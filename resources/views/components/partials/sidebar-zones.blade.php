@@ -32,17 +32,27 @@
              a few pixels left of the navigation it belongs to, which reads as a
              layout fault rather than a choice.
 
-             Applied on the ZONE rather than asked of the caller: the alignment
+             Applied on the zone rather than asked of the caller: the alignment
              is a property of the column, and a developer supplying a brand row
              should not have to know which token the items happen to use. --}}
         {{-- A chrome band placed in this zone makes the zone drop its own inset entirely —
              see the `:has()` rule in dist/wirekit.css. The zone does not have to publish that
              inset any more: it simply stops applying it, which is one fewer variable and one
              fewer thing that can be read wrong. --}}
+        {{-- The margin below keeps the column's own padding between the head and the scrolling
+             list. The list clips what scrolls under it at its top edge, so without it a row
+             scrolled up stopped right under the brand while the column's edge stood a padding
+             above it. A band that bleeds draws its own rule there and gives the margin back, in
+             the same rule that takes the inset.
+
+             `data-wk-sidebar-zone-inset` names the inset the zone applies, so a row placed in
+             the zone can give it back: a `sidebar.item` carries the same inset inside its own
+             hover area, and in a zone it would otherwise stand indented twice. --}}
         <div @class([
             'shrink-0',
+            'mb-[var(--padding-wk-y-sm)]',
             'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true,
-        ])>
+        ]) @if($zoneInset ?? true) data-wk-sidebar-zone-inset @endif>
             {{ $header }}
         </div>
     @endif
@@ -62,14 +72,14 @@
          shadow appears exactly when there is somewhere left to scroll.
 
          The wrapper is `relative` because the overlays are absolutely positioned
-         siblings of the scroller — painted ABOVE the content, so a hovered row at
+         siblings of the scroller — painted above the content, so a hovered row at
          the edge cannot cover the affordance. --}}
     {{-- The shadow apparatus is separable from the zones, and it was not.
          A developer with their own edge treatment could only be rid of ours by
          dropping `header` and `footer` — which also gives up the sticky head and
          foot, an unrelated capability. `scroll-shadows="false"` keeps the zones,
          the scroller and its scrollbar, and leaves the edge alone. --}}
-    {{-- The scroller clips on BOTH axes: `overflow-y: auto` turns the inline axis into one that
+    {{-- The scroller clips on both axes: `overflow-y: auto` turns the inline axis into one that
          clips as well. The rows fill it edge to edge, so a row's focus ring, drawn outside the
          row, would lie wholly outside what the scroller shows on the left and the right. The inline
          padding is as wide as the farthest a focus ring reaches, its width plus its offset (a
@@ -86,13 +96,13 @@
             data-wk-sidebar-scroller
             class="relative min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
         >
-            {{-- `-mb-px` cancels the sentinel's OWN height. It has to stay one pixel tall
+            {{-- `-mb-px` cancels the sentinel's own height. It has to stay one pixel tall
                  for the observer to report it reliably — a zero-height target is not
                  dependably "intersecting" — but that pixel is real layout, and it put the
                  first row one pixel below the rail's. The negative margin gives the
                  observer its pixel and the reader none. --}}
             <div x-ref="topSentinel" aria-hidden="true" class="h-px shrink-0 -mb-px"></div>
-            {{-- The rows carry the rhythm, NOT the scroller. A gap on the scroller
+            {{-- The rows carry the rhythm, not the scroller. A gap on the scroller
                  would space its two sentinels too, since they are its flex children: an
                  invisible 1px marker plus one gap would push the whole list down, below
                  where the rail's first row sits. The sentinels stay where the observer
@@ -121,7 +131,7 @@
              as the items above it. --}}
         {{-- `$collapsible`, and it has to be the gate rather than `isset($collapseBtnClasses)`.
              The classes are resolved unconditionally at the top of `sidebar.blade.php`, so
-             that test is true for EVERY column and the control was rendered beside the footer
+             that test is true for every column and the control was rendered beside the footer
              of a plain, non-collapsible sidebar too. Two things followed, and only one of them
              is visible: the button does nothing, because there is no rail state to toggle —
              and its three Alpine bindings (`:aria-expanded`, `:aria-label`, the chevron's
@@ -147,11 +157,16 @@
             // included, so a utility named here compiles into the stylesheet with nothing
             // emitting it and the reverse drift diff goes red over a sentence.
             'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true,
-        ])>
+            // The margin of the head, mirrored: a row scrolling down to the foot stops a padding
+            // above it. A margin rather than padding, because a shell that states a shared foot
+            // height centers the content of the foot in that height, and padding would move it
+            // off the line the foot of the rail sits on.
+            'mt-[var(--padding-wk-y-sm)]',
+        ]) @if($zoneInset ?? true) data-wk-sidebar-zone-inset @endif>
             {{ $footer }}
-            @if($footHostsToggle)
+            @wirekitLast($footHostsToggle)
                 @include('wirekit::components.partials.sidebar-collapse-toggle')
-            @endif
+            @endwirekitLast
         </div>
     @endif
 @else

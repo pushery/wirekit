@@ -10,7 +10,7 @@
  * over a success message, with no error text beside it.
  *
  * A form reset would clear the memory, and it would also clear every other field of the form,
- * which Livewire still holds. So the red is gated on an attribute instead: a field the SERVER
+ * which Livewire still holds. So the red is gated on an attribute instead: a field the server
  * emptied carries `data-wk-cleared`, and the stylesheet and the field utilities read
  * `:user-invalid:not([data-wk-cleared])`. The browser's validity is untouched; only the paint is.
  *

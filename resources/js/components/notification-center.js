@@ -5,13 +5,13 @@
  * actionable notifications. Manages read/unread state, type filtering, grouping
  * (by time bucket or type), and optimistic realtime insertion. Read-state
  * changes are emitted via bubbling events (`notification-read` /
- * `notification-read-all`) and the unread count is mirrored to a hidden input
- * for a wire:model bridge.
+ * `notification-read-all` / `notification-delete-read`) and the unread count is
+ * mirrored to a hidden input for a wire:model bridge.
  *
  * Lifecycle resources held on `this`:
- *   - _rt (window event listener) — OPTIONAL, created only when a
+ *   - _rt (window event listener) — optional, created only when a
  *     `realtimeEvent` name is configured; removed in destroy(). Its callback
- *     does NOT dereference `this._rt`, so no post-destroy null-guard is needed
+ *     does not dereference `this._rt`, so no post-destroy null-guard is needed
  *     (it only calls prepend()).
  *   - _stopRepair (MutationObserver) — puts the panel's placement back when a
  *     framework update erases it; released on every re-anchor, in close() and in
@@ -60,7 +60,7 @@ const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):
 /**
  * Is this element a tab stop the reader can actually reach right now?
  *
- * TWO ways it can be present and not reachable, and this panel has both:
+ * Two ways it can be present and not reachable, and this panel has both:
  *
  *   - `x-show` writes `display: none`, which leaves the element in the DOM and
  *     in every `querySelectorAll` result. "Mark all read" is exactly that — it
@@ -68,7 +68,7 @@ const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):
  *     the browser would drop focus on `<body>`.
  *   - The type filter is a ROVING-TABINDEX radiogroup, so every radio except the
  *     checked one carries `tabindex="-1"` while still matching
- *     `button:not([disabled])` — the selector clauses are an OR, and a button
+ *     `button:not([disabled])` — the selector clauses are an or, and a button
  *     satisfies the button clause whatever its tabindex says.
  *
  * The second one is the half a copy of another component's helper does not
@@ -202,9 +202,9 @@ export default function wirekitNotificationCenter(config = {}) {
                 window.addEventListener(config.realtimeEvent, this._rt);
             }
             // Close on page scroll / viewport resize. The teleported panel is
-            // position:fixed, anchored ONCE on open — when the page scrolls under
+            // position:fixed, anchored once on open — when the page scrolls under
             // it, the panel strands visually detached from the bell (it stays in
-            // place when the page scrolls away under it). Scrolling INSIDE the
+            // place when the page scrolls away under it). Scrolling inside the
             // panel (a long notification list) must keep working — only scrolls
             // originating outside the panel dismiss it. Capture catches every
             // scroller (document + nested containers); passive per perf-hygiene.
@@ -255,6 +255,9 @@ export default function wirekitNotificationCenter(config = {}) {
         },
 
         // ── Derived state ────────────────────────────────────────────────
+        get readCount() {
+            return this.items.filter((i) => i.read).length;
+        },
         get unreadCount() {
             return this.items.filter((i) => !i.read).length;
         },
@@ -354,7 +357,7 @@ export default function wirekitNotificationCenter(config = {}) {
         },
 
         /**
-         * Move to the control that FOLLOWS the bell on the page.
+         * Move to the control that follows the bell on the page.
          *
          * Where a forward Tab out of the flyout belongs: the panel is drawn
          * beside the bell, so leaving it should continue from the bell and not
@@ -401,12 +404,12 @@ export default function wirekitNotificationCenter(config = {}) {
          * Leaving closes it, which is what this flyout's other three dismissals
          * already mean: Escape, a click outside and a page scroll all return the
          * reader to the page. A non-modal dialog is left, not escaped from — so
-         * a focus TRAP is deliberately not used here, the same call filter-builder
+         * a focus trap is deliberately not used here, the same call filter-builder
          * records for the identical shape. There is no `aria-modal` and no scroll
          * lock, and a trap would also have to be taught about the roving-tabindex
          * radiogroup and the `tabindex="0"` scroll region the panel already owns.
          *
-         * The BACKWARD edge also fires on the panel container itself. Opening
+         * The backward edge also fires on the panel container itself. Opening
          * focuses `$refs.panel`, which is `tabindex="-1"` and therefore not a tab
          * stop and never equal to `focusables[0]` — so the very first Shift+Tab
          * after opening is the one edge a `focusables`-only check does not catch.
@@ -443,7 +446,7 @@ export default function wirekitNotificationCenter(config = {}) {
             }
 
             event.preventDefault();
-            // Focus moves BEFORE the panel hides. `x-show` writes `display: none`,
+            // Focus moves before the panel hides. `x-show` writes `display: none`,
             // and hiding the subtree that holds focus makes the browser drop it on
             // `<body>` — after our own focus() call, which would then have
             // accomplished nothing.
@@ -486,7 +489,7 @@ export default function wirekitNotificationCenter(config = {}) {
 
         // Anchor the teleported (fixed) panel to the bell. Prefers opening toward
         // the inline-end (bottom-start = left-aligned, so the panel extends to the
-        // RIGHT into available space); the shift along the bell pulls it back
+        // right into available space); the shift along the bell pulls it back
         // on-screen when the right edge would overflow (e.g. a top-right navbar
         // bell). There is no shift across it: below the bell that axis is the
         // vertical one, and a shift there would lift the panel over the bell.
@@ -531,10 +534,10 @@ export default function wirekitNotificationCenter(config = {}) {
             this.items = this.items.map((i) => (i.id === id ? { ...i, read: true } : i));
             this._emit('notification-read', { id });
         },
-        // Row activation = mark read + announce WHICH notification was clicked
+        // Row activation = mark read + announce which notification was clicked
         // via a bubbling `notification-action` (id + href when present). The
         // developer listens and navigates / opens a panel / calls Livewire —
-        // the component never navigates by itself. Rows WITH `href` also render
+        // the component never navigates by itself. Rows with `href` also render
         // as real links (native navigation + middle-click keep working on top
         // of the event).
         activate(item) {
@@ -546,45 +549,70 @@ export default function wirekitNotificationCenter(config = {}) {
             // held the focus: the browser would drop it to the page with the panel still open.
             // Whether it held it is read now, while it is still in the document; the first row
             // takes it once the list has re-rendered, or the list itself when it is empty.
-            const handOver = typeof document !== 'undefined'
-                && document.activeElement
-                && typeof document.activeElement.hasAttribute === 'function'
-                && document.activeElement.hasAttribute('data-wk-mark-all-read');
+            const handOver = this._holdsFocus('data-wk-mark-all-read');
 
             this.items = this.items.map((i) => ({ ...i, read: true }));
             this._emit('notification-read-all', {});
 
             if (handOver) {
-                const place = () => {
-                    const panel = this.$refs && this.$refs.panel;
+                this._focusList();
+            }
+        },
+        // Takes the read notifications out of the list and names them in a bubbling
+        // `notification-delete-read`, so the application deletes them where they are stored. Like
+        // marking all read, the list changes at once and nothing waits for an answer.
+        deleteRead() {
+            // The button shows only while something is read, so it takes itself away as well.
+            const handOver = this._holdsFocus('data-wk-delete-read');
+            const ids = this.items.filter((i) => i.read).map((i) => i.id);
 
-                    if (! panel || typeof panel.querySelector !== 'function') {
-                        return;
-                    }
+            this.items = this.items.filter((i) => ! i.read);
+            this._emit('notification-delete-read', { ids });
 
-                    const target = panel.querySelector('[data-wk-notification-row]')
-                        ?? panel.querySelector('[data-wk-notification-list]');
+            if (handOver) {
+                this._focusList();
+            }
+        },
+        // Whether the element that holds the focus carries the given marker, read before the
+        // change that removes it from the document.
+        _holdsFocus(marker) {
+            return typeof document !== 'undefined'
+                && !! document.activeElement
+                && typeof document.activeElement.hasAttribute === 'function'
+                && document.activeElement.hasAttribute(marker);
+        },
+        // The focus goes to the first row once the list has re-rendered, or to the list itself
+        // when it is empty, so it stays in the open panel.
+        _focusList() {
+            const place = () => {
+                const panel = this.$refs && this.$refs.panel;
 
-                    if (target && typeof target.focus === 'function') {
-                        target.focus({ preventScroll: true });
-                    }
-                };
-
-                if (typeof this.$nextTick === 'function') {
-                    this.$nextTick(place);
-                } else {
-                    place();
+                if (! panel || typeof panel.querySelector !== 'function') {
+                    return;
                 }
+
+                const target = panel.querySelector('[data-wk-notification-row]')
+                    ?? panel.querySelector('[data-wk-notification-list]');
+
+                if (target && typeof target.focus === 'function') {
+                    target.focus({ preventScroll: true });
+                }
+            };
+
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(place);
+            } else {
+                place();
             }
         },
         setFilter(type) {
             this.activeFilter = type;
         },
-        // Radio-group keyboard model for the filter row: arrows move AND select
+        // Radio-group keyboard model for the filter row: arrows move and select
         // (selection follows focus, per the ARIA radio pattern), wrapping at the
         // ends. Focus lands on the newly active radio via its data-filter hook.
         //
-        // Resolved through `$refs.panel`, NEVER `$root`. The radios live in the
+        // Resolved through `$refs.panel`, never `$root`. The radios live in the
         // panel, and the panel is teleported to `#wk-overlay-root` at the end of
         // <body> — so it is not a descendant of the element `$root` is bound to,
         // and a downward `querySelector` from there would find nothing. Selection

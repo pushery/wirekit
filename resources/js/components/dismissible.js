@@ -39,7 +39,7 @@ export default function wirekitDismissible(config = {}) {
             }
 
             // Storage can throw — private mode, a full quota, a blocked origin.
-            // A component that cannot READ its preference should appear, not
+            // A component that cannot read its preference should appear, not
             // vanish.
             try {
                 this.shown = window.localStorage.getItem(this._persistKey) !== '1';
@@ -63,7 +63,7 @@ export default function wirekitDismissible(config = {}) {
             this.shown = false;
 
             if (this._persistKey) {
-                // A failed WRITE is not worth surfacing: the reader dismissed it,
+                // A failed write is not worth surfacing: the reader dismissed it,
                 // that worked, and it will simply return next visit.
                 try {
                     window.localStorage.setItem(this._persistKey, '1');

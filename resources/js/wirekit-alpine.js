@@ -8,7 +8,7 @@
  *
  *   wirekit.js          — your app already runs Alpine and registers
  *                         WireKit components yourself (Laravel + Livewire
- *                         setups). BYO Alpine.
+ *                         setups). Byo Alpine.
  *
  *   wirekit-alpine.js   — you want a self-contained drop that gives
  *                         you Alpine + every WireKit primitive in one
@@ -31,8 +31,10 @@
 import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
+import { registerInlineStepMagic } from './utils/inline-direction.js';
 import { registerPagerFocusMagics } from './utils/pager-focus.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerGroupedDigitsDirective } from './utils/grouped-digits.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerCallerModelDirective } from './utils/caller-model.js';
 import { registerImeDirective } from './utils/ime.js';
@@ -53,6 +55,7 @@ import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerFocusUnitDirective } from './utils/focus-unit.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { registerFieldValidity } from './utils/field-validity.js';
 import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
@@ -84,6 +87,7 @@ import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
 import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
+import wirekitSidebarWidth from './components/sidebar-width.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
@@ -179,7 +183,7 @@ import wirekitStream from './components/stream.js';
 
 /**
  * Detect a pre-existing Alpine instance. Loading wirekit-alpine.js when
- * the developer's app ALSO loaded its own Alpine means two Alpines would
+ * the developer's app also loaded its own Alpine means two Alpines would
  * walk the same DOM, which produces a runtime warning that is hard to
  * debug — so this bundle does not start its own. It registers every
  * component on the Alpine that is already running and says so in the
@@ -232,21 +236,21 @@ window.wirekitShortcut = defineShortcut;
     // The cost is part of every bundle's size in `dist/README.md`, paid by
     // developers who render no disclosure as well. The docs promise the animation,
     // so not paying it would ship a promise that is not true.
-    // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is not
+    // `collapse(Alpine)`, not `Alpine.plugin(collapse)`, and the difference is not
     // style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
-    // callback its OWN module singleton and ignores the receiver. This bundle starts
+    // callback its own module singleton and ignores the receiver. This bundle starts
     // its own Alpine, or registers on the host's when a page already runs one, so
     // going through `plugin` could register the directive on an Alpine that is not
     // the one running the page. Calling the installer directly registers it on the
     // Alpine in hand.
-    // On the RUNNING Alpine — `target`, not the imported one. A directive registered on a
+    // On the running Alpine — `target`, not the imported one. A directive registered on a
     // module singleton the page never starts reaches no element: with a host Alpine present,
     // every disclosure would lose its animation, and nothing would say so.
     collapse(target);
 
 if (hostAlpine) {
     // Not an error, and not silent either. The page works after this — but the reason a
-    // developer reaches for THIS bundle is usually the CSP guarantee, and that guarantee is
+    // developer reaches for this bundle is usually the CSP guarantee, and that guarantee is
     // about which Alpine build evaluates expressions. The one now running is the host's, so
     // the guarantee is the host's to keep, not this bundle's to promise.
     console.warn(
@@ -263,12 +267,16 @@ if (hostAlpine) {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(target);
     registerScrollToMagic(target);
+    registerInlineStepMagic(target);
     // A page turned under Livewire keeps the focus in its pager. See utils/pager-focus.js.
     registerPagerFocusMagics(target);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
-    // apply it after EVERY render — not only the first. See utils/indeterminate.js.
+    // apply it after every render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(target);
+    // An amount field that groups its digits while it is typed, and whose value stays the
+    // plain number. See utils/grouped-digits.js.
+    registerGroupedDigitsDirective(target);
     // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
     // root the component renders. See utils/caller-ref.js.
     registerCallerRefDirective(target);
@@ -313,6 +321,8 @@ if (hostAlpine) {
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // A field the browser holds invalid says why under the red it turns. See utils/field-validity.js.
+    registerFieldValidity();
     // An alert a Livewire render adds is announced. See utils/alert-arrival.js.
     installAlertArrival();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
@@ -352,6 +362,7 @@ if (hostAlpine) {
     target.data('wirekitAppRail', wirekitAppRail);
     target.data('wirekitAppShell', wirekitAppShell);
     target.data('wirekitSidebarRail', wirekitSidebarRail);
+    target.data('wirekitSidebarWidth', wirekitSidebarWidth);
     target.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     target.data('wirekitNavbarScroll', wirekitNavbarScroll);
     target.data('wirekitOverflowNav', wirekitOverflowNav);

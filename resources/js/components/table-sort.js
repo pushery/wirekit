@@ -33,7 +33,7 @@ export default function wirekitTableSort(config = {}) {
         _originalOrder: [],
         _rowChanges: null,
 
-        // The application's locale, so a formatted column can be READ as a number rather
+        // The application's locale, so a formatted column can be read as a number rather
         // than only compared as text. Handed down from the Blade template — this file has
         // no access to App::getLocale(), and the browser's own locale is the reader's
         // machine, not the page.
@@ -120,7 +120,7 @@ export default function wirekitTableSort(config = {}) {
 
             const esc = (c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-            // French groups with a NARROW NO-BREAK SPACE (U+202F), not the space on a
+            // French groups with a narrow NO-BREAK space (U+202F), not the space on a
             // keyboard. A page that writes its numbers by hand, or through a tool that
             // normalizes whitespace, produces U+0020 or U+00A0 instead — visually identical
             // and a different code point. All three are accepted when the locale's group
@@ -147,7 +147,7 @@ export default function wirekitTableSort(config = {}) {
             devWarn(config.warning);
 
             // Snapshot original row order so we can restore it when sort is cleared.
-            // Use $root (the x-data <table>), NOT $el — see _reorderRows for why.
+            // Use $root (the x-data <table>), not $el — see _reorderRows for why.
             this.$nextTick(() => {
                 const tbody = this.$root.querySelector('tbody');
                 if (tbody) {
@@ -231,7 +231,7 @@ export default function wirekitTableSort(config = {}) {
          * Reads cell values from data-wk-sort-value attribute or textContent.
          */
         _reorderRows() {
-            // $root, NOT $el. sortBy() is reached from an @click on the header's
+            // $root, not $el. sortBy() is reached from an @click on the header's
             // sort <button>, so at call time Alpine binds $el to that button,
             // which has no <tbody> and no <thead th> descendants: $el.querySelector
             // would return null and this method would return early, so the
@@ -244,7 +244,7 @@ export default function wirekitTableSort(config = {}) {
             // No active sort — restore original DOM order
             if (!this.sortColumn || !this.sortDirection) {
                 /*
-                 * Only rows the table STILL has, and every row it has now.
+                 * Only rows the table still has, and every row it has now.
                  *
                  * `_originalOrder` is a snapshot of node references taken once at init, and
                  * `appendChild` on a detached node RE-ATTACHES it. After a Livewire
@@ -255,7 +255,7 @@ export default function wirekitTableSort(config = {}) {
                  *
                  * The snapshot is still worth keeping: it is the only record of the order
                  * the server sent, and re-deriving it from the current DOM after a sort
-                 * would just record the sorted order. So it is INTERSECTED with what is
+                 * would just record the sorted order. So it is intersected with what is
                  * live, and anything the current table holds that the snapshot does not —
                  * rows added by that same re-render — keeps its place at the end rather
                  * than being dropped.
@@ -289,7 +289,7 @@ export default function wirekitTableSort(config = {}) {
             /*
              * Decorate, sort, undecorate.
              *
-             * Everything the comparator needs is derived ONCE PER RECORD here, because a
+             * Everything the comparator needs is derived once per record here, because a
              * comparator runs O(n log n) times and none of this work depends on the pair
              * being compared. Read inside the comparator, a 500-row table would extract
              * text roughly 4,500 times instead of 500, and since `_toNumber` compiles its
@@ -303,7 +303,7 @@ export default function wirekitTableSort(config = {}) {
                 // Prefer explicit sort value, fall back to trimmed text content
                 const val = sortValue ?? cell?.textContent?.trim() ?? '';
 
-                // Numeric comparison ONLY when each value is FULLY numeric.
+                // Numeric comparison only when each value is fully numeric.
                 // parseFloat() reads a leading number out of a non-numeric
                 // string — "2025-01-15" → 2025 — which would collapse every ISO
                 // date in a column to its year, so they would compare equal and

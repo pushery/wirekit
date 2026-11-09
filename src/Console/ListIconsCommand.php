@@ -41,7 +41,7 @@ class ListIconsCommand extends Command
      *
      * ## Why this is worth a command
      *
-     * The two states look IDENTICAL in a browser. A glyph name renders
+     * The two states look identical in a browser. A glyph name renders
      * perfectly as long as the preset stays put; it breaks on a preset switch,
      * and then all of them break at once. There is no signal until the moment it
      * is expensive — which is exactly the shape an audit is for.
@@ -118,8 +118,8 @@ class ListIconsCommand extends Command
          * Tags were found, but not one of them names anything the source can
          * judge. Reporting that as three zeros reads like a clean sweep — the
          * exact shape this command refuses everywhere else, and it slipped
-         * through here because the earlier guard asks whether ANY tag was seen,
-         * not whether any could be DECIDED.
+         * through here because the earlier guard asks whether any tag was seen,
+         * not whether any could be decided.
          *
          * Found by running the command's own documented default form against a
          * real application rather than the fixture it was built against.
@@ -237,7 +237,7 @@ class ListIconsCommand extends Command
      * inherits what it knows — a `{{-- don't --}}` comment inside a tag, a tag
      * another element interrupted, a file that ends mid-tag.
      *
-     * The attribute VALUE is read here rather than there on purpose:
+     * The attribute value is read here rather than there on purpose:
      * `tagsFromSource()` returns boundaries and names, deliberately, so that it
      * does not become the second and weaker parser for every caller's different
      * question. Reading the value out of the boundaries it hands back is the
@@ -300,7 +300,7 @@ class ListIconsCommand extends Command
     }
 
     /**
-     * Every WireKit component that accepts an ICON NAME as a prop, derived rather than
+     * Every WireKit component that accepts an icon name as a prop, derived rather than
      * listed.
      *
      * Why this exists: the audit separates names under contract (a declared alias) from
@@ -389,7 +389,7 @@ class ListIconsCommand extends Command
         $formatValue = $this->option('format');
 
         if ($this->option('audit') === true) {
-            // The listing flags do not compose with the audit, so they are REJECTED
+            // The listing flags do not compose with the audit, so they are rejected
             // rather than silently honored — the house convention `InstallCommand`
             // states outright and `BoostSkillsCommand` follows for `--check --force`.
             //

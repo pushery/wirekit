@@ -25,10 +25,10 @@
     // server-side renders without a Tailwind build step, or any context
     // outside the developer's source-tree scan.
     $layoutStyle = match ($layout) {
-        // `--gap-wk-lg`, NOT `--gap-wk-md`, and the difference is the whole point of using a
+        // `--gap-wk-lg`, not `--gap-wk-md`, and the difference is the whole point of using a
         // token here at all. A fallback keeps the 1rem only while the token is unset, and it is
         // not: `dist/wirekit.css` ships `--gap-wk-md: 0.75rem`, so `md` would tighten every
-        // stacked and grid list in every application from 1rem to 0.75rem. `--gap-wk-lg` IS
+        // stacked and grid list in every application from 1rem to 0.75rem. `--gap-wk-lg` is
         // 1rem, so nothing moves and the gap becomes adjustable.
         'stacked' => 'display: flex; flex-direction: column; gap: var(--gap-wk-lg, 1rem);',
         // The columns of `grid` are in dist/wirekit.css, under `dl[data-layout="grid"]`: two, and
@@ -36,8 +36,8 @@
         // columns written here the list stayed at two on a phone.
         'grid' => 'display: grid; gap: var(--gap-wk-lg, 1rem);',
         // `summary` is the totals shape: an invoice subtotal block, a cart
-        // summary, an order overview. The LABEL takes whatever width is left
-        // over; the VALUE is as wide as its own content and sits flush right,
+        // summary, an order overview. The label takes whatever width is left
+        // over; the value is as wide as its own content and sits flush right,
         // so amounts line up under one another along a single column edge.
         //
         // Neither existing layout can express it, which is why this one exists
@@ -49,9 +49,9 @@
         //
         // The <dt>/<dd> pairs are the grid's own items — `data-list.item`
         // drops its wrapper box to `display: contents` in this layout — so the
-        // value column is ONE track sized across every row, not a separate
+        // value column is one track sized across every row, not a separate
         // size per row. That shared track is what makes the amounts a
-        // column rather than a set of independently right-aligned strings.
+        // column rather than a set of strings each aligned to the end on its own.
         //
         // Row rhythm comes from the row gap rather than per-item padding, and
         // there are deliberately no row separators: a totals block rules the
@@ -70,8 +70,8 @@
         'summary' => 'display: grid; grid-template-columns: 1fr fit-content(max(40%, 10rem)); '
             .'gap: var(--gap-wk-xs, 0.25rem) var(--gap-wk-md, 0.75rem); align-items: baseline;',
         // `detail` is `summary` with the columns swapped, and it is the commoner of the two:
-        // "Customer: …", "Payment method: …" — the LABEL is as wide as its own text and the
-        // VALUE takes the rest. An application builds more detail lists than totals blocks.
+        // "Customer: …", "Payment method: …" — the label is as wide as its own text and the
+        // value takes the rest. An application builds more detail lists than totals blocks.
         //
         // `grid` is the obvious wrong choice for it. At `repeat(2, 1fr)` a label like
         // "Payment method" is handed half the row and the value the other half, so the two

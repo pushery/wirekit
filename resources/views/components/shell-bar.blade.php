@@ -5,14 +5,14 @@
      so with a `label` the bar renders a focusable element. --}}
 {{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
-    // The border. This is THE horizontal line of a console shell: place one bar at
+    // The border. This is the horizontal line of a console shell: place one bar at
     // the head of each column and the segments meet, because they are the same
     // component reading the same height token rather than three hand-aligned
     // headers. Set false for a second, stacked bar that should not draw a rule of
     // its own (a tab strip directly under the title bar).
     //
-    // `true` draws it BELOW the bar, which is what a head wants. `'top'` draws it
-    // above instead, for a bar sitting at the FOOT of a column — an account row at
+    // `true` draws it below the bar, which is what a head wants. `'top'` draws it
+    // above instead, for a bar sitting at the foot of a column — an account row at
     // the bottom of a sidebar is the case. Without it such a bar would draw its rule
     // along the column's bottom edge, and a symmetric column would need a bare foot
     // row, which does not match the head it faces.
@@ -31,7 +31,7 @@
     // edge, which is what a title-plus-actions bar wants; `start` and `center` are
     // for a bar whose content is one cluster.
     'align' => 'between',
-    // Sticks the bar to the top of its SCROLLING ancestor.
+    // Sticks the bar to the top of its scrolling ancestor.
     //
     // Read this before reaching for it: in the console layout the bar sits inside
     // the app-shell's content column, and that column carries `overflow-hidden` and
@@ -39,7 +39,7 @@
     // move, which is to say it does nothing. It is not a bug to fix here; it is what
     // `position: sticky` means. The console layout does not need it either, because
     // the main region below is the scroller and the bar already stays put.
-    // Where it DOES work: a bar placed in ordinary document flow on a page that
+    // Where it does work: a bar placed in ordinary document flow on a page that
     // scrolls as a document.
     'sticky' => false,
     // Cancels the padding of a host that pads its children, so the bar — and therefore its
@@ -52,12 +52,12 @@
     //
     // The bar does not escape: it marks itself `data-wk-bleed`, and the container stands aside.
     // A zone holding a bleeding bar drops its own inset and pulls back the column's, so the head
-    // reaches the column's edge FROM THE INSIDE — see dist/wirekit.css. Outside such a container
+    // reaches the column's edge from the inside — see dist/wirekit.css. Outside such a container
     // the prop does nothing at all, which is the right no-op.
     'bleed' => false,
     // An accessible name for the leading cluster.
     //
-    // The cluster SCROLLS rather than clipping (see below), and a scroll region has to be
+    // The cluster scrolls rather than clipping (see below), and a scroll region has to be
     // keyboard-operable. Where its content is interactive — a tab strip, a breadcrumb of
     // links — Tab reaches each item and the browser scrolls it into view, so nothing more is
     // owed. Where it is not — a long title, a status line — the region needs a name and a
@@ -81,8 +81,8 @@
         $rule = \Pushery\WireKit\WireKit::validateProp('shell-bar', 'rule', $rule, ['true', 'false', 'top']);
     }
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `rule="false"` would otherwise KEEP the rule. Normalize against each prop's
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
+    // `rule="false"` would otherwise keep the rule. Normalize against each prop's
     // own default so a cast never engages a mode that was meant off.
     //
     // `rule` is TRI-STATE, modeled as two booleans rather than cast down to one: it accepts
@@ -118,7 +118,7 @@
     // default slot below is a `min-w-0` flex child.
     //
     // `shrink-0` for the same reason from the other direction: the bar is usually
-    // the first child of a flex COLUMN, and a flex item's shrink would let a long
+    // the first child of a flex column, and a flex item's shrink would let a long
     // page steal pixels from the bar's height.
     // `w-full` belongs to the NON-bleeding branch only. Emitting both it and the bleed's
     // width leaves two width utilities of equal specificity on one element, and the winner is
@@ -142,7 +142,7 @@
     // segment crossing a toned column matches that column's own edge instead of
     // drawing a light hairline across a dark surface. On an untoned column the
     // role falls back to --color-wk-border, so nothing changes there.
-    // Both variants are written out as WHOLE literals rather than concatenated from an
+    // Both variants are written out as whole literals rather than concatenated from an
     // edge and a suffix. Tailwind generates a utility only if it can see the class as
     // text in a source file; `$edge.'-[length:…]'` is assembled at runtime, so the
     // scanner never sees it and the border silently does not exist. `'top'` is matched
@@ -153,17 +153,17 @@
         default => '',
     };
 
-    // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
+    // Sticks below a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
     $stickyClasses = $sticky ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)]' : '';
 
-    // The block margin cancels the host's own padding; the inline margin cancels that PLUS
+    // The block margin cancels the host's own padding; the inline margin cancels that plus
     // the zone's inset, because a zone that insets its content to line up with the navigation
-    // is a second layer of the same thing. Logical properties throughout, so a right-to-left
-    // column bleeds on the side its content actually starts from.
+    // is a second layer of the same thing. Logical properties throughout, so a column on a page
+    // that reads from the right bleeds on the side its content actually starts from.
     //
-    // The BOTTOM is deliberately not canceled: the gap under the head is what separates the
+    // The bottom is deliberately not canceled: the gap under the head is what separates the
     // rule from the first navigation item, and pulling it up would close it.
-    // NOTHING. The bar does not escape its container — the container stands aside.
+    // Nothing. The bar does not escape its container — the container stands aside.
     //
     // Bleeding with negative margins plus a width of `100% + 2 * the padding` would be
     // fragile: an element that relies on overflowing its parent is at the mercy of every
@@ -179,7 +179,7 @@
     data-wk-shell-bar
     @if($sticky) data-wk-scroll-inset="top" @endif
     @if($bleed) data-wk-bleed @endif
-    {{-- Marks WHICH edge the zone must pull back. A head bleeds upward, a foot downward, and
+    {{-- Marks which edge the zone must pull back. A head bleeds upward, a foot downward, and
          the stylesheet cannot tell them apart from position alone: in a collapsible column the
          foot zone is not the last child — the fold control is. --}}
     @if($ruleOnTop) data-wk-rule-top @endif
@@ -189,7 +189,7 @@
          long title would push the `end` cluster off the bar instead of truncating. With it,
          `truncate` on the title actually engages.
 
-         It SCROLLS rather than clipping. A console layout's top bar — three navigation items
+         It scrolls rather than clipping. A console layout's top bar — three navigation items
          and two actions — is about 520px wide, and the content column of a 375px phone would
          clip about 146px of it under `overflow: hidden`. The clipped part would not merely be
          unseen but unreachable; nothing scrolls a box that has no scroller. A horizontally
@@ -214,7 +214,7 @@
              which on a phone is immediately. `shrink-0` for the same reason the trailing
              cluster has it: the thing that gives way under pressure is the middle.
 
-             The slot's own attributes land on THIS wrapper, and that is what lets a caller
+             The slot's own attributes land on this wrapper, and that is what lets a caller
              write `<x-slot:start class="lg:hidden">`. Without it the only place to hang a
              responsive class would be the control inside, and a control that is `display: none`
              leaves its wrapper behind as a zero-width flex item — which still takes the bar's
@@ -226,13 +226,13 @@
         </div>
     @endif
     <div
-        {{-- The KEYBOARD half is unconditional. Behind a `label` check it would tie a
+        {{-- The keyboard half is unconditional. Behind a `label` check it would tie a
              WCAG 2.1.1 obligation to a cosmetic prop: the strip always carries
              `overflow-x-auto`, and most bars omit `label`, so the configuration that
              failed would be the default one. `tabindex` and the focus ring below stay on
              every bar.
 
-             The ROLE and the NAME are a different thing and wait for the caller. A role
+             The role and the name are a different thing and wait for the caller. A role
              plus a name is a named container announced in its own right, and a built-in
              default makes every bar in an application the same one — a reader tabbing
              through a three-column shell would hear "Toolbar, group" three times before
@@ -250,7 +250,7 @@
              whose leading cluster is empty". The gate below enforces that rule rather than
              leaving it to the caller.
 
-             The condition lives in the attribute's VALUE, not around the attribute: a tab
+             The condition lives in the attribute's value, not around the attribute: a tab
              stop behind a Blade conditional is not a keyboard model the markup can show, and
              read without its conditional the wrapped form has no `tabindex` at all. `map`
              uses the same shape for the same reason.
@@ -299,7 +299,7 @@
     >
         {{ $slot }}
     </div>
-    @if(\Pushery\WireKit\Support\SlotContent::given($end ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($end ?? null))
         {{-- The trailing cluster. `shrink-0` so actions keep their size and the
              title gives way first — the opposite is a bar whose buttons squash
              into unreadable slivers while a heading nobody needs in full stays
@@ -308,5 +308,5 @@
         <div {{ \Pushery\WireKit\Support\SlotAttributes::of($end)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller(\Pushery\WireKit\Support\SlotAttributes::of($end), 'flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]')) }}>
             {{ $end }}
         </div>
-    @endif
+    @endwirekitLast
 </div>

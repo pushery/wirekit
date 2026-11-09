@@ -6,7 +6,7 @@
  * it, and a form or a one-time secret that opens at the top of the page. Without it nothing seems
  * to happen, and the button reads as broken.
  *
- * THE SERVER DECIDES, through `data-wk-scroll-key`: a value that is new with every result to show,
+ * The server decides, through `data-wk-scroll-key`: a value that is new with every result to show,
  * an id or a time. The region comes into view when it appears carrying a key and whenever the key
  * changes; without a key it stays where it is, so a page that loads with the region on it does not
  * jump. Why an attribute plus an observer is the reasoning `x-wk-flash` gives: a Livewire render
@@ -23,7 +23,7 @@
  * into view and takes the focus, and the others stay where they are. Each region asks on its own,
  * and the last to ask would otherwise win, which is the lowest on the page.
  *
- * REDUCED MOTION jumps instead of gliding: scrollBehavior() in motion.js.
+ * Reduced motion jumps instead of gliding: scrollBehavior() in motion.js.
  *
  * Lifecycle: one MutationObserver per element and the settling scroll's timer, both released in the
  * directive's cleanup; one `morph.updating` hook per page, installed with the first tabindex this
@@ -291,7 +291,7 @@ function requestBringIntoView(el, options) {
             return;
         }
 
-        // `compareDocumentPosition` answers PRECEDING when its argument comes before the element.
+        // `compareDocumentPosition` answers preceding when its argument comes before the element.
         const first = batch.reduce((chosen, request) => (
             typeof chosen.el.compareDocumentPosition === 'function'
                 && (chosen.el.compareDocumentPosition(request.el) & PRECEDING)

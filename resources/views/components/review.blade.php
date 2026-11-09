@@ -36,7 +36,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('review', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     $verified = BooleanProp::from($verified, false, 'review', 'verified');
 
@@ -85,9 +85,9 @@
             @if($written)
                 <time datetime="{{ $written->toIso8601String() }}">{{ $dateText($written) }}</time>
             @endif
-            @if($verified)
+            @wirekitLast($verified)
                 <x-wirekit::badge intent="success" size="sm">{{ __('wirekit::Verified purchase') }}</x-wirekit::badge>
-            @endif
+            @endwirekitLast
         </p>
     @endif
 
@@ -101,15 +101,15 @@
         <article data-wk-review-reply aria-labelledby="{{ $id }}-reply" class="ms-[var(--space-wk-md)] flex flex-col gap-[var(--gap-wk-xs)] border-s-[length:var(--border-wk-width)] border-[var(--color-wk-border)] ps-[var(--padding-wk-x-md)]">
             <p data-wk-prose-skip class="m-0 {{ $metaClasses }}">
                 <span id="{{ $id }}-reply" class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] [overflow-wrap:anywhere]">{{ $replyName }}</span>
-                @if($replied)
+                @wirekitLast($replied)
                     <time datetime="{{ $replied->toIso8601String() }}">{{ $dateText($replied) }}</time>
-                @endif
+                @endwirekitLast
             </p>
             <div class="text-[length:var(--text-wk-sm)] [overflow-wrap:anywhere]">{{ $reply }}</div>
         </article>
     @endif
 
-    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div data-wk-review-actions class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
-    @endif
+    @endwirekitLast
 </article>

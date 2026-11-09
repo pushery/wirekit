@@ -82,7 +82,7 @@
 @if ($items !== [])
     <div
         data-wk-quick-replies
-        {{-- A group of buttons, named. NOT `toolbar`: that role promises an arrow-key
+        {{-- A group of buttons, named. Not `toolbar`: that role promises an arrow-key
              model, and this has none — a reader who tries the arrows would find the
              promise broken rather than the widget rich. --}}
         @unless($attributes->has('role')) role="group" @endunless
@@ -91,7 +91,7 @@
              below never initializes: a directive only runs inside a tree Alpine walks, so
              in a plain Blade page every chip would be a button that does nothing at all.
              Emitted only when the call site brought no `x-data` of its own — HTML keeps
-             the FIRST of two identical attributes, so hardcoding it would silently
+             the first of two identical attributes, so hardcoding it would silently
              discard theirs. --}}
         @unless($attributes->has('x-data')) x-data @endunless
         {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
@@ -103,7 +103,7 @@
                 data-value="{{ $item['value'] }}"
                 @disabled($item['disabled'])
                 {{-- The press hands the answer to the application and performs nothing
-                     itself: what a reply DOES is the application's decision, and a
+                     itself: what a reply does is the application's decision, and a
                      component that sent it would have to know how. --}}
                 x-on:click="$dispatch('wirekit:quick-replies-select', { value: {{ AlpinePayload::string($item['value']) }}, label: {{ AlpinePayload::string($item['label']) }}, index: {{ (int) $index }} })"
                 class="wk-touch-row {{ $chipClasses }}"

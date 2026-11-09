@@ -1,5 +1,5 @@
 /**
- * The SECOND half of the CSP restriction: which names an expression may READ.
+ * The second half of the CSP restriction: which names an expression may read.
  *
  * The first half is whether an expression parses under Alpine's CSP grammar. Both
  * halves are needed, and the gap between them is not academic: `Illuminate\Support\Js::from()` emits `JSON.parse('…')`, which is a
@@ -12,7 +12,7 @@
  */
 
 /**
- * Globals a directive expression may not name — the SECOND half of the CSP
+ * Globals a directive expression may not name — the second half of the CSP
  * restriction, and the half a parser cannot see.
  *
  * Alpine's CSP Evaluator resolves an identifier like this:
@@ -27,7 +27,7 @@
  * `Object.getOwnPropertyNames(globalThis)`.
  *
  * The consequence is worse than one dead binding: an `x-data` that names a
- * global throws while BUILDING the component, so the element ends up with an
+ * global throws while building the component, so the element ends up with an
  * empty scope and every directive on it does nothing. The only report is the
  * `Alpine Expression Error` the build writes to the browser console: an
  * event-calendar handed one event would render "No events in this range".
@@ -56,7 +56,7 @@ const FORBIDDEN_GLOBALS = new Set([
 ]);
 
 /**
- * Root identifiers an expression READS — the names the evaluator has to resolve.
+ * Root identifiers an expression reads — the names the evaluator has to resolve.
  *
  * A member expression contributes only its object (`foo.bar` needs `foo`, never
  * `bar`), and an object literal's keys are not reads at all. Both distinctions
@@ -115,23 +115,23 @@ function forbiddenGlobalsIn(ast) {
 }
 
 /**
- * Property names that reach a `globalThis` VALUE no matter what you start from.
+ * Property names that reach a `globalThis` value no matter what you start from.
  *
- * The CSP evaluator does not refuse a name — it refuses a VALUE. It builds a set
+ * The CSP evaluator does not refuse a name — it refuses a value. It builds a set
  * from `Object.getOwnPropertyNames(globalThis)` and throws on any property access
  * whose result lands in it. So a chain can be perfectly resolvable, run, and still
  * be rejected at the moment it touches something that happens to be a global.
  *
  * `$el.ownerDocument.location.reload()` is the case that produced this list. Every
  * identifier resolves, the function exists, and the call is refused: an element's
- * `ownerDocument` IS `document`, and `document.location` IS `window.location`. The
+ * `ownerDocument` is `document`, and `document.location` is `window.location`. The
  * route through a name that is not "window" reaches the same forbidden object.
  *
- * This is the statically decidable part of that rule, and it is deliberately SHORT.
+ * This is the statically decidable part of that rule, and it is deliberately short.
  * The general question is about values at runtime, which source cannot answer, and
  * a wrong answer here is expensive: a false finding in a tool whose only worth is
  * that its output can be believed. So only names whose value is the global object
- * REGARDLESS of the receiver are listed.
+ * regardless of the receiver are listed.
  *
  * Names that look like they belong and do not:
  *

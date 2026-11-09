@@ -27,7 +27,7 @@ export default function wirekitDrawer(config = {}) {
         // False for an overlay inside a page region, such as a preview: the page keeps scrolling.
         lockScroll: config.lockScroll !== false,
         // drawer.body is a tab stop so a drawer of plain text can be scrolled from the keyboard,
-        // and it wraps everything inside the drawer — start on the first CONTROL instead, and
+        // and it wraps everything inside the drawer — start on the first control instead, and
         // on the body only when there is none. utils/first-control.js.
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-drawer-body'),
         // Asked before the reader closes a drawer whose fields they changed; null asks nothing.

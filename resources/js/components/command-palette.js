@@ -340,7 +340,7 @@ export default function wirekitCommandPalette(config = {}) {
                 window.removeEventListener('wirekit-command-palette-show', this._showHandler);
                 this._showHandler = null;
             }
-            // Removed by the SAME reference it was added with; a re-bound arrow would make the
+            // Removed by the same reference it was added with; a re-bound arrow would make the
             // removal a silent no-op and leak a listener on every Livewire morph.
             if (this._closeHandler) {
                 window.removeEventListener('wirekit-command-palette-close', this._closeHandler);
@@ -386,7 +386,7 @@ export default function wirekitCommandPalette(config = {}) {
             this._startTypeAhead();
 
             // A state left over from the last open describes a request nobody is waiting for.
-            // Reset BEFORE the query goes out below: a host that answers it synchronously with
+            // Reset before the query goes out below: a host that answers it synchronously with
             // 'loading' must not have its report overwritten by this line.
             this.remoteState = 'idle';
             // The list an open shows is the answer to the empty query, so nothing is pending.
@@ -394,7 +394,7 @@ export default function wirekitCommandPalette(config = {}) {
 
             // Clearing `query` is a plain assignment, and an assignment fires no
             // `input` event — so the only dispatcher, the input's own handler,
-            // never ran. A server-driven host therefore kept the LAST search
+            // never ran. A server-driven host therefore kept the last search
             // alive: type "strategy", close, reopen, and the field is empty while
             // the list still shows the results for a word nobody can see. Every
             // open began on a visibly wrong frame.
@@ -640,7 +640,7 @@ export default function wirekitCommandPalette(config = {}) {
             // themselves on being topmost — a flag they can only lower for an overlay
             // that announced itself. The palette does not, and its hotkey is bound to
             // `document`, so it opens from inside an open dialog: one Escape then
-            // closed the palette AND the dialog underneath it, because the dialog
+            // closed the palette and the dialog underneath it, because the dialog
             // never learned anything had opened above it.
             //
             // Stopping the event here is the same guarantee the stack gives, made
@@ -795,9 +795,9 @@ export default function wirekitCommandPalette(config = {}) {
                 // `data-active` drove the highlight and nothing published it: the rows carry
                 // `role="option"`, and `aria-selected` is the state ARIA defines for that
                 // role. The list is a single-select listbox driven by `aria-activedescendant`,
-                // so the active option IS the selected one.
+                // so the active option is the selected one.
                 //
-                // Set HERE rather than only in the template because this method is what runs
+                // Set here rather than only in the template because this method is what runs
                 // again after a Livewire morph — a static attribute alone would survive the
                 // morph and then describe whichever row was active before it.
             });
@@ -818,7 +818,7 @@ export default function wirekitCommandPalette(config = {}) {
          *
          * Resetting `_activeIndex` only in show() is correct only while the list is
          * rendered once. With server-side search the list is rebuilt on every
-         * keystroke, and a surviving index would point into the NEW results, so
+         * keystroke, and a surviving index would point into the new results, so
          * Enter would activate whatever now sat at that position: the user arrows
          * to the third hit, types one more character, and confirms something they
          * never looked at.
@@ -941,7 +941,7 @@ export default function wirekitCommandPalette(config = {}) {
         /**
          * Close once an option has been chosen, by click or by Enter (which clicks it).
          *
-         * Bound on the list, so it runs AFTER the option's own handlers: the click reaches the
+         * Bound on the list, so it runs after the option's own handlers: the click reaches the
          * option first and bubbles up, which keeps a `wire:click` or `x-on:click` on the item
          * in charge of what the choice does. A disabled option, or a click on a group heading,
          * chose nothing and leaves the palette open.
@@ -1378,7 +1378,7 @@ export default function wirekitCommandPalette(config = {}) {
             return this.remoteState === 'error';
         },
 
-        // Empty means the list holds no option AND no request is pending or failed. While one
+        // Empty means the list holds no option and no request is pending or failed. While one
         // is, "nothing matched" is not yet known, or not true. For a host that reports its
         // requests, an input it has not answered yet is pending too: the list still shows what
         // an older input asked for.
@@ -1393,7 +1393,7 @@ export default function wirekitCommandPalette(config = {}) {
         /**
          * Emit the query for a host driving server-side search.
          *
-         * Dispatched from the component ROOT, not from the input. The input lives
+         * Dispatched from the component root, not from the input. The input lives
          * inside a teleporting `<template>`, so at runtime it is a child of
          * <body>: an event fired there never passes the root element, and
          * `<x-wirekit::command-palette x-on:wirekit-command-palette-query="…">` —

@@ -290,7 +290,7 @@ export default function wirekitReadingMeta(config = {}) {
         },
 
         /**
-         * Each annotation says how long is left FROM THERE, so the counts are
+         * Each annotation says how long is left from there, so the counts are
          * accumulated from the end backwards. Annotations above the reading
          * position are hidden rather than removed — the reader may scroll back.
          */

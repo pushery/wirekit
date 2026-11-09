@@ -114,7 +114,7 @@
 {{-- The rows hold visually hidden text, so the root is positioned to keep it inside (data-wk-sr-host). --}}
 <div data-wk-review-summary data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     <div data-wk-review-summary-score class="flex flex-wrap items-center gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-xs)]">
-        @if($hasAverage)
+        @wirekitLast($hasAverage)
             {{-- The number repeats the stars' image name, which says it with its scale. --}}
             <span aria-hidden="true" class="text-[length:var(--text-wk-3xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums">{{ LocalizedNumber::format($score, precision: 1) }}</span>
             <span class="flex flex-col gap-[var(--gap-wk-xs)]">
@@ -123,7 +123,7 @@
             </span>
         @else
             <span data-wk-review-summary-count class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No reviews yet') }}</span>
-        @endif
+        @endwirekitLast
     </div>
 
     @if($sum > 0)
@@ -157,7 +157,7 @@
         <div data-wk-review-summary-notice class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] [overflow-wrap:anywhere]">{{ $notice }}</div>
     @endif
 
-    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div data-wk-review-summary-actions class="flex flex-wrap gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
-    @endif
+    @endwirekitLast
 </div>

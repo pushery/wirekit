@@ -67,7 +67,7 @@
         'overflow-y-auto overscroll-contain',
     ]), $scope);
 
-    // An unpadded panel takes every padding utility out of the RESOLVED list. Adding `p-0`
+    // An unpadded panel takes every padding utility out of the resolved list. Adding `p-0`
     // beside them did nothing: two padding utilities on one element are decided by the
     // stylesheet's order, and that put `p-[var(--padding-wk-x-md)]` over `p-0`. Filtering the
     // resolved list rather than the default one keeps the promise when a personalization
@@ -93,7 +93,7 @@
     {{-- Trigger — clicking toggles the popover.
 
          ARIA attributes (aria-haspopup, aria-expanded) are applied to the
-         INNER interactive element (button/link) via x-init, NOT to this
+         inner interactive element (button/link) via x-init, not to this
          wrapper div. The ARIA spec requires these attributes to live on an
          element with an interactive role; placing them on a generic <div>
          fails axe-core's aria-allowed-attr rule. A popover is a click-to-open
@@ -108,7 +108,7 @@
     </div>
 
     {{-- Popover panel — positioned via Floating UI, focus-trapped --}}
-{{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but NOT a
+{{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but not a
      stacking context: a host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after that ancestor
      covers the panel however high the z-index goes. --}}
@@ -136,7 +136,7 @@
              the template does not carry, and the focused panel would drop the focus to the
              page. --}}
         tabindex="-1"
-        {{-- The panel traps focus and closes on Escape, which IS the modal contract — but
+        {{-- The panel traps focus and closes on Escape, which is the modal contract — but
              without this attribute assistive technology is told the page behind stays
              reachable, so a screen reader keeps offering content its own virtual cursor can
              no longer get back out of. The two halves have to agree. --}}

@@ -22,11 +22,11 @@
     // when the section padding is too generous) doesn't recur.
     // Pass `size="sm"` for the tightest spacing across every viewport.
     'size' => 'lg',
-    // `tightOnMobile` — when true, drop an ADDITIONAL tier on mobile
+    // `tightOnMobile` — when true, drop an additional tier on mobile
     // viewports for `size="lg"` heroes. Useful for dark-variant heroes
     // with gradient overlays where even 5 rem of mobile bottom padding
     // reads as a visible dead-zone below the content on 390 px-wide
-    // viewports (iPhone 12-class). Opt-in (default `false`) — does NOT
+    // viewports (iPhone 12-class). Opt-in (default `false`) — does not
     // change the rendering of any existing hero. For `size="sm"` and
     // `size="md"`, the prop is a no-op (mobile already runs at the
     // tightest tier).
@@ -58,7 +58,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('hero', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $gradient = BooleanProp::from($gradient, false, 'hero', 'gradient');
@@ -74,7 +74,7 @@
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
     // Validate `size` against the three-tier enum. An off-enum value is reported through the
-    // strictness gate, and where the gate does not throw it renders the FIRST allowed value,
+    // strictness gate, and where the gate does not throw it renders the first allowed value,
     // which is why `lg`, the default, leads the list.
     $validSize = in_array($size, ['sm', 'md', 'lg'], true)
         ? $size
@@ -87,15 +87,15 @@
     // historical "14rem vertical padding on every viewport" footgun into
     // a viewport-aware contract.
     //
-    // The class strings below are STATIC (no string interpolation) so
+    // The class strings below are static (no string interpolation) so
     // Tailwind's source-detection picks them up cleanly. Dynamically-
     // constructed arbitrary values (Blade-interpolated into the class
     // attribute) would be invisible to Tailwind and the drift-audit
-    // would flag them. NOTE: do not write the literal pattern here as
+    // would flag them. Note: do not write the literal pattern here as
     // an example, even in a comment — Tailwind's source scanner reads
     // raw .blade.php files and would emit invalid CSS for any
     // bracket-wrapped value containing a PHP-style variable token.
-    // Class strings stay STATIC (no string interpolation) so Tailwind v4's
+    // Class strings stay static (no string interpolation) so Tailwind v4's
     // source-detection picks them up. The 6-way match exhausts every
     // (size × tightOnMobile) combination — emitting the literal strings
     // here is the only shape that keeps every variant visible to the
@@ -125,13 +125,13 @@
         'px-[var(--padding-wk-x-lg)]',
     ]), $scope);
 
-    // `dark` establishes a real dark TOKEN CONTEXT (the bare `dark` class), not
+    // `dark` establishes a real dark token context (the bare `dark` class), not
     // just a dark band: every --color-wk-* token resolves to its `.dark` value
     // for the whole subtree, so a token-surfaced child (<x-wirekit::code-block>,
-    // card, input, table) renders a DARK surface instead of a light one, so a
+    // card, input, table) renders a dark surface instead of a light one, so a
     // code-block in a dark hero never renders white on white. Painting from
     // the regular --color-wk-bg / --color-wk-text (which are dark / light under
-    // `.dark`) keeps the band identical in light mode AND keeps the hero
+    // `.dark`) keeps the band identical in light mode and keeps the hero
     // genuinely dark in dark mode — a `bg-inverse` band would flip to
     // near-white in dark mode. `accent` stays a colored surface (no `.dark`,
     // it isn't dark); its token-surfaced children read the page mode, which is
@@ -152,10 +152,10 @@
     //   stacked  — both rows full-width, copy on top, aside below; like centered for copy alignment
     //              but the aside is preserved (centered layout also keeps the aside, just renders it below).
     $layoutMap = [
-        'balanced' => ['flex-1', 'flex-1', 'flex-col lg:flex-row', 'text-center lg:text-left'],
-        'lead' => ['flex-[3]', 'flex-[2]', 'flex-col lg:flex-row', 'text-center lg:text-left'],
+        'balanced' => ['flex-1', 'flex-1', 'flex-col lg:flex-row', 'text-center lg:text-start'],
+        'lead' => ['flex-[3]', 'flex-[2]', 'flex-col lg:flex-row', 'text-center lg:text-start'],
         'centered' => ['max-w-[var(--size-wk-container-md,48rem)] mx-auto', 'w-full mt-[var(--space-wk-xl,2.5rem)]', 'flex-col', 'text-center'],
-        'stacked' => ['w-full', 'w-full mt-[var(--space-wk-xl,2.5rem)]', 'flex-col', 'text-center lg:text-left'],
+        'stacked' => ['w-full', 'w-full mt-[var(--space-wk-xl,2.5rem)]', 'flex-col', 'text-center lg:text-start'],
     ];
     // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
     $layout = \Pushery\WireKit\Support\NumericProp::key($layout);
@@ -197,7 +197,7 @@
     }
 
     // Alignment-dependent classes for lede + actions. Centered keeps mobile + desktop centered;
-    // every other layout keeps the original "centered on mobile, left-aligned at lg+" behavior.
+    // every other layout keeps the original "centered on mobile, aligned to the start at lg+" behavior.
     $isCentered = $validLayout === 'centered';
     $ledeAlignClasses = $isCentered ? 'mx-auto' : 'lg:mx-0 mx-auto';
     $actionsAlignClasses = $isCentered ? 'justify-center' : 'justify-center lg:justify-start';
@@ -207,13 +207,13 @@
 
     // Gradient overlay direction is variant-aware so the effect stays visible
     // regardless of the underlying background luminance:
-    //   - default (light surface): 20 % BLACK at the bottom-right corner reads
+    //   - default (light surface): 20 % black at the bottom-right corner reads
     //     as a subtle vignette darkening.
     //   - muted (subtle-tinted surface): same as default — a touch of black
     //     adds depth without competing.
     //   - dark / accent (saturated or near-black surface in WireKit's neutral
     //     default theme): black-on-near-black is invisible. Switch to a 30 %
-    //     WHITE overlay so the corner LIGHTENS instead, producing a
+    //     white overlay so the corner lightens instead, producing a
     //     comparable depth cue against dark backgrounds.
     //
     // The two figures are the `/20` and `/30` in the classes directly below.
@@ -275,26 +275,26 @@
                     </p>
                 @endif
 
-                @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+                @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
                     <div class="flex flex-wrap gap-[var(--gap-wk-sm)] {{ $actionsAlignClasses }}">
                         {{ $actions }}
                     </div>
-                @endif
+                @endwirekitLast
             </div>
 
-            @if(\Pushery\WireKit\Support\SlotContent::given($aside ?? null))
+            @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($aside ?? null))
                 {{-- min-w-0 w-full lg:w-auto — see rationale on the copy
                      column above. The aside is the higher-risk side
                      because developers commonly drop a
                      <x-wirekit::code-block> into the aside; <pre>'s
-                     white-space: pre keeps the LONGEST line non-breakable,
+                     white-space: pre keeps the longest line non-breakable,
                      which without min-w-0 escapes the column's intrinsic
                      min-content sizing and overflows the page on narrow
                      viewports. The code-block's own overflow-x-auto then
                      handles intra-line horizontal scrolling within the
                      column's now-constrained inline-size. --}}
                 <div class="{{ $asideColClasses }} min-w-0 w-full lg:w-auto">{{ $aside }}</div>
-            @endif
+            @endwirekitLast
         </div>
     </div>
 </section>

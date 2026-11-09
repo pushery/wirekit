@@ -69,7 +69,7 @@ final class PropText
         'placeholder', 'emptyText', 'attribution', 'author', 'discardQuestion', 'ariaLabel', 'unit',
         'listLabel', 'weekLabel', 'bulkActionsLabel', 'clearLabel', 'onLabel', 'offLabel', 'trendLabel', 'tableLabel', 'badgeLabel',
         'decreaseLabel', 'increaseLabel', 'addLabel', 'removeLabel', 'kindLabel', 'unlimitedLabel', 'priceLabel', 'totalLabel',
-        'remainingLabel', 'beforeLabel', 'afterLabel', 'featuredLabel', 'seeAllLabel', 'intervalLabel', 'dismissLabel',
+        'remainingLabel', 'beforeLabel', 'afterLabel', 'featuredLabel', 'seeAllLabel', 'intervalLabel', 'dismissLabel', 'baseLabel',
         'moreLabel', 'menuLabel', 'stripLabel', 'valueText', 'copiedText', 'expiredText', 'initialText',
         'unknownMessage', 'startMessage', 'readyMessage', 'stoppedMessage', 'failedMessage',
         'altLang', 'captionLang', 'titleLang', 'triggerLang', 'nameLang',
@@ -130,7 +130,7 @@ final class PropText
      * on another: a list of keys in the `shortcut` of a menubar item, a map of variants in the
      * `logo` of a sign-in button, a record in the `avatar` of a profile, a list that a calendar's
      * `min` reports on its own terms. A list given to one of these is reported as on the props of
-     * SINGLE, and an object passes.
+     * single, and an object passes.
      *
      * @var array<string, list<string>>
      */
@@ -225,11 +225,15 @@ final class PropText
     /** What a report says a prop expected that takes one value, an object included. */
     private const EXPECTED_SINGLE = 'one value, not a list';
 
+    /** What a report says a parameter of a class component expected that takes a list and no text. */
+    private const EXPECTED_LIST = 'a list, not a text';
+
     /**
      * The constructor parameters of each class component, read once per process: the names of the
-     * types each takes, null for an untyped one, and whether it has a default.
+     * types each takes, null for an untyped one, whether it has a default, whether it takes null,
+     * and its default where that is one value.
      *
-     * @var array<class-string, array<string, array{types: list<string>|null, optional: bool}>>
+     * @var array<class-string, array<string, array{types: list<string>|null, optional: bool, nullable: bool, default: bool|int|float|string|null}>>
      */
     private static array $parameters = [];
 
@@ -393,6 +397,14 @@ final class PropText
      * default. Given the class as well, a list or an object on any other parameter whose type
      * refuses it is reported and left out the same way, a switch or a number given a list.
      *
+     * Blade builds a class component through the container, which declares no `strict_types`, so
+     * PHP fits a value to a parameter's type where it can: a text on a `bool` parameter reads as on
+     * whatever it says, `inline="false"` included, a text that is no number on an `int` parameter
+     * throws, and so does null on a parameter that takes none. Given the class, a text on a `bool`
+     * parameter is read as BooleanProp::from() reads it, a text on an `int` one as
+     * NumericProp::int() does, with the parameter's default for one that is no number, and null on
+     * a parameter that takes none is left out, so it takes its default.
+     *
      * @param  array<array-key, mixed>  $data
      * @param  class-string|null  $class  the component's class, whose constructor takes the values
      * @return array<array-key, mixed>
@@ -425,8 +437,15 @@ final class PropText
                     continue;
                 }
 
+                $parameter = $class !== null ? self::parameter($class, $prop) : null;
+                // A parameter with a default that takes no null: null there is an error before the
+                // component runs, and left out the parameter takes its default.
+                $takesNoNull = $parameter !== null && $parameter['types'] !== null && $parameter['optional'] && ! $parameter['nullable'];
+
                 if ($shown !== null || self::isNoText($prop, $value)) {
-                    $values[$key] = null;
+                    if (! $takesNoNull) {
+                        $values[$key] = null;
+                    }
 
                     continue;
                 }
@@ -437,6 +456,54 @@ final class PropText
                     StrictnessGate::reject($component, $prop, is_array($value) ? 'array' : class_basename($value), self::EXPECTED_VALUE, '');
 
                     continue;
+                }
+
+                if ($value === null && $takesNoNull) {
+                    continue;
+                }
+
+                // A float on a parameter that takes no float is read before PHP coerces it. `NAN` holds
+                // nothing such a parameter takes: PHP reads it as on where the parameter takes a switch,
+                // writes it as a text where it takes one, and warns from 8.5 on, which ends the page.
+                // On a parameter that takes an integer, PHP refuses `INF` and cuts `2.5` with a
+                // deprecation. So `NAN` anywhere, and any float where an integer fits, is read as
+                // NumericProp::intOrNull() reads it, and left out for the parameter's default where no
+                // integer holds it.
+                if ($parameter !== null && $parameter['optional'] && is_float($value) && $parameter['types'] !== null
+                    && array_intersect($parameter['types'], ['float', 'mixed']) === []
+                    && (is_nan($value) || in_array('int', $parameter['types'], true))) {
+                    $number = NumericProp::intOrNull($value);
+
+                    if ($number !== null) {
+                        $values[$key] = $number;
+                    }
+
+                    continue;
+                }
+
+                // A switch, and a number, written as text.
+                if ($parameter !== null && $parameter['optional'] && is_string($value)) {
+                    if ($parameter['types'] === ['bool']) {
+                        $values[$key] = BooleanProp::from($value, $parameter['default'] === true, $component, $prop);
+
+                        continue;
+                    }
+
+                    if ($parameter['types'] === ['int']) {
+                        $values[$key] = NumericProp::int($value, is_int($parameter['default']) ? $parameter['default'] : 0, $component, $prop);
+
+                        continue;
+                    }
+
+                    // A text on a parameter that takes a list or an object and no text ends the
+                    // component before it runs, as a list does on a switch: reported, and left out.
+                    if ($parameter['types'] !== null && array_intersect($parameter['types'], ['string', 'mixed', 'bool', 'int', 'float']) === []) {
+                        if ($component !== null) {
+                            StrictnessGate::reject($component, $prop, $value, self::EXPECTED_LIST, '');
+                        }
+
+                        continue;
+                    }
                 }
             }
 
@@ -560,6 +627,41 @@ final class PropText
     }
 
     /**
+     * A class component's constructor parameter of this name, or null when it has none.
+     *
+     * @param  class-string  $class
+     * @return array{types: list<string>|null, optional: bool, nullable: bool, default: bool|int|float|string|null}|null
+     */
+    private static function parameter(string $class, string $prop): ?array
+    {
+        if (! isset(self::$parameters[$class])) {
+            $parameters = [];
+
+            foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
+                $type = $parameter->getType();
+                $default = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+
+                $parameters[$parameter->getName()] = [
+                    'types' => match (true) {
+                        $type instanceof ReflectionNamedType => [$type->getName()],
+                        // A part of a union that is itself an intersection takes what it takes: read as any.
+                        $type instanceof ReflectionUnionType => array_map(static fn (ReflectionType $part): string => $part instanceof ReflectionNamedType ? $part->getName() : 'mixed', $type->getTypes()),
+                        default => null,
+                    },
+                    'optional' => $parameter->isDefaultValueAvailable(),
+                    // An untyped parameter takes null as it takes anything.
+                    'nullable' => $type === null || $type->allowsNull(),
+                    'default' => is_scalar($default) ? $default : null,
+                ];
+            }
+
+            self::$parameters[$class] = $parameters;
+        }
+
+        return self::$parameters[$class][$prop] ?? null;
+    }
+
+    /**
      * Whether a class component's constructor takes a list or an object under this name. A name
      * with no parameter goes to the attribute bag, and an untyped parameter or one without a
      * default is left to the constructor, which decides what it accepts: only a parameter that
@@ -570,27 +672,7 @@ final class PropText
      */
     private static function parameterTakes(string $class, string $prop, array|object $value): bool
     {
-        if (! isset(self::$parameters[$class])) {
-            $parameters = [];
-
-            foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
-                $type = $parameter->getType();
-
-                $parameters[$parameter->getName()] = [
-                    'types' => match (true) {
-                        $type instanceof ReflectionNamedType => [$type->getName()],
-                        // A part of a union that is itself an intersection takes what it takes: read as any.
-                        $type instanceof ReflectionUnionType => array_map(static fn (ReflectionType $part): string => $part instanceof ReflectionNamedType ? $part->getName() : 'mixed', $type->getTypes()),
-                        default => null,
-                    },
-                    'optional' => $parameter->isDefaultValueAvailable(),
-                ];
-            }
-
-            self::$parameters[$class] = $parameters;
-        }
-
-        $parameter = self::$parameters[$class][$prop] ?? null;
+        $parameter = self::parameter($class, $prop);
 
         if ($parameter === null || $parameter['types'] === null || ! $parameter['optional']) {
             return true;

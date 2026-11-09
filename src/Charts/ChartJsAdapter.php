@@ -94,6 +94,53 @@ final class ChartJsAdapter implements ChartAdapter
     }
 
     /**
+     * On a stacked value axis an area fills to the series below it, so each series draws as a band.
+     *
+     * The `fill: true` that `normalizeData()` gives an area reaches the zero line. Stacked, the line
+     * of a series stands on the sum of the series beneath it, so its area would lie over all of
+     * theirs, and the lowest band would carry every tint at once. `stack` fills to the series below,
+     * and the lowest one to the zero line. Stacking belongs to a scale, so each dataset is read on the
+     * value axis it is drawn on. Only the fill this adapter set changes: one the developer wrote, `true`
+     * included, stays as written.
+     *
+     * @param  array<string, mixed>  $normalized  what `normalizeData()` returned
+     * @param  array<int, array<string, mixed>>  $datasets  the datasets `normalizeData()` was given
+     * @param  array<mixed>  $options  the merged options of the chart
+     * @return array<string, mixed>
+     */
+    public function stackAreaFills(array $normalized, array $datasets, array $options): array
+    {
+        $data = $normalized['data'] ?? null;
+
+        if (! is_array($data) || ! is_array($data['datasets'] ?? null)) {
+            return $normalized;
+        }
+
+        $valueAxis = ($options['indexAxis'] ?? null) === 'y' ? 'x' : 'y';
+        $scales = is_array($options['scales'] ?? null) ? $options['scales'] : [];
+        $written = array_values($datasets);
+        $filled = [];
+
+        foreach ($data['datasets'] as $i => $dataset) {
+            if (is_array($dataset) && ($dataset['fill'] ?? null) === true && ! isset($written[$i]['fill'])) {
+                $axisId = $dataset[$valueAxis.'AxisID'] ?? null;
+                $scale = $scales[is_string($axisId) ? $axisId : $valueAxis] ?? null;
+
+                if (is_array($scale) && in_array($scale['stacked'] ?? false, [true, 'single'], true)) {
+                    $dataset['fill'] = 'stack';
+                }
+            }
+
+            $filled[$i] = $dataset;
+        }
+
+        $data['datasets'] = $filled;
+        $normalized['data'] = $data;
+
+        return $normalized;
+    }
+
+    /**
      * WireKit canonical type → Chart.js native type. Sparkline / annotated
      * fall back to line; mixed falls back to bar (the per-dataset `type`
      * field on individual datasets carries the actual rendering shape).
@@ -181,7 +228,7 @@ final class ChartJsAdapter implements ChartAdapter
      * Type-specific scale defaults.
      * Pie/doughnut/radar/polar have no cartesian axes.
      *
-     * IMPORTANT: Do NOT include empty 'ticks' or 'grid' objects here.
+     * Important: Do not include empty 'ticks' or 'grid' objects here.
      * Chart.js 4.x uses Proxy objects for option resolution. Empty
      * plain objects from PHP (@js()) break the Proxy chain, causing
      * "setContext is not a function" errors. Colors and fonts for

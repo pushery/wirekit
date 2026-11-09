@@ -214,7 +214,7 @@ export default function wirekitImageCompare(config = {}) {
 
             this._dragging = true;
 
-            // Cache the track's rect ONCE per drag — it's stationary while dragging,
+            // Cache the track's rect once per drag — it's stationary while dragging,
             // so re-reading getBoundingClientRect on every pointermove (a hot path)
             // would force a needless layout read per frame. The click path keeps
             // reading fresh (the track may have shifted since the last drag).
@@ -275,14 +275,14 @@ export default function wirekitImageCompare(config = {}) {
             // does, to suppress native drag), so it must not block scroll.
             document.addEventListener('pointermove', this._moveHandler, { passive: true });
             document.addEventListener('pointerup', this._upHandler);
-            // pointercancel ends a drag too, and NO pointerup follows it — the
+            // pointercancel ends a drag too, and no pointerup follows it — the
             // browser fires it when it takes the pointer away (a touch that turns
             // into a scroll, a system gesture).
             document.addEventListener('pointercancel', this._upHandler);
         },
 
         /**
-         * The element that must end up focused, which is NOT always the one pressed.
+         * The element that must end up focused, which is not always the one pressed.
          *
          * `startDrag` is bound on two elements: the handle, which carries `role="slider"`
          * and every keyboard binding, and the track behind it, which starts a drag when the
@@ -290,7 +290,7 @@ export default function wirekitImageCompare(config = {}) {
          * one the sibling range-slider can use because its binding sits on the thumb alone —
          * is the track on one of the two paths. Focusing the track would be worse than
          * focusing nothing: it is `aria-hidden` with `tabindex="-1"`, so it announces nothing
-         * AND leaves the arrow keys, which are bound on the handle, still unreachable.
+         * and leaves the arrow keys, which are bound on the handle, still unreachable.
          *
          * Resolved by role rather than by a ref: the role is the property that matters here,
          * it is already in the markup for assistive technology, and it cannot drift out of

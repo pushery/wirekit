@@ -77,7 +77,7 @@ export default function wirekitColorPicker(config = {}) {
         fieldsetDisabled: false,
         _stopFieldsetWatch: null,
         // Focus trap over the teleported panel — created when the panel opens,
-        // released in EVERY close path (close / _closeFromTrap / destroy). The
+        // released in every close path (close / _closeFromTrap / destroy). The
         // panel carries role="dialog", so a trap plus a focus return to the
         // trigger is the contract, not a nicety.
         _trap: null,
@@ -114,7 +114,7 @@ export default function wirekitColorPicker(config = {}) {
         // Opt-in escape hatch: on touch-primary devices, swap the popover
         // trigger for the platform's native color sheet (the non-popover
         // variant gets that for free via <input type="color">; the popover
-        // variant otherwise ALWAYS opens the custom panel, even on mobile).
+        // variant otherwise always opens the custom panel, even on mobile).
         nativeOnMobile: config.nativeOnMobile === true,
         useNative: false,
         invalidInput: false,
@@ -130,7 +130,7 @@ export default function wirekitColorPicker(config = {}) {
         /**
          * The text of the hex field's error region.
          *
-         * A getter rather than a template expression: the region has to be ALWAYS present and
+         * A getter rather than a template expression: the region has to be always present and
          * always referenced by `aria-describedby` — a description pointing at a `display:
          * none` element is ignored — so it is emptied rather than hidden, and the emptying is
          * a value rather than a `x-show`.
@@ -180,7 +180,7 @@ export default function wirekitColorPicker(config = {}) {
 
             this._applyStart();
             this._loadRecents();
-            // Decide native-vs-popover ONCE at mount. `(pointer: coarse)` is the
+            // Decide native-vs-popover once at mount. `(pointer: coarse)` is the
             // touch-primary discriminator (true on phones/tablets, false on
             // desktops — including desktops with a touchscreen but a mouse as
             // the primary pointer). Guarded so node-based logic tests and SSR
@@ -189,17 +189,17 @@ export default function wirekitColorPicker(config = {}) {
                 && typeof window !== 'undefined'
                 && typeof window.matchMedia === 'function'
                 && window.matchMedia('(pointer: coarse)').matches;
-            // Do NOT sync on init: the hidden input already carries the developer's
+            // Do not sync on init: the hidden input already carries the developer's
             // exact value (server-rendered). Syncing here would re-write it as the
             // HSV-rounded value (±1 per channel), drifting an untouched form field.
             // We sync only once the user actually changes the color.
 
-            // Anchor AND focus the teleported panel whenever it opens (any trigger
+            // Anchor and focus the teleported panel whenever it opens (any trigger
             // path: swatch click, programmatic). The panel teleports to the overlay
             // root at the end of <body>, so it needs Floating UI to position it
             // relative to the swatch — and for
             // the same reason it needs the focus handling below: in the document it
-            // sits LAST, so a reader who activated the swatch would otherwise tab
+            // sits last, so a reader who activated the swatch would otherwise tab
             // through the whole rest of the page to reach the sliders.
             watchCurrent(this, 'isOpen', (isOpen) => {
                 if (isOpen) {
@@ -332,7 +332,7 @@ export default function wirekitColorPicker(config = {}) {
         /**
          * Trigger toggle. Closing goes through close() so focus is handed back.
          *
-         * NOT called `toggle`: this component can sit inside the optimistic layer, which
+         * Not called `toggle`: this component can sit inside the optimistic layer, which
          * declares `toggle()` as part of its own contract, and the two then share one
          * merged Alpine scope. Today this one wins inside its own markup and the layer
          * never calls the name itself, so nothing misfires — a guarantee that holds only
@@ -425,7 +425,7 @@ export default function wirekitColorPicker(config = {}) {
                 return;
             }
 
-            // Was the reader inside the panel? Asked BEFORE anything hides, because
+            // Was the reader inside the panel? Asked before anything hides, because
             // it decides whether focus is ours to move at all. Programmatic closes
             // and closes that arrive while focus sits elsewhere leave it alone —
             // taking focus from somebody who never had it in the panel would be a
@@ -433,7 +433,7 @@ export default function wirekitColorPicker(config = {}) {
             const panel = this.$refs.panel;
             const hadFocus = panel ? panel.contains(document.activeElement) : false;
 
-            // Release the trap BEFORE moving focus and before the hide. While a trap
+            // Release the trap before moving focus and before the hide. While a trap
             // is active it pulls any outside focus straight back in, so a focus()
             // call made first would simply bounce; and hiding the subtree that holds
             // focus makes the browser drop it on <body>, after which our call would
@@ -453,7 +453,7 @@ export default function wirekitColorPicker(config = {}) {
         /**
          * Close triggered by the trap deactivating itself (Escape).
          *
-         * Deliberately does NOT call deactivate() again — this runs from inside it.
+         * Deliberately does not call deactivate() again — this runs from inside it.
          * The focus return is the trap's own, through `setReturnFocus` above.
          */
         _closeFromTrap() {
@@ -553,7 +553,7 @@ export default function wirekitColorPicker(config = {}) {
             return this.cleared ? this._noColorLabel : this.formattedValue;
         },
 
-        // Popover value-field text. Like displayValue but BLANK (not "No color")
+        // Popover value-field text. Like displayValue but blank (not "No color")
         // while cleared, so the editable field shows its placeholder rather than a
         // stale color. withClear off keeps cleared false → always formattedValue.
         get popoverValue() {
@@ -600,13 +600,13 @@ export default function wirekitColorPicker(config = {}) {
                 return;
             }
 
-            // The gesture starts HERE, at pointerdown — not at the pointerup that
+            // The gesture starts here, at pointerdown — not at the pointerup that
             // commits it. `_apply` below already moves the color, and every frame
             // in between moves it again, so a baseline taken at commit time would
             // be the value being handed over.
             this._markGesture();
             this._drag = which;
-            // Cache the target's rect ONCE per drag — the element is stationary while
+            // Cache the target's rect once per drag — the element is stationary while
             // dragging, so re-reading getBoundingClientRect on every pointermove (a hot
             // path) would force a needless layout read per frame.
             this._rect = this.$refs[which].getBoundingClientRect();
@@ -617,7 +617,7 @@ export default function wirekitColorPicker(config = {}) {
             // preventDefault); touch-scroll is stopped via the plane's `touch-none`.
             document.addEventListener('pointermove', this._moveHandler, { passive: true });
             document.addEventListener('pointerup', this._upHandler);
-            // pointercancel ends a drag too, and NO pointerup follows it — the
+            // pointercancel ends a drag too, and no pointerup follows it — the
             // browser fires it when it takes the pointer away (a touch that
             // becomes a scroll, a system gesture). Without this the move handler
             // stays on document for the life of the page, recomputing a value
@@ -680,7 +680,7 @@ export default function wirekitColorPicker(config = {}) {
          * and a reader who follows that pattern and gets no response has been told something
          * untrue. It was the one of the three without them.
          *
-         * They move the SATURATION axis and leave brightness alone. A plane has two ranges and
+         * They move the saturation axis and leave brightness alone. A plane has two ranges and
          * one Home key, so it has to pick: saturation is the axis the left and right arrows
          * already drive, and jumping both at once would move the color somewhere the reader
          * did not ask for.
@@ -803,7 +803,7 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         // Clear to "no color": empty the bound form value + dispatch input/change
-        // so wire:model picks up the empty string, AND reset the picker apparatus
+        // so wire:model picks up the empty string, and reset the picker apparatus
         // to its neutral default so the popover stops displaying the just-cleared
         // color — the plane marker, hue, and value field all reset (matching a
         // fresh empty `withClear` picker). The next applied color un-clears via
@@ -860,9 +860,9 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         /**
-         * The commit boundary, and this method already WAS one before any of
+         * The commit boundary, and this method already was one before any of
          * this existed. It is called from exactly the four places where a color is
-         * SETTLED rather than moving: the end of a drag, the eyedropper, a swatch
+         * settled rather than moving: the end of a drag, the eyedropper, a swatch
          * or recent, and `_sync(true)` for a typed value or an arrow-key nudge.
          * That is also why a color lands in "recents" here and nowhere else.
          *
@@ -882,12 +882,12 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         /**
-         * Mark the START of a gesture, so the layer's rollback baseline is the
-         * color from BEFORE the drag rather than the one the drag produced.
+         * Mark the start of a gesture, so the layer's rollback baseline is the
+         * color from before the drag rather than the one the drag produced.
          *
          * `failure: 'keep'` was very nearly the argument for leaving this out —
          * a refused save never rolls back, so why hold a baseline at all? Because
-         * `keep` covers only the SERVER's refusal. A CANCELED request still
+         * `keep` covers only the SERVER's refusal. A canceled request still
          * restores, and canceling is exactly what a second drag started during
          * the first one's round trip does. Without a mark, that restore writes
          * back the value the drag itself produced: the plane marker stays put and

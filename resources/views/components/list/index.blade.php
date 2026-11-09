@@ -77,7 +77,9 @@
         // margins on <ol>/<ul>/<li> so the spacing prop is the single
         // source of truth for inter-item vertical rhythm at every depth.
         'wk-list',
-        $type !== 'none' ? 'pl-[var(--space-wk-lg,1.5rem)]' : '',
+        // The markers stand at the start of the line, so the indent that holds them follows the
+        // reading direction.
+        $type !== 'none' ? 'ps-[var(--space-wk-lg,1.5rem)]' : '',
         $typeClasses,
         $spacingClasses,
     ]), $scope);
@@ -113,9 +115,9 @@
 
     if ($rows !== []) {
         $rowClasses = WireKit::resolveClasses('list-item', 'base', '', $scope);
+        // The classes `link` draws without a size: no family class, so the row's own family holds.
         $rowLinkClasses = WireKit::resolveClasses('link', 'base', implode(' ', [
             '[overflow-wrap:break-word]',
-            'font-[family-name:var(--font-wk-sans)]',
             'cursor-pointer',
             'transition-[color,text-decoration-color,opacity]',
             'duration-[var(--transition-wk-duration)]',
@@ -137,7 +139,7 @@
 
 <{{ $tag }} data-wk-prose-skip @if($listRole) role="list" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     @foreach($rows as $row)
-        <li data-wk-prose-skip class="{{ $rowClasses }}">@if($row['href'] !== null)<a data-wk-prose-skip href="{{ $row['href'] }}" class="{{ $rowLinkClasses }}">{{ $row['text'] }}</a>@else{{ $row['text'] }}@endif @if($row['meta'] !== null)<span class="{{ $rowMetaClasses }}">{{ $row['meta'] }}</span>@endif</li>
+        <li data-wk-prose-skip class="{{ $rowClasses }}">@if($row['href'] !== null)<a data-wk-prose-skip href="{{ $row['href'] }}" class="{{ $rowLinkClasses }}">{{ $row['text'] }}</a>@else{{ $row['text'] }}@endif @wirekitLast($row['meta'] !== null)<span class="{{ $rowMetaClasses }}">{{ $row['meta'] }}</span>@endwirekitLast</li>
     @endforeach
     {{ $slot }}
 </{{ $tag }}>

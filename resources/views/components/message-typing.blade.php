@@ -24,14 +24,19 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('message-typing', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $announce = BooleanProp::from($announce, false, 'message-typing', 'announce');
 
-    $sideValue = in_array($side, ['left', 'right'], true)
-        ? $side
-        : WireKit::validateProp('message-typing', 'side', $side, ['left', 'right']);
+    // `start` and `end` name the side by the direction of the page. `left` and `right` are the same
+    // two sides under their first names: the row is a flexbox, so a message on the left stands at the
+    // start of a conversation that reads from the right as well.
+    // The subject is validated first, so a refused value renders what the fallback `left` renders.
+    $sideValue = match (WireKit::validateProp('message-typing', 'side', $side, ['left', 'right', 'start', 'end'])) {
+        'right', 'end' => 'right',
+        default => 'left',
+    };
 
     $alignClass = $sideValue === 'right' ? 'flex-row-reverse' : 'flex-row';
     // Column alignment mirrors <x-wirekit::message>: the name + bubble hug the
@@ -70,7 +75,7 @@
     @endif
 
     {{-- Content column mirrors the message layout: the name sits above the bubble,
-         and the bubble is indented under it — so the reader sees WHO is typing,
+         and the bubble is indented under it — so the reader sees who is typing,
          not an anonymous set of dots floating at the thread edge. --}}
     <div class="flex flex-col {{ $columnAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
         @if($hasAuthor)

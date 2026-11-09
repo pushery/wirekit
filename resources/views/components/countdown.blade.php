@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — client-only
      A timer. --}}
 @props([
-    // The ABSOLUTE target instant — a date object of any class, an ISO-8601 string, or a unix
+    // The absolute target instant — a date object of any class, an ISO-8601 string, or a unix
     // timestamp. Absolute, never a duration: a duration drifts the moment the
     // tab sleeps or the page is cached; an absolute instant is recomputed from
     // the real clock on every tick.
@@ -69,11 +69,19 @@
         $animate = \Pushery\WireKit\WireKit::validateProp('countdown', 'animate', $animate, ['box', 'text', 'none']);
     }
 
+    // A switch written as text is the switch it names, in every spelling BooleanProp reads: the
+    // resolution of the style knows `false`, `none` and `0`, and `off` would animate.
+    $animateSwitch = is_string($animate) ? \Pushery\WireKit\Support\BooleanProp::orNull($animate) : null;
+
+    if ($animateSwitch !== null) {
+        $animate = $animateSwitch;
+    }
+
     // Interpolated into the opening and the closing tag, where Blade's escaping lets a space or an
     // `=` through: the shape is checked, as for `tooltip` and `card`.
     $as = \Pushery\WireKit\WireKit::tagName('countdown', (string) $as);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showSeconds = BooleanProp::from($showSeconds, true, 'countdown', 'showSeconds');
@@ -95,7 +103,8 @@
     $shownTarget = Moment::in($target, $timezone, 'countdown');
     $targetMs = $target->getTimestampMs();
     $targetIso = $shownTarget->toIso8601String();
-    $humanDeadline = $shownTarget->isoFormat('LLL');
+    // The deadline as the label says it, with the word the language puts after the hour.
+    $humanDeadline = Moment::clock($shownTarget, 'LLL');
 
     // The script writes it with `x-text`, so markup is read as its text.
     $expiredLabel = \Pushery\WireKit\Support\SlotContent::textOf($expiredText ?? __('wirekit::Overdue'));
@@ -120,7 +129,7 @@
         $autoMode = false;
     }
 
-    // Localized unit labels for the SEGMENTS variant — a standalone caption under
+    // Localized unit labels for the segments variant — a standalone caption under
     // a big number, where the plural noun is the convention regardless of value.
     $unitLabels = [
         'years' => __('wirekit::Years'), 'days' => __('wirekit::Days'), 'hours' => __('wirekit::Hours'),
@@ -160,11 +169,11 @@
         'minutes' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count minute|[2,*] :count minutes'),
         'seconds' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count second|[2,*] :count seconds'),
     ];
-    // ONE key, carrying both intentions: the prop is honored, and whatever it
+    // One key, carrying both intentions: the prop is honored, and whatever it
     // resolves to is normalized to a language tag.
     //
     // These were two assignments feeding two `locale:` entries in the same x-data
-    // object. A JavaScript object literal keeps the LAST of a duplicated key, so the
+    // object. A JavaScript object literal keeps the last of a duplicated key, so the
     // one that read the prop was dead — `locale="fr-FR"` on a German page counted in
     // German, with no error anywhere, and right by coincidence wherever the prop and
     // the app locale agreed.
@@ -179,8 +188,8 @@
     // Resolve the change-animation style. `animate` accepts a bool or one of the
     // strings 'box' / 'text' / 'none'. 'box' (the default when true) pulses the
     // whole box; 'text' flashes only the changing number; anything falsey is off.
-    // NOT a boolean prop despite its `true` default: it is tri-state — true,
-    // off (false / 'none' / '0' / 0), or the string 'text'. It must NOT go
+    // Not a boolean prop despite its `true` default: it is tri-state — true,
+    // off (false / 'none' / '0' / 0), or the string 'text'. It must not go
     // through BooleanProp::from(), which would collapse 'text' to true and
     // silently drop the text-only mode. The match below already handles the
     // unbound-attribute case ('false' as a string), so the Blade stringly-false
@@ -244,7 +253,7 @@
         static: {{ \Pushery\WireKit\Support\AlpinePayload::from($static) }},
     })"
     @unless($attributes->has('role')) role="timer" @endunless
-    {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
+    {{-- Only when the caller did not name it. HTML keeps the first of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded, silently. Same shape, same fix, as navbar. --}}
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
@@ -269,7 +278,7 @@
          version people paste, so it is API surface: the surrounding text carries the words
          and the binding names a property. Where an interpolation is genuinely needed,
          compute it as a property on the scope and bind that.
-         The default sr <time>/units are intentionally NOT rendered here so the
+         The default sr <time>/units are intentionally not rendered here so the
          developer's own copy is the single source of truth. --}}
     {{ $slot }}
     @else

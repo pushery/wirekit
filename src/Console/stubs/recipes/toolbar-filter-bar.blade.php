@@ -16,7 +16,7 @@
                 wire:model.live.debounce.300ms="search"
             />
         </x-wirekit::row>
-        <x-wirekit::row gap="sm" align="center">
+        <x-wirekit::row gap="sm" align="center" wrap>
             <x-wirekit::select name="status" size="sm" aria-label="Filter by status" wire:model.live="status">
                 <option value="">All statuses</option>
                 <option value="active">Active</option>
@@ -29,7 +29,8 @@
                 @endforeach
             </x-wirekit::select>
             <x-wirekit::button size="sm" wire:click="$dispatch('open-add-product')">
-                + Add Product
+                <x-slot:iconLeft><x-wirekit::icon name="plus" size="sm" aria-hidden="true" /></x-slot:iconLeft>
+                Add Product
             </x-wirekit::button>
         </x-wirekit::row>
     </x-wirekit::toolbar>

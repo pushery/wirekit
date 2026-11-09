@@ -3,9 +3,9 @@
      an option is clicked. A selection is a discrete set of server values, so an
      undo puts back what the server has and destroys nothing the user typed —
      the filter text is separate state and is never rolled back. The optimistic
-     scope nests INSIDE this component and binds to `selected`. --}}
+     scope nests inside this component and binds to `selected`. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade would fold
     // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk — and StrictnessGate would not
     // complain, because `required` is in its HTML passthrough list. The result would be a
@@ -19,14 +19,14 @@
     // form, the list still opens to show the options, and nothing picks or removes one.
     // Undeclared, the attribute landed on the wrapper, where it stops nothing.
     'readonly' => false,
-    // Livewire method to call optimistically. It receives the FULL new
+    // Livewire method to call optimistically. It receives the full new
     // selection as an array. The pill appears immediately and is removed again
     // if the call fails. Absent -> the plain multi-select.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -79,12 +79,12 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `required="false"` would read as TRUE and mark the field required anyway.
     $required = BooleanProp::from($required, false, 'multi-select', 'required');
     $disabled = BooleanProp::from($disabled, false, 'multi-select', 'disabled');
@@ -131,7 +131,7 @@
     $attributes = $attributes->except(['id', 'name']);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -196,7 +196,7 @@
     // token would put the placeholder half as far from the border as the text
     // in the fields beside it.
     $containerClasses = WireKit::resolveClasses('multi-select', 'base', implode(' ', [
-        'flex flex-wrap items-center gap-1',
+        'flex flex-wrap items-center gap-[var(--gap-wk-xs)]',
         'min-h-[var(--size-wk-md)]',
         'py-[var(--padding-wk-y-sm)] px-[var(--padding-wk-x-md)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -215,8 +215,8 @@
 
     // Pill classes for selected values — py-1 for balanced vertical padding
     $pillClasses = implode(' ', [
-        'inline-flex items-center gap-1',
-        'pl-[var(--padding-wk-x-sm)] pr-1 py-1',
+        'inline-flex items-center gap-[var(--gap-wk-xs)]',
+        'ps-[var(--padding-wk-x-sm)] pe-1 py-[var(--padding-wk-y-xs)]',
         'text-[length:var(--text-wk-sm)]',
         'bg-[var(--color-wk-bg-muted)]',
         'text-[color:var(--color-wk-text)]',
@@ -225,7 +225,7 @@
 
     // Dropdown option classes
     /*
-     * The appearance of the row the arrow keys are on, resolved HERE rather than
+     * The appearance of the row the arrow keys are on, resolved here rather than
      * written into the runtime binding below.
      *
      * A class string that only ever exists inside `:class="…"` is out of reach of
@@ -353,7 +353,7 @@
     // `keywords` and a `selectedLabel`; OptionMedia validates them and adds only the keys an
     // option uses, so an option without them normalizes to its value and label alone.
     //
-    // A LIST is decided by the ARRAY, never by one key: keys 0, 1, 2 … in order. PHP turns a
+    // A list is decided by the array, never by one key: keys 0, 1, 2 … in order. PHP turns a
     // numeric string key into an integer, so deciding by the key's type would read `[31 => 'Rain
     // jacket']` and every `pluck('name', 'id')` as a list and submit the NAMES — the pills would
     // look right and `wire:model` would receive labels instead of ids.
@@ -370,7 +370,7 @@
             ] + \Pushery\WireKit\Support\OptionMedia::fields('multi-select', $option, $value, $label);
         }
 
-        // In a list the string is BOTH value and label; in a map the key is the submitted
+        // In a list the string is both value and label; in a map the key is the submitted
         // value and the string beside it its label, whatever type the key has.
         return $optionsAreAList
             ? ['value' => (string) $option, 'label' => (string) $option]
@@ -436,7 +436,7 @@
 @endphp
 
 @php
-    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // The optimistic layer nests inside this component, and the direction is not
     // interchangeable: a nested Alpine component's method reads and writes its
     // parent's properties through `this`, never the other way around. So it has
     // to be the child to reach `selected`, and the options have to be inside it
@@ -449,7 +449,7 @@
         'bind' => 'selected',
         'after' => '_afterToggle',
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
@@ -623,18 +623,18 @@
                     @if($server) x-text="searchEmptyText(filter)" @endif
                     class="{{ $emptyRowClasses }}"
                 >{{ __('wirekit::No results') }}</p>
-                @if($server)
+                @wirekitLast($server)
                     <p data-wk-prose-skip
                         x-show="listOptions.length > 0 && searchNote() !== ''"
                         x-text="searchNote()"
                         class="{{ $emptyRowClasses }} empty:hidden"
                     ></p>
-                @endif
+                @endwirekitLast
             </div>
 
             {{-- The choice, under the options, with a button to take each one out. A chosen option
                  keeps its name here after the results move on to another search. --}}
-            <div x-show="selected.length > 0" class="mt-[var(--space-wk-sm)] space-y-1">
+            <div x-show="selected.length > 0" class="mt-[var(--space-wk-sm)] space-y-[var(--space-wk-xs)]">
                 <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" x-text="selectionHeading"></p>
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
                     <template x-for="(val, i) in selected" :key="'chosen-'+val">
@@ -650,7 +650,7 @@
                                 @if($disabled) disabled @endif
                                 @click="{{ $optimisticConfig ? 'runListRemoval(val)' : 'removeFromList(val)' }}"
                                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
-                                class="wk-touch-row relative p-1 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                                class="wk-touch-row relative p-[var(--space-wk-xs)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                             >
                                 <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                             </button>
@@ -736,12 +736,12 @@
                 @keydown.tab="dropdownOpen = false"
                 {{-- The combobox keyboard model. Focus never leaves this input —
                      the options are `role="option"` with no tab stop — so these
-                     keys plus `aria-activedescendant` below are the ONLY way a
+                     keys plus `aria-activedescendant` below are the only way a
                      keyboard reaches the list. Home/End move the highlight
                      rather than the caret, matching the sibling combobox; the
                      filter field holds a word or two, and jumping to the first
                      or last option is what the reader is here for.
-                     Space is deliberately NOT bound: this is an editable
+                     Space is deliberately not bound: this is an editable
                      combobox, and a text field that swallows the space bar
                      cannot be typed into. --}}
                 @keydown.arrow-down.prevent="openAndMove(1)"
@@ -779,14 +779,14 @@
         </div>
 
         {{-- Dropdown listbox --}}
-        {{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but NOT
+        {{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but not
              a stacking context, which is why the combobox and dropdown panels teleport too. --}}
         <template x-teleport="#wk-overlay-root">
         <div
-            {{-- THE MORPH KEY. Livewire identifies a node across an update as
+            {{-- The morph key. Livewire identifies a node across an update as
                  `wire:id`, then `wire:key`, then `el.id` — so without this line the
                  id below is the identity, and an id that disagrees between the live
-                 node and the incoming template makes the morph SWAP rather than
+                 node and the incoming template makes the morph swap rather than
                  patch: the live node is replaced by a native `cloneNode(true)` with
                  no Alpine expandos, landing in the overlay root, which hangs off
                  <body> in no `x-data`. Alpine's parent walk then finds no scope and
@@ -796,7 +796,7 @@
                  `$id` falls back to a counted value when the call site supplies
                  neither an id nor a name, and a count can restart when only part
                  of the page re-renders (see `DomId`), so a key derived from it
-                 would not agree across renders. STATIC on purpose: the morph patches a teleported node
+                 would not agree across renders. Static on purpose: the morph patches a teleported node
                  against its own counterpart, one to one, never against a keyed
                  sibling, so several multi-selects on a page do not compete. --}}
             wire:key="wk-multi-select-listbox"
@@ -860,7 +860,7 @@
                          it, and that row would take the highlight, and Enter, from
                          a reader who never moved the mouse. --}}
                     x-on:pointermove.passive="hoverOption(idx)"
-                    {{-- nextWith() returns a NEW array. toggleValue() splices in place,
+                    {{-- nextWith() returns a new array. toggleValue() splices in place,
                          and an in-place mutation gives the layer nothing to
                          snapshot — the rollback would restore the array it had
                          just changed. `frozen` first: a read-only field changes nothing, and a
@@ -897,7 +897,7 @@
                  and it never becomes the active descendant because the
                  highlight indexes `filteredOptions`, which is empty exactly
                  when this row is showing.
-                 The sibling combobox solves the same problem with a SECOND
+                 The sibling combobox solves the same problem with a second
                  teleported panel; here that would be a second `fixed` box for
                  _place() to anchor, and an unanchored one sits at the viewport
                  origin. One panel, two contents, one anchor. --}}
@@ -933,7 +933,7 @@
              `value` prop seeded: a region that arrives together with its text
              is a new node, and nothing is announced at all.
              It exists because the announcement a combobox normally gets for
-             free cannot happen here. `filteredOptions` DROPS an option the
+             free cannot happen here. `filteredOptions` drops an option the
              moment it is chosen, so the `aria-selected` flip a reader would
              hear happens on a row that has stopped existing.
              Not rendered on the optimistic path, and that is the arbitration
@@ -976,14 +976,18 @@
         @endif
         {{-- Inside the component's root, where its state is: the error and the hint below stand
              outside it. --}}
-        @if($requiredMessageId)
+        @wirekitLast($requiredMessageId)
             @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
-        @endif
+        @endwirekitLast
     </div>
 
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

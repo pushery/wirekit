@@ -56,7 +56,7 @@ final class ChartManager
     }
 
     /**
-     * Get the adapter for a SPECIFIC library, bypassing the global
+     * Get the adapter for a specific library, bypassing the global
      * `wirekit.charts.library` config. Used by callers that need to
      * pin a chart to a specific library regardless of the app's
      * default (e.g. an ApexCharts demo page in a docs app whose
@@ -75,7 +75,7 @@ final class ChartManager
 
     /**
      * Resolve a library name to a fresh adapter instance.
-     * Accepts built-in keys (chartjs / apexcharts) AND custom FQCN.
+     * Accepts built-in keys (chartjs / apexcharts) and custom FQCN.
      */
     private function resolve(string $library): ChartAdapter
     {
@@ -85,9 +85,9 @@ final class ChartManager
 
         if (class_exists($library)) {
             /*
-             * The type is checked BEFORE the class is instantiated, and the order is the whole
+             * The type is checked before the class is instantiated, and the order is the whole
              * point. `new $library` ran first, so a class that is not an adapter had its
-             * CONSTRUCTOR executed on the way to being rejected — and a constructor with
+             * constructor executed on the way to being rejected — and a constructor with
              * required arguments threw `ArgumentCountError` instead of the documented
              * `InvalidArgumentException`, from inside a method whose job is to produce that
              * exception. A developer who passed the wrong class name got an error about

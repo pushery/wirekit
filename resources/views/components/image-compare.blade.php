@@ -9,7 +9,7 @@
     'orientation' => 'horizontal',
     // Optional intrinsic aspect-ratio (e.g. "16/9", "4/3", "1/1"). The component
     // has absolutely-positioned images, so it needs a sized box. Set `ratio` and
-    // the figure sizes ITSELF (height derived from width) — no hand-rolled
+    // the figure sizes itself (height derived from width) — no hand-rolled
     // `<div style="aspect-ratio: …">` wrapper needed. Leave it null to fill the
     // height of whatever box the developer provides (the original contract).
     'ratio' => null,
@@ -55,7 +55,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:slide']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $labels = BooleanProp::from($labels, true, 'image-compare', 'labels');
@@ -120,7 +120,7 @@
     $ratio = \Pushery\WireKit\Support\CssValue::prop($ratio, 'image-compare', 'ratio');
 
     // Class blocks — all themable via WireKit::personalize() + scope.
-    // `h-full` (fill the developer-provided box) applies ONLY when no ratio is
+    // `h-full` (fill the developer-provided box) applies only when no ratio is
     // given; with a ratio, the aspect-ratio style on the figure drives the height
     // from the width and h-full would fight it. Kept as a plain implode array (no
     // array_filter) so the drift scanner can statically extract every literal
@@ -167,7 +167,7 @@
 
     $labelClasses = WireKit::resolveClasses('image-compare', 'label', implode(' ', [
         'absolute z-40 pointer-events-none',
-        'px-2 py-1 rounded-[var(--radius-wk-sm)]',
+        'px-2 py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)]',
         'text-[length:var(--text-wk-xs)] font-medium',
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
@@ -245,17 +245,17 @@
     {{--
         After image (top layer, clipped by clip-path driven by `value`).
 
-        The clip insets from the LEFT edge in horizontal mode (and the TOP
-        edge in vertical mode), so as `value` grows from 0 → 100 the AFTER
+        The clip insets from the left edge in horizontal mode (and the top
+        edge in vertical mode), so as `value` grows from 0 → 100 the after
         image is "wiped in" from the trailing side toward the slider — the
         universal before/after-slider convention.
 
-        At `value = 50` (default) the AFTER image's RIGHT half is visible
-        (horizontal) or BOTTOM half is visible (vertical), matching the
-        label-anchor positions on the BEFORE side: `before-label` sits at
+        At `value = 50` (default) the after image's right half is visible
+        (horizontal) or bottom half is visible (vertical), matching the
+        label-anchor positions on the before side: `before-label` sits at
         bottom-LEFT (horizontal) / top-LEFT (vertical) — directly over
-        the BEFORE image — and `after-label` sits at top-RIGHT (horizontal)
-        / bottom-RIGHT (vertical) — directly over the AFTER image. Clipping
+        the before image — and `after-label` sits at top-RIGHT (horizontal)
+        / bottom-RIGHT (vertical) — directly over the after image. Clipping
         from the other edge would swap the visible halves relative to the
         label anchors, and each label would float over the wrong image.
     --}}
@@ -319,7 +319,7 @@
         aria-orientation="{{ $isVertical ? 'vertical' : 'horizontal' }}"
         @if($disabled) disabled @endif
         @pointerdown.stop="startDrag($event)"
-        {{-- Left decreases and Right increases on BOTH axes, which is what the APG slider
+        {{-- Left decreases and Right increases on both axes, which is what the APG slider
              pattern asks for and what a swallowed key cannot deliver: `.prevent` fires
              whatever the guard decides, so a vertical slider would suppress the browser
              default and then do nothing. The up/down inversion below is a different matter

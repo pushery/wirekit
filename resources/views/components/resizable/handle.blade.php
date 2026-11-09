@@ -5,11 +5,19 @@
     'index' => 0,
     // Accessible name for the separator. It needs one: the Alpine plugin gives this
     // element `role="separator"` and `tabindex="0"`, so a reader tabs onto it and hears
-    // "splitter, 50%" with nothing saying WHICH split it moves — and a three-panel layout
+    // "splitter, 50%" with nothing saying which split it moves — and a three-panel layout
     // has two of them, announced identically. The APG's Window Splitter names it after the
     // pane it sizes, so pass the pane's name when you have one, or point `aria-labelledby`
     // at that pane's visible heading; the default is only a floor.
     'label' => null,
+    // The two step controls beside the grip, the way to resize with one pointer and no drag
+    // (WCAG 2.5.7). Off, a pointer that cannot drag has only the keyboard left, so turn them off
+    // only where the split can be set another way as well.
+    'steps' => true,
+    // When the three dots of the grip show: `always`, or `hover`, only while the line is pointed
+    // at, focused from the keyboard or dragged. Where the pointer cannot hover, they show at rest
+    // either way, since nothing would ever reveal them there.
+    'grip' => 'always',
     'scope' => null,
 ])
 
@@ -42,6 +50,12 @@
     // because the handle itself carries the ARIA separator role.
     $classes = WireKit::resolveClasses('resizable.handle', 'base', '', $scope);
 
+    // A control at a bound is taken away by the stylesheet, from the list the Alpine component
+    // writes into `data-wk-steps-spent`; these two decide whether the controls are there at all
+    // and when the grip shows.
+    $steps = \Pushery\WireKit\Support\BooleanProp::from($steps, true, 'resizable.handle', 'steps');
+    $grip = WireKit::validateProp('resizable.handle', 'grip', \Pushery\WireKit\Support\NumericProp::text($grip ?: 'always'), ['always', 'hover']);
+
     // The name is emitted only when the caller supplied neither of the two attributes
     // that already carry one. `aria-labelledby` pointing at the pane's own heading is the
     // better answer whenever there is a heading, and writing an `aria-label` beside it
@@ -51,6 +65,7 @@
 
 <div
     data-wk-resizable-handle
+    @if($grip === 'hover') data-wk-grip="hover" @endif
     x-data="wirekitResizableHandle"
     x-on:pointerdown="onPointerDown($event)"
     x-on:pointermove.passive="onPointerMove($event)"
@@ -71,13 +86,15 @@
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <span data-wk-resizable-grip aria-hidden="true"></span>
-    {{-- Two step controls beside the grip, the way to resize with one pointer and no drag
-         (WCAG 2.5.7): each click moves the handle a few pixels, little enough that the control
-         is still under the pointer for the next click. Spans rather than buttons, and hidden
-         from assistive technology: the handle is the focusable control with the keyboard
-         model, and a focusable control inside it would be nested interactive content.
-         `select-none` because two quick clicks are a double click, which would otherwise
-         start a text selection at the divider. --}}
-    <span class="select-none" data-wk-resizable-step="-1" aria-hidden="true" x-on:click="stepFromControl(-1)"></span>
-    <span class="select-none" data-wk-resizable-step="1" aria-hidden="true" x-on:click="stepFromControl(1)"></span>
+    @wirekitLast($steps)
+        {{-- Two step controls beside the grip, the way to resize with one pointer and no drag
+             (WCAG 2.5.7): each click moves the handle a few pixels, little enough that the control
+             is still under the pointer for the next click. Spans rather than buttons, and hidden
+             from assistive technology: the handle is the focusable control with the keyboard
+             model, and a focusable control inside it would be nested interactive content.
+             `select-none` because two quick clicks are a double click, which would otherwise
+             start a text selection at the divider. --}}
+        <span class="select-none" data-wk-resizable-step="-1" aria-hidden="true" x-on:click="stepFromControl(-1)"></span>
+        <span class="select-none" data-wk-resizable-step="1" aria-hidden="true" x-on:click="stepFromControl(1)"></span>
+    @endwirekitLast
 </div>

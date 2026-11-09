@@ -10,7 +10,7 @@
  * included: two implementations of one formula would otherwise drift apart, each correct against
  * its own expectations.
  *
- * NO `resolveCssVars()` HERE, DELIBERATELY. The PHP class resolves `var()` chains because it
+ * No `resolveCssVars()` here, deliberately. The PHP class resolves `var()` chains because it
  * reads a stylesheet as text. A browser hands out resolved values already, so a second resolver
  * would be a second place for a chain to be read differently — and it is the half with no
  * reader. `getComputedStyle(el).color` is what a caller passes in.
@@ -57,7 +57,7 @@ const leadingFloat = (raw) => {
     return Number.isNaN(n) ? 0 : n;
 };
 
-/** OKLCH L-component (0..1 decimal OR "NN%") as a 0..1 float. */
+/** OKLCH L-component (0..1 decimal or "NN%") as a 0..1 float. */
 function parseOklchL(raw) {
     return raw.endsWith('%') ? leadingFloat(raw) / 100 : leadingFloat(raw);
 }
@@ -361,7 +361,7 @@ function compositeOver(top, under) {
 
 /**
  * WCAG 2.1 contrast ratio between two color strings: >= 1 (1:1 identical, 21:1 max), or null
- * when either input is in an unsupported format, or when the BACKGROUND is translucent.
+ * when either input is in an unsupported format, or when the background is translucent.
  *
  * A translucent foreground is laid over the background first, the way a browser composites it.
  * Computed as if it were opaque, 50% black on white would read 21:1 where a reader sees 3.98:1 —

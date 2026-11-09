@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\View\Factory;
 use ReflectionProperty;
 use Throwable;
@@ -70,7 +71,13 @@ final class AwareProp
 
         for ($i = $depth - 1; $i >= 0; $i--) {
             $entry = $stack[$i] ?? null;
-            $name = is_string($entry) ? UnboundModel::componentOf($entry) : null;
+            // An anonymous component stands on the stack as its view's name, a class component as
+            // the view its `render()` returned, which carries the same name.
+            $name = match (true) {
+                is_string($entry) => UnboundModel::componentOf($entry),
+                $entry instanceof ViewContract => UnboundModel::componentOf($entry->name()),
+                default => null,
+            };
 
             if ($name !== null && array_key_exists($name, $implied)) {
                 return $implied[$name];
@@ -117,8 +124,11 @@ final class AwareProp
         }
 
         foreach ($state[0] as $entry) {
-            // Read as read() reads the stack: an anonymous component stands on it as its view's name.
-            $name = is_string($entry) ? UnboundModel::componentOf($entry) : null;
+            $name = match (true) {
+                is_string($entry) => UnboundModel::componentOf($entry),
+                $entry instanceof ViewContract => UnboundModel::componentOf($entry->name()),
+                default => null,
+            };
 
             if ($name !== null && in_array($name, $owners, true)) {
                 return true;

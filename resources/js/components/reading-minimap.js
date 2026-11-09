@@ -86,7 +86,9 @@ export default (options = {}) => ({
 
     target: options.target || null,
     itemSelector: options.itemSelector || 'a, h2, h3, [data-minimap-item]',
-    side: options.side === 'left' ? 'left' : 'right',
+    // `start` and `end` follow the direction of the page; `init()` reads them as the physical side
+    // they stand on, which the geometry below and the stylesheet's `data-side` rules work in.
+    side: ['left', 'right', 'start', 'end'].includes(options.side) ? options.side : 'right',
     draggable: options.draggable !== false,
 
     // Rendered mode + extension props
@@ -153,6 +155,7 @@ export default (options = {}) => ({
     _hoverPreviewEscapeHandler: null,
 
     init() {
+        this.side = this._physicalSide(this.side);
         this._scrollHost = this.resolveTarget();
         if (!this._scrollHost) return;
 
@@ -176,7 +179,7 @@ export default (options = {}) => ({
              * A ResizeObserver fires once per frame for as long as a window is being
              * dragged, and this callback ran a full `querySelectorAll` over the article
              * plus a rect read per item — 41 headings on the documentation page itself —
-             * and then WROTE `this.items`, a reactive array whose change re-renders the
+             * and then wrote `this.items`, a reactive array whose change re-renders the
              * minimap that the second observer is watching.
              *
              * The asymmetry was inside this one callback: `_scheduleRebuild` already
@@ -352,7 +355,7 @@ export default (options = {}) => ({
      * minimap was inert under a strict Content-Security-Policy, in the quiet way
      * (it renders, nothing positions).
      *
-     * They read better here anyway. The stripe height depends on itemStyle AND
+     * They read better here anyway. The stripe height depends on itemStyle and
      * on whether the controller populated heightFraction, and that condition is
      * legible next to the code that populates it.
      */
@@ -386,6 +389,23 @@ export default (options = {}) => ({
 
     anchorHref(anchor) {
         return `#${anchor.id}`;
+    },
+
+    /**
+     * The physical side a side value stands on: `start` is the left of a left-to-right page and
+     * the right of a right-to-left one, `end` the other; `left` and `right` are themselves.
+     *
+     * @param {string} side
+     * @returns {'left'|'right'}
+     */
+    _physicalSide(side) {
+        if (side !== 'start' && side !== 'end') {
+            return side === 'left' ? 'left' : 'right';
+        }
+
+        const rtl = getComputedStyle(this.$el).direction === 'rtl';
+
+        return (side === 'start') !== rtl ? 'left' : 'right';
     },
 
     tooltipStyle() {
@@ -445,14 +465,14 @@ export default (options = {}) => ({
     },
 
     /**
-     * WCAG 1.4.13 — content shown on hover has to be DISMISSIBLE without moving the pointer.
+     * WCAG 1.4.13 — content shown on hover has to be dismissible without moving the pointer.
      *
      * The stripe tooltip was hover-triggered and had no way out but moving the mouse. That is
      * the criterion's own example of what fails it: a reader who magnifies the page, or whose
      * pointer is imprecise, can end up with the tooltip covering the very thing they were
      * trying to read and no way to clear it without losing their place.
      *
-     * The hover PREVIEW in this same component already had an Escape handler. This is the
+     * The hover preview in this same component already had an Escape handler. This is the
      * other surface, and it now uses the same shape — a window listener, armed only while the
      * tooltip is up, so nothing accumulates and nothing fires for a component that is idle.
      */
@@ -508,7 +528,7 @@ export default (options = {}) => ({
         const scrollHeight = host.scrollHeight;
         // Use the scroll host's clientHeight (= the native browser
         // scrollbar's track length) as the drag-translation denominator
-        // — NOT the minimap's own clientHeight. Reason: users compare
+        // — not the minimap's own clientHeight. Reason: users compare
         // minimap-drag feel against the browser scrollbar drag-feel,
         // and if the two ratios differ they perceive the minimap as
         // "scrolling faster" (the minimap column is shorter than the
@@ -587,13 +607,10 @@ export default (options = {}) => ({
      * texture map, not a literal scaled clone — the editor-minimap
      * convention readers know from IDEs.
      *
-     * This replaces an earlier iframe-srcdoc-clone approach that
-     * scaled the live DOM via `transform: scale(0.1)`. The clone
-     * approach produced a tiny LEGIBLE preview that surprised users
-     * (minimap convention is abstract blocks, not readable text),
-     * and the iframe added ~100 ms of cold-start cost on long
-     * articles. Canvas is a single rAF-fast pass, no iframe, no
-     * sanitizer, no cross-origin stylesheet plumbing.
+     * Blocks rather than a scaled clone of the page: a minimap reads
+     * as abstract shapes, not as tiny legible text, and a canvas is a
+     * single pass in one animation frame, with no iframe, no sanitizer
+     * and no cross-origin stylesheet plumbing.
      */
     _buildCanvas() {
         if (!this._renderHost) return;
@@ -612,7 +629,7 @@ export default (options = {}) => ({
         // cost is O(textNodes) rather than O(htmlSize). 5000-tag threshold
         // ports from the iframe-clone path; comparable enough.
         //
-        // Counted off the LIVE DOM, not through `countTags()` in sanitize-minimap-html.js:
+        // Counted off the live DOM, not through `countTags()` in sanitize-minimap-html.js:
         // that one weighs an HTML string before anything has parsed it, and here the source
         // element is already in the document. The two are not interchangeable, and that
         // helper's own docblock claimed this call site until it was corrected.
@@ -660,7 +677,7 @@ export default (options = {}) => ({
         // so the canvas reads as a translucent texture over whatever
         // background the surrounding minimap surface paints.
         //
-        // Walk-priority (first match wins, walking UP from each text
+        // Walk-priority (first match wins, walking up from each text
         // node toward the source root):
         //   1. code        (<pre>, <code>, <kbd>, <samp>)
         //   2. heading     (h1..h6 — each gets its own color)
@@ -713,7 +730,7 @@ export default (options = {}) => ({
                 if (TABLE_TAGS.has(tag)) return 'table';
                 if (BLOCKQUOTE_TAGS.has(tag)) return 'blockquote';
                 if (PROSE_TAGS.has(tag)) return 'prose';
-                // WireKit wildcard — any wk-* class EXCEPT wk-reading-*
+                // WireKit wildcard — any wk-* class except wk-reading-*
                 // (the minimap shares wk-reading-* prefixes with the
                 // family siblings; recursing into the minimap's own
                 // DOM would draw the wrapper element itself).
@@ -761,7 +778,7 @@ export default (options = {}) => ({
 
                 // Convert viewport-coordinates to source-relative coords.
                 // (rect.top + scrollY) is the absolute document Y; subtract
-                // the source's absolute Y to get position WITHIN the source.
+                // the source's absolute Y to get position within the source.
                 const srcY = (rect.top + (window.scrollY || document.documentElement.scrollTop)) - sourceScrollY;
                 const srcX = (rect.left + (window.scrollX || document.documentElement.scrollLeft)) - sourceScrollX;
 
@@ -789,7 +806,7 @@ export default (options = {}) => ({
         const visualElements = source.querySelectorAll(visualSelector);
         ctx.fillStyle = STYLES.image;
         for (const el of visualElements) {
-            // Skip SVGs that are NESTED inside another image-tag element
+            // Skip SVGs that are nested inside another image-tag element
             // — e.g. an <svg> inside a <figure> already gets covered by
             // the figure's bounding rect, drawing both would double-paint.
             // Use the outermost image-tag wrapper.
@@ -924,8 +941,8 @@ export default (options = {}) => ({
         // not _scrollHost. When `renderTarget` is unset they're identical
         // (both default to the article container). When `renderTarget`
         // narrows to a sub-element (e.g. `renderTarget="article"` while
-        // `target="#scrollable-wrapper"`), headings OUTSIDE the article
-        // but INSIDE the scroll container are intentionally dropped —
+        // `target="#scrollable-wrapper"`), headings outside the article
+        // but inside the scroll container are intentionally dropped —
         // the rendered-mode canvas shows the article only, so anchors
         // should match that scope. Developers wanting full-host anchor
         // coverage should leave `renderTarget` undefined.
@@ -976,7 +993,7 @@ export default (options = {}) => ({
      * desktop too.
      *
      * Both sides are measured. The strip moves inside only when the outboard side cannot hold
-     * the widest label AND the inboard side holds more. A label is narrowed — to the room its
+     * the widest label and the inboard side holds more. A label is narrowed — to the room its
      * side really has, ending in an ellipsis — only when even that side is too small.
      * `scrollWidth` is a label's natural width whatever clamp it carries, so a label held to
      * yesterday's room never reports that room as its own width, and the placement cannot
@@ -1020,7 +1037,7 @@ export default (options = {}) => ({
         const reduced = prefersReducedMotion();
         el.scrollIntoView({ behavior: scrollBehavior(!reduced), block: 'start' });
         // Update the URL fragment without pushing a history entry (back-
-        // button still goes to the previous PAGE, not the previous heading).
+        // button still goes to the previous page, not the previous heading).
         //
         // Wrapped in try/catch because an iframe-srcdoc context has `origin: null`
         // and rejects a replaceState against the parent page's URL with a

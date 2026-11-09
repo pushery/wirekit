@@ -4,14 +4,14 @@
     // state before the server has agreed to it. Null (the default) leaves the
     // developer's own wire:model / wire:click untouched.
     //
-    // It is a METHOD NAME rather than a boolean because the component cannot
+    // It is a method name rather than a boolean because the component cannot
     // know the action otherwise — WireKit passes server actions through the
     // attribute bag, so a component never sees the developer's wire:click.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -21,7 +21,7 @@
     'label' => null,
     // Render the label sr-only (kept as the control's accessible name) — for a
     // toggle in a table column or a toolbar whose surrounding chrome already
-    // names it. The <label> WRAPS the control, so the name is associated with the
+    // names it. The <label> wraps the control, so the name is associated with the
     // element rather than with the visible text and survives being taken off the
     // screen. Mirrors input / select / textarea / combobox / checkbox `hideLabel`.
     'hideLabel' => false,
@@ -56,7 +56,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -70,7 +70,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -78,7 +78,7 @@
     // `name[]`, is reported and left off the field (Support\FieldValue).
     $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'toggle', ['value', 'checked']);
 
-    // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
+    // Same trap one level in: an unbound `hideLabel="false"` reaches here as the
     // truthy string 'false' and would hide the label the call site asked to show.
     $hideLabel = BooleanProp::from($hideLabel, false, 'toggle', 'hideLabel');
 
@@ -131,10 +131,10 @@
     $fieldGroup = $wkFieldSet instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
     $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($errorName) ?? false);
 
-    // Error detection: explicit prop OR Laravel validation bag
+    // Error detection: explicit prop or Laravel validation bag
     $errorMessage = \Pushery\WireKit\Support\FieldError::message($groupOwnsBagEntry ? null : ($errors ?? null), $errorName, $error);
     $hasError = $errorMessage !== null;
-    // Whether this toggle answers for the group's message. A group error can be true of SOME of
+    // Whether this toggle answers for the group's message. A group error can be true of some of
     // its controls; announced on one that cannot resolve it, the reader hears "invalid" and a
     // sentence that switching it will not satisfy. `covers()` is not gated on this, so a
     // declining control does not start printing the group's message under itself.
@@ -175,12 +175,12 @@
     // Knob diameter = track height minus 4px of padding
     $sizing = match ($size) {
         // Both directions per size, and the RTL half is not decoration. A switch encodes
-        // off -> on as travel along the READING direction; that is the whole affordance. With
+        // off -> on as travel along the reading direction; that is the whole affordance. With
         // only the positive form, an Arabic or Hebrew form mirrors around the control while the
         // knob still starts at the left edge and runs right, so "on" points back at the start of
         // the line. Nothing fails and nothing is logged — the control simply reads inverted.
         //
-        // Written out per size rather than assembled, because Tailwind scans source TEXT for
+        // Written out per size rather than assembled, because Tailwind scans source text for
         // class names and a class built at runtime is never generated.
         'sm' => ['track' => 'w-8 h-4', 'knob' => 'w-3 h-3', 'translate' => 'peer-checked:translate-x-4 rtl:peer-checked:-translate-x-4'],
         'lg' => ['track' => 'w-12 h-6', 'knob' => 'w-5 h-5', 'translate' => 'peer-checked:translate-x-6 rtl:peer-checked:-translate-x-6'],
@@ -235,7 +235,7 @@
 
     // Track: the neutral fill is the contrast-bound control border, see the arms above. WCAG 1.4.11
     // asks 3:1 of the track against the page and of the knob against the track.
-    // MUST be a direct sibling of .peer for peer-checked:* to resolve.
+    // Must be a direct sibling of .peer for peer-checked:* to resolve.
     $trackClasses = WireKit::resolveClasses('toggle', 'track', implode(' ', [
         'absolute inset-0',
         'rounded-full',
@@ -254,11 +254,11 @@
     ]), $scope);
 
     // Knob styles: a circle that slides from the inline start to the inline end when checked.
-    // MUST be a direct sibling of .peer for peer-checked:* to resolve.
+    // Must be a direct sibling of .peer for peer-checked:* to resolve.
     //
-    // `start-0.5`, not `left-0.5`: the anchor is the other half of the direction pair above,
-    // and repairing only the travel would leave the knob starting at the wrong edge and then
-    // running off it.
+    // `start-0.5`, the logical anchor: it is the other half of the direction pair above, and a
+    // physical anchor with a logical travel would start the knob at the wrong edge and run it
+    // off the track.
     $knobClasses = implode(' ', [
         'absolute start-0.5 top-1/2 -translate-y-1/2',
         'rounded-full',
@@ -287,7 +287,7 @@
         // dev-warning call site in the catalog uses.
         'debug' => (bool) config('app.debug'),
         // A toggle rejects a second flip while one is in flight rather than
-        // queueing it. With a queue the final state depends on the ORDER the
+        // queueing it. With a queue the final state depends on the order the
         // responses come back in — network timing — which is both wrong and
         // untestable.
         'mode' => 'reject',
@@ -317,7 +317,7 @@
 
 {{-- `wk-toggle` is the marker that puts this subtree inside the library's reduced-motion
      rule, and it is load-bearing rather than decorative. That rule is deliberately scoped
-     to WireKit's own surface — it matches a `wk-` CLASS TOKEN and its descendants, because
+     to WireKit's own surface — it matches a `wk-` class token and its descendants, because
      matching the class attribute as a substring once clamped a whole application's
      animations to 1ms through `bg-[var(--color-wk-bg)]` on its <body>. The knob below
      slides on `transition-transform` with the themed duration, and nothing here carried
@@ -331,7 +331,7 @@
     @if($helpId || $labelAfterGiven)
     <div data-wk-label-row class="{{ $labelAfterGiven ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($labelAfterGiven)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
     @endif
-    <label for="{{ $id }}" class="{{ $rowMarker }}inline-flex items-center gap-3 cursor-pointer">
+    <label for="{{ $id }}" class="{{ $rowMarker }}inline-flex items-center gap-[var(--gap-wk-md)] cursor-pointer">
         {{-- Switch visual: wrapper contains input (.peer), track, and knob as siblings --}}
         {{-- so peer-checked:* selectors resolve correctly (peer-checked targets siblings only). --}}
         <span class="{{ $wrapperClasses }}">
@@ -379,16 +379,16 @@
     // `true`.
     $wkRequiredMarker = (bool) $attributes->get('required', false);
 @endphp
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
         @endif
 
-        @if($hasStateText)
+        @wirekitLast($hasStateText)
             {{-- The state in words. Hidden from a screen reader, which hears the switch say it.
                  Both words are always in the markup and the stylesheet shows the one the
                  checkbox matches (`[data-wk-toggle-state]` in dist/wirekit.css), so it changes
                  with the click; `start` moves it before the switch there, by `order`. --}}
             <span data-wk-toggle-state="{{ $statePosition }}" aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] select-none"><span data-wk-toggle-state-off>{{ $offLabel }}</span><span data-wk-toggle-state-on>{{ $onLabel }}</span></span>
-        @endif
+        @endwirekitLast
     </label>
     @if($helpId || $labelAfterGiven)
         @if($helpId)
@@ -399,16 +399,20 @@
     @endif
 
     @if($optimisticConfig)
-        {{-- Rendered unconditionally and starting EMPTY. A live region that
+        {{-- Rendered unconditionally and starting empty. A live region that
              arrives together with its text is a new node rather than a changed
              region, and nothing is announced at all. --}}
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
     @endif
 
     {{-- Error message or hint text --}}
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

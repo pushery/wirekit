@@ -1,31 +1,31 @@
 {{-- optimistic-ui: supported
      The set shape matches the one `multi-select` uses. What differs is where a
-     tag comes from: it is TYPED, not picked from a list, so rolling back a failed
-     ADD deletes text the reader wrote. Removing an existing tag carries no such
+     tag comes from: it is typed, not picked from a list, so rolling back a failed
+     add deletes text the reader wrote. Removing an existing tag carries no such
      cost.
 
-     Both paths take the FOURTH exit anyway, and that is the decision rather than
-     an oversight. Splitting them is not available: the set is ONE value, so a
+     Both paths take the fourth exit anyway, and that is the decision rather than
+     an oversight. Splitting them is not available: the set is one value, so a
      rollback restores the whole set — there is no way to undo a removal without
      also undoing an addition that happened alongside it. `keep` guarantees
-     nothing typed is destroyed; the price is that a refused REMOVAL stays
+     nothing typed is destroyed; the price is that a refused removal stays
      removed and says so, which the reader can act on because the tag is one
      keystroke away. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
     // complain either, because `required` is in its HTML passthrough list — so it looked like
     // a legitimate attribute all the way down. The result was a required field that submits
     // empty, in the same form as a plain input that behaves correctly.
     'required' => false,
-    // The Livewire method to call when the set changes. A refusal KEEPS the
+    // The Livewire method to call when the set changes. A refusal keeps the
     // change and says it was not saved — see the note above.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -73,7 +73,7 @@
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -87,12 +87,12 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would disable the field the call site asked to leave alone.
     $disabled = BooleanProp::from($disabled, false, 'tags-input', 'disabled');
     $readonly = BooleanProp::from($readonly, false, 'tags-input', 'readonly');
@@ -156,9 +156,9 @@
     // the container only needs enough room for the focus ring and a
     // single-pixel border without doubling the visual whitespace.
     $containerClasses = WireKit::resolveClasses('tags-input', 'base', implode(' ', [
-        'flex flex-wrap items-center gap-1',
+        'flex flex-wrap items-center gap-[var(--gap-wk-xs)]',
         'min-h-[var(--size-wk-md)]',
-        'p-1',
+        'p-[var(--space-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
         'bg-[var(--color-wk-bg-input)]',
         'rounded-[var(--radius-wk-md)]',
@@ -172,7 +172,7 @@
         ? 'border-[var(--color-wk-border-error)]'
         : 'border-[var(--color-wk-border-strong)]';
 
-    // Dimming sits on the CONTAINER rather than on the text input, because the chips and
+    // Dimming sits on the container rather than on the text input, because the chips and
     // their remove buttons are the larger half of the control and they are disabled too —
     // a dimmed field beside fully-lit chips reads as one part being off, not the control.
     $disabledClasses = $disabled
@@ -180,19 +180,13 @@
         : '';
 
     /*
-     * Tag chip classes — `px-2 py-1` (8 px horizontal, 4 px vertical).
-     * Symmetric on each axis (left == right, top == bottom) but more
-     * generous horizontally than vertically so the label has breathing
-     * room around its trailing X-button without inflating the chip
-     * height. The earlier `p-1` (uniform 4 px) made chips read as
-     * cramped against multi-word labels; the previous-previous
-     * `pl-x-sm pr-1 py-1` was asymmetric left-vs-right which looked
-     * lopsided. `px-2 py-1` keeps both axes symmetric AND gives the
-     * label enough horizontal slack to read comfortably.
+     * Tag chip classes: `px-2` and the smallest padding-y token, 8 px along the line and 4 px
+     * across it. Even on each axis and more generous along the line than across it, so a label
+     * of several words has room around its trailing X button without a taller chip.
      */
     $tagClasses = implode(' ', [
-        'inline-flex items-center gap-1',
-        'px-2 py-1',
+        'inline-flex items-center gap-[var(--gap-wk-xs)]',
+        'px-2 py-[var(--padding-wk-y-xs)]',
         'text-[length:var(--text-wk-sm)]',
         'bg-[var(--color-wk-bg-muted)]',
         'text-[color:var(--color-wk-text)]',
@@ -221,7 +215,7 @@
     $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
 
     /*
-     * What the live region says, as TEMPLATES rather than sentences built in JavaScript.
+     * What the live region says, as templates rather than sentences built in JavaScript.
      *
      * Every one of these covers a change a screen reader is otherwise given nothing to
      * notice: the field empties and a chip appears elsewhere, Backspace takes a tag back
@@ -245,8 +239,8 @@
     ]);
 
     // `bind` rather than `value`: `tags` already exists on the component this
-    // layer nests inside. A tuple is not needed — the set IS the value, and the
-    // factory snapshots an array by COPY, so a rollback cannot restore the same
+    // layer nests inside. A tuple is not needed — the set is the value, and the
+    // factory snapshots an array by copy, so a rollback cannot restore the same
     // reference it was meant to replace.
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'tags',
@@ -312,7 +306,7 @@
         x-wk-focus-unit.focus-only
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
-        {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
+        {{-- The set's own live region, outside the optimistic wrapper below.
              Unconditional and starting empty, for the reason the optimistic announcer
              states next to itself: a live region that arrives together with its text is
              a new node and announces nothing.
@@ -361,7 +355,7 @@
         {{-- `wk-field-frame`: on a coarse pointer the frame takes the 44px touch floor and the text
              input inside gives its own up. Outside `resolveClasses()`, so restyling keeps it. --}}
         <div class="{{ $containerClasses }} {{ $stateClasses }} {{ $disabledClasses }} wk-field-frame" @click="$refs.input.focus()"
-            {{-- A named group around the chips AND the field, so a screen reader that
+            {{-- A named group around the chips and the field, so a screen reader that
                  lands on the remove button of the fourth chip is told which control it
                  is inside. Only when a label exists: `role="group"` with no accessible
                  name adds a level to walk through and says nothing at the top of it. --}}
@@ -413,7 +407,7 @@
                 Text input for new tags — carries its own `px-2` padding so the
                 placeholder text reads as comfortably indented from the input-
                 box border (matching a regular `<x-wirekit::input>`), without
-                inflating the OUTER container's gutter and pushing the tag
+                inflating the outer container's gutter and pushing the tag
                 chips away from the border. The container stays tight (`p-1`)
                 so chips hug the edge; this `px-2` only affects the text-input
                 slot, giving the empty-state placeholder its expected
@@ -434,8 +428,8 @@
                      placeholder is not a name (WCAG 2.1 AA / axe `label`).
                      Fall back to the placeholder as the aria-label so the
                      control is always named, to the default placeholder
-                     where a blank one was given; when a label IS present the
-                     <label for> above owns the name and we must NOT override
+                     where a blank one was given; when a label is present the
+                     <label for> above owns the name and we must not override
                      it with aria-label. The same holds for a caller's `id`: it
                      is there so a label of the caller's can reach the field, and
                      an aria-label would win over that label, so the fallback
@@ -487,14 +481,18 @@
 @endif
         {{-- Inside the component's root, where its state is: the error and the hint below stand
              outside it. --}}
-        @if($requiredMessageId)
+        @wirekitLast($requiredMessageId)
             @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
-        @endif
+        @endwirekitLast
     </div>
 
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

@@ -1,10 +1,10 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
      shown early. --}}
-{{-- DEPRECATED: superseded by the radial-progress component, which is the canonical
+{{-- deprecated: superseded by the radial-progress component, which is the canonical
      radial (circular) progress — richer (threshold coloring, valueText, a required
      accessible name) and consistently named. This sub-component still renders for
-     back-compat, and no removal is scheduled — what is settled is that it will not GAIN
+     back-compat, and no removal is scheduled — what is settled is that it will not gain
      anything, not when it goes. New code should use radial-progress.
      (A removal would be a breaking change with nothing to soften it: there is no
      component-level alias in this package, so the tag would simply stop resolving.)
@@ -34,7 +34,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false, 'progress.circle', 'showValue');
@@ -90,7 +90,7 @@
     // here would stay put.
     //
     // Two of the four have a token at exactly their size and use it, so a theme that
-    // retunes the ramp carries them. The other two are BELOW the smallest rung
+    // retunes the ramp carries them. The other two are below the smallest rung
     // (`--text-wk-2xs` is 0.6875rem) and there is no token to reach for — a 40px ring has
     // to fit "100%" — so they keep their length and multiply by the scale factor
     // themselves, which is the same shape the tokens use one file over.
@@ -102,12 +102,12 @@
     };
 
     $wrapperClasses = WireKit::resolveClasses('progress', 'circle', implode(' ', [
-        'inline-flex flex-col items-center gap-1',
+        'inline-flex flex-col items-center gap-[var(--gap-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
     // Auto-generate id for aria-labelledby
-    // STABLE across re-renders, which a `Str::random(6)` id would not be: inside a
+    // stable across re-renders, which a `Str::random(6)` id would not be: inside a
     // wire:poll region every poll would mint a new id, and aria-labelledby and the
     // label's id would drift apart on every tick. A progress indicator that polls is
     // the normal case, not an edge one.
@@ -125,7 +125,7 @@
 <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}>
     {{-- SVG circular progress indicator --}}
     <div class="relative {{ $dimensions }}">
-        {{-- An accessible name is MANDATORY on anything carrying role="progressbar"
+        {{-- An accessible name is mandatory on anything carrying role="progressbar"
              (axe-core's progressbar-name rule), and it must not depend on which branch
              the value takes: a name attached beside the indeterminate arc would leave a
              determinate circle with no `label` — `value="40"` and nothing else, the
@@ -135,7 +135,7 @@
                1. `label` prop (visible under the circle)
                2. `aria-labelledby` from the caller
                3. `aria-label` from the caller
-               4. a generic fallback so the element always has SOME name — "Loading"
+               4. a generic fallback so the element always has some name — "Loading"
                   while there is no value to read out, "Progress" once there is. --}}
         <svg
             role="progressbar"
@@ -164,7 +164,7 @@
             />
 
             {{-- Fill circle (progress) --}}
-            @if($isIndeterminate)
+            @wirekitLast($isIndeterminate)
                 {{-- Indeterminate: partial arc that rotates via CSS animation --}}
                 <circle
                     cx="18"
@@ -190,21 +190,21 @@
                     stroke-dashoffset="{{ $dashOffset }}"
                     style="transition: stroke-dashoffset var(--transition-wk-duration) var(--transition-wk-easing)"
                 />
-            @endif
+            @endwirekitLast
         </svg>
 
         {{-- Center value text (only when showValue and determinate) --}}
-        @if($showValue && ! $isIndeterminate)
+        @wirekitLast($showValue && ! $isIndeterminate)
             <div class="absolute inset-0 flex items-center justify-center {{ $textSize }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums" aria-hidden="true">
                 {{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) (int) $percent, 0) }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- Optional visible label below the circle --}}
-    @if($label)
+    @wirekitLast($label)
         <span id="{{ $labelId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $label }}
         </span>
-    @endif
+    @endwirekitLast
 </div>

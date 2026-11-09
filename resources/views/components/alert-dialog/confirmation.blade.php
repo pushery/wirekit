@@ -7,9 +7,9 @@
 
 {{-- Alert dialog confirmation field — the brake in front of an irreversible action.
 
-     Renders NOTHING unless the parent alert-dialog was given a `confirmation-phrase`,
+     Renders nothing unless the parent alert-dialog was given a `confirmation-phrase`,
      so dropping it into a dialog that does not ask for one costs nothing and changes
-     nothing. Place it in the dialog BODY, next to the description — not inside
+     nothing. Place it in the dialog body, next to the description — not inside
      `alert-dialog.actions`, which is a flex row and would put a text field beside the
      buttons.
 
@@ -43,7 +43,7 @@
     ]), $scope);
 
     $phraseClasses = WireKit::resolveClasses('alert-dialog.confirmation', 'phrase', implode(' ', [
-        // The mono TOKEN, as every other monospace surface in the catalog uses — code,
+        // The mono token, as every other monospace surface in the catalog uses — code,
         // code-block, kbd, color-picker. Bare `font-mono` resolves to Tailwind's stack and
         // ignores the family the developer configured, so this confirmation phrase was the
         // one place their type choice did not reach.

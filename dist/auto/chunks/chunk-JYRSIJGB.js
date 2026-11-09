@@ -1,0 +1,2 @@
+/*! WireKit per page v2.73.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+var s="data-wk-steps-spent";function b({current:t,lower:i,upper:e,grows:u,tolerance:n=0}){if(![t,i,e].every(Number.isFinite))return"";let o=u===-1?-1:1,r=[];return t<=i+n&&r.push(-o),t>=e-n&&r.push(o),r.sort((f,p)=>f-p).join(" ")}function A(t,i){if(!t||typeof t.setAttribute!="function")return;let e=t.getAttribute?.(s)??null;if(i===""){e!==null&&t.removeAttribute?.(s);return}e!==i&&t.setAttribute(s,i)}export{s as a,b,A as c};

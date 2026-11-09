@@ -12,12 +12,12 @@ use Pushery\WireKit\WireKit;
  *
  * A control with no explicit `id` derives one from `name`. Two controls that
  * share a `name` on one page — a create + an edit form, a filter bar + a modal,
- * a repeater row — then emit the SAME `id`. Per the HTML spec `label[for]` /
- * `getElementById` resolve to the FIRST match, so every 2nd+ control is left with
- * no accessible name AND its `aria-describedby` points at a foreign field's hint.
- * The form key `name` is CORRECT to repeat; only the DOM `id` must be unique.
+ * a repeater row — then emit the same `id`. Per the HTML spec `label[for]` /
+ * `getElementById` resolve to the first match, so every 2nd+ control is left with
+ * no accessible name and its `aria-describedby` points at a foreign field's hint.
+ * The form key `name` is correct to repeat; only the DOM `id` must be unique.
  *
- * This keeps a per-request registry: the FIRST sight of a base returns it verbatim
+ * This keeps a per-request registry: the first sight of a base returns it verbatim
  * (so a lone `id="email"` stays as written), and each subsequent collision
  * appends `-2`, `-3`, … The registry is reset after each HTTP request, which keeps it
  * per request under Octane (FPM starts every request with empty static state anyway),
@@ -26,8 +26,8 @@ use Pushery\WireKit\WireKit;
  * Opt out with `config('wirekit.a11y.dedupe_ids', false)` — then the preferred
  * value is returned verbatim, and may collide.
  *
- * A control with NEITHER `id` nor `name` gets a derived id too, and that one is
- * COUNTED rather than random. The difference is the whole point: a random id is
+ * A control with neither `id` nor `name` gets a derived id too, and that one is
+ * counted rather than random. The difference is the whole point: a random id is
  * new on every render, so a Livewire morph replaces the node instead of patching
  * it — the reader loses focus mid-keystroke — and every `aria-controls` /
  * `label[for]` / `aria-describedby` that names it is left pointing at the id from
@@ -38,7 +38,7 @@ use Pushery\WireKit\WireKit;
  * number on a re-render as long as the markup order is stable — which is exactly
  * the case a morph is.
  *
- * CAVEAT (documented, and it applies to BOTH paths): across INDEPENDENTLY-updating
+ * Caveat (documented, and it applies to both paths): across INDEPENDENTLY-updating
  * Livewire islands the registry resets per request, so an id that was `email-2` on
  * the full render can come back `email` after a partial island update, and a
  * counted id can restart at 1 in an island that re-renders alone. Within one
@@ -46,7 +46,7 @@ use Pushery\WireKit\WireKit;
  * Repeat the same `name` across independent islands → pass an explicit `id`.
  *
  * That caveat is the price of the trade and it is the right way round: a random id
- * breaks the pairing on EVERY render, a counted one only in a case that needs two
+ * breaks the pairing on every render, a counted one only in a case that needs two
  * independently-morphing islands rendering the same nameless control. The first is
  * a defect every user meets; the second is a configuration a caller can fix by
  * passing an `id`.
@@ -104,7 +104,7 @@ final class DomId
      *
      * For a component that builds its id from a name or a bound property and writes it as it is,
      * brackets included (`wk-date-settings[due]`). unique() cuts a bracketed value at its base,
-     * which would move the id of the FIRST instance as well; here only a repeat on the page
+     * which would move the id of the first instance as well; here only a repeat on the page
      * changes, so the second instance's `label[for]` and `aria-describedby` stop resolving to
      * the first one's elements. Kept apart from unique()'s registry, so a derived id never moves
      * the id of another kind of control.

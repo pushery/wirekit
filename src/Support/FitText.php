@@ -50,9 +50,11 @@ final class FitText
      * What a `fit` prop asks for: false for no fitting, '' for the token's floor, or a floor.
      *
      * `true`, an empty value and the attribute written bare ask for the token's floor; `false`,
-     * `null` and the string `false` ask for none. A length is a floor of its own. Anything else is
-     * reported through the strictness gate under the component and prop it was given to, and the
-     * token's floor applies.
+     * `null` and a switch written as off ask for none, a switch written as on for the token's
+     * floor, in every spelling BooleanProp reads. A length is a floor of its own. A float that is
+     * no number asks for none, as without the prop: as a text it would be "NAN", which PHP 8.5
+     * warns on. Anything else is reported through the strictness gate under the component and prop
+     * it was given to, and the token's floor applies.
      *
      * The value is `mixed` because a prop arrives as the call site wrote it: a bare attribute is
      * `true`, a written one a string, and a bound one whatever the expression returns.
@@ -67,14 +69,20 @@ final class FitText
             return '';
         }
 
+        if (is_float($value) && is_nan($value)) {
+            return false;
+        }
+
         $written = is_scalar($value) ? trim((string) $value) : '';
 
-        if ($written === '' || in_array(strtolower($written), ['true', '1'], true)) {
+        if ($written === '') {
             return '';
         }
 
-        if (in_array(strtolower($written), ['false', '0'], true)) {
-            return false;
+        $switch = BooleanProp::orNull($written);
+
+        if ($switch !== null) {
+            return $switch ? '' : false;
         }
 
         $floor = self::floor($written);

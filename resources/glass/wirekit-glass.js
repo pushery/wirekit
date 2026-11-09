@@ -39,7 +39,7 @@
 
     if (window.location.search.indexOf('wk-glass-debug') !== -1) {
         console.info(
-            '[WireKit Glass] Tier:', supportsRefract ? '2 (Refraction)' : '1 (Frosted)',
+            '[WireKit Glass] Tier:', supportsRefract ? '2 (Refraction)' : '1 (Glass)',
             '| UA:', navigator.userAgent.split(' ').pop()
         );
     }

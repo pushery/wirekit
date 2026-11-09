@@ -22,7 +22,7 @@ import { formatDecimal } from '../utils/locale-number.js';
 
 export default function wirekitProgress(config = {}) {
     return {
-        // The PROPERTY NAME to read from the surrounding scope, not the value.
+        // The property name to read from the surrounding scope, not the value.
         _from: typeof config.from === 'string' && config.from !== '' ? config.from : 'value',
 
         _max: Number.isFinite(Number(config.max)) && Number(config.max) > 0 ? Number(config.max) : 100,
@@ -94,7 +94,7 @@ export default function wirekitProgress(config = {}) {
         _indeterminate: typeof config.indeterminate === 'string' ? config.indeterminate : '',
 
         /**
-         * The fill's class SET, not one class on top of a static list.
+         * The fill's class set, not one class on top of a static list.
          *
          * The two states differ in layout, not just in appearance: the
          * indeterminate keyframes move the bar across the track, so that variant

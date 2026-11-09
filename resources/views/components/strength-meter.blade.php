@@ -97,7 +97,7 @@
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
-{{-- The step travels on `data-wk-server-value` and NOT in the `x-data` seed, which stays the same
+{{-- The step travels on `data-wk-server-value` and not in the `x-data` seed, which stays the same
      across renders: a seed that changed would be rewritten by the Livewire morph, and Alpine
      re-initializes a component whose `x-data` changes. The factory reads the attribute at init
      and follows it after that. --}}
@@ -120,7 +120,7 @@
         @if($level !== '') aria-valuetext="{{ $level }}" @endif
         x-bind:aria-valuenow="steps"
         x-bind:aria-valuetext="valueText"
-        class="flex flex-1 gap-1"
+        class="flex flex-1 gap-[var(--gap-wk-xs)]"
     >
         @include('wirekit::components.partials.strength-bars', [
             'count' => $max,
@@ -138,10 +138,10 @@
         </span>
     @endif
 
-    @if($announce)
+    @wirekitLast($announce)
         {{-- Rendered empty and kept in the DOM: a live region that arrives together with its
-             text is a new node, and a new node announces nothing. It is filled on a CHANGE of
+             text is a new node, and a new node announces nothing. It is filled on a change of
              step only, so a page does not announce its meters on load. --}}
         <span class="sr-only" role="status" aria-live="polite" x-text="spoken"></span>
-    @endif
+    @endwirekitLast
 </div>

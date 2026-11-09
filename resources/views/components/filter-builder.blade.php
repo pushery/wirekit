@@ -10,7 +10,7 @@
     // Same reasoning, same default and same escape as data-table's `searchDebounce`:
     // this input dispatches straight to whatever the host wired the event to, and the
     // documented wiring is a Livewire round trip. Without the wait that is one request
-    // per CHARACTER, and every answer but the last is discarded. 0 disables it.
+    // per character, and every answer but the last is discarded. 0 disables it.
     'searchDebounce' => config('wirekit.components.filter-builder.search-debounce', 300),
     'searchPlaceholder' => config('wirekit.components.filter-builder.search-placeholder') ?? __('wirekit::Search…'),
     'addLabel' => config('wirekit.components.filter-builder.add-label') ?? __('wirekit::Add filter'),
@@ -47,7 +47,7 @@
         'no' => __('wirekit::No'),
     ]);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `searchable="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
     // the only reason the coverage guard did not see it. The single read is a truth test
@@ -134,8 +134,8 @@
     // exactly (otherwise the chip reads visibly shorter than the Add-filter
     // button beside it).
     $chipClasses = implode(' ', [
-        'inline-flex items-center gap-1',
-        'pl-[var(--padding-wk-x-sm)] pr-1 py-[var(--padding-wk-y-sm)]',
+        'inline-flex items-center gap-[var(--gap-wk-xs)]',
+        'ps-[var(--padding-wk-x-sm)] pe-1 py-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-sm)]',
         'border-[length:var(--border-wk-width)] border-transparent',
         'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
@@ -156,14 +156,14 @@
     ]);
 
     // Select variant of $control: hide the native dropdown arrow
-    // (appearance-none) and reserve right-edge space (pr-8) so the custom
+    // (appearance-none) and reserve space at the end (pe-8) so the custom
     // chevron overlay sits where <x-wirekit::select> puts it — otherwise the
     // raw native arrow renders flush at the far-right edge, inconsistent with
-    // the rest of WireKit. Each <select> using this MUST sit in a `relative`
+    // the rest of WireKit. Each <select> using this must sit in a `relative`
     // wrapper alongside the chevron overlay below.
-    $selectControl = $control.' appearance-none pr-8';
+    $selectControl = $control.' appearance-none pe-8';
 
-    $controlLabel = 'block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] mb-1';
+    $controlLabel = 'block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] mb-[var(--space-wk-xs)]';
 
     /*
      * What the reader is told when the set shrinks.
@@ -177,7 +177,7 @@
      * cannot be translated and word order is not the same in every language — the shape
      * `tags-input` and `wizard` both use.
      *
-     * The optional `$status` slot below is NOT this: it is the developer's result count,
+     * The optional `$status` slot below is not this: it is the developer's result count,
      * it is empty unless they fill it, and the docs say so.
      */
     $filterAnnouncements = \Pushery\WireKit\Support\AlpinePayload::from([
@@ -230,7 +230,7 @@
     data-wk-sr-host {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
 >
     {{-- The set's own live region.
-         Unconditional and starting EMPTY, both deliberately: a live region that
+         Unconditional and starting empty, both deliberately: a live region that
          arrives together with its text is a new node and announces nothing, and one
          gated on a condition is absent for exactly the readers who need it. It is not
          the `$status` slot below — that is the developer's result count, and it is
@@ -285,7 +285,7 @@
                     {{-- The marker `remove()` re-finds the surviving chips by, once the
                          splice has run. The loop is INDEX-keyed, so Alpine drops the
                          element holding the highest key and rewrites the rest in place:
-                         removing the LAST chip destroys this button while it holds focus,
+                         removing the last chip destroys this button while it holds focus,
                          which is why the focus move cannot be left to the browser.
 
                          24px square, the WCAG 2.2 target size, as on the pills of
@@ -308,7 +308,7 @@
                 aria-expanded="false"
                 :aria-expanded="isOpen"
                 aria-haspopup="dialog"
-                class="wk-touch-row inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                class="wk-touch-row inline-flex items-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
             >
                 <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
                 <span>{{ $addLabel }}</span>
@@ -316,7 +316,7 @@
 
             {{-- Teleported to the overlay root at the end of <body> + Floating-UI positioned (see wirekitFilterBuilder)
                  so the panel escapes any clipping/stacking ancestor and flips/shifts to
-                 stay on-screen. click.outside lives HERE (on the panel), not the root,
+                 stay on-screen. click.outside lives here (on the panel), not the root,
                  because teleporting moves the panel out of the root's subtree. --}}
             <template x-teleport="#wk-overlay-root">
             <div
@@ -327,7 +327,7 @@
                 x-on:click.outside="closeOutside($event)"
                 {{-- The two edges the teleport broke. The panel is drawn beside the
                      trigger and lives at the end of <body>, so forwards off the last
-                     control the browser would leave the DOCUMENT, and backwards off
+                     control the browser would leave the document, and backwards off
                      the first it would land on whatever precedes the overlay root —
                      both while this dialog is still open and painted over the page.
                      Opening moves focus in here, so without this a reader was put
@@ -350,7 +350,7 @@
                                 <option :value="f.key" x-text="f.label"></option>
                             </template>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                        <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]">
                             <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                         </div>
                     </div>
@@ -365,7 +365,7 @@
                                 <option :value="o.op" x-text="o.label"></option>
                             </template>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                        <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]">
                             <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                         </div>
                     </div>
@@ -382,15 +382,15 @@
                                     <option :value="opt.value" x-text="opt.label"></option>
                                 </template>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                            <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]">
                                 <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                             </div>
                         </div>
                     </template>
                     <template x-if="draftValueType() === 'bool'">
                         <div class="relative">
-                            {{-- .boolean is REQUIRED: a non-multiple <select> x-model reads
-                                 the option's DOM value, which is ALWAYS a string ("false").
+                            {{-- .boolean is required: a non-multiple <select> x-model reads
+                                 the option's DOM value, which is always a string ("false").
                                  Without it the model holds the truthy string "false" → the
                                  chip shows "Yes" and the emitted JSON carries a string, not a
                                  boolean. apply() also coerces as a defensive net. --}}
@@ -398,7 +398,7 @@
                                 <option :value="true">{{ __('wirekit::Yes') }}</option>
                                 <option :value="false">{{ __('wirekit::No') }}</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                            <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]">
                                 <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                             </div>
                         </div>
@@ -415,7 +415,7 @@
                 </label>
 
                 {{-- Actions --}}
-                <div class="flex items-center justify-end gap-[var(--gap-wk-sm)] pt-1">
+                <div class="flex items-center justify-end gap-[var(--gap-wk-sm)] pt-[var(--padding-wk-y-xs)]">
                     <button type="button" @click="close(true)" class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Cancel') }}</button>
                     <button type="button" @click="apply()" :disabled="!canApply()" class="wk-touch-row px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-accent)] rounded-[var(--radius-wk-md)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Add')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply')) }}"></button>
                 </div>
@@ -435,7 +435,7 @@
 
     {{-- Optional result-count / status slot — wrap it in aria-live in your app
          so screen readers hear the count change as filters are applied. --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($status ?? null))
-        <div class="mt-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-live="polite">{{ $status }}</div>
-    @endif
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($status ?? null))
+        <div class="mt-[var(--space-wk-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-live="polite">{{ $status }}</div>
+    @endwirekitLast
 </div>

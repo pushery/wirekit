@@ -80,17 +80,17 @@ class ExportBlocksCommand extends Command
             $this->line('a published release does not carry them. It works in a checkout of the package');
             $this->line('repository and cannot work from a Composer install.');
 
-            // FAILURE, not the usage-error code Symfony also offers: every wirekit:* command
+            // Failure, not the usage-error code Symfony also offers: every wirekit:* command
             // exits 1 on every error path.
             return self::FAILURE;
         }
 
         $blocks = $this->scanDirectory($packageRoot, 'blueprints');
 
-        // --public: hard-filter to the public blocks at the SOURCE. A
-        // public machine-readable manifest (served at /blocks.json) must NEVER
+        // --public: hard-filter to the public blocks at the source. A
+        // public machine-readable manifest (served at /blocks.json) must never
         // list a block that isn't public — non-public blocks and drafts are
-        // dropped HERE so the guarantee can't depend on a downstream serve
+        // dropped here so the guarantee can't depend on a downstream serve
         // remembering to filter (an absolute project rule: a public artifact
         // never carries non-public content). Without the flag the full
         // manifest (every block + its visibility field) stays available as the
@@ -112,7 +112,7 @@ class ExportBlocksCommand extends Command
 
         $payload = [
             'version' => $this->detectVersion($packageRoot),
-            // The newest RELEASED version, which is a different question from
+            // The newest released version, which is a different question from
             // `version` above: that one is the build installed here, and on a
             // deployment pinned to a development branch it is literally that branch
             // name. So it cannot be compared against a version a page claims to
@@ -214,7 +214,7 @@ class ExportBlocksCommand extends Command
                 'visibility' => $frontmatter['visibility'] ?? 'member',
                 'draft' => $frontmatter['draft'] ?? false,
                 'preview_url' => WireKit::DOCS_URL.'/'.$slug,
-                // The docs site's raw-markdown route, NOT a repository URL.
+                // The docs site's raw-markdown route, not a repository URL.
                 //
                 // A repository URL cannot resolve, for two independent reasons:
                 // the public mirror has no `develop` branch — it carries releases,

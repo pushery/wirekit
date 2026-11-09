@@ -1,24 +1,24 @@
 {{-- optimistic-ui: n/a — client-only
      Hover and tooltip state over data the server sent. --}}
 @props([
-    // The empty state. `empty` REPLACES the body rather than sitting beside it: the screen a
-    // new user sees FIRST is the one with no data, and a single muted sentence can only say
+    // The empty state. `empty` replaces the body rather than sitting beside it: the screen a
+    // new user sees first is the one with no data, and a single muted sentence can only say
     // that nothing is here — it cannot say what to do about it, which is the whole job of that
     // screen. `emptyText` is the default, so a caller that does not care changes nothing.
     // Same shape as data-table, which is where the reasoning was first written down.
     'emptyText' => __('wirekit::Nothing here yet'),
     'rows' => [],                   // [{key,label}] — the matrix rows (left axis)
     'columns' => [],                // [{key,label}] — the matrix columns (top axis)
-    'cells' => [],                  // value map: ["rowKey:colKey" => value] OR [rowKey => [colKey => value]]
+    'cells' => [],                  // value map: ["rowKey:colKey" => value] or [rowKey => [colKey => value]]
     'cellType' => config('wirekit.components.status-matrix.cell-type', 'status'), // tristate | toggle | status | heat
     'editable' => false,            // tristate / toggle become interactive
     'cornerLabel' => '',            // top-left header cell label (the row-axis name)
-    // Accessible name for the grid, and the switch that makes the scroll wrapper a LANDMARK.
+    // Accessible name for the grid, and the switch that makes the scroll wrapper a landmark.
     //
     // Two elements read this prop, and they treat it differently on purpose. The inner
-    // `<table>` is ALWAYS named — a table with no accessible name is a worse outcome than a
+    // `<table>` is always named — a table with no accessible name is a worse outcome than a
     // duplicated region, so the fallback below survives for it. The outer scroll wrapper only
-    // becomes `role="region"` when the CALLER named it: unnamed, three matrices on one page
+    // becomes `role="region"` when the caller named it: unnamed, three matrices on one page
     // were three rotor entries called "Status matrix" (axe: `landmark-unique`).
     'ariaLabel' => null,
     'name' => null,                 // hidden-input name for form submission (editable)
@@ -46,17 +46,17 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('status-matrix', $attributes->getAttributes());
 
-    // The DISPLAY name, resolved once. The raw `$ariaLabel` stays the record of whether the
+    // The display name, resolved once. The raw `$ariaLabel` stays the record of whether the
     // caller supplied one, which is what the region's role is gated on below; this variable is
     // what every element that must always be named actually renders.
     $ariaLabelResolved = filled($ariaLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) : __('wirekit::Status matrix');
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $editable = BooleanProp::from($editable, false, 'status-matrix', 'editable');
     // Same contract, different spelling of the default: a `config()` fallback declares a
-    // boolean as surely as a literal does. `legend` defaults ON, so `legend="false"` is a
+    // boolean as surely as a literal does. `legend` defaults on, so `legend="false"` is a
     // switch a developer sets deliberately — and the legend it asked to drop stayed drawn.
     $legend = BooleanProp::from($legend, true, 'status-matrix', 'legend');
 
@@ -68,7 +68,7 @@
         \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('status-matrix', $attributes->getAttributes(), 'unless it is `editable` with the `tristate` or `toggle` cell type');
     }
 
-    // Is this matrix a COMPOSITE WIDGET, or a data table?
+    // Is this matrix a composite widget, or a data table?
     //
     // `role="grid"` is a promise of a keyboard model: exactly one tab stop inside
     // the grid, from which the arrows navigate. Only the two interactive cell types
@@ -76,21 +76,21 @@
     // with the roving tabindex and `moveFocus`. The `heat` cell is a <div> with a
     // <span>, and the default `status` cell is a badge; neither is focusable.
     //
-    // Declared unconditionally, the SHIPPED DEFAULT was therefore a grid with zero
+    // Declared unconditionally, the shipped default was therefore a grid with zero
     // tab stops. A reader reaches the scroll region, hears "grid, N rows, M
     // columns", and no key takes them in. Zero tab stops is not a reduced grid; it
     // is a role announcing a navigation that does not exist — and `axe-core` has no
     // rule for it, so both accessibility lanes ran green over it throughout.
     //
     // The role is withdrawn rather than the tab stop retrofitted, and that is the
-    // better outcome rather than the smaller change. `role="grid"` REPLACES the
+    // better outcome rather than the smaller change. `role="grid"` replaces the
     // screen reader's own table-navigation mode — the one that announces the row
     // and column header as you move — with an application-widget model. A read-only
-    // matrix IS a data table, so the native semantics are the right ones for it; and
+    // matrix is a data table, so the native semantics are the right ones for it; and
     // the alternative would have made every cell of a routinely 10x12 table a focus
     // stop in exchange for reaching data the reader could already reach.
     //
-    // Gated on the CELL TYPE, not on `$isEditable`: a read-only tristate matrix
+    // Gated on the cell type, not on `$isEditable`: a read-only tristate matrix
     // still navigates by arrow key, so it is still a grid. That is exactly what the
     // note on the tristate cell below argues, and it stays true where it was written.
     //
@@ -120,7 +120,7 @@
     $rowList = $toAxis($rows, 'rows');
     $colList = $toAxis($columns, 'columns');
 
-    // The grid role needs CELLS as well as an editable cell type. Gated on the type alone,
+    // The grid role needs cells as well as an editable cell type. Gated on the type alone,
     // an empty `rows`/`columns` set still produced a `role="grid"` with no gridcell in it —
     // which axe reports as `aria-required-children`, and which promises a reader a keyboard
     // model with nothing to move between. An empty matrix is a plain `<table>`, and that is
@@ -143,6 +143,18 @@
     }
     $cellAt = fn ($r, $c) => $flatCells[$r.':'.$c] ?? null;
 
+    // A tristate cell names one of three states, read in any case and with spaces around it. Any
+    // other value is reported, and the script reads it as `inherit`, as a cell that holds nothing.
+    if ($cellType === 'tristate') {
+        foreach ($flatCells as $state) {
+            if ($state === null || $state === '' || (is_string($state) && in_array(strtolower(trim($state)), ['inherit', 'allow', 'deny'], true))) {
+                continue;
+            }
+
+            \Pushery\WireKit\Support\StrictnessGate::reject('status-matrix', 'cells', is_bool($state) ? ($state ? 'true' : 'false') : \Pushery\WireKit\Support\NumericProp::text($state), 'allow, deny or inherit', 'inherit');
+        }
+    }
+
     // Map a status value to a semantic intent for the badge (sensible defaults).
     $statusIntent = function ($value) {
         $v = strtolower((string) $value);
@@ -153,6 +165,11 @@
             default => 'neutral',
         };
     };
+
+    // The bounds of the heat scale, read once for the cells, the legend and the script. A bound that
+    // holds no finite number takes its default, and a text that holds none is reported.
+    $heatMin = \Pushery\WireKit\Support\NumericProp::from($heatMin, 0, 'status-matrix', 'heatMin');
+    $heatMax = \Pushery\WireKit\Support\NumericProp::from($heatMax, 100, 'status-matrix', 'heatMax');
 
     // Heat ratio (server-side initial paint; heat is read-only).
     $heatRatio = function ($value) use ($heatMin, $heatMax) {
@@ -169,43 +186,43 @@
 
     // Sticky header cell + sticky first column share a token surface so the
     // frozen edges read as chrome against the scrolling body.
-    // NOTE: no default text-align here — the corner cell is explicitly text-left
-    // (it labels the row axis, aligning with the left-aligned row headers) while
+    // Note: no default text-align here — the corner cell is explicitly text-start
+    // (it labels the row axis, aligning with the row headers at the start) while
     // the data-column headers are explicitly text-center (aligning with the
-    // centered cell content). Baking text-left into the shared class let it win
-    // over a later text-center via Tailwind's source order, so the data headers
-    // rendered left-aligned despite the text-center utility.
-    // NOTE: no z-index here either — it's owned per cell so the top-left CORNER
-    // can sit ABOVE the data headers. The corner is sticky on BOTH axes
-    // (top-0 + left-0) at sticky-z plus one; the data headers sit at base
+    // centered cell content). In the shared class a text-start would win over a
+    // later text-center through Tailwind's source order, and the data headers
+    // would align to the start despite the text-center utility.
+    // Note: no z-index here either — it's owned per cell so the top-left corner
+    // can sit above the data headers. The corner is sticky on both axes
+    // (top-0 + start-0) at sticky-z plus one; the data headers sit at base
     // sticky-z. Baking the sticky z utility into the shared class gave the
     // corner two equal-specificity z classes, so on mobile the data headers
-    // (painted later in the DOM) scrolled OVER the sticky corner — the
+    // (painted later in the DOM) scrolled over the sticky corner — the
     // first-column header "Cohort" vanished while the body first column
-    // stayed (the first-column label scrolled away on mobile). Spelled WITHOUT
+    // stayed (the first-column label scrolled away on mobile). Spelled without
     // the bracket shorthand: Tailwind's scanner reads comments, and the
     // class-shaped shorthand minted a phantom utility in the sample build
     // (caught by the drift reverse-diff).
     $headCell = 'sticky top-0 bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] whitespace-nowrap border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
-    // border-b continues the row separator THROUGH the frozen first column so a
+    // border-b continues the row separator through the frozen first column so a
     // row label visually connects to its row (otherwise the label column had no
     // horizontal rules and you couldn't tell which label belonged to which row).
-    $rowHead = 'sticky left-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] text-left whitespace-nowrap border-r-[length:var(--border-wk-width)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
+    $rowHead = 'sticky start-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] text-start whitespace-nowrap border-e-[length:var(--border-wk-width)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
     $cellBox = 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-center border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
 
     // A focusable interactive cell button (tristate / toggle).
     $cellButton = 'inline-flex items-center justify-center min-w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors '.($isEditable ? 'cursor-pointer hover:bg-[var(--color-wk-bg-active)]' : 'cursor-default');
 
-    // ── The strings that reach a reader from JAVASCRIPT ───────────────────
+    // ── The strings that reach a reader from javascript ───────────────────
     //
-    // Translated HERE and handed to the factory. A literal inside an Alpine
-    // plugin passes through no `__()`, so it is localizable by NO ONE — not
+    // Translated here and handed to the factory. A literal inside an Alpine
+    // plugin passes through no `__()`, so it is localizable by no one — not
     // even by publishing the views, which is the escape hatch the rest of this
     // package leans on. `stream` records the same class as a fixed bug, and the
     // toggle cell below already takes exactly this route for On / Off.
     //
-    // For the tristate cell the word IS the state: its three SVGs are
-    // `aria-hidden`, so `tristateLabel()` is the ONLY channel a screen reader
+    // For the tristate cell the word is the state: its three SVGs are
+    // `aria-hidden`, so `tristateLabel()` is the only channel a screen reader
     // has, so it answers in the application's locale, not in English.
     $stateLabels = \Pushery\WireKit\Support\AlpinePayload::from([
         'allow' => __('wirekit::Allowed'),
@@ -213,7 +230,7 @@
         'inherit' => __('wirekit::Inherited'),
     ]);
 
-    // The unsaved-changes counter is a COUNT that only exists in the browser, so
+    // The unsaved-changes counter is a count that only exists in the browser, so
     // the plural form has to be chosen there — the server renders every form and
     // `Intl.PluralRules` picks. It read `N unsaved change(s)`, and the
     // parenthesized `(s)` is an English shorthand no locale can express: German
@@ -249,7 +266,7 @@
     {{ $attributes->except(['id', 'name', 'class', 'aria-labelledby'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
     data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $flatCells) }}"
-    x-data="wirekitStatusMatrix({ cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ \Pushery\WireKit\Support\NumericProp::from($heatMin, 0, 'status-matrix', 'heatMin') }}, heatMax: {{ \Pushery\WireKit\Support\NumericProp::from($heatMax, 0, 'status-matrix', 'heatMax') }}, stateLabels: {{ $stateLabels }}, changePhrases: {{ $changePhrases }}, locale: {{ $pluralLocale }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
+    x-data="wirekitStatusMatrix({ cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ $heatMin }}, heatMax: {{ $heatMax }}, stateLabels: {{ $stateLabels }}, changePhrases: {{ $changePhrases }}, locale: {{ $pluralLocale }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
     {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
 >
     @if($isEditable)
@@ -262,7 +279,7 @@
     @endif
 
     {{-- Scroll region — keyboard-reachable per WCAG 2.1.1 (tabindex + focus ring, both
-         unconditional). It becomes a LANDMARK only when the caller named the matrix; the inner
+         unconditional). It becomes a landmark only when the caller named the matrix; the inner
          table is the role=grid composite and keeps its name either way. --}}
     <div
         @if($callerLabelledBy) role="region" aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled($ariaLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}" @endif
@@ -273,25 +290,25 @@
              Named either way: `aria-label` names a plain <table> exactly as it named
              the grid, so nothing is lost by dropping to the native semantics. --}}
         @if($rowList === [] || $colList === [])
-            {{-- The empty state REPLACES the table. A `<table>` with a header row and no body
+            {{-- The empty state replaces the table. A `<table>` with a header row and no body
                  rows reads as a broken render rather than as "nothing to show" — and the
                  composite-grid role is already switched off for this case a hundred lines up,
                  which is the same judgment one step earlier. The `empty` slot replaces the
                  sentence; see data-table for why it replaces rather than accompanies it. --}}
-            <div class="flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
-                @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
+            <div class="flex flex-col items-center justify-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
+                @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
                     {{ $empty }}
                 @else
                     <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-                @endif
+                @endwirekitLast
             </div>
         @else
         <table data-wk-prose-skip @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}"@else aria-label="{{ $ariaLabelResolved }}"@endif>
             <thead>
                 <tr>
-                    {{-- Top-left corner: the row-axis label — left-aligned to match
-                         the row headers below it. --}}
-                    <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-left left-0 z-[calc(var(--z-wk-sticky)+1)]">{{ $cornerLabel }}</th>
+                    {{-- The corner at the top and the start: the row-axis label, aligned to the
+                         start to match the row headers below it. --}}
+                    <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-start start-0 z-[calc(var(--z-wk-sticky)+1)]">{{ $cornerLabel }}</th>
                     @foreach($colList as $col)
                         <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-center z-[var(--z-wk-sticky)]">{{ $col['label'] }}</th>
                     @endforeach
@@ -350,8 +367,9 @@
                                             data-r="{{ $ri }}" data-c="{{ $ci }}"
                                             tabindex="{{ $tabindex }}"
                                             role="switch"
-                                            {{-- The cell as the server holds it, read as toggleOn() reads it. --}}
-                                            aria-checked="{{ ($val === true || $val === 'on') ? 'true' : 'false' }}"
+                                            {{-- The cell as the server holds it, read as toggleOn() reads it: on for
+                                                 every value a switch reads as on. --}}
+                                            aria-checked="{{ \Pushery\WireKit\Support\BooleanProp::orNull($val) === true ? 'true' : 'false' }}"
                                             :aria-checked="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'true' : 'false'"
                                             {{-- See the tristate cell above: navigation is unconditional, and a
                                                  non-editable switch says so instead of accepting an Enter that
@@ -372,7 +390,17 @@
                                         @break
 
                                     @case('heat')
-                                        @php $ratio = $heatRatio($val); @endphp
+                                        @php
+                                            // A value that is no finite number holds no share of the scale, so the cell
+                                            // paints and reads as an empty one.
+                                            $val = is_float($val) && ! is_finite($val) ? null : $val;
+                                            $ratio = $heatRatio($val);
+                                            // A number is written in the application's locale, as WireKit writes its
+                                            // own numbers, and a text that holds none as it comes.
+                                            $heatLabel = is_int($val) || is_float($val) || (is_string($val) && is_numeric(trim($val)))
+                                                ? \Pushery\WireKit\Support\LocalizedNumber::format((float) $val)
+                                                : $val;
+                                        @endphp
                                         <div
                                             class="flex items-center justify-center rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]"
                                             style="background: color-mix(in oklch, {{ $heatFrom }}, {{ $heatTo }} {{ round($ratio * 100) }}%);"
@@ -381,11 +409,11 @@
                                                  (amber, low) → heatTo (red, high) by the cell's normalized value, so
                                                  the grid reads as actual heat rather than an achromatic fade. The value
                                                  rides in a contrast-guaranteed chip (--color-wk-text on
-                                                 --color-wk-bg-elevated is the canonical ~18:1 body pairing in BOTH
+                                                 --color-wk-bg-elevated is the canonical ~18:1 body pairing in both
                                                  themes), decoupling label legibility from the saturated tile — so the
                                                  number stays AA-legible at every point on the ramp and the grid works
                                                  for colorblind readers (the value is always printed). --}}
-                                            <span class="inline-flex items-center justify-center rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text)] tabular-nums">{{ $val !== null ? $val.$heatUnit : '—' }}</span>
+                                            <span class="inline-flex items-center justify-center rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text)] tabular-nums">{{ $heatLabel !== null ? $heatLabel.$heatUnit : '—' }}</span>
                                         </div>
                                         @break
 
@@ -408,25 +436,25 @@
 
     {{-- Legend — names the cell encoding so it's never color-only. --}}
     @if($legend)
-        <div class="mt-2 flex flex-wrap items-center gap-[var(--space-wk-md)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
+        <div class="mt-[var(--space-wk-sm)] flex flex-wrap items-center gap-[var(--space-wk-md)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
             @switch($cellType)
                 @case('tristate')
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-success-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg> {{ __('wirekit::Allowed') }}</span>
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-danger-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg> {{ __('wirekit::Denied') }}</span>
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg> {{ __('wirekit::Inherited') }}</span>
+                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-success-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg> {{ __('wirekit::Allowed') }}</span>
+                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-danger-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg> {{ __('wirekit::Denied') }}</span>
+                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg> {{ __('wirekit::Inherited') }}</span>
                     @break
                 @case('heat')
-                    <span>{{ $heatMin }}{{ $heatUnit }}</span>
-                    <span class="inline-block h-2.5 w-24 rounded-[var(--radius-wk-full)]" style="background: linear-gradient(to right, {{ $heatFrom }}, {{ $heatTo }});" aria-hidden="true"></span>
-                    <span>{{ $heatMax }}{{ $heatUnit }}</span>
+                    <span>{{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $heatMin) }}{{ $heatUnit }}</span>
+                    <span data-wk-heat-ramp class="inline-block h-2.5 w-24 rounded-[var(--radius-wk-full)]" style="background: linear-gradient(var(--wk-heat-run, to right), {{ $heatFrom }}, {{ $heatTo }});" aria-hidden="true"></span>
+                    <span>{{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $heatMax) }}{{ $heatUnit }}</span>
                     @break
                 @case('toggle')
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('wirekit::On') }}</span>
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span> {{ __('wirekit::Off') }}</span>
+                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('wirekit::On') }}</span>
+                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span> {{ __('wirekit::Off') }}</span>
                     @break
             @endswitch
-            @if($isEditable && $cellType === 'tristate')
-                {{-- One node, one string: the count and its noun are ONE sentence, and a
+            @wirekitLast($isEditable && $cellType === 'tristate')
+                {{-- One node, one string: the count and its noun are one sentence, and a
                      sentence assembled around a `<span>` in the template fixes English word
                      order for every language. `changedLabel` picks the translated form in the
                      browser, where the count lives. --}}
@@ -441,7 +469,7 @@
                      render, empty, and only its text changes. --}}
                 <span x-show="changedCount > 0" x-cloak aria-hidden="true" x-text="changedLabel" class="text-[color:var(--color-wk-warning-text)]"></span>
                 <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-wk-announcer x-text="changedCount > 0 ? changedLabel : ''"></span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 </div>

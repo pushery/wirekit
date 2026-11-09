@@ -21,7 +21,7 @@
  *   - _media + _onSystemChange (MediaQueryList listener) — removed in destroy().
  *   - _onPeerChange (window listener) — removed in destroy().
  *   - _fixedObserver (MutationObserver on the root element's two attributes) —
- *     disconnected in destroy() AND null-guarded inside its callback.
+ *     disconnected in destroy() and null-guarded inside its callback.
  */
 export default function wirekitThemeController(config = {}) {
     return {
@@ -70,7 +70,7 @@ export default function wirekitThemeController(config = {}) {
                 });
             }
 
-            // Follow the OTHER controls on the page. Each one is its own Alpine
+            // Follow the other controls on the page. Each one is its own Alpine
             // scope with its own `theme`, so without this a header toggle and a
             // settings switch would drift apart the moment either was used — the
             // page would be dark while the switch still said light. Reading the
@@ -158,7 +158,7 @@ export default function wirekitThemeController(config = {}) {
         },
 
         /**
-         * Flip between light and dark. From 'system' this picks the OPPOSITE of
+         * Flip between light and dark. From 'system' this picks the opposite of
          * what the reader is currently looking at — pressing a toggle should
          * always change something, and choosing an explicit value is exactly what
          * the reader just asked for.
@@ -273,7 +273,7 @@ export default function wirekitThemeController(config = {}) {
                     return;
                 }
 
-                // 'system' is stored as the ABSENCE of a choice, so it agrees with
+                // 'system' is stored as the absence of a choice, so it agrees with
                 // the head script — which reads "no key" as "follow the OS". A
                 // literal "system" string there would fall through to the OS check
                 // anyway, but removing it keeps one meaning in one place.
@@ -292,7 +292,7 @@ export default function wirekitThemeController(config = {}) {
          * Parse the theme out of document.cookie. Scans the pair list by exact
          * name rather than a regex so a storageKey with regex-special characters
          * cannot break the match. Mirrors the head script's own reader so both
-         * resolve the SAME cookie to the same theme.
+         * resolve the same cookie to the same theme.
          */
         _readCookie() {
             const cookies = document.cookie ? document.cookie.split('; ') : [];

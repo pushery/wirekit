@@ -50,12 +50,12 @@ final class AssetFreshnessCheck extends VerifyCheck
             $this->checkFileFreshness($name, $source, public_path('vendor/wirekit/'.$name));
         }
 
-        // The Liquid Glass extension, but ONLY where it has been installed —
+        // The Liquid Glass extension, but only where it has been installed —
         // checkFileFreshness stays silent when the published file is absent, so
         // an application that never opted in hears nothing about it.
         //
         // Its own command publishes it, not `vendor:publish`, and that is the
-        // whole reason this check exists: the extension is COPIED into
+        // whole reason this check exists: the extension is copied into
         // public/, so a composer update refreshes vendor/ and leaves the served
         // copy untouched. The page then keeps rendering the old stylesheet
         // through any number of deploys, and nothing anywhere says so — which
@@ -90,14 +90,14 @@ final class AssetFreshnessCheck extends VerifyCheck
             //
             // "Outdated" undersells what has happened. A stale copy does not get served —
             // `@wirekitStyles` / `@wirekitScripts` compare size and hash, decide the
-            // published copy cannot be trusted, and emit the package ROUTE instead. Nothing
+            // published copy cannot be trusted, and emit the package route instead. Nothing
             // throws, nothing logs, and the page is correct, so the only symptom is that
             // every asset now travels through PHP: no year-long immutable Cache-Control, no
             // precompressed sibling, none of what a developer configured for
             // `public/vendor/`.
             //
             // This is easiest to walk into after a patch too small to notice. A release that
-            // changes one byte per file leaves every artifact the same SIZE, so "nothing
+            // changes one byte per file leaves every artifact the same size, so "nothing
             // changed" is the natural reading — and the hash still differs, which is exactly
             // why the check hashes.
             if (! $this->assetDeliveryConsequenceShown) {

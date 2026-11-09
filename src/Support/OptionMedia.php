@@ -20,14 +20,14 @@ use Stringable;
  *
  * - `icon`, `image` — the same keys `scope-switcher` reads for the same two things. A second
  *   vocabulary for one concept is the drift the other guards in this package exist against.
- * - `avatar` — a photo URL, drawn round. It counts as SET even when it is null, and that is the
+ * - `avatar` — a photo URL, drawn round. It counts as set even when it is null, and that is the
  *   point of it: a people picker maps `'avatar' => $user->avatar_url`, some users have no photo,
  *   and those rows show the person's initials instead of dropping out of alignment.
  * - `initials` — only beside `avatar`, for a name whose initials are not its first and last
  *   words ("Dr. Ada Lovelace"). Without it they are derived from the label.
  * - `description` — context under the label in the open panel, never in the field or a pill.
  *   Plain text: the panel renders in the browser through `x-text`, so markup would show as tags.
- * - `keywords` — extra words the search matches. The description is deliberately NOT searched:
+ * - `keywords` — extra words the search matches. The description is deliberately not searched:
  *   typing into a filter should narrow to options whose name fits, and a sentence of context
  *   matches far more than the reader meant.
  * - `flag` — a country or region code such as `de`. The option

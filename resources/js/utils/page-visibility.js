@@ -11,7 +11,7 @@
  * qualifies for the same reason: they read the clock. A countdown recomputes from
  * `Date.now()`, a calendar's current-time line from `new Date()` — so the ticks missed
  * while hidden were not carrying state, and the first tick after `onShow` is already
- * correct. Work that ACCUMULATES (a poll that must not miss a message, a timer that
+ * correct. Work that accumulates (a poll that must not miss a message, a timer that
  * counts its own ticks) must not be paused this way; it would come back short.
  *
  * The listener wiring is what this exists to carry. Registering it is easy to remember
@@ -54,7 +54,7 @@ export function pauseWhileHidden({ onHide, onShow, scope } = {}) {
      * that has never reported either — a stub, an older embedded webview — gives
      * `undefined` for both, and `!undefined` is TRUE. Reading it as "hidden" would pause
      * every timer on the page permanently, so the comparison is written to fall to
-     * VISIBLE on anything it does not recognize.
+     * visible on anything it does not recognize.
      */
     const isHidden = () => doc.visibilityState === 'hidden';
 

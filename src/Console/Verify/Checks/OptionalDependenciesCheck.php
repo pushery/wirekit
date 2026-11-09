@@ -86,7 +86,7 @@ final class OptionalDependenciesCheck extends VerifyCheck
      * the opposite of what it says.
      *
      * Still a heuristic, so still a WARN at the call site. An app may assign the
-     * global from somewhere this scan cannot see, and a check that FAILED on that
+     * global from somewhere this scan cannot see, and a check that failed on that
      * would be confidently wrong about a working installation.
      */
     private function assignsBrowserGlobal(string $globalName): bool
@@ -134,12 +134,12 @@ final class OptionalDependenciesCheck extends VerifyCheck
     /**
      * Name the ApexCharts major in play, and say whether the adapter has been tested against it.
      *
-     * The presence check above proves the package can be resolved. It says nothing about WHICH
+     * The presence check above proves the package can be resolved. It says nothing about which
      * major, and that is the half a developer cannot answer from the outside: WireKit ships no
      * `package.json` in its vendor directory, so there are no `peerDependencies` to read, and a
      * chart that breaks on a new major breaks silently — 200, correct markup, empty box.
      *
-     * The INSTALLED version is preferred over the declared range because they disagree routinely:
+     * The installed version is preferred over the declared range because they disagree routinely:
      * `^6.4.0` in a manifest resolves to whatever the lockfile pinned. The range is the fallback
      * for a tree with no `node_modules`, and it is read as its lower bound, which is the only
      * major a caret range is guaranteed to permit.
@@ -241,7 +241,7 @@ final class OptionalDependenciesCheck extends VerifyCheck
             $this->reportInfo('package.json not found — skipping apexcharts npm presence check');
         }
 
-        // Step 1b: is the global actually ASSIGNED anywhere?
+        // Step 1b: is the global actually assigned anywhere?
         //
         // The manifest check above proves the package can be resolved, and that is a
         // different question from whether it reaches the page. The adapter reads
@@ -249,7 +249,7 @@ final class OptionalDependenciesCheck extends VerifyCheck
         // the npm package and never writes the assignment ships a bundle that finds
         // nothing, and every chart shows an "ApexCharts is not loaded" notice instead of drawing.
         //
-        // A heuristic over the app's own JS, so it WARNS rather than fails: a project may
+        // A heuristic over the app's own JS, so it warns rather than fails: a project may
         // assign the global from a file this scan does not know about, and a check that
         // failed on that would be wrong about a working installation.
         $assignmentFound = $this->assignsBrowserGlobal('ApexCharts');
@@ -270,7 +270,7 @@ final class OptionalDependenciesCheck extends VerifyCheck
         // Step 2: license-tier reminder. WARN-only; never FAIL on this.
         //
         // Four outcomes, not two. The WARN condition is deliberate and stays:
-        // the $2M threshold is a CONTINUING condition, not an install step, so
+        // the $2M threshold is a continuing condition, not an install step, so
         // a project crosses it without any file changing and a reminder that
         // went quiet would go quiet at exactly the wrong moment.
         //
@@ -283,7 +283,7 @@ final class OptionalDependenciesCheck extends VerifyCheck
         // teaches people to skim, and then the real findings go unread too.
         //
         // So a declared community tier gets its own line that confirms the value
-        // arrived AND says why it still speaks, and the unset case gets the full
+        // arrived and says why it still speaks, and the unset case gets the full
         // explanation without a promise to fall silent.
         $tier = config('wirekit.charts.apex_license');
 
@@ -304,7 +304,7 @@ final class OptionalDependenciesCheck extends VerifyCheck
             );
         } elseif (is_string($tier) && $tier !== '') {
             // A typo is the same defect one level up: it falls into no branch,
-            // and telling someone who DID record a tier to go record one is the
+            // and telling someone who did record a tier to go record one is the
             // instruction that cannot be followed all over again. Name the value
             // back so the difference is visible without opening the source.
             $this->reportWarn(sprintf(

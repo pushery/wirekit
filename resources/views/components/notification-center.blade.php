@@ -3,10 +3,10 @@
 @props([
     'items' => [],                  // [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
     'groupBy' => config('wirekit.components.notification-center.group-by', 'none'), // none | time | type ('time' groups by each item's `group` label)
-    // Panel heading, bell name — and the switch that makes the list a LANDMARK.
+    // Panel heading, bell name — and the switch that makes the list a landmark.
     //
     // Four elements read this and only one of them is gated on it. The trigger, the panel and
-    // the heading are ALWAYS named, so the fallback below survives for them; the scrolling list
+    // the heading are always named, so the fallback below survives for them; the scrolling list
     // becomes `role="region"` only when the caller supplied a title, because the derived
     // "Notifications list" was identical on every unnamed center on a page (axe:
     // `landmark-unique`).
@@ -15,6 +15,12 @@
     'realtimeEvent' => null,        // window event name to listen for new items
     'open' => false,                // start with the panel open (inline embeds / demos)
     'seeAllHref' => null,           // footer "see all" link
+    // A check where the unread dot stands, on a read notification, with "Read." for a screen
+    // reader. `false` leaves a read row with nothing in that place.
+    'readMarker' => true,
+    // "Delete read" in the panel's head: takes the read notifications out of the list and names
+    // their ids in a bubbling `notification-delete-read`, for the application to delete them.
+    'deleteRead' => false,
     // Both defaults resolve through the catalog, the way faq's `label` does. They were
     // English literals, so a German application rendered a fully translated panel with
     // an English footer link and an English empty state — the catalog that would have
@@ -22,10 +28,13 @@
     'seeAllLabel' => __('wirekit::See all'),
     'emptyText' => __("wirekit::You're all caught up"),
     'name' => null,                 // hidden-input name mirroring the unread count
-    // How the panel is opened: `bell`, the icon button, or `row`, an entry of a navigation with the
+    // How the panel is opened: `bell`, the icon button; `row`, an entry of a navigation with the
     // bell, the title and the unread count, in the look of a sidebar item, for a center that stands
-    // among the entries of a sidebar.
-    'trigger' => 'bell',
+    // among the entries of a sidebar; or `rail`, an entry of an app rail drawn by the rail's own
+    // entry, the bell alone in a narrow rail and with the title in a wide one. Without it the
+    // configured trigger, `bell` unless the project names another, so an application sets it once
+    // for a center it does not render itself.
+    'trigger' => config('wirekit.components.notification-center.trigger', 'bell'),
     'scope' => null,
 ])
 
@@ -42,7 +51,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape', 'x-on:keydown.escape.window']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false, 'notification-center', 'open');
@@ -50,9 +59,11 @@
     // boolean as surely as a literal does. This one gates the whole filter strip above the
     // list, so the string 'false' rendered a control row the call site had turned off.
     $filters = BooleanProp::from($filters, false, 'notification-center', 'filters');
+    $readMarker = BooleanProp::from($readMarker, true, 'notification-center', 'readMarker');
+    $deleteRead = BooleanProp::from($deleteRead, false, 'notification-center', 'deleteRead');
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
-    $trigger = WireKit::validateProp('notification-center', 'trigger', $trigger, ['bell', 'row']);
+    $trigger = WireKit::validateProp('notification-center', 'trigger', $trigger, ['bell', 'row', 'rail']);
     // Whether the row stands in a sidebar that can collapse to an icon rail, and so in a tooltip
     // that names the bell there. It is the sidebar's own `collapsible`, read from that family
     // only (Support\AwareProp): a `sidebar.group` around the row folds its entries, never the rail.
@@ -111,12 +122,12 @@
     // A group's label names the group's list, by an id that is bound per group inside the panel.
     $groupLabelId = \Pushery\WireKit\Support\AlpinePayload::string($idBase.'-group-').' + groupIndex';
 
-    // The DISPLAY title, resolved once. The raw `$title` stays the record of whether the caller
+    // The display title, resolved once. The raw `$title` stays the record of whether the caller
     // supplied one — that is what the list's landmark role is gated on — while everything that
     // must always carry a name renders this.
     $titleResolved = filled($title) ? $title : __('wirekit::Notifications');
 
-    $base = $trigger === 'row'
+    $base = in_array($trigger, ['row', 'rail'], true)
         // A row takes the width of its column, as the entries around it do.
         ? WireKit::resolveClasses('notification-center', 'base-row', 'relative block w-full font-[family-name:var(--font-wk-sans)]', $scope)
         : WireKit::resolveClasses('notification-center', 'base', 'relative inline-block font-[family-name:var(--font-wk-sans)]', $scope);
@@ -124,7 +135,7 @@
     // The row trigger in the look of a sidebar item: its height floor, padding, rounding, resting
     // color, hover and focus ring, and the centering of its lone icon in a collapsed rail.
     $rowTriggerClasses = WireKit::resolveClasses('notification-center', 'row-trigger', implode(' ', [
-        'relative flex w-full items-center gap-[var(--padding-wk-x-sm)]',
+        'relative flex w-full items-center gap-[var(--space-wk-nav-icon-gap)]',
         ...($folds ? ['group-data-[collapsed]/wk-sidebar:justify-center'] : []),
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
@@ -140,11 +151,11 @@
         'cursor-pointer',
     ]), $scope);
 
-    $tab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
+    $tab = 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
 
     // Shared row chrome for both row variants (a real <a> when the item carries
-    // an href, a <button> otherwise) — ONE interactive element per row.
-    $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
+    // an href, a <button> otherwise) — one interactive element per row.
+    $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-start hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -194,8 +205,8 @@
         <input type="hidden" x-ref="model" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ $serverUnread }}" :value="unreadCount" @if($formOwner) form="{{ $formOwner }}" @endif />
     @endif
 
-    {{-- Screen-reader announcement for new notifications. Fed from the SAME
-         Alpine state as the badge; the text carries the LATEST item's title (items[0])
+    {{-- Screen-reader announcement for new notifications. Fed from the same
+         Alpine state as the badge; the text carries the latest item's title (items[0])
          so a fresh notification re-announces even when the count is unchanged — a
          count-only region would stay silent when one notification replaces another.
          Polite (never assertive): a notification must not interrupt the user. --}}
@@ -223,6 +234,37 @@
     @else
         @include('wirekit::components.partials.notification-center-row-trigger')
     @endif
+    @elseif($trigger === 'rail')
+    {{-- An entry of an app rail, drawn by the rail's own entry: the bell, the title and the unread
+         count, in every labeling mode the rail has. Narrow, the entry is the bell with its name in a
+         tooltip; wide, the bell and the title. The count follows the center live (`live-badge`).
+
+         Wired as the row is, and for the same reasons: the entry may stand in a tooltip of its own,
+         and `aria-expanded` has to read `panelOpen`, since the tooltip has an `isOpen` of its own.
+         `x-on:`/`x-bind:` rather than `@`/`:`, because on a component tag Blade reads those itself.
+
+         The entry is a part of the rail, so it hands a caller's `x-ref` on above the nearest boundary,
+         and the nearest one around it is the rail's root: the bell was filed above the rail, or on
+         nothing where no root stands there, and the panel was never placed. The element around the
+         entry is the boundary the row's tooltip is, so the bell is filed on this center. --}}
+    @php($railTitle = \Pushery\WireKit\Support\SlotContent::textOf($titleResolved))
+    <div data-wk-ref-scope style="display: contents">
+    <x-wirekit::app-rail.item
+        as="button"
+        icon="bell"
+        :label="$railTitle"
+        :badge="$serverUnread > 0 ? $serverUnread : null"
+        live-badge="unreadCount"
+        x-ref="bell"
+        x-on:click="toggle()"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        x-bind:aria-expanded="panelOpen"
+        :aria-label="$railTitle"
+        x-bind:aria-label="unreadCount > 0 ? bellName() : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => \Pushery\WireKit\Support\SlotContent::textOf($titleResolved)])) }}"
+        data-wk-notification-trigger-rail
+    />
+    </div>
     @else
     {{-- Bell trigger. The accessible name carries the live unread count so a
          screen reader announces "Notifications, 3 unread" (not color/dot alone). --}}
@@ -244,11 +286,11 @@
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
         {{-- Unread count pill (decorative — the count is in the bell's aria-label).
 
-             INTENTIONALLY hand-rolled, NOT <x-wirekit::indicator> + <x-wirekit::badge>:
-             a bell count wants a compact pill anchored at the BUTTON corner. The
+             Intentionally hand-rolled, not <x-wirekit::indicator> + <x-wirekit::badge>:
+             a bell count wants a compact pill anchored at the button corner. The
              indicator would anchor at the icon corner (~10px inward) and badge's
              smallest size is a step taller — both are visible changes, so neither
-             is used here. Do NOT "dedupe" this into the indicator; the compact
+             is used here. Do not "dedupe" this into the indicator; the compact
              custom pill is the choice.
 
              (No literal Tailwind class names in this comment on purpose — Tailwind's
@@ -257,7 +299,7 @@
             x-show="unreadCount > 0"
             x-cloak
             aria-hidden="true"
-            class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-1 inline-flex items-center justify-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-danger)] rounded-[var(--radius-wk-full)]"
+            class="absolute -top-0.5 -end-0.5 min-w-[1rem] h-4 px-1 inline-flex items-center justify-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-danger)] rounded-[var(--radius-wk-full)]"
         ><span x-text="unreadCount > 99 ? '99+' : unreadCount">{{ $serverUnread }}</span></span>
     </button>
     @endif
@@ -266,7 +308,7 @@
          wirekitNotificationCenter._anchor) so it escapes any clipping/stacking
          ancestor and opens toward the inline-end (rightward) into available space,
          shifting back on-screen when the edge would overflow. click.outside lives
-         HERE (on the panel), not the root, because teleporting moves the panel out
+         here (on the panel), not the root, because teleporting moves the panel out
          of the root's subtree. Near-full-width on small screens. --}}
     <template x-teleport="#wk-overlay-root">
     <div
@@ -276,7 +318,7 @@
         tabindex="-1"
         x-transition.origin.top.left
         x-on:click.outside="closeOutside($event)"
-        {{-- Tab containment lives HERE, on the teleported panel: its events bubble
+        {{-- Tab containment lives here, on the teleported panel: its events bubble
              to <body> and never reach the component root. Both edges are wrong by
              default — the panel is drawn beside the bell and sits at the end of
              <body> — so leaving it either way closes it and continues from the bell's
@@ -291,32 +333,46 @@
         class="fixed z-[var(--z-wk-dropdown)] w-[22rem] max-w-[calc(100vw-2rem)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] focus-visible:outline-hidden overflow-y-auto overscroll-contain"
     >
         {{-- Header --}}
-        <div class="flex items-center justify-between gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+        <div class="flex items-center justify-between gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
             <p data-wk-prose-skip id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $titleResolved }}</p>
-            <button
-                type="button"
-                data-wk-mark-all-read
-                x-show="unreadCount > 0"
-                x-cloak
-                @click="markAllRead()"
-                {{-- Ghost button (subtle hover surface), not a hover-underline
-                     text-link — matches WireKit's other in-panel actions
-                     (e.g. data-table "Clear", filter-builder "Clear all"). --}}
-                class="wk-touch-row px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
-            >{{ __('wirekit::Mark all read') }}</button>
+            {{-- The panel's actions, at the end of its head. Each shows only while it has
+                 something to do, and a wrapper keeps them together beside the title. --}}
+            <div class="flex items-center gap-[var(--gap-wk-xs)]">
+                <button
+                    type="button"
+                    data-wk-mark-all-read
+                    x-show="unreadCount > 0"
+                    x-cloak
+                    @click="markAllRead()"
+                    {{-- Ghost button (subtle hover surface), not a hover-underline
+                         text-link — matches WireKit's other in-panel actions
+                         (e.g. data-table "Clear", filter-builder "Clear all"). --}}
+                    class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
+                >{{ __('wirekit::Mark all read') }}</button>
+                @if($deleteRead)
+                    <button
+                        type="button"
+                        data-wk-delete-read
+                        x-show="readCount > 0"
+                        x-cloak
+                        @click="deleteRead()"
+                        class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
+                    >{{ __('wirekit::Delete read') }}</button>
+                @endif
+            </div>
         </div>
 
         @if($filters)
-            {{-- Type filter — a single-select RADIOGROUP, not tabs: the buttons
+            {{-- Type filter — a single-select radiogroup, not tabs: the buttons
                  filter one list in place and own no tabpanels, so radio semantics
                  (aria-checked + roving tabindex + arrows move-and-select, wrapping)
                  are the honest contract. --}}
             <div x-show="types.length > 0" x-cloak role="radiogroup" aria-label="{{ __('wirekit::Filter notifications') }}"
-                @keydown.arrow-right.prevent="filterMove(1)"
+                @keydown.arrow-right.prevent="filterMove($wkInlineStep($event))"
                 @keydown.arrow-down.prevent="filterMove(1)"
-                @keydown.arrow-left.prevent="filterMove(-1)"
+                @keydown.arrow-left.prevent="filterMove($wkInlineStep($event))"
                 @keydown.arrow-up.prevent="filterMove(-1)"
-                class="flex flex-wrap items-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+                class="flex flex-wrap items-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{-- The checked filter is a fill, which forced colors does not paint, so
                      `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
                 <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-active)]'" class="wk-state-button wk-touch-row {{ $tab }}">{{ __('wirekit::All') }}</button>
@@ -331,7 +387,7 @@
              center: the derived name was the same on every unnamed one. --}}
         <div data-wk-notification-list @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => \Pushery\WireKit\Support\SlotContent::textOf($title)]) }}" @endif tabindex="0" class="relative max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
-            <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
+            <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
                 <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
             </div>
@@ -342,7 +398,7 @@
                     {{-- A group's label stays at the top of the list while its items scroll, and tells the
                          list how much of the top it covers, so an item that takes the focus on the way up
                          rests below it (WCAG 2.4.11). --}}
-                    <p data-wk-prose-skip :id="{{ $groupLabelId }}" data-wk-scroll-inset="top" x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-1 text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
+                    <p data-wk-prose-skip :id="{{ $groupLabelId }}" data-wk-scroll-inset="top" x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
                     {{-- The group is a list, so a screen reader hears how many notifications it holds and
                          can move from one to the next, and its label names it when the panel is grouped:
                          "Today, list, 3 items" says which notifications the label stands over (WCAG 1.3.1).
@@ -351,9 +407,9 @@
                          keeps the markers off where a stylesheet did not scan this view, as in cart-list. --}}
                     <ul data-wk-prose-skip role="list" :aria-labelledby="group.label ? {{ $groupLabelId }} : null" class="list-none" style="list-style: none; margin: 0; padding: 0;">
                         <template x-for="item in group.items" :key="item.id">
-                            {{-- One interactive element per row. Items WITH href render as a
+                            {{-- One interactive element per row. Items with href render as a
                                  real <a> (native navigation + middle-click work) and items
-                                 without one as a <button>; BOTH route through activate(item),
+                                 without one as a <button>; both route through activate(item),
                                  which marks the row read and dispatches the bubbling
                                  `notification-action` event ({id, href}) the developer
                                  listens for. actionLabel renders as the row's call-to-action
@@ -366,19 +422,16 @@
                                         @click="activate(item)"
                                         class="wk-touch-row {{ $row }}"
                                     >
-                                        {{-- NO aria-label on the row. An aria-label REPLACES the name
+                                        {{-- No aria-label on the row. An aria-label replaces the name
                                              computed from the content, so a row labeled with title +
                                              actionLabel announced the headline and silently dropped the
                                              body and the time — the substance of the notification and
                                              the thing a reader triages by. The name is computed from
                                              the content instead, which reads in visual order: unread
                                              prefix, title, body, time, action. --}}
-                                        {{-- Unread dot — paired with the visually hidden "Unread."
-                                             prefix below, so the state is never color alone. The
-                                             marker is on the unread dot only: the forced-colors rule
-                                             keeps it filled, and a read row stays without one. --}}
-                                        <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
-                                        <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
+                                        {{-- The read state, as the partial explains: a dot or a
+                                             check, each with its word for a screen reader. --}}
+                                        @include('wirekit::components.partials.notification-center-read-state')
                                         <span class="min-w-0 flex-1">
                                             <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
                                             <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
@@ -395,12 +448,9 @@
                                         class="wk-touch-row {{ $row }}"
                                     >
                                         {{-- No aria-label here either — same reason as the link row. --}}
-                                        {{-- Unread dot — paired with the visually hidden "Unread."
-                                             prefix below, so the state is never color alone. The
-                                             marker is on the unread dot only: the forced-colors rule
-                                             keeps it filled, and a read row stays without one. --}}
-                                        <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
-                                        <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
+                                        {{-- The read state, as the partial explains: a dot or a
+                                             check, each with its word for a screen reader. --}}
+                                        @include('wirekit::components.partials.notification-center-read-state')
                                         <span class="min-w-0 flex-1">
                                             {{-- leading-snug tightens the title's line-box so the
                                                  time/body sit closer to the name (the default
@@ -420,7 +470,7 @@
         </div>
 
         @if($seeAllHref)
-            {{-- Footer — ghost action (subtle full-width hover surface), NOT a
+            {{-- Footer — ghost action (subtle full-width hover surface), not a
                  hover-underline text-link, matching the "Mark all read" header
                  action and WireKit's in-panel-action standard. --}}
             <a data-wk-prose-skip id="{{ $seeAllId }}" aria-labelledby="{{ $seeAllId }} {{ $titleId }}" href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-active)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>

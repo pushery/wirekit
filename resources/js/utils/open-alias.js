@@ -3,7 +3,7 @@ import { withOwnScope } from './own-scope.js';
 /**
  * The component object an alias belongs to, stored under a key no markup can spell.
  *
- * Alpine evaluates an expression against the MERGED scope of the element it is on, and hands
+ * Alpine evaluates an expression against the merged scope of the element it is on, and hands
  * that merged scope to an accessor as `this`. `this.isOpen` inside the alias would therefore
  * resolve `isOpen` against the whole stack, and the first scope that declares one wins: markup
  * reading `open` inside a WireKit dropdown, with a scope of its own that declares `isOpen` in
@@ -17,8 +17,7 @@ import { withOwnScope } from './own-scope.js';
 const OWNER = Symbol('wirekit.openAliasOwner');
 
 /**
- * `open` as an alias of `isOpen`, deprecated since 2.57.0 and removed in 3.0.0, a major version
- * that has no fixed date.
+ * `open` as an alias of `isOpen`, deprecated since 2.57.0. It keeps working.
  *
  * A component's open state is `isOpen`, not `open`: `open` is also the name of a function on
  * `window`, so an expression evaluated against a scope that no longer carries the component finds
@@ -28,7 +27,7 @@ const OWNER = Symbol('wirekit.openAliasOwner');
  *
  * `open` stays readable and writable for markup written against it, such as a developer's own slot
  * content or a view published with `vendor:publish`. The accessor is defined on the finished object
- * rather than in the returned literal because an object spread copies a getter's current VALUE, and
+ * rather than in the returned literal because an object spread copies a getter's current value, and
  * a component built as `{ ...overlay }` would then carry a frozen `open`.
  *
  * The component's methods are bound to its own scope on the way out (see `own-scope.js`). `isOpen`

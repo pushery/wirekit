@@ -196,7 +196,7 @@ final class FieldGroup
      * `$takesGroupError` is a control declining the group's message — a checkbox that belongs to
      * the group, does not cause the rejection and cannot resolve it. It drops the reference to
      * the group error and nothing else: the control keeps its own error, its own hint, and the
-     * group HINT, which is a different sentence and is on the page whenever the group is valid.
+     * group hint, which is a different sentence and is on the page whenever the group is valid.
      * It is deliberately not expressed as "pass null for the group": that would also stop
      * {@see covers()} from suppressing the group's bag entry, and the control would print the
      * group's message under itself — the confusion this is here to prevent, one step over.

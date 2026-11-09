@@ -24,7 +24,7 @@ use Pushery\WireKit\Support\VersionResolver;
  *
  * Where `laravel/mcp` is installed, the SDK serves (Sdk\WireKitMcpServer), with the protocol
  * revisions it maintains. Where it is not, the package's own loop below serves, which speaks
- * revision 2025-06-18 only and goes with the next major version. Both answer from the same
+ * revision 2025-06-18 only. Both answer from the same
  * definitions, so an assistant hears the same thing either way.
  */
 final class McpServeCommand extends Command
@@ -61,7 +61,7 @@ final class McpServeCommand extends Command
         while (true) {
             $line = fgets($in);
 
-            // A false read is NOT necessarily end-of-input. Node-based MCP
+            // A false read is not necessarily end-of-input. Node-based MCP
             // clients (Claude Code, Cursor, Cline — all spawning through libuv)
             // hand the child its stdio as a Unix socketpair rather than an
             // anonymous pipe, and on a socket PHP applies default_socket_timeout
@@ -130,7 +130,7 @@ final class McpServeCommand extends Command
     /**
      * Did this false read come from an idle socket timeout rather than EOF?
      *
-     * The reason for staying on a BLOCKING stream and distinguishing the two,
+     * The reason for staying on a blocking stream and distinguishing the two,
      * instead of the more common non-blocking-plus-retry loop: a non-blocking
      * fgets() returns whatever bytes have arrived, which for a half-delivered
      * message is a partial line with no trailing newline. That splits one

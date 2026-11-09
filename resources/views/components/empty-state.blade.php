@@ -8,7 +8,7 @@
     // Heading level for the title (1–6). Defaults to 3, an <h3>; set it to match
     // the surrounding document outline so screen-reader heading navigation stays
     // correct (e.g. level=2 directly under a page <h1>, or level=1 when the
-    // empty-state IS the page's main content).
+    // empty-state is the page's main content).
     'level' => 3,
     // Container chrome: default (no border/bg) · outline (dashed
     // border, reads as a placeholder drop-zone) · muted (filled muted surface).
@@ -75,11 +75,11 @@
 <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     {{-- Icon: iconSlot (if provided) takes priority; else string $icon prop. --}}
     @if($hasIconSlot)
-        <div class="mb-4 flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
+        <div class="mb-[var(--space-wk-md)] flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
             {{ $iconSlot }}
         </div>
     @elseif($icon)
-        <div class="mb-4 flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
+        <div class="mb-[var(--space-wk-md)] flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
             <x-wirekit::icon :name="$icon" size="lg" />
         </div>
     @endif
@@ -88,7 +88,7 @@
         {{-- Dynamic heading tag — level is validated to 1–6 in the @php block. A centered column item
              is as wide as its longest word, so `anywhere` rather than `break-word`: it lets a typed
              token with no break point (a pasted URL) wrap, and a title whose words fit keeps its width. --}}
-        <h{{ $levelValue }} data-wk-prose-skip class="mb-1 [overflow-wrap:anywhere] text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <h{{ $levelValue }} data-wk-prose-skip class="mb-[var(--space-wk-xs)] [overflow-wrap:anywhere] text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h{{ $levelValue }}>
     @endif
@@ -104,9 +104,9 @@
     {{-- Default slot holds the call-to-action (e.g. button). The space before it belongs to it, not
          to the text above, so a state without an action ends as close to its edge as its icon starts:
          24px after a description and 8px after a title alone. --}}
-    @if($slot->hasActualContent())
-        <div @class(['mt-6' => filled($description), 'mt-2' => blank($description)])>
+    @wirekitLast($slot->hasActualContent())
+        <div @class(['mt-[var(--space-wk-lg)]' => filled($description), 'mt-[var(--space-wk-sm)]' => blank($description)])>
             {{ $slot }}
         </div>
-    @endif
+    @endwirekitLast
 </div>

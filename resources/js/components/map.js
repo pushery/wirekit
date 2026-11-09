@@ -2,11 +2,11 @@
  * WireKit Map Alpine component — a peer-dependency adapter.
  *
  * Like chart (Chart.js) and editor (Tiptap), WireKit ships the themed chrome,
- * the declarative API, and the Alpine glue — but NEVER bundles the heavy map
+ * the declarative API, and the Alpine glue — but never bundles the heavy map
  * library. The app installs MapLibre GL (default) or Leaflet and supplies the
  * tiles; this glue detects whichever is present and drives it.
  *
- * The accessible path is the marker LIST rendered by the Blade view — always in
+ * The accessible path is the marker list rendered by the Blade view — always in
  * the DOM, never gated on the library. The visual map is a progressive
  * enhancement: if no supported library is loaded, the component degrades to the
  * list + a placeholder (and a one-time console hint, mirroring chart.js).
@@ -26,7 +26,7 @@
  * @param {string} config.provider - 'maplibre' | 'leaflet'
  * @param {string} config.styleUrl - tile/style URL (provider-specific)
  * @param {string} config.attribution - tile attribution HTML (Leaflet provider; shown
- *   in Leaflet's attribution control). Required by some tile sources (e.g. OSM).
+ *   in Leaflet's attribution control). Required by some tile sources (e.g. Osm).
  */
 import { keepRaw } from '../utils/keep-raw.js';
 import { prefersReducedMotion } from '../utils/motion.js';
@@ -111,14 +111,14 @@ export default function wirekitMap(config = {}) {
         // True when tiles were withheld for the data preference rather than missing.
         // The template shows a "load anyway" control on this, not on `available`.
         dataDeferred: false,
-        // The accessible NAME of a role="button" marker. Translated on the server —
+        // The accessible name of a role="button" marker. Translated on the server —
         // this file has no translator — with the English kept as the fallback so a
         // directly-constructed factory still names its pins.
         _markerLabel: config.markerLabel || 'Map marker',
         styleUrl: config.styleUrl || null,
         attribution: config.attribution || null,
         available: false,
-        // Currently-selected marker id (set by a list click OR a map-pin click).
+        // Currently-selected marker id (set by a list click or a map-pin click).
         // The Blade list highlights the matching row, so clicking a pin and clicking
         // a list row stay in sync.
         selectedId: null,
@@ -156,7 +156,7 @@ export default function wirekitMap(config = {}) {
              * through is a worse answer than not asking.
              *
              * `reducedData="ignore"` opts a specific map out — a delivery-tracking view
-             * where the canvas IS the content rather than an illustration of it.
+             * where the canvas is the content rather than an illustration of it.
              */
             if (this._prefersReducedData()) {
                 this.available = false;
@@ -171,7 +171,7 @@ export default function wirekitMap(config = {}) {
             // An engine that arrives after this map is gone must not boot it, and a pending
             // missing-engine hint must not speak for a map that no longer exists.
             this._stopAwaitingEngine();
-            // Disconnect the ResizeObserver BEFORE tearing the map down so a final
+            // Disconnect the ResizeObserver before tearing the map down so a final
             // resize callback can't fire against a removed map — defensive observer
             // cleanup; a callback after teardown would break browser tests.
             if (this._resizeObserver && typeof this._resizeObserver.disconnect === 'function') {
@@ -188,7 +188,7 @@ export default function wirekitMap(config = {}) {
         /**
          * Has the reader asked their browser for less data?
          *
-         * `prefers-reduced-data` is ABOVE this library's support baseline, which is
+         * `prefers-reduced-data` is above this library's support baseline, which is
          * exactly why it is safe to read: a browser that does not know the query returns
          * `matches: false`, so the map loads its tiles right away. Nothing depends on the
          * feature: it is a progressive enhancement, and the enhancement is a saving rather
@@ -353,18 +353,18 @@ export default function wirekitMap(config = {}) {
                     layer.addTo(map);
                 }
             }
-            // Mark the library instance raw BEFORE storing it on Alpine state.
+            // Mark the library instance raw before storing it on Alpine state.
             // Alpine deep-proxies component data via its vendored Vue reactivity,
-            // and a PROXIED MapLibre map corrupts its internal WebGL render chain:
+            // and a proxied MapLibre map corrupts its internal WebGL render chain:
             // the style + tiles fetch fine (the network shows them loading) but the
-            // GL canvas paints BLANK, while DOM markers still project — the exact
+            // GL canvas paints blank, while DOM markers still project — the exact
             // half-broken "tiles load, map stays empty" symptom. Leaflet renders
             // via DOM/img tiles and tolerates the proxy, but we mark both for
             // parity. `__v_skip` is the flag Vue's markRaw() sets and reactive()
             // honors — the same flag the editor sets on its ProseMirror instance.
             this._map = keepRaw(map);
             // Zoom controls. Leaflet's L.map() ships a zoom control by default, but
-            // MapLibre ships NO UI — add the standard NavigationControl (zoom in/out
+            // MapLibre ships no UI — add the standard NavigationControl (zoom in/out
             // + compass) so both engines have on-canvas zoom buttons (MapLibre
             // otherwise has no zoom buttons). Guarded for a stubbed/older
             // build without NavigationControl.
@@ -383,14 +383,14 @@ export default function wirekitMap(config = {}) {
             }
             // Keep the GL canvas matched to its container.
             //
-            // A ResizeObserver re-measures on EVERY container size change
+            // A ResizeObserver re-measures on every container size change
             // (responsive reflow, font load, sidebar wrap, container queries) and
             // calls the library's own resize — the canonical pattern for a
             // dynamically-sized map mount. The rAF is a belt-and-braces resize
             // right after mount; the load handler covers a style that
             // finishes after the last resize. All three are idempotent.
             //
-            // The mount's HEIGHT is not this observer's job. MapLibre adds
+            // The mount's height is not this observer's job. MapLibre adds
             // `maplibregl-map` (position: relative in maplibre-gl.css) to the
             // mount, which can override the template's `absolute` (equal
             // specificity, source order wins) and collapse the mount to height 0,
@@ -398,7 +398,7 @@ export default function wirekitMap(config = {}) {
             // would re-read 0 forever (the observer fires, but there is no height
             // to grow into). `h-full w-full` on the Blade mount (see
             // map.blade.php) holds under either computed position; the observer
-            // here handles GENUINE size changes only.
+            // here handles genuine size changes only.
             const resize = () => {
                 if (!this._map) return;
                 if (typeof this._map.resize === 'function') this._map.resize();
@@ -425,8 +425,8 @@ export default function wirekitMap(config = {}) {
         },
 
         // Resolve an intent to its computed theme color. Map pins are drawn by the
-        // peer library OUTSIDE WireKit's CSS, so we can't hand them a `var(--…)`
-        // reference — we read the token's COMPUTED value off the component root, which
+        // peer library outside WireKit's CSS, so we can't hand them a `var(--…)`
+        // reference — we read the token's computed value off the component root, which
         // honors the active theme + any per-instance scope. A pin is a graphic that carries the
         // intent, so it takes the intent's text tone, which holds 3:1 on the page where the
         // fill tone of warning did not. Returns '' when there's no
@@ -447,7 +447,7 @@ export default function wirekitMap(config = {}) {
         },
 
         // Escape a developer-supplied string for the popup/tooltip HTML below.
-        // BOTH engines parse their content as HTML (Leaflet's bindTooltip and
+        // Both engines parse their content as HTML (Leaflet's bindTooltip and
         // MapLibre's Popup.setHTML), so an unescaped label/body would be a
         // stored-XSS sink for marker data (same precedent as the ApexCharts
         // tooltip escaping).
@@ -469,7 +469,7 @@ export default function wirekitMap(config = {}) {
         // the image URL in the src attribute.
         _tipHtml(m) {
             const imageOnly = m.tooltip === 'image' && m.image;
-            // Photo-ONLY bubbles need a DEFINITE width: Leaflet's tooltip (and
+            // Photo-ONLY bubbles need a definite width: Leaflet's tooltip (and
             // MapLibre's popup) shrink-wrap their content, so a bare `width:100%`
             // image has no width to resolve against and collapses to a sliver
             // (a photo-only bubble collapses to a sliver on Leaflet). When there's text
@@ -512,7 +512,7 @@ export default function wirekitMap(config = {}) {
         },
 
         // Create one rendered pin and register it by id. Intent color, click-to-select
-        // and a label tooltip are wired here for BOTH providers.
+        // and a label tooltip are wired here for both providers.
         _addMarker(m) {
             if (!this._map || !m || m.id === undefined) return;
             const color = this._intentColor(m.intent);
@@ -530,14 +530,14 @@ export default function wirekitMap(config = {}) {
                     node.setAttribute('aria-label', m.label || this._markerLabel);
 
                     /*
-                     * A `role="button"` is a PROMISE: focusable, and activated by Enter and
+                     * A `role="button"` is a promise: focusable, and activated by Enter and
                      * Space. Without a tabindex and a key handler the pin would announce itself
                      * as a button to a reader who could then neither reach nor press it.
                      * Inside a `role="application"` container that is worse
                      * than usual: the browser's own fallbacks are off there, and the only
                      * keyboard behavior is the one the component provides.
                      *
-                     * The accessible marker LIST beside the map remains the primary path;
+                     * The accessible marker list beside the map remains the primary path;
                      * this makes the pin itself keep the contract it advertises.
                      */
                     node.setAttribute('tabindex', '0');
@@ -560,8 +560,8 @@ export default function wirekitMap(config = {}) {
                     // pins get no popup — the label is already the aria-label + list row.
                     const popup = new engine.Popup({ offset: 24, closeButton: false }).setHTML(this._tipHtml(m));
                     marker.setPopup(popup);
-                    // Open on HOVER. MapLibre's setPopup toggles the popup on marker
-                    // CLICK, but our click is reserved for selectMarker (pan + emit) —
+                    // Open on hover. MapLibre's setPopup toggles the popup on marker
+                    // click, but our click is reserved for selectMarker (pan + emit) —
                     // and the docs promise "hovering (or tapping) a pin opens a
                     // bubble", which is how Leaflet's bindTooltip already behaves. So
                     // wire mouseenter/leave to togglePopup for parity (MapLibre popups
@@ -616,9 +616,9 @@ export default function wirekitMap(config = {}) {
         },
         panTo(marker) {
             if (!this._map) return;
-            // Use the RESOLVED provider (the library actually in use), not the
+            // Use the resolved provider (the library actually in use), not the
             // requested one — _detectProvider can fall back to whichever is present.
-            // Respect reduced-motion: jump instead of animating. Read once, because BOTH
+            // Respect reduced-motion: jump instead of animating. Read once, because both
             // branches move the viewport — Leaflet's panTo animates by default and takes
             // the same `animate` option its flyTo does, so leaving it off would let a click in
             // the marker list (the component's keyboard path) slide the map for a reader who
@@ -637,7 +637,7 @@ export default function wirekitMap(config = {}) {
             if (!marker || marker.id === undefined) return;
             const i = this.markers.findIndex((m) => m.id === marker.id);
             this.markers = i === -1 ? [...this.markers, { ...marker }] : this.markers.map((m) => (m.id === marker.id ? { ...m, ...marker } : m));
-            // Keep the RENDERED pin in sync, not just the list: drop the old library
+            // Keep the rendered pin in sync, not just the list: drop the old library
             // marker (if any) and re-add from the merged record (picks up moved
             // coordinates / a changed intent color).
             if (this._map) {

@@ -17,7 +17,7 @@
  * is for everything already rendered, which would otherwise fail in silence.
  *
  * And that silence is expensive, because the error the developer actually sees names
- * neither WireKit nor the real cause. Alpine reports the dead element's CHILD
+ * neither WireKit nor the real cause. Alpine reports the dead element's child
  * bindings, so the console says `startShadow is not defined` — a property of a
  * component the developer never wrote, out of a bundle they did not author. On the
  * table `responsive` defaults to true, so one ordinary `<x-wirekit::table>` is enough
@@ -90,7 +90,7 @@ function hasDeadComponent(names) {
  * bundle missed Alpine's walk.
  *
  * @param {string} bundle       Bundle filename, so the message names the file to move.
- * @param {() => boolean} wasEarly  Reads the caller's `alpine:init` flag AT CHECK TIME.
+ * @param {() => boolean} wasEarly  Reads the caller's `alpine:init` flag AT check time.
  * @param {string[]|null} [names]   The component names the bundle registered (see
  *   `registeredNames`); null checks every WireKit component.
  */
@@ -161,7 +161,7 @@ export function reportLateRegistration(bundle, wasEarly, names = null) {
          * Kept deliberately short. It ships in five bundles, so every character is paid
          * for five times over — and on the core bundle the message was a measurable
          * fraction of the whole file. What it may not lose is the part a developer can
-         * SEARCH for: the `[wirekit]` tag, the bundle name, the shape of the error they
+         * search for: the `[wirekit]` tag, the bundle name, the shape of the error they
          * are actually staring at, and the one directive that fixes it.
          */
         console.error(

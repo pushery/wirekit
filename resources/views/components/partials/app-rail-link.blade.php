@@ -2,24 +2,24 @@
      Not a component at all but an @include shared by the two branches of
      app-rail/item.blade.php. It renders a navigation link; nothing here has a value a
      server could accept or refuse. --}}
-{{-- The rail module's link, factored out because the item renders it EITHER inside a
+{{-- The rail module's link, factored out because the item renders it either inside a
      tooltip or bare, and the two branches must not become two copies of the same anchor.
      Every variable it reads ($linkAttributes, $linkDescribedBy, $icon, $iconClasses, $labelClasses,
-     $labelText, $truncate, $badge, $badgeSentence, $opensNewTab) is resolved in the including view —
+     $labelText, $truncate, $badge, $badgeSentence, $liveBadge, $opensNewTab) is resolved in the including view —
      @include shares the including scope, so nothing has to be passed.
 
      `$linkAttributes` in particular is resolved there so both branches take the same
      `except('rel')` and the same class merge from one expression. --}}
-{{-- href / aria-current / rel are written HERE rather than folded into $linkAttributes,
+{{-- href / aria-current / rel are written here rather than folded into $linkAttributes,
      and they are plain locals from the including view — @include shares that scope, and
      unlike `$attributes` these are not rebound by the surrounding component.
      They belong on the element explicitly for the same reason sidebar.item writes them
-     explicitly: `$attributes->merge` treats a value as a DEFAULT, so a caller's own `rel`
+     explicitly: `$attributes->merge` treats a value as a default, so a caller's own `rel`
      (even `rel="prev"`) would win and silently defeat the tabnabbing injection, and a
      caller's own `aria-current` would beat the component's own notion of "current". --}}
 {{-- The element is chosen by the including view's `as` prop and defaults to `a`. A rail
      module is a destination, so a link is right for nearly all of them; a `button` is for
-     the entry that OPENS something — our own console-shell blueprint builds a dropdown
+     the entry that opens something — our own console-shell blueprint builds a dropdown
      trigger out of one, and as a link that trigger does not activate on Space.
      `href` and `rel` are written only in the link branch: they mean nothing on a button,
      and an `href` there is invalid rather than merely useless. `aria-current` is written
@@ -39,16 +39,16 @@
     @if($icon)
         {{-- Decorative: the label below is the accessible name. --}}
         <span class="shrink-0" aria-hidden="true">
-            @if(is_string($icon) && ! str_contains($icon, '<'))
+            @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
                 {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses]) }}
             @else
                 {{ $icon }}
-            @endif
+            @endwirekitLast
         </span>
     @endif
     <span data-wk-rail-label class="{{ $labelClasses }}" @if($truncate) title="{{ $labelText }}" @endif>{{ $labelText }}</span>
     @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
-    @if($badgeText !== null)
+    @if($badgeText !== null || $liveBadge !== null)
         {{-- Going `absolute` in the icon-only rail is what keeps the lone glyph centered —
              sharing the flex row pushes it visibly off-center, which is what the browser
              test measures. In the wide rail it rejoins the row as a pill. The digits move
@@ -56,7 +56,10 @@
              accessible name in both states. With a `badge-label` the sentence carries the
              count as the link's description instead, and the bare digits leave the name.
              `data-wk-rail-badge` is what the stylesheet reads to give a counter on a filled
-             item, the current module or one under the pointer, the role for a fill. --}}
+             item, the current module or one under the pointer, the role for a fill.
+             With a `live-badge` the counter follows that expression: it is in the markup at any
+             count, shown while the expression is above zero, and hidden until the script runs when
+             the server knew of nothing to count. --}}
         <span data-wk-rail-badge @if($badgeSentence !== null) aria-hidden="true" @endif class="pointer-events-none absolute end-[calc(var(--padding-wk-x-sm)/2)] top-[calc(var(--padding-wk-y-sm)/2)] h-2 w-2 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-rail-badge)]
             group-data-[labels=inline]/wk-rail:pointer-events-auto
             group-data-[labels=inline]/wk-rail:static
@@ -68,7 +71,7 @@
             group-data-[labels=inline]/wk-rail:px-[var(--padding-wk-x-sm)]
             group-data-[labels=inline]/wk-rail:text-[length:var(--text-wk-xs)]
             group-data-[labels=inline]/wk-rail:font-[number:var(--font-wk-heading-weight)]
-            group-data-[labels=inline]/wk-rail:text-[color:var(--color-wk-rail-badge-fg)]"><span class="sr-only group-data-[labels=inline]/wk-rail:not-sr-only">{{ $badgeText }}</span></span>
+            group-data-[labels=inline]/wk-rail:text-[color:var(--color-wk-rail-badge-fg)]" @if($liveBadge !== null) x-show="{{ $liveBadge }} > 0" @if($badgeText === null) x-cloak @endif @endif><span class="sr-only group-data-[labels=inline]/wk-rail:not-sr-only" @if($liveBadge !== null) x-text="{{ $liveBadge }} > 99 ? '99+' : {{ $liveBadge }}" @endif>{{ $badgeText }}</span></span>
     @endif
     {{-- Link branch only. `$opensNewTab` is derived from a `target` attribute, and a
          `<button>` has no target — so on a button this promised a new tab that never

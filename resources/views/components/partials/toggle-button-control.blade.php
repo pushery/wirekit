@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — sub-component
      Not a component but an @include of `toggle-button`, which owns the state and the optimistic
      wiring. It renders the one button that component is, and accepts nothing a server could refuse. --}}
-{{-- THE BUTTON OF `toggle-button`, in a partial for one reason: it is rendered either inside a
+{{-- the button of `toggle-button`, in a partial for one reason: it is rendered either inside a
      `<x-wirekit::tooltip>` or on its own, and a component tag cannot be opened in one `@if` and
      closed in another. Blade pairs component tags when it compiles, so an opening tag behind an
      `@if` swallowed the button whenever there was no tooltip, and the component rendered nothing.

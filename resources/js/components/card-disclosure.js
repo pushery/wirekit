@@ -56,7 +56,7 @@ function addresses(detail, name) {
  * The state is `isOpen`. The card's own head toggles it, and only that click is the reader's choice:
  * it is what the browser remembers under `persist` and what `wirekit:card-toggled` reports, so an
  * application that keeps the state in its own store can save it there. Everything else that opens
- * the card opens it FOR the reader and records nothing: the browser's find in page, a field the
+ * the card opens it for the reader and records nothing: the browser's find in page, a field the
  * browser finds invalid, an address whose fragment names an element inside, `wirekit:card-open`, a
  * reason the server gives that the card did not have, and a field inside that a response rejects.
  * `wirekit:card-close` folds it and records nothing either.

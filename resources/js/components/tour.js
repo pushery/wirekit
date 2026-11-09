@@ -181,7 +181,7 @@ export default function wirekitTour(config = {}) {
             const targetEl = targetSelector ? document.querySelector(targetSelector) : null;
 
             if (targetEl && stepEl) {
-                // Every step re-places a DIFFERENT element, so the previous step's observer is
+                // Every step re-places a different element, so the previous step's observer is
                 // dropped here rather than only on finish().
                 this._stopRepair?.();
                 this._stopRepair = null;
@@ -201,7 +201,7 @@ export default function wirekitTour(config = {}) {
                     //
                     // A tour is the longest-lived overlay in the catalog — it stands over the page
                     // for as many steps as it has, and the page underneath keeps working. The
-                    // whole point of a step is that it POINTS AT something, and a step that has
+                    // whole point of a step is that it points AT something, and a step that has
                     // slid to the end of the document is telling the reader about an element they
                     // cannot see, while the focus trap still holds them inside it.
                     repairErasure: true,
@@ -215,6 +215,13 @@ export default function wirekitTour(config = {}) {
                     // stood past the edge, fixed, with its buttons out of reach while the focus
                     // trap held the reader in it (WCAG 1.4.10).
                     fitViewport: true,
+                    // A target taller than the window, scrolled to its middle, leaves no room
+                    // above or below it, and the step stood below it, past the bottom of the
+                    // window, with Next out of reach behind the scrim. Shifted across, the step
+                    // lies over the target at the edge of the window instead, and takes the
+                    // window's height before it scrolls. A step that fits beside its target
+                    // stays there.
+                    crossAxisShift: true,
                 });
 
                 if (placed && typeof placed.stop === 'function') {
@@ -243,7 +250,7 @@ export default function wirekitTour(config = {}) {
          * A step is a `role="dialog"` behind a full-viewport scrim, so the dialog
          * contract applies in full: focus starts inside it, Tab cycles within it,
          * and the element that opened the tour gets focus back at the end. Without
-         * this the page's own tab order stays live UNDER a scrim that covers it —
+         * this the page's own tab order stays live under a scrim that covers it —
          * and because the steps are teleported to the end of the document, a
          * keyboard reader would have to walk the entire covered page to reach the
          * Back and Next buttons of the step they are looking at.
@@ -252,11 +259,11 @@ export default function wirekitTour(config = {}) {
          * and body are announced ahead of its controls; the panel carries
          * `tabindex="-1"` for exactly that.
          *
-         * The trap is rebuilt per step because a tour walks between SIBLING
+         * The trap is rebuilt per step because a tour walks between sibling
          * dialogs. Leaving the previous step's trap active would keep pulling
          * focus back into a panel that is now hidden.
          *
-         * Body scroll is deliberately NOT locked, which is the one place a tour
+         * Body scroll is deliberately not locked, which is the one place a tour
          * departs from the modal overlays. A tour exists to point at elements on
          * the page and scrolls each target into view itself, so pinning the
          * document would defeat the component. Focus-trap's `preventScroll` keeps
@@ -278,7 +285,7 @@ export default function wirekitTour(config = {}) {
             if (!stepEl) return;
 
             // Captured on the first step only. From the second step onward the
-            // focused element IS the previous panel, which is about to be hidden,
+            // focused element is the previous panel, which is about to be hidden,
             // so re-reading it would record a destination that cannot take focus.
             if (!this._opener) {
                 this._opener = document.activeElement;
@@ -299,7 +306,7 @@ export default function wirekitTour(config = {}) {
                 // twice.
                 escapeDeactivates: false,
                 initialFocus: stepEl,
-                // Every step after the first activates while the PREVIOUS panel
+                // Every step after the first activates while the previous panel
                 // holds focus, so focus-trap's own record of "what was focused
                 // before" points at a step that is hidden by the time the tour
                 // ends. The opener is the only sensible destination.
@@ -345,7 +352,7 @@ export default function wirekitTour(config = {}) {
         /**
          * Get progress text for announcement.
          *
-         * A TEMPLATE with placeholders rather than a sentence built here, because it has
+         * A template with placeholders rather than a sentence built here, because it has
          * to be translatable and a sentence assembled from fragments in JavaScript cannot
          * be — word order is not the same in every language. This read as a literal for a
          * while, and the cost was quiet: the sentence goes into a live region and onto the

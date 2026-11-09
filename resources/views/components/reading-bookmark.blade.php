@@ -30,7 +30,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $promptOnReturn = BooleanProp::from($promptOnReturn, true, 'reading-bookmark', 'promptOnReturn');
@@ -38,7 +38,7 @@
 
     // Reading-bookmark — saves the reader's scroll position to localStorage
     // and surfaces a "Resume reading?" pill on return-visit if they spent
-    // enough time reading the previous session AND scrolled past the threshold.
+    // enough time reading the previous session and scrolled past the threshold.
     //
     // All localStorage operations are wrapped in try/catch — falls back to
     // a no-op on private browsing, quota-exceeded, or storage-disabled.
@@ -87,7 +87,7 @@
 
     $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
     $boundaryClass = $useScoped
-        ? 'absolute bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]'
+        ? 'absolute bottom-[var(--padding-wk-x-lg)] end-[var(--padding-wk-x-lg)]'
         // The bottom of the viewport is not the bottom of the usable screen on a phone with
         // a home indicator, whose inset is 34px on a notched iPhone. The same expression keeps
         // `.wk-fab` and `.wk-bottom-nav` clear of it. `env()` resolves to 0 wherever there is
@@ -95,12 +95,17 @@
         //
         // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
         // Playwright, which is why it survived every green mobile run.
-        : 'fixed bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]';
+        //
+        // Both arms stand at the end of the line, as the floating action button does, so a page
+        // that reads from the right has the bookmark in the bottom left corner.
+        // `--wk-scrollbar-inset` is a gutter at the end of the line, the side the offset is
+        // measured from.
+        : 'fixed bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]';
 
     $rootClass = 'wk-reading-bookmark '.WireKit::resolveClasses('reading-bookmark', 'base', implode(' ', [
         $boundaryClass,
         'z-[var(--z-wk-sticky)]',
-        'flex items-center gap-3 px-4 py-3',
+        'flex items-center gap-[var(--gap-wk-md)] px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-lg)]',
         'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]',
     ]), $scope);
 
@@ -129,7 +134,7 @@
 @endphp
 
 {{-- A wrapper with no box of its own: it holds nothing but the Alpine scope, so the
-     live region below can sit OUTSIDE the pill while still reading the pill's state.
+     live region below can sit outside the pill while still reading the pill's state.
      It is not positioned. Scoped to a container, the pill is `absolute` against the
      nearest positioned ancestor, the reading frame; a positioned wrapper would be that
      ancestor instead, a box of no height, and the pill would stand wherever the wrapper
@@ -190,7 +195,7 @@
         <button
             type="button"
             @click="resume()"
-            class="wk-reading-bookmark__resume wk-touch-row inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+            class="wk-reading-bookmark__resume wk-touch-row inline-flex items-center cursor-pointer px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
         >
             {{ __('wirekit::Resume') }}
         </button>

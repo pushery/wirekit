@@ -11,7 +11,7 @@
     // a scoped stacking container that should contain the overlay itself
     // (rare, and usually an anti-pattern).
     // Names the panel. A `role="menu"` with no name is announced as an unnamed menu, and the
-    // panel TELEPORTS out to the overlay root — so the trigger that opened it is no longer
+    // panel teleports out to the overlay root — so the trigger that opened it is no longer
     // where the reading cursor is, and there is nothing left to identify it by.
     'label' => null,
     'teleport' => true,
@@ -40,7 +40,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:keydown.escape.window']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $teleport = BooleanProp::from($teleport, true, 'context-menu', 'teleport');
@@ -80,7 +80,7 @@
 <div
     x-data="wirekitContextMenu()"
     x-on:keydown="handleKeydown"
-    {{-- Escape is ALSO bound on the window, and not only through handleKeydown.
+    {{-- Escape is also bound on the window, and not only through handleKeydown.
 
          handleKeydown only ever sees a keypress that bubbles through this wrapper or
          through the panel, and there are states where the keypress does neither: a menu
@@ -90,7 +90,7 @@
          to dismiss it (WCAG 2.1.1).
 
          `open &&` keeps it inert while closed, so a page full of context menus does not
-         answer every Escape on the page. It cannot double-close either: when focus IS on
+         answer every Escape on the page. It cannot double-close either: when focus is on
          an item the panel handler runs first and flips `open`, and this guard then reads
          false. Same binding, same reason, as dropdown.blade.php. --}}
     x-on:keydown.escape.window="isOpen && ! $event.defaultPrevented && close()"
@@ -103,7 +103,7 @@
     @php
         /*
          * `Shift+F10` (and the platform context-menu key) fire a `contextmenu` event on the
-         * FOCUSED element, so the documented keyboard path only exists if something here can
+         * focused element, so the documented keyboard path only exists if something here can
          * be focused. The wrapper could not: no tabindex, no role, nothing.
          *
          * If the caller's trigger already contains a control, that control takes the focus
@@ -121,7 +121,7 @@
         $contextMenuHintId = $contextMenuTriggerIsFocusable ? null : \Pushery\WireKit\Support\DomId::unique(null, 'wk-context-menu-hint-');
     @endphp
 
-    {{-- The wrapper's focus indication is an OUTLINE set one ring width inward. It wraps whatever
+    {{-- The wrapper's focus indication is an outline set one ring width inward. It wraps whatever
          the caller passed, and two shapes of that content defeat the other forms: a table with
          rounded, clipped corners cuts an outer ring off at both sides of a row that fills it, and
          content with a background of its own (a card) covers an inset ring, which is painted
@@ -164,9 +164,9 @@
         <div
             x-ref="panel"
             x-show="isOpen"
-            {{-- The menu keyboard model is bound HERE too, not only on the wrapper.
+            {{-- The menu keyboard model is bound here too, not only on the wrapper.
 
-                 `x-teleport` MOVES this element to `#wk-overlay-root`; it does not re-route
+                 `x-teleport` moves this element to `#wk-overlay-root`; it does not re-route
                  the events it fires. So the moment focus sits on a menu item, a keydown
                  bubbles from here to the overlay root and on to the document, and never
                  passes through the wrapper — where `x-on:keydown="handleKeydown"` was the

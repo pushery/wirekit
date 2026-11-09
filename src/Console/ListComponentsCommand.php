@@ -19,7 +19,7 @@ class ListComponentsCommand extends Command
 
     /**
      * Output formats supported by --as=…. Each value below is a case of
-     * emitMachineFormat(), so adding a format means an entry here PLUS its
+     * emitMachineFormat(), so adding a format means an entry here plus its
      * case there.
      */
     private const FORMATS = ['count', 'json', 'slugs', 'categories'];
@@ -45,7 +45,7 @@ class ListComponentsCommand extends Command
         if ($categoryFilter) {
             // Multi-category filter: comma-separated list
             // unions the per-category sets. `--category=Marketing,Display`
-            // returns every component in EITHER category.
+            // returns every component in either category.
             $requested = array_values(array_filter(array_map('trim', explode(',', (string) $categoryFilter))));
             $available = ComponentRegistry::categories();
             $unknown = array_values(array_diff($requested, $available));

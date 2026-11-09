@@ -31,7 +31,7 @@ final class BladeDirectivesCheck extends VerifyCheck
     private function checkBladeDirectives(): void
     {
         // Bare-install INFO: when no layout file exists at any canonical
-        // install path AND no @import alternative is configured in
+        // install path and no @import alternative is configured in
         // app.css, emit a single INFO hint and skip the directive scan.
         // The natural state right after `wirekit:install` on a fresh
         // Laravel skeleton is "layout not yet written" — emitting two
@@ -63,7 +63,7 @@ final class BladeDirectivesCheck extends VerifyCheck
 
         foreach ($bladeFiles as $file) {
             $rawContent = (string) file_get_contents($file);
-            // Scan only the text this file would actually EXECUTE. A comment
+            // Scan only the text this file would actually execute. A comment
             // that happens to name a directive answers the check for it, which
             // is the same failure this scan already guarded against for Blade
             // comments and was still open for three other comment syntaxes.
@@ -100,7 +100,7 @@ final class BladeDirectivesCheck extends VerifyCheck
         $this->context->scriptsFoundAnywhere = $foundScripts;
 
         // The @wirekitStyles directive is one of two valid setup paths;
-        // the OTHER valid path is `@import 'wirekit.css'` in app.css.
+        // the other valid path is `@import 'wirekit.css'` in app.css.
         // checkCssImportAntiPattern() detects the second path and reports
         // it as PASS. To avoid a contradictory FAIL/PASS pair on the same
         // install, only fail @wirekitStyles when neither path is present.
@@ -162,9 +162,9 @@ final class BladeDirectivesCheck extends VerifyCheck
      * (INFO — bare install, next step is on the developer) from "layout
      * exists but directives missing" (FAIL — real misconfiguration).
      *
-     * Returns true when EITHER a single conventional layout file exists
-     * (`views/components/layout.blade.php`) OR any `.blade.php` file lives
-     * inside one of the conventional layout DIRECTORIES (`views/layouts/`,
+     * Returns true when either a single conventional layout file exists
+     * (`views/components/layout.blade.php`) or any `.blade.php` file lives
+     * inside one of the conventional layout directories (`views/layouts/`,
      * where Livewire 4 registers `layouts::`, or `views/components/layouts/`,
      * the Livewire 3 location).
      * The directory-scan flavor matches real-world projects that ship

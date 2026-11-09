@@ -2,7 +2,7 @@
      Choosing a scope is a page change, not a value a server accepts or refuses. There is
      nothing to anticipate: the new page either arrives or it does not. --}}
 @props([
-    // Stable id base. REQUIRED, and not by convention: every option's id is built from it,
+    // Stable id base. Required, and not by convention: every option's id is built from it,
     // `aria-activedescendant` points at those ids, and a Livewire morph that regenerates
     // them silently breaks the link between the input and the row it claims is active.
     'name' => null,
@@ -66,39 +66,10 @@
     );
     $resultLocale = \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag());
 
-    // Fold accents ONCE, on the server, so a reader typing `munchen` finds `München`.
-    // Per keystroke in the browser this would be the same work repeated for every character
-    // typed, over every row.
-    //
-    // NFD then strip the combining marks — the same two steps the Alpine side takes, which
-    // is what makes the two agree. Decomposition splits a letter into its base plus its
-    // marks; dropping the marks leaves the base. The alternative, a table of replacements,
-    // is a list that is wrong for the next language somebody uses.
-    //
-    // NOT iconv//TRANSLIT: it is platform-dependent and wrong here. On this machine it
-    // renders `München` as `M"unchen`, inserting a quote where the umlaut was — so the
-    // search text would contain a character nobody will ever type.
-    //
-    // `ext-intl` is not in this package's require list, so its absence degrades rather than
-    // fails: the text stays as written and an accented row is then found by typing the
-    // accent. Everything else about the component still works.
-    $normalize = static function (string $value) : string {
-        if (class_exists(\Normalizer::class)) {
-            $decomposed = \Normalizer::normalize($value, \Normalizer::FORM_D);
-
-            // A mark stays where it makes another letter (カ and ガ, कमल and कोमल), the same
-            // scripts as `foldForSearch()` in the browser, which folds the query this text meets.
-            if (is_string($decomposed)) {
-                $value = (string) preg_replace_callback(
-                    '/(\P{M})(\p{M}+)/u',
-                    static fn (array $mark): string => preg_match('/[\p{Devanagari}\p{Bengali}\p{Gurmukhi}\p{Gujarati}\p{Oriya}\p{Tamil}\p{Telugu}\p{Kannada}\p{Malayalam}\p{Sinhala}\p{Thai}\p{Lao}\p{Tibetan}\p{Myanmar}\p{Khmer}\p{Hiragana}\p{Katakana}]/u', $mark[1]) === 1 ? $mark[0] : $mark[1],
-                    $decomposed,
-                );
-            }
-        }
-
-        return mb_strtolower(trim($value));
-    };
+    // Fold accents once, on the server, so a reader typing `munchen` finds `München`: per keystroke
+    // in the browser this would be the same work repeated for every character typed, over every
+    // row. `Support\SearchFold` folds by the rule the browser folds the query by.
+    $normalize = static fn (string $value): string => \Pushery\WireKit\Support\SearchFold::text(trim($value));
 
     $seen = [];
     $rows = [];
@@ -217,7 +188,7 @@
         'no-underline cursor-pointer',
         'hover:bg-[var(--color-wk-bg-hover)]',
         // The keyboard's position is its own state, published by the input through
-        // aria-activedescendant. It is deliberately NOT aria-selected — that says "this is
+        // aria-activedescendant. It is deliberately not aria-selected — that says "this is
         // the chosen one", which here means the scope the page is already showing.
         'data-[active]:bg-[var(--color-wk-bg-active)]',
     ]), $scope);
@@ -240,7 +211,7 @@
     <x-slot:trigger>
         {{-- Named by its own two children rather than by an aria-label, and the order of the
              IDREFs is the order the name is read in: the current scope first, its purpose
-             second. An aria-label sat here and REPLACED the visible text, so the button was
+             second. An aria-label sat here and replaced the visible text, so the button was
              called "Switch Server" while the word on it said "Production" — a voice-control
              user saying "click Production" matched nothing on the page (WCAG 2.5.3 Label in
              Name), and a screen-reader user was never told which scope they were in. The
@@ -259,7 +230,7 @@
                 <x-wirekit::icon :name="$currentRow['icon']" size="sm" />
             @endif
 
-            {{-- The id is how the LIST reaches this text. The panel is teleported to the
+            {{-- The id is how the list reaches this text. The panel is teleported to the
                  overlay root, so it is not a descendant of this button in the DOM and shares
                  no Alpine scope with it; an id is the one handle that survives both. --}}
             {{-- One line at most 12rem wide; a name it cuts is whole in its title. --}}
@@ -285,7 +256,7 @@
         </x-wirekit::button>
     </x-slot:trigger>
 
-    {{-- The state lives HERE, on the panel, and not on the popover wrapper.
+    {{-- The state lives here, on the panel, and not on the popover wrapper.
          The wrapper already carries `x-data="wirekitPopover(…)"`, and an element has exactly
          one Alpine scope — a second x-data passed through the attribute bag does not merge
          with the first, it is simply never applied. The component then appears to render
@@ -395,7 +366,7 @@
                         @unless($isCurrent || ! $row['navigates']) @if($prefetch) wire:navigate.hover @else wire:navigate @endif @endunless
                         data-key="{{ $row['key'] }}"
                         data-search="{{ $row['search'] }}"
-                        {{-- Present ONLY on the current row, never as `false` elsewhere. A
+                        {{-- Present only on the current row, never as `false` elsewhere. A
                              single-select listbox needs `aria-selected="true"` on the chosen
                              option and nothing on the others; spelling out `false` is valid
                              and makes NVDA and JAWS say "not selected" on every row a reader
@@ -440,12 +411,12 @@
                             <span class="ms-auto shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $row['meta'] }}</span>
                         @endif
 
-                        @if($isCurrent)
+                        @wirekitLast($isCurrent)
                             <x-wirekit::icon name="check" size="sm" @class([
                                 'text-[color:var(--color-wk-accent-text)]',
                                 'ms-auto' => ! $row['meta'],
                             ]) aria-hidden="true" />
-                        @endif
+                        @endwirekitLast
                     </a>
                 @endforeach
 
@@ -472,18 +443,18 @@
         <x-wirekit::visually-hidden role="status" aria-live="polite">
             {{-- Was `announcement + 'results'` — JavaScript concatenation with no separator, so
                  the live region said "3results", and "3Treffer" in German. Gluing a number to a
-                 word also fixes the ORDER to English, which several locales do not share. The
+                 word also fixes the order to English, which several locales do not share. The
                  server renders every plural form and `Intl.PluralRules` picks, the same shape
                  status-matrix and data-table use for their counters. --}}
             <span x-text="resultAnnouncement"></span>
         </x-wirekit::visually-hidden>
 
-        @if($create)
+        @wirekitLast($create)
             {{-- Outside the listbox on purpose. It is an action, not one of the things being
                  chosen between, so it must not be an `option` — it is reached with Tab, and
                  the arrow keys stay in the list. --}}
             <div class="border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] py-[var(--padding-wk-y-xs)]">
-                {{-- A ROW, not a button, and the difference is visible.
+                {{-- A row, not a button, and the difference is visible.
                      This was `<x-wirekit::button surface="ghost">`, whose hover surface is
                      the same token the rows use — but a button brings its own geometry with
                      it: `px-sm` against the rows' `px-md`, a corner radius where the rows are
@@ -509,6 +480,6 @@
                     {{ $create['label'] }}
                 </a>
             </div>
-        @endif
+        @endwirekitLast
     </div>
 </x-wirekit::popover>

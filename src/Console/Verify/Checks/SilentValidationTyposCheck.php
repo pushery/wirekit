@@ -31,7 +31,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
      * the page renders with the fallback and the developer never sees
      * the log.
      *
-     * SAFE-DEGRADE contract — this check is an OPTIONAL helper, never
+     * SAFE-DEGRADE contract — this check is an optional helper, never
      * required, never blocks. Every branch handles its failure mode
      * gracefully:
      *   - Log file missing → INFO ("scan skipped — log not at default path")
@@ -42,7 +42,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
      *     ("scan skipped — single-file scan can't see custom channels")
      *   - Found WireKit lines → WARN with example count + first 3 lines
      *   - Found none → PASS
-     * The check NEVER returns FAIL — the doctor's overall exit code is
+     * The check never returns FAIL — the doctor's overall exit code is
      * unaffected.
      *
      * Opt-out: set `wirekit.doctor.scan_logs` to `false` in config. The config key is the
@@ -51,11 +51,11 @@ final class SilentValidationTyposCheck extends VerifyCheck
     private function checkSilentValidationTypos(): void
     {
         // SAFE-DEGRADE outer guard — wrap the entire method body in a
-        // try/catch so ANY unexpected error (filesystem race during
+        // try/catch so any unexpected error (filesystem race during
         // parallel test runs, transient permission issue, glob() / fopen()
         // edge case) silently degrades to an INFO line instead of aborting
         // the rest of the doctor's check pipeline. The doctor's contract
-        // (see method docblock) is that this check NEVER blocks; we extend
+        // (see method docblock) is that this check never blocks; we extend
         // the contract here to "NEVER aborts subsequent checks either".
         // Without this guard, a transient PHP warning escalated to an
         // exception would abort `handle()` mid-pipeline, and the checks
@@ -73,7 +73,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
 
     private function checkSilentValidationTyposBody(): void
     {
-        // Honor opt-out config — defaults to true (helper IS on by default
+        // Honor opt-out config — defaults to true (helper is on by default
         // in dev environments; production developers may disable explicitly).
         $enabled = BooleanProp::from(config('wirekit.doctor.scan_logs', true), true);
         if (! $enabled) {
@@ -81,7 +81,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
         }
 
         // Custom log channels — when the developer routes logs anywhere
-        // OTHER than the default single-file channel ('single' or 'daily'),
+        // other than the default single-file channel ('single' or 'daily'),
         // scanning a static file path would miss the writes entirely. Bail
         // out with an INFO instead of falsely reporting "no typos".
         $defaultChannel = (string) config('logging.default', 'stack');
@@ -161,7 +161,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
         // scanner — read line-by-line — so a huge log file doesn't
         // exhaust memory.
         //
-        // BOUNDED BY AGE, and without that bound this check could never come back green.
+        // Bounded by age, and without that bound this check could never come back green.
         // It reads the whole log history, so a typo fixed weeks ago keeps its line in
         // laravel.log forever and the warning stays yellow for the life of the file. A
         // developer who did exactly what they were told sees no change, which teaches
@@ -188,7 +188,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
 
                 $matchCount++;
 
-                // A line whose timestamp will not parse counts as RECENT. The opposite
+                // A line whose timestamp will not parse counts as recent. The opposite
                 // default would silently drop real findings to keep the output tidy,
                 // which is the failure this whole check exists to catch, one level up.
                 $stamp = strtotime($m['ts']);
@@ -200,7 +200,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
 
                 $recentCount++;
 
-                // Examples from the RECENT set: a sample drawn from the whole history
+                // Examples from the recent set: a sample drawn from the whole history
                 // would show lines the developer has already fixed.
                 if (count($matches) < 3) {
                     $matches[] = trim($line);
@@ -228,7 +228,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
             return;
         }
 
-        // Found something — surface as WARN, NEVER as FAIL. The doctor
+        // Found something — surface as WARN, never as FAIL. The doctor
         // shouldn't refuse to exit zero just because the developer left
         // a typo in a button. Show count + first 3 example lines.
         $exampleLines = implode("\n      ", array_map(

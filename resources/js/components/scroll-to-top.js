@@ -117,7 +117,7 @@ export default function wirekitScrollToTop(config = {}) {
 
         scrollToTop() {
             /*
-             * `behavior` is an ARGUMENT, so the CSS reduced-motion rule cannot
+             * `behavior` is an argument, so the CSS reduced-motion rule cannot
              * reach it. That rule sets `scroll-behavior`, which an explicit
              * argument overrides — the browser does what the call asked for.
              * Every animated scroll in this bundle therefore has to consult the

@@ -10,13 +10,13 @@
  * put in. Not a focus: the focus a dialog moves into itself on opening is trusted as well, and it
  * would take the state before the server's values arrived.
  *
- * WHAT COUNTS. Every field in the panel, by its name or its id, with its value, a checked state or
+ * What counts. Every field in the panel, by its name or its id, with its value, a checked state or
  * the number of files chosen. Left out: buttons, disabled fields, and the search box of a combobox,
  * a multi-select or a scope switcher (`role="combobox"`), where a filter typed and abandoned is no
  * input; those components keep their value in a field of their own, which does count. A field the
  * caller marks `data-wk-discard-ignore`, or that sits in such an element, is left out as well.
  *
- * AND `x-wk-unsaved`. A field inside the panel that the unsaved directive marks holds a value its
+ * And `x-wk-unsaved`. A field inside the panel that the unsaved directive marks holds a value its
  * server does not have, so the panel holds changes whatever the state taken here says.
  *
  * Fields that come and go. Each field is compared with its own value at the state, not the panel

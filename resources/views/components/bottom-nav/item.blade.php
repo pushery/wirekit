@@ -12,14 +12,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav.item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
 
     use Pushery\WireKit\Support\BooleanProp;
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -29,7 +29,7 @@
     // so a caller's target would otherwise reach a bare anchor; for that shape the
     // injection is unconditional. Rendered explicitly with the bag echoed via
     // except('rel'), because
-    // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
+    // $attributes->merge() treats rel as a default and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
     // Unconditional, unlike the sibling in `fab.action` which gates on `$href`: this
@@ -49,7 +49,7 @@
     'href' => '#',
     'label' => '',
     // Which page this is. Marks the item as the current one. In interactive mode
-    // it is the INITIAL current tab; clicks then move it client-side.
+    // it is the initial current tab; clicks then move it client-side.
     'active' => false,
     // Optional icon name — see the icon component.
     'icon' => null,
@@ -67,7 +67,7 @@
     // An empty address, one of white space or `false` is none, so the item keeps its own `#`.
     $href = \Pushery\WireKit\Support\UrlProp::text($href) ?? '#';
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false, 'bottom-nav.item', 'active');
@@ -95,7 +95,7 @@
         // `min-w-0`: a tab takes its share of the bar and cuts a long label, rather than growing to
         // the label's longest word and pushing the bar past its frame. Under a coarse pointer the
         // touch row's 44px floor stands above it.
-        'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1',
+        'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[var(--gap-wk-xs)]',
         // Vertical padding gives the corner badge (-top-1.5 on the icon) room so it
         // does not break through the bar's top border line.
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-lg)]',
@@ -103,7 +103,7 @@
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset',
         // The current-tab look (accent color + heavier weight) is CSS keyed on
-        // data-active (see dist/wirekit.css), NOT baked in here — so it follows the
+        // data-active (see dist/wirekit.css), not baked in here — so it follows the
         // state whether the server sets `active` or the interactive mode's Alpine
         // binding does. The marker line above it is the second, color-independent
         // signal (WCAG 1.4.1).
@@ -134,7 +134,7 @@
 <a data-wk-prose-skip
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
-    {{-- `aria-label=""` is not "no label", it is an EMPTY name, and it overrides the text
+    {{-- `aria-label=""` is not "no label", it is an empty name, and it overrides the text
          content that would otherwise have named the link. With no `label` prop this emitted
          exactly that, so the item became a nameless link rather than falling back to
          anything. Omitted entirely when there is nothing to say. --}}
@@ -147,20 +147,20 @@
     @if($icon)
         <span class="relative inline-flex" aria-hidden="true">
             <x-wirekit::icon :name="$icon" size="lg" />
-            @if($badgeText !== null)
+            @wirekitLast($badgeText !== null)
                 {{-- aria-hidden via the wrapper: the number is already in the
                      link's accessible name, and announcing it twice is worse
                      than not at all. --}}
                 <span data-wk-bottom-nav-badge class="absolute -end-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-danger)] px-1 text-[length:var(--text-wk-xs)] leading-4 text-[color:var(--color-wk-danger-fg)]">{{ $badgeText }}</span>
-            @endif
+            @endwirekitLast
         </span>
     @endif
 
-    @if(filled($label))
+    @wirekitLast(filled($label))
         {{-- A label too long for its tab, a long word of another language for one, shows whole in
              a tooltip on hover, on the link's keyboard focus and on a long press while it is cut. --}}
         <x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="max-w-full">{{ $label }}</x-wirekit::text>
     @else
         <span class="truncate"></span>
-    @endif
+    @endwirekitLast
 </a>

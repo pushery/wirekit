@@ -13,7 +13,7 @@ namespace Pushery\WireKit\Support;
  *
  * Mechanism: each `<x-wirekit::tour.step>` calls `next()` when its own
  * `$index` prop is null (the default), getting the next sequential
- * integer. Blade renders a component's slot BEFORE its view, so a
+ * integer. Blade renders a component's slot before its view, so a
  * tour's steps have drawn their numbers by the time `<x-wirekit::tour>`'s
  * own `@php` block runs; its `reset()` readies the counter for the next
  * tour on the page, not for its own steps.
@@ -49,7 +49,7 @@ final class TourStepCounter
     }
 
     /**
-     * Return the current counter value AND increment it. Called by
+     * Return the current counter value and increment it. Called by
      * `<x-wirekit::tour.step>`'s `@php` block when `$index` is null.
      */
     public static function next(): int

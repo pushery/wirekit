@@ -19,7 +19,7 @@
         // Tailwind never compiled the class it was asked for — the mark rendered with no
         // background at all, silently. The rest of this directory already writes it this
         // way (`color-mix(in_oklch,…)_14%`).
-        // No fallback. It read `oklch(0.905_0.093_102.1)`, which matches NEITHER declared
+        // No fallback. It read `oklch(0.905_0.093_102.1)`, which matches neither declared
         // value of this token — light is `oklch(96.4% 0.058 102.1)` and dark is
         // `oklch(32% 0.06 80)`. So in the one situation a fallback exists for, the highlight
         // came out a color the theme never chose, in both modes, and the palette guard

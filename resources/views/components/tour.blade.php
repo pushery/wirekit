@@ -43,7 +43,7 @@
 @endphp
 
 <div
-    {{-- The progress sentence is handed in as a TEMPLATE rather than built in the plugin,
+    {{-- The progress sentence is handed in as a template rather than built in the plugin,
          because it has to be translatable — a sentence assembled from fragments in
          JavaScript cannot be, and word order is not the same in every language. It is the
          same key the wizard uses, and it reaches both the live region below and the visible

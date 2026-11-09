@@ -22,11 +22,11 @@ final class AiManifestStalenessCheck extends VerifyCheck
 
     /**
      * The generated AI catalogs (`.boost/wirekit.json`, `.wirekit-schema.json`)
-     * are written ONCE and never refreshed on their own — `wirekit:boost-skills`
+     * are written once and never refreshed on their own — `wirekit:boost-skills`
      * and `wirekit:install` both bail early when the file already exists unless
      * `--force` is passed. So after a `composer update` that adds components or
      * props, a committed manifest silently goes stale and keeps feeding an AI
-     * tool the OLD API surface. Warn when a manifest is older than the installed
+     * tool the old API surface. Warn when a manifest is older than the installed
      * package source it is derived from.
      */
     private function checkAiManifestStaleness(): void

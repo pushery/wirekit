@@ -3,21 +3,21 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'target' => null,
-    // A selector for subtrees whose headings are NOT this page's structure, such as live
+    // A selector for subtrees whose headings are not this page's structure, such as live
     // component demos, whose accordion panel titles or carousel product names would otherwise
-    // become entries. `target` cannot help there, because the demos sit INSIDE the article that
+    // become entries. `target` cannot help there, because the demos sit inside the article that
     // holds the real sections. Unset (the default), every heading in `target` is an entry.
     'exclude' => null,
     'levels' => '2,3',
     'position' => 'right',
-    // How far in from the edge `position` chose. `position` picks WHICH edge; this
+    // How far in from the edge `position` chose. `position` picks which edge; this
     // picks the distance, and `0` is expressible: a spine flush against the window.
     // An unlayered stylesheet override would reach every spine in the app rather than
     // the one call that wants it, and it wins only because Tailwind v4 emits its
     // utilities into a layer. Null keeps 1rem.
     'edgeOffset' => null,
     'expand' => 'hover',
-    // NOT the distance from the edge — that is `edgeOffset` above. This is the
+    // Not the distance from the edge — that is `edgeOffset` above. This is the
     // scroll/observer offset the plugin measures a section's arrival against.
     'offset' => '6rem',
     'hideBelow' => 'md',
@@ -52,10 +52,12 @@
 
     // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
     // the default; a bound `null` or empty string is the default without a word.
-    $position = \Pushery\WireKit\WireKit::validateProp('reading-spine', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'right'), ['right', 'left']);
+    // `start` and `end` name the edges where the lines of the page begin and end and follow the
+    // direction of the page; `left` and `right` name a physical edge.
+    $position = \Pushery\WireKit\WireKit::validateProp('reading-spine', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'right'), ['right', 'left', 'start', 'end']);
     $hideBelow = \Pushery\WireKit\WireKit::validateProp('reading-spine', 'hideBelow', \Pushery\WireKit\Support\NumericProp::text($hideBelow ?: 'md'), ['md', 'sm', 'lg', 'xl', 'none']);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -64,7 +66,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@mouseenter', '@mouseleave', '@focusin', '@focusout', 'x-on:keydown.escape.window.capture']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $numbered = BooleanProp::from($numbered, false, 'reading-spine', 'numbered');
@@ -88,14 +90,14 @@
         ->values()
         ->all();
 
-    // A `levels` string can filter down to NOTHING — `levels="0,7"` is entirely
+    // A `levels` string can filter down to nothing — `levels="0,7"` is entirely
     // out of range, and a value that arrived with its own quotes still attached
     // (`levels="'2'"`) casts to 0. The empty array would then reach `min()` at
     // the bottom of this block, and `min([])` is a ValueError: the whole page
     // carrying the spine would fail with a 500 rather than the spine degrading.
     //
     // Falling back to the `levels` default keeps the promise the prop makes — an
-    // out-of-range level is FILTERED, not fatal — and it is the one outcome a
+    // out-of-range level is filtered, not fatal — and it is the one outcome a
     // reader can act on: a default outline instead of a white screen. The fallback
     // spells the same `2,3` the prop declares as its default.
     $levelsArray = $levelsArray ?: [2, 3];
@@ -124,6 +126,8 @@
     // no element uses.
     $positionClass = match ($position) {
         'left' => 'left-[var(--reading-spine-edge-offset,1rem)]',
+        'start' => 'start-[var(--reading-spine-edge-offset,1rem)]',
+        'end' => 'end-[var(--reading-spine-edge-offset,1rem)]',
         default => 'right-[var(--reading-spine-edge-offset,1rem)]',
     };
 
@@ -198,8 +202,8 @@
 
     $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
     // Viewport mode: `fixed` + vertically centered. Scoped/container mode: the
-    // aside is `absolute` at the top of a zero-height STICKY wrapper (rendered
-    // below) so it PINS to the scroll container's viewport (offset by
+    // aside is `absolute` at the top of a zero-height sticky wrapper (rendered
+    // below) so it pins to the scroll container's viewport (offset by
     // --reading-spine-offset-top) instead of scrolling away with the content —
     // an `absolute` element alone is anchored to the scrolling box and scrolls
     // out of view with the article.
@@ -218,7 +222,7 @@
     // the standard --ring-wk-* tokens; hidden on mouse-only focus.
     // `overflow-x-hidden` is explicit (not implied by `overflow-y-auto`):
     // per CSS spec, setting one axis to `auto` while leaving the other at
-    // `visible` computes BOTH axes to `auto`. Long heading labels with
+    // `visible` computes both axes to `auto`. Long heading labels with
     // `white-space: nowrap` on `.wk-reading-spine__label` would then
     // produce a horizontal scrollbar inside the spine even though the
     // ellipsis truncation should clip them visually. Pinning x-axis to
@@ -278,7 +282,7 @@
         'fillSections' => filter_var($fillSections, FILTER_VALIDATE_BOOL),
         'sectionEvents' => filter_var($sectionEvents, FILTER_VALIDATE_BOOL),
         // Config rather than an `x-init` carrying Blade control flow: Alpine's CSP
-        // build parses ONE expression, so a pair of statements wrapped in `@if`
+        // build parses one expression, so a pair of statements wrapped in `@if`
         // would be refused outright — and a refused x-init leaves the element with
         // an empty scope, which takes every other directive on it down silently.
         'forceExpanded' => filter_var($forceExpanded, FILTER_VALIDATE_BOOL),
@@ -324,7 +328,7 @@
 <{{ $rootTag }} data-wk-prose-skip
     x-data="wirekitReadingSpine({{ $alpineOptions }})"
     x-bind:data-expand="expanded ? 'true' : 'false'"
-    data-side="{{ $position === 'left' ? 'left' : 'right' }}"
+    data-side="{{ $position }}"
     {{-- Bound rather than set from the script: a Livewire morph removes every attribute the
          server's copy lacks, and a flag written with `dataset` would go with the first round
          trip, taking the rails' opacity and the band's transition with it. --}}
@@ -388,7 +392,7 @@
     {{-- Optional developer-supplied filter input slot. Two-way-binds to
          `filter` Alpine state via `x-model` on the developer's input. --}}
     @if (\Pushery\WireKit\Support\SlotContent::given($filter ?? null))
-        <div class="wk-reading-spine__filter px-2 pb-2 border-b border-[var(--color-wk-border)]">
+        <div class="wk-reading-spine__filter px-2 pb-[var(--padding-wk-y-md)] border-b border-[var(--color-wk-border)]">
             {{ $filter }}
         </div>
     @endif
@@ -425,7 +429,7 @@
         --}}
         <ol data-wk-prose-skip role="list" data-wk-reading-spine-list
             class="flex flex-col py-[var(--reading-spine-padding-y)] px-[var(--reading-spine-padding-x)]"
-            style="list-style: none; margin: 0; padding-top: var(--reading-spine-padding-y); padding-right: var(--reading-spine-padding-x); padding-bottom: var(--reading-spine-padding-y); padding-left: var(--reading-spine-padding-x); display: flex; flex-direction: column; gap: var(--reading-spine-gap);"
+            style="list-style: none; margin: 0; padding-block: var(--reading-spine-padding-y); padding-inline: var(--reading-spine-padding-x); display: flex; flex-direction: column; gap: var(--reading-spine-gap);"
         >
             <template x-for="item in items" :key="item.key">
                 <li data-wk-prose-skip
@@ -449,7 +453,7 @@
                         {{-- A row of the rail takes the touch floor. A tick of the spine does not: the
                              spacing of the ticks draws the outline of the page, and a tick 44px tall would
                              draw none. --}}
-                        class="wk-reading-spine__link{{ $rail ? ' wk-touch-row' : '' }} group flex items-center gap-2 cursor-pointer text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-reading-spine__link{{ $rail ? ' wk-touch-row' : '' }} group flex items-center gap-[var(--gap-wk-sm)] cursor-pointer text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         :style="linkStyle(item)"
                         @click="scrollTo(item.key, $event)"
                     >
@@ -503,11 +507,11 @@
             </template>
         </ol>
 
-        @if (filter_var($backToTop, FILTER_VALIDATE_BOOL))
+        @wirekitLast (filter_var($backToTop, FILTER_VALIDATE_BOOL))
             {{-- Back-to-top pill — fixed at the spine bottom, scrolls
                  to top on click. Reduced-motion respected via the same
                  matchMedia check as scrollTo. Visible only when expanded
-                 OR when scrollY > 0 (you're past the top).
+                 or when scrollY > 0 (you're past the top).
 
                  `cursor-pointer` is spelled out because nothing else supplies
                  it: Tailwind v4's preflight no longer sets `cursor: pointer` on
@@ -515,7 +519,7 @@
                  dist/wirekit.css — it is a styling hook, not a style. --}}
             <button
                 type="button"
-                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-reading-spine__back-to-top mt-[var(--space-wk-sm)] ms-[var(--space-wk-sm)] inline-flex items-center justify-center cursor-pointer w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 aria-label="{{ __('wirekit::Back to top') }}"
                 @click="scrollToTop()"
             >
@@ -523,7 +527,7 @@
                     <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z" clip-rule="evenodd"/>
                 </svg>
             </button>
-        @endif
+        @endwirekitLast
     </nav>
     @if ($rail)
     </div>

@@ -38,7 +38,7 @@
 @if($label && !$isVertical)
     {{-- Horizontal divider with centered label.
 
-         The name is emitted HERE rather than left to the caller, because `separator` has
+         The name is emitted here rather than left to the caller, because `separator` has
          `childrenPresentational: true` — the label span below renders, and contributes
          nothing to the accessible name. Without it `<x-wirekit::divider label="OR" />`,
          which is what the docs page teaches, would announce as an unnamed separator, and the
@@ -69,7 +69,7 @@
         aria-orientation="vertical"
         {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
             WireKit::resolveClasses('divider', 'base', implode(' ', [
-                'self-stretch border-l',
+                'self-stretch border-s',
                 $borderColor,
             ]), $scope),
         ])) }}
@@ -80,7 +80,7 @@
         @unless($attributes->has('role')) role="separator" @endunless
         {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
             WireKit::resolveClasses('divider', 'base', implode(' ', [
-                'border-t border-b-0 border-l-0 border-r-0',
+                'border-t border-b-0 border-s-0 border-e-0',
                 $borderColor,
             ]), $scope),
         ])) }}

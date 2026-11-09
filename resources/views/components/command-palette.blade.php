@@ -58,12 +58,12 @@
 
     // Page-unique, so two palettes on one page do not share it. With a fixed id the second
     // listbox would duplicate the first one's and the second input's `aria-controls` would
-    // resolve to the FIRST palette's list — a combobox pointing at somebody else's options,
+    // resolve to the first palette's list — a combobox pointing at somebody else's options,
     // with neither palette showing anything wrong: the browser simply takes the first match
     // for a duplicate id and moves on.
     $listId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-command-list-');
 
-    // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
+    // A caller-supplied `aria-label` names the control, not the wrapper `{{ $attributes }}`
     // lands on. On the wrapper, `<x-wirekit::command-palette aria-label="…">` would put the name
     // on a roleless element and leave the control the user actually operates without an
     // accessible name — WCAG 4.1.2 — while looking correct in the markup.
@@ -74,7 +74,7 @@
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $teleport = BooleanProp::from($teleport, true, 'command-palette', 'teleport');
@@ -133,7 +133,7 @@
     ]), $scope);
 
     // The row between the input and the list: controls that narrow what the list shows, which
-    // is why they sit ABOVE it. In the footer a filter would come after the results it filters.
+    // is why they sit above it. In the footer a filter would come after the results it filters.
     $filtersClasses = WireKit::resolveClasses('command-palette', 'filters', implode(' ', [
         'flex flex-wrap items-center',
         'gap-[var(--gap-wk-xs)]',
@@ -268,7 +268,7 @@
                         {{-- Search icon, through the icon system rather than hand-drawn, so it
                              follows the developer's icon preset like every other icon in the
                              package. --}}
-                        <div class="pl-[var(--padding-wk-x-lg)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
+                        <div class="ps-[var(--padding-wk-x-lg)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
                             {{ \Pushery\WireKit\Support\IconSvg::html('search', ['class' => 'w-5 h-5']) }}
                         </div>
                         <input
@@ -280,7 +280,7 @@
                             role="combobox"
                             {{-- The palette's own input is the control the caller means; without a
                                  name it is announced as an unlabeled combobox. The placeholder is
-                                 NOT a name — it disappears the moment the user types. --}}
+                                 not a name — it disappears the moment the user types. --}}
                             @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}" @endif
                             aria-expanded="true"
                             aria-controls="{{ $listId }}"
@@ -297,7 +297,7 @@
 
                                  emitTypedQuery() reports nothing Enter has sent already, so a host
                                  hears the query before the submit and not after it. It reports
-                                 through emitQuery(), which dispatches from the component ROOT, not
+                                 through emitQuery(), which dispatches from the component root, not
                                  from this input: this input is teleported into <body>, so an event
                                  fired here would never pass the root element and a listener placed
                                  on the component would never hear it. Wire it up on the component:
@@ -305,7 +305,7 @@
                                    <x-wirekit::command-palette
                                        x-on:wirekit-command-palette-query="search($event.detail.query)" />
 
-                                 or, from Livewire, with the FULL event name:
+                                 or, from Livewire, with the full event name:
 
                                    <x-wirekit::command-palette
                                        wire:wirekit-command-palette-query="search($event.detail.query)" /> --}}
@@ -340,7 +340,7 @@
                         {{-- Choosing an option closes the palette. On the list rather than on the
                              option, so the option's own handlers run first. --}}
                         x-on:click="closeAfterChoice"
-                        {{-- `wk-command-list` is a MARKER CLASS, documented in the public CSS
+                        {{-- `wk-command-list` is a marker class, documented in the public CSS
                              API as a Stable styling hook, so a developer can scope overrides to
                              it. The list's id is page-unique and is not that hook. --}}
                         class="wk-command-list {{ $listClasses }}"
@@ -348,14 +348,14 @@
                         {{ $slot }}
                     </div>
 
-                    {{-- ONE status region for everything the palette says beside the list, and it
+                    {{-- One status region for everything the palette says beside the list, and it
                          is rendered whenever there is something to say: a live region that
                          appears together with its text is announced unreliably, while text
                          appearing inside a region that already exists is announced. The slots
                          therefore take plain content — a `role="status"` of their own inside
                          this one would be announced twice.
 
-                         A SIBLING of the list, and that is the whole point. `role="listbox"`
+                         A sibling of the list, and that is the whole point. `role="listbox"`
                          owns its children, and they are options; a line of prose among them is a
                          non-option child of a role that requires them, which is what axe reports
                          as `aria-required-children`.
@@ -363,7 +363,7 @@
                          Empty state: the input keeps `aria-expanded="true"` and reports no
                          active descendant, so without this a search that matched nothing would
                          be indistinguishable from a list the reader had not touched. The palette
-                         decides WHEN it shows: only while the list holds no option and no remote
+                         decides when it shows: only while the list holds no option and no remote
                          request is pending or failed. Rendered whenever the slot is passed, the
                          message would sit beneath a full list of results.
 

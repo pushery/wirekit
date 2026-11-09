@@ -37,7 +37,7 @@ return [
     | ISO 4217 currency code the <x-wirekit::price> / <x-wirekit::pricing-tier>
     | components use when no per-call `currency` is passed. Uppercase (EUR, USD,
     | GBP). The components read this key; it is declared here so a global default
-    | is settable AND visible.
+    | is settable and visible.
     |
     */
 
@@ -76,7 +76,7 @@ return [
         'strict' => EnvValue::get('WIREKIT_STRICT_VALIDATION'),
 
         // Whether an invalid value (a bad prop value, an unknown icon alias)
-        // should THROW rather than degrade to a fallback. Null (default) uses the
+        // should throw rather than degrade to a fallback. Null (default) uses the
         // context: console / artisan / test fail fast so a typo breaks the build
         // loudly, while an HTTP request degrades so one bad value cannot 500 a
         // whole view (an unknown icon renders an inert placeholder). Set true to
@@ -157,14 +157,14 @@ return [
     | `storage` picks the backing store:
     |   'local'  — localStorage (default, client-only). The head script must read
     |              it and apply `.dark` before paint; the server never sees it.
-    |   'cookie' — document.cookie, which the SERVER can read on the next request.
+    |   'cookie' — document.cookie, which the server can read on the next request.
     |              With this driver your Laravel layout can resolve the theme from
     |              the request cookie and render <html class="dark"> itself, so the
     |              first paint is already correct and the head script is only a
     |              safety net for the 'system' case. Required for any server-
-    |              rendered dark mode. IMPORTANT: the control writes the cookie from
+    |              rendered dark mode. Important: the control writes the cookie from
     |              JavaScript (unencrypted), so if your app runs the EncryptCookies
-    |              middleware you MUST add this key to its `$except` list, or Laravel
+    |              middleware you must add this key to its `$except` list, or Laravel
     |              drops it as tampered on the server read. `cookie_attributes`
     |              tunes the written cookie (a UI preference: Lax + one-year Max-Age
     |              is the sensible default; Secure is added automatically on HTTPS).
@@ -196,8 +196,8 @@ return [
     |
     | Global a11y defaults. `announce_error` controls whether form controls
     | wrap their error message in an aria-live="polite" region so screen
-    | readers announce it as it appears. Turn it OFF app-wide when your app
-    | runs its OWN error live-region and would otherwise double-announce; a
+    | readers announce it as it appears. Turn it off app-wide when your app
+    | runs its own error live-region and would otherwise double-announce; a
     | per-control `:announce-error` still overrides this default.
     |
     */
@@ -215,7 +215,7 @@ return [
         // states otherwise. Set `data-reduce-motion` on <html> to override it:
         //
         //   reduce          reduce motion whatever the OS says
-        //   no-preference   do NOT reduce, even though the OS asks — for someone
+        //   no-preference   do not reduce, even though the OS asks — for someone
         //                   who set the OS flag for an unrelated reason
         //   attribute absent  follow the OS (the default)
         //
@@ -242,7 +242,7 @@ return [
         'motion_attribute' => 'data-reduce-motion',
 
         // The attribute an increased-contrast preference is expressed with, and like the
-        // one above this is a RECORD of what the stylesheet carries rather than a switch:
+        // one above this is a record of what the stylesheet carries rather than a switch:
         // `dist/wirekit.css` names it literally in its selectors, so changing this string
         // changes nothing. It is here to be read.
         //
@@ -258,7 +258,7 @@ return [
 
         /*
          * The third preference, and the one that is a custom property rather than an
-         * attribute — because it carries a NUMBER, not a state. Motion and contrast each
+         * attribute — because it carries a number, not a state. Motion and contrast each
          * have three named positions; type size is a factor, and an application setting
          * `1.25` should not have to pick from a list somebody else guessed at.
          *
@@ -266,7 +266,7 @@ return [
          *
          *     <html style="--font-scale-wk: 1.25">
          *
-         * Like its two siblings, this key is a RECORD of the name the shipped stylesheet
+         * Like its two siblings, this key is a record of the name the shipped stylesheet
          * carries, not a switch that renames it: the stylesheet reads `--font-scale-wk`
          * whatever the key says, so the two name the same property.
          */
@@ -304,7 +304,7 @@ return [
         // The editor engine is a peer dependency (Tiptap recommended: install
         // @tiptap/core + @tiptap/starter-kit and expose window.wirekitEditor — the
         // legacy window.tiptapEditor name still works as a deprecated alias).
-        // `extensions` is an OPTIONAL list of name hints forwarded to YOUR factory;
+        // `extensions` is an optional list of name hints forwarded to your factory;
         // the factory owns the real extension set (see docs/components/editor.md). It
         // defaults to an empty array so a factory that naively spreads it can't throw on a
         // bare string — set your own hints here only if your factory reads them.
@@ -321,7 +321,9 @@ return [
         'avatar' => ['size' => 'md', 'shape' => 'circle', 'status-variant' => 'dot'],
         'avatar.group' => [],
         'flag' => ['size' => 'md', 'shape' => 'rect'],
-        'alert' => ['variant' => 'info'],
+        // `toast-when-hidden`: every alert a render adds out of view shows as a toast as well; see
+        // the alert's `toast-when-hidden`.
+        'alert' => ['variant' => 'info', 'toast-when-hidden' => false],
         'toggle' => ['size' => 'md'],
         'checkbox' => ['size' => 'md', 'variant' => 'default'],
         'radio' => ['size' => 'md', 'variant' => 'default'],
@@ -330,7 +332,7 @@ return [
         'field.legend' => [],
 
         // Data display components
-        // A sub-component's own options live NESTED, not under its flat dotted name.
+        // A sub-component's own options live nested, not under its flat dotted name.
         // `config()` walks the segments, so a leaf under the literal key `'table.head'` is
         // never reached — it reads as declared and resolves to the caller's default forever.
         // The flat entries below stay as the catalog of sub-components; the values go here.
@@ -356,13 +358,16 @@ return [
         // further accents) or 'categorical' (eight pastels from the `--color-wk-chart-*` tokens,
         // each a fill and an edge). A chart's own `palette` prop wins.
         'chart' => ['palette' => 'semantic'],
-        // The two string defaults are null on purpose. A literal here WINS over the
+        // The two string defaults are null on purpose. A literal here wins over the
         // component's `__()` fallback — `config(key, default)` never reaches its second
         // argument once the key exists — so an English word in this file silently made
         // the catalog unreachable for every application that did not override it.
         'filter-builder' => ['searchable' => false, 'search-placeholder' => null, 'search-debounce' => 300, 'add-label' => null],
         'status-matrix' => ['cell-type' => 'status', 'legend' => true],
-        'notification-center' => ['group-by' => 'none', 'filters' => false],
+        // `trigger`: how a center without one opens, `bell`, the icon button, `row`, an entry in
+        // the look of a sidebar item, for a center that stands among a sidebar's entries, or `rail`,
+        // an entry of an app rail.
+        'notification-center' => ['group-by' => 'none', 'filters' => false, 'trigger' => 'bell'],
         'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false, 'search-debounce' => 300, 'sticky-column' => false],
         'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
         // The first day of the week, 0 (Sunday) to 6 (Saturday); null follows the application's
@@ -425,7 +430,10 @@ return [
         'dropdown.item' => [],
         'dropdown.checkbox-item' => [],
         'dropdown.radio-item' => [],
-        'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100],
+        // `shared`: a tooltip of words alone draws into one panel the page's tooltips share rather
+        // than carrying a panel of its own in its markup, which a form with help on every label
+        // repeats for every field. Its words stand once, in the element its trigger is described by.
+        'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100, 'shared' => false],
         'modal' => ['size' => 'md', 'dismissible' => true, 'confirm-discard' => true, 'confirm-shortcut' => true],
         'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true, 'confirm-discard' => true],
         // `placeholder` is null rather than a literal so the component keeps resolving
@@ -465,7 +473,9 @@ return [
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
         'range-slider' => ['show_values' => true, 'min' => 0, 'max' => 100, 'step' => 1],
         'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],
-        'cart-item' => ['min' => 1, 'size' => 'lg'],
+        // `stepper-surface`: the surface of the − and + of `stepper="buttons"`, `outline`, `soft`,
+        // `filled` or `ghost`.
+        'cart-item' => ['min' => 1, 'size' => 'lg', 'stepper-surface' => 'outline'],
         'number-input' => ['size' => 'md', 'step' => 1],
         'password-input' => ['size' => 'md', 'toggle' => true, 'strength-meter' => false],
         'phone' => ['country' => 'DE', 'size' => 'md'],
@@ -494,7 +504,7 @@ return [
         ],
         'scroll-to-top' => ['size' => 'md'],
         'alert-dialog' => ['dismissible' => false, 'close-on-confirm' => false, 'confirm-shortcut' => true],
-        'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
+        'toast-region' => ['position' => 'top-end', 'duration' => 5000, 'max' => 5],
 
         // Activity-row kind → dot-color token map. Merged over the
         // component's built-in defaults (commit / merge / deploy / comment /
@@ -553,7 +563,7 @@ return [
     |
     | Available built-in presets:
     |   'heroicons'           — base, blade-ui-kit/blade-heroicons (~316 icons, Mini style)
-    |   'heroicons-app'       — stackable extension, EMPTY: all four base presets
+    |   'heroicons-app'       — stackable extension, empty: all four base presets
     |                           carry its words, so it adds nothing. The name
     |                           resolves so a config that lists it keeps booting.
     |   'heroicons-marketing' — stackable extension with marketing/landing aliases
@@ -607,6 +617,15 @@ return [
         'aliases' => [
             // 'close' => 'lucide-x',
         ],
+
+        // Draw the glyphs the kit repeats in every instance once per page. The
+        // question mark of a field's help, the check and the dash of a checkbox,
+        // the arrows of a select and a folding card and the spinner of a busy
+        // button are each written once as a symbol by @wirekitScripts, and every
+        // instance points there instead of carrying the whole drawing. Every page
+        // that renders these components needs @wirekitScripts while this is on:
+        // without it the glyphs have no symbol to point at.
+        'sprite' => EnvValue::get('WIREKIT_ICON_SPRITE', false),
     ],
 
     /*
@@ -647,12 +666,12 @@ return [
     |                          the library's.
     |   'block' / 'fallback' / 'auto' — the remaining CSS values, unchanged.
     |
-    | THIS ONE IS A SWITCH, and it reaches every path WireKit writes: the
+    | this one is A switch, and it reaches every path WireKit writes: the
     | package route substitutes it while serving, and `wirekit:publish-fonts`
     | writes it into the published copy. The one path it cannot reach is a raw
     | `vendor:publish --tag=wirekit-fonts`, which is a plain file copy the
     | framework performs — those files keep whatever the package shipped. That
-    | gap is REPORTED rather than left silent: the <x-wirekit::fonts> component
+    | gap is reported rather than left silent: the <x-wirekit::fonts> component
     | emits an inert HTML comment naming the file, and `wirekit:verify` fails
     | its font check. An interface that looks like an interface and is not is
     | worse than having none, so this one says when it did not reach.
@@ -674,7 +693,7 @@ return [
 
         /*
         |----------------------------------------------------------------------
-        | Metric-matched fallbacks for YOUR fonts
+        | Metric-matched fallbacks for your fonts
         |----------------------------------------------------------------------
         |
         | Every bundled family ships with a second `@font-face` that registers a
@@ -690,7 +709,7 @@ return [
         |         'Your Family' => [
         |             'local' => ['Arial', 'Helvetica Neue', 'Liberation Sans'],
         |             'sizeAdjust' => '___%',      // measure these four
-        |             'ascentOverride' => '___%',  // they are specific to YOUR
+        |             'ascentOverride' => '___%',  // they are specific to your
         |             'descentOverride' => '___%', // font file, and no other
         |             'lineGapOverride' => '___%', // family's numbers will do
         |         ],
@@ -705,7 +724,7 @@ return [
         | than a blank, because a blank cannot be pasted.
         |
         | Measure the four values. Do not estimate them. A guessed `size-adjust`
-        | moves the layout in the OTHER direction and looks deliberate while doing
+        | moves the layout in the other direction and looks deliberate while doing
         | it, which is worse than leaving the whole thing alone. The method, and
         | the two things that are easy to get wrong about it, are on the Fonts
         | component page under "Matching a font you host yourself".
@@ -725,7 +744,7 @@ return [
     |
     | Available adapters:
     |   'chartjs'    — Chart.js (MIT, ~60KB, requires npm install chart.js)
-    |   'apexcharts' — ApexCharts (NOT MIT — see apex_license below)
+    |   'apexcharts' — ApexCharts (not MIT — see apex_license below)
     |
     | You can also provide a fully qualified class name implementing
     | \Pushery\WireKit\Contracts\ChartAdapter for custom chart libraries.
@@ -883,7 +902,7 @@ return [
     | Middleware for the routes that serve WireKit's own CSS, JS and fonts
     | straight from the package (`/wirekit/wirekit.css` and its siblings).
     |
-    | The default is NONE, and that is deliberate. Those handlers read a file
+    | The default is none, and that is deliberate. Those handlers read a file
     | from the package directory — no session, no CSRF token, no auth, no model
     | binding. Putting them in `web` adds `StartSession`, which means a
     | session read and write for every stylesheet hit and, worse, a `Set-Cookie`
@@ -896,7 +915,7 @@ return [
     | Without the cookie the one-year directive is honest and a CDN can actually
     | serve these files, which is what it was written for.
     |
-    | Set this ONLY if your application needs its own middleware on them — a
+    | Set this only if your application needs its own middleware on them — a
     | security-header or HTTPS-enforcement layer you apply everywhere is the
     | realistic case. Both a string and a list are accepted. Anything that starts
     | a session brings the cookie back with it.
@@ -924,7 +943,11 @@ return [
     | A class you put on a component keeps its name. While this is on, a
     | selector of your own that looks for one of the kit's utilities on its
     | elements finds nothing, and a utility of yours on a component element
-    | wins over the kit's where both set the same property.
+    | wins over the kit's where both set the same property, as long as
+    | @wirekitStyles stands before your application's stylesheet, where
+    | wirekit:install puts it: both sheets write their utilities into the same
+    | layer, so the later one wins. wirekit:doctor names a page shell that
+    | loads them the other way round.
     |
     | The setting is read once per request and per queued job, so a middleware
     | may turn it on before the page renders.
@@ -945,11 +968,11 @@ return [
     | longer change what a WireKit component says. "Map" as a verb in your app
     | and "Map" as a noun in a component are two strings now, not one.
     |
-    | `legacy_key_bridge` keeps a translation you wrote BEFORE that prefix
+    | `legacy_key_bridge` keeps a translation you wrote before that prefix
     | existed working. If your catalog has `"Close"` and nothing says
     | `"wirekit::Close"`, your wording still applies. Turn it off to get the
     | package's own wording everywhere and opt into the namespaced keys at your
-    | own pace. It is removed in the next major version.
+    | own pace.
     |
     */
 

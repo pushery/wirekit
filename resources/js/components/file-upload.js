@@ -40,7 +40,7 @@ export function splitFileName(name) {
  * silently, while clicking the label still worked — the kind of half-working that
  * reads as a browser quirk rather than a policy failure.
  *
- * The list also has to follow the input when something ELSE empties it, and three
+ * The list also has to follow the input when something else empties it, and three
  * things do. Livewire clears a bound input by assigning `value` once the property goes
  * back to empty, which is what a save action does; a native form reset clears it; and a
  * page without either can ask for it with the `wirekit:file-upload-reset` event. None of
@@ -95,7 +95,7 @@ export function splitFileName(name) {
  *   with `:name` standing in for the file
  */
 export default function wirekitFileUpload(config = {}) {
-    // The control's root element, resolved ONCE while something is still attached to
+    // The control's root element, resolved once while something is still attached to
     // resolve it from.
     //
     // `$root` is resolved when it is read, by walking up from `$el` to the nearest
@@ -105,7 +105,7 @@ export default function wirekitFileUpload(config = {}) {
     // nothing.
     //
     // Deliberately no `?? this.$el` fallback. A button answers `querySelectorAll`
-    // perfectly well and has no rows inside it, so the list would come back EMPTY and
+    // perfectly well and has no rows inside it, so the list would come back empty and
     // the code would take its last-resort branch — focus to the control, a plausible
     // enough place for focus that the wrong answer would look right.
     let rootEl = null;
@@ -139,7 +139,7 @@ export default function wirekitFileUpload(config = {}) {
         _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         /**
-         * The sentence spoken after a removal, as a TEMPLATE handed in from the Blade.
+         * The sentence spoken after a removal, as a template handed in from the Blade.
          *
          * Assembled from a placeholder rather than concatenated here: a sentence built
          * in JavaScript cannot be translated, and word order is not the same in every
@@ -206,7 +206,7 @@ export default function wirekitFileUpload(config = {}) {
 
             if (input && input.form && typeof input.form.addEventListener === 'function') {
                 this._form = input.form;
-                // `reset` fires BEFORE the browser resets the controls, so the input still
+                // `reset` fires before the browser resets the controls, so the input still
                 // holds the file at this point. The list is emptied without asking it.
                 this._formResetHandler = () => this.reset();
                 this._form.addEventListener('reset', this._formResetHandler);
@@ -598,7 +598,7 @@ export default function wirekitFileUpload(config = {}) {
          * Drop one file — the row's own remove button, and nothing else.
          *
          * The removal takes the focused element away with it. Rows are keyed by file
-         * NAME, so the template drops the node whose key vanished, which is the node
+         * name, so the template drops the node whose key vanished, which is the node
          * holding the button that was just pressed: focus falls back to `<body>` and the
          * next Tab restarts at the top of the page, inside a control the reader was in
          * the middle of using. So focus is placed deliberately afterwards rather than
@@ -632,7 +632,7 @@ export default function wirekitFileUpload(config = {}) {
             this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
 
             this._announce(removed.name);
-            // Resolved HERE — synchronously, while the button that anchors the scope is
+            // Resolved here — synchronously, while the button that anchors the scope is
             // still in the document. The move itself waits for the tick.
             rootOf(this);
             this._focusAfterRemoval(index);
@@ -672,7 +672,7 @@ export default function wirekitFileUpload(config = {}) {
          * no tick and no DOM — the guards make this a no-op there rather than the throw a
          * bare `this.$nextTick` would be.
          *
-         * The root comes from the cache the caller filled, NOT from `$root` read here: by
+         * The root comes from the cache the caller filled, not from `$root` read here: by
          * then the element that anchored the scope is detached. See the note at the top
          * of this file.
          *

@@ -88,13 +88,13 @@ final class ModeTokens
             // "token unresolved" rather than wrong.
             //
             // `[^{};]*` and not `[^{}]*`: a selector list cannot contain a semicolon, and
-            // without that exclusion a `.dark` inside a DECLARATION (`:where(.dark, .dark *)`)
+            // without that exclusion a `.dark` inside a declaration (`:where(.dark, .dark *)`)
             // runs across the gap to the next rule and captures a block it does not belong to.
             $pattern = '/(?<![\w-])(?::where\(\s*)?'.$escaped.'(?:\s*\))?(?:\s*,[^{};]*)?\s*\{([^}]*)\}/u';
             preg_match_all($pattern, $source, $matches);
             $tokens = [];
             foreach ($matches[1] ?? [] as $body) {
-                // Capture EVERY custom property (not just --color-wk-*) so that
+                // Capture every custom property (not just --color-wk-*) so that
                 // a hue-driven token like `oklch(L C var(--theme-hue))` can have
                 // its `--theme-hue` reference substituted before parsing.
                 // The pairings still only evaluate --color-wk-* pairs; the extra
@@ -221,7 +221,7 @@ final class ModeTokens
     /**
      * Which of the audited presentations an `@media` prelude describes.
      *
-     * Deliberately a short list of things that are definitely NOT the default screen,
+     * Deliberately a short list of things that are definitely not the default screen,
      * rather than an attempt at a media-query parser: the cost of the two directions is not
      * symmetric. Misreading a block as screen puts a wrong number in a report somebody can
      * check against their own page; dropping one they meant makes a finding disappear.
@@ -230,7 +230,7 @@ final class ModeTokens
     {
         $prelude = strtolower(trim($prelude));
 
-        // `not print` is every medium EXCEPT paper, so the word alone decides nothing. A
+        // `not print` is every medium except paper, so the word alone decides nothing. A
         // negated query is left where it is rather than guessed at.
         if (preg_match('/(?<![\w-])not(?![\w-])/', $prelude) === 1) {
             return 'screen';
@@ -240,7 +240,7 @@ final class ModeTokens
             return 'dark';
         }
 
-        // The media TYPE, which is a bare word rather than a feature in parentheses.
+        // The media type, which is a bare word rather than a feature in parentheses.
         if (preg_match('/(^|[\s,(])(print|speech)(?![\w-])/', $prelude) === 1) {
             return 'drop';
         }

@@ -114,7 +114,7 @@ export function revealScroll(scrollTop, height, top, bottom) {
 
 export default (options = {}) => ({
     target: options.target || 'main, article',
-    // A selector for subtrees whose headings are NOT this page's structure — an embedded
+    // A selector for subtrees whose headings are not this page's structure — an embedded
     // demo, a sidebar of related links. `null` excludes nothing.
     exclude: options.exclude || null,
     levels: Array.isArray(options.levels) ? options.levels : [2, 3],
@@ -138,7 +138,7 @@ export default (options = {}) => ({
      * Start expanded — always, or only from the md breakpoint up.
      *
      * These arrive as options rather than as an `x-init` because the template's
-     * version was a pair of STATEMENTS wrapped in Blade `@if`, and Alpine's CSP
+     * version was a pair of statements wrapped in Blade `@if`, and Alpine's CSP
      * build parses one expression: under a strict policy the whole attribute was
      * refused, which does not fail loudly — it leaves the element with an empty
      * scope, so every other directive on it goes quiet too. The condition is
@@ -210,7 +210,7 @@ export default (options = {}) => ({
     /**
      * The tick's style, including the per-section progress fill when it is on.
      *
-     * This was a TEMPLATE LITERAL in the attribute, which Alpine's CSP build
+     * This was a template literal in the attribute, which Alpine's CSP build
      * cannot parse at all — and, as everywhere else, a refused expression does
      * not announce itself: the element simply renders with no style, the tick
      * collapses to zero width, and the spine loses the only affordance that says
@@ -237,7 +237,7 @@ export default (options = {}) => ({
      * observers, so a test of the expansion rule would otherwise need a whole
      * document to ask a question about two booleans.
      *
-     * `matchMedia` is read ONCE, here, rather than watched — this is a starting
+     * `matchMedia` is read once, here, rather than watched — this is a starting
      * position, not a responsive binding. The spine's own hover and focus
      * handlers own the state from this point on, and re-deciding it on a resize
      * would fight them.
@@ -596,10 +596,10 @@ export default (options = {}) => ({
     },
 
     /**
-     * The active section is the LAST heading at or above the spine's line.
+     * The active section is the last heading at or above the spine's line.
      *
      * A tall section becomes active once the reader scrolls past its first paragraph, rather than
-     * waiting for the next heading. At the end of the scroller the LAST section is forced active:
+     * waiting for the next heading. At the end of the scroller the last section is forced active:
      * a short final section can never reach the line, and the reader looking at it is in it. A
      * region that cannot scroll at all is at its start, not at its end.
      */
@@ -639,7 +639,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * Per-section progress fill. For each heading, compute how far the reader has scrolled THROUGH
+     * Per-section progress fill. For each heading, compute how far the reader has scrolled through
      * that section (top of next heading − top of this heading). Stores 0..1 on each item; CSS reads
      * via a style="--reading-spine-fill: NN%" inline binding.
      *
@@ -684,7 +684,7 @@ export default (options = {}) => ({
 
     destroy() {
         // The capture flag has to be repeated here. `removeEventListener` matches on target, type,
-        // listener AND capture; leave it off and the call is a silent no-op, and a teardown that
+        // listener and capture; leave it off and the call is a silent no-op, and a teardown that
         // leaves a live handler keeps this component alive and recomputing against a spine that is
         // gone. Under Livewire navigation that accumulated one full set per visit.
         if (this._onScroll) {
@@ -869,7 +869,7 @@ export default (options = {}) => ({
         if (idx >= 0) this.activeIndex = idx;
 
         // Focus goes where the reader asked to go. `preventDefault()` at the top suppressed
-        // the anchor's default, and that default moves TWO things: the scroll and the
+        // the anchor's default, and that default moves two things: the scroll and the
         // sequential-navigation starting point. Only the first was replaced here, so a
         // keyboard reader who jumped to a section was returned to the spine on their very
         // next Tab. Shared with reading-toc, which had the identical gap.

@@ -5,21 +5,21 @@
 
        a five-move drag  → 5 × input, then exactly one change, at release
        one arrow key     → 1 × input, then change, immediately
-       two arrow keys    → one input+change pair EACH, no coalescing
+       two arrow keys    → one input+change pair each, no coalescing
        blur afterwards   → nothing further
 
      So `change` is the boundary for both input modes at once, and it needs no
      special case: it fires once at the end of a drag, and once per keypress
      because one press is already a finished decision.
 
-     The mirror moves DURING the gesture (`@input="current = ..."`), so this
+     The mirror moves during the gesture (`@input="current = ..."`), so this
      marks the gesture's start — otherwise the baseline would already be the
      value being committed and a refusal would roll back onto itself. `after`
      pushes the mirror back onto the element, because the element owns its value
      and a rollback that moved only the mirror would leave the thumb where the
      server refused to put it. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
     // complain either, because `required` is in its HTML passthrough list — so it looked like
@@ -34,7 +34,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'name' => null,
@@ -47,7 +47,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out —
-    // an app that runs its OWN error summary would otherwise double-announce here.
+    // an app that runs its own error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
@@ -68,7 +68,7 @@
     // value => label map (`[0 => 'Low', 100 => 'High']`) for labeled ticks.
     'marks' => [],
     // Decouple the announced aria-valuetext from the visual tick labels: an explicit
-    // value => spoken-text map lets you show NUMERIC ticks but announce semantic meaning
+    // value => spoken-text map lets you show numeric ticks but announce semantic meaning
     // (e.g. [1 => 'Low', 5 => 'High']). Falls back to the `marks` labels.
     'valueTextMap' => null,
     // Show a value bubble above the thumb that follows it as the user drags.
@@ -83,7 +83,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -117,7 +117,7 @@
     // Whether a message line renders below the control: the error, or the hint when there is none.
     $hasMessage = (bool) $error || (bool) $hint;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false, 'slider', 'showValue');
@@ -152,7 +152,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -163,7 +163,7 @@
     // need to style the track + thumb via CSS variables.
     //
     // The id is the same on every render: Livewire's morph recognizes an element by it, and an
-    // id drawn fresh per render would make every round trip REPLACE the range input, so a drag
+    // id drawn fresh per render would make every round trip replace the range input, so a drag
     // bound with `wire:model.live` would lose its thumb mid-gesture. Seeded from the bound property when
     // there is no name, counted per render order when there is neither. DomId keeps it unique on
     // the page like every other form control: a second slider with the same name gets `-2`, so
@@ -201,8 +201,8 @@
     $value = \Pushery\WireKit\Support\NumericProp::orNull($value);
     $currentValue = $value ?? $min;
 
-    // Normalize marks to [['value'=>, 'label'=>, 'pct'=>], ...]. A LIST (`[0, 25, 50]`)
-    // is positions-only (label = the number); a MAP (`[0 => 'Low', 100 => 'High']`)
+    // Normalize marks to [['value'=>, 'label'=>, 'pct'=>], ...]. A list (`[0, 25, 50]`)
+    // is positions-only (label = the number); a map (`[0 => 'Low', 100 => 'High']`)
     // uses the key as the position and the value as the label. pct positions each
     // tick along the track: (value − min) / (max − min) × 100, clamped to 0–100.
     $range = ($max - $min) ?: 1;
@@ -214,30 +214,30 @@
     $marksIsList = true;
     $hasLabeledMarks = false;
     if (! empty($marks)) {
-        // THREE accepted shapes, and the third is the reason this is not a simple
+        // Three accepted shapes, and the third is the reason this is not a simple
         // cast any more:
         //
         //   [0, 50, 100]                                  a plain list of positions
         //   [0 => 'Low', 100 => 'High']                   value => label
         //   [0 => ['label' => 'Low', 'description' => …]] value => label + meaning
         //
-        // The third exists because a slider whose positions MEAN something is the
+        // The third exists because a slider whose positions mean something is the
         // normal case once the values are not numbers — five steps from -2 to +2,
         // each standing for a policy. Before it, a reader saw only the numbers and
-        // had to MOVE the slider to learn what a position means, which is the one
+        // had to move the slider to learn what a position means, which is the one
         // thing they were trying to find out before changing it.
         //
         // `valueTextMap` already solved the screen-reader half well. This is the
         // visual half: what gets announced was not readable without altering the
         // value.
         // `array_is_list` alone is not the list/map question, and reading it as if it were
-        // CRASHED on a legitimate call. `[0 => ['description' => …], 1 => [...]]` is a map
+        // crashed on a legitimate call. `[0 => ['description' => …], 1 => [...]]` is a map
         // whose positions happen to be 0 and 1 — a slider from 0 to 1 with a meaning at each
         // end — and PHP cannot tell that from a list. The list branch then cast a spec array
         // to string: "Array to string conversion", a fatal on markup that is documented as
         // supported. Found by a test written for a different gap.
         //
-        // A list element is a POSITION, never a spec, so an array element settles it: the
+        // A list element is a position, never a spec, so an array element settles it: the
         // caller wrote a map and PHP's key numbering is a coincidence.
         //
         // And a position is a number, which the array test alone does not say. A label map
@@ -277,14 +277,14 @@
     // The track overlay (tooltip bubble + tick marks) needs a relative container.
     $hasTrackOverlay = $tooltip || ! empty($normalizedMarks);
 
-    // Value → semantic-text map. When `marks` is a labeled MAP
-    // (`[0 => 'Low', 100 => 'High']`, i.e. NOT a plain list), the labels carry
+    // Value → semantic-text map. When `marks` is a labeled map
+    // (`[0 => 'Low', 100 => 'High']`, i.e. Not a plain list), the labels carry
     // meaning a screen reader must hear — otherwise the native range input
     // announces only the bare number ("0"), while sighted users read "Low" off
     // the ticks. Build a string-keyed map (the Alpine `current` value is always a
     // string) so the slider can announce the label via aria-valuetext and echo
     // it in the tooltip / value display. A plain list of positions carries no
-    // extra meaning, so it does NOT get aria-valuetext — the number IS the value.
+    // extra meaning, so it does not get aria-valuetext — the number is the value.
     // A caller-supplied aria-valuetext binding wins over our own (the same
     // precedence as aria-label). An explicit `valueTextMap` prop decouples the spoken
     // text from the visual ticks entirely.
@@ -294,15 +294,15 @@
     $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap, 'slider', 'valueTextMap');
     $explicitValueTextMap = is_array($valueTextMap) && $valueTextMap !== [] ? $valueTextMap : null;
 
-    // A marks MAP opts into aria-valuetext ONLY when a label carries meaning beyond the
+    // A marks map opts into aria-valuetext only when a label carries meaning beyond the
     // number (a numeric-label map — [-2 => '-2', …] — stays byte-identical to a plain
-    // slider: the number already IS the value).
-    // Reads the NORMALIZED marks, not the raw prop. Casting the raw value with
+    // slider: the number already is the value).
+    // Reads the normalized marks, not the raw prop. Casting the raw value with
     // `(string)` works for a mark that is a string and throws "Array to string
     // conversion" the moment one is a spec array. Reading
     // the normalized form means the shape is handled in exactly one place — the
     // normalizer above — rather than in every reader of `$marks`.
-    // A DESCRIPTION counts as semantic content, not only a label that differs from the
+    // A description counts as semantic content, not only a label that differs from the
     // value. Without the second clause a map whose marks carry descriptions and no labels
     // binds no `aria-valuetext` at all, so the descriptions reach nothing — while the docs
     // say a mark may carry a description with no label and that the description is what the
@@ -319,15 +319,15 @@
         }
     } elseif ($isLabeledMarkMap) {
         foreach ($normalizedMarks as $m) {
-            // The DESCRIPTION wins over the label when both exist, and that is
+            // The description wins over the label when both exist, and that is
             // the point of the third shape: the label is what a sighted reader
             // sees on the tick ("−2"), the description is what the position
-            // MEANS ("Single verdict"). A screen reader should hear the meaning.
+            // means ("Single verdict"). A screen reader should hear the meaning.
             $valueTextMap[(string) $m['value']] = $m['description'] ?? $m['label'];
         }
     }
 
-    // Bind aria-valuetext when we have a semantic map AND the caller didn't bind it.
+    // Bind aria-valuetext when we have a semantic map and the caller didn't bind it.
     $bindValueText = ($explicitValueTextMap !== null || $isLabeledMarkMap) && ! $callerBindsValueText;
 
     // Track height per size token.
@@ -341,7 +341,7 @@
     // IN-FLOW space for the out-of-flow overlays, so the component never
     // requires the caller to hand-pad around it: the tooltip bubble floats
     // `bottom-full` (pt-7 ≈ bubble + gap) and the tick marks hang `top-full`
-    // (pb-6 with labels, pb-2 ticks-only). Without the reservation the bubble
+    // (pb-6 with labels, a row's vertical padding with ticks only). Without the reservation the bubble
     // clips inside overflow-hidden ancestors and labeled marks overlap the
     // content below. A `min(16rem, 100%)` minimum width is the same usability floor as
     // range-slider: in any shrink-to-fit context (flex/grid auto item, table
@@ -349,7 +349,7 @@
     // collapses to a few px — far too narrow to drag.
     $wrapperClasses = WireKit::resolveClasses('slider', 'wrapper', implode(' ', array_filter([
         // With the value below, a grid rather than the row: the label keeps its column and the
-        // value gets a line of its own under the TRACK. A wrapping row would center the value
+        // value gets a line of its own under the track. A wrapping row would center the value
         // under the label and the track together, half a label away from the track's middle.
         // One column when no label is shown, or an empty first column would still cost a gap.
         // The gap is a gap token and runs between the rows too, so the value line keeps the same
@@ -374,7 +374,7 @@
         // takes that room too: the row wraps, the message is a line of its own (`basis-full`),
         // and it starts under the marks. Without the wrap it was a fourth item of the row,
         // beside the value, and took its width from the track.
-        $valueBelow ? '' : ($hasMessage ? 'flex-wrap gap-y-[var(--gap-wk-xs)]' : ($hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-2' : ''))),
+        $valueBelow ? '' : ($hasMessage ? 'flex-wrap gap-y-[var(--gap-wk-xs)]' : ($hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-[var(--padding-wk-y-md)]' : ''))),
     ])), $scope);
 
     // The native input — we make the thumb and track visible via `wk-slider`
@@ -398,7 +398,7 @@
      * The widest text this box will ever show, so it can reserve that width once and stop
      * resizing while the thumb is held.
      *
-     * The value span is a SIBLING of the track inside a `w-full` flex row, so the track's
+     * The value span is a sibling of the track inside a `w-full` flex row, so the track's
      * width is the row minus the gap minus this box. Anything that changes this box's width
      * moves the track — under the pointer that is dragging it. With `valueTextMap` the text
      * is a word, and the width changes with every step.
@@ -451,12 +451,12 @@
         // And the value line starts under the marks. They hang out of flow from the track, so
         // the grid row does not know they are there: a tick is 0.5rem under the track and a
         // labeled one adds a line of `xs` text, 1.75rem in all.
-        $valueBelow ? ($hasLabeledMarks ? 'mt-7' : (! empty($normalizedMarks) ? 'mt-2' : '')) : '',
+        $valueBelow ? ($hasLabeledMarks ? 'mt-7' : (! empty($normalizedMarks) ? 'mt-[var(--space-wk-sm)]' : '')) : '',
     ])), $scope);
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) — every form input must
     // have a programmatically-determinable name. When no visible `label`
-    // prop is set AND no `aria-label` / `aria-labelledby` is passed via
+    // prop is set and no `aria-label` / `aria-labelledby` is passed via
     // attributes, derive a sr-only fallback from `name` (humanized).
     $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
@@ -479,9 +479,9 @@
     }
 
     // `bind` rather than `value`: `current` already exists on the component this
-    // layer nests inside, so binding to it keeps ONE truth for the value.
+    // layer nests inside, so binding to it keeps one truth for the value.
     //
-    // `after` is what keeps the ELEMENT in step. The mirror is deliberately not
+    // `after` is what keeps the element in step. The mirror is deliberately not
     // bound onto the input, so a write that moved only `current` would leave the
     // thumb where the server refused to put it.
     //
@@ -491,7 +491,7 @@
         'bind' => 'current',
         'after' => 'syncToInput',
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($sliderId.'-error'),
@@ -520,10 +520,10 @@
      fill) update on input. `pct` is the thumb position as a 0–100 percentage,
      which places the tooltip bubble over the thumb.
 
-     `current` is a MIRROR of the input's own value, and it is kept honest in both
+     `current` is a mirror of the input's own value, and it is kept honest in both
      directions. Written once at render and mutated only by @input, it would be
      correct only while the browser is the only thing that moves the thumb. With
-     `wire:model`, a server-side change writes `el.value` directly and fires NO
+     `wire:model`, a server-side change writes `el.value` directly and fires no
      input event, so the mirror would keep the old number while the thumb showed
      the new one, and everything derived from the mirror (aria-valuetext, the
      tooltip, showValue, the fill) would announce a value the reader can no longer
@@ -546,17 +546,17 @@
     x-init="initResync()"
     @if($callerRef !== '') data-wk-ref-scope @endif
     {{-- Caller layout attributes (class / style — e.g. a width constraint)
-         bind to the WRAPPER, not the <input>. The tooltip bubble + tick marks
-         are positioned `left: pct%` relative to the overlay container, which
+         bind to the wrapper, not the <input>. The tooltip bubble + tick marks
+         stand at `pct%` from the inline start of the overlay container, which
          fills the wrapper; the <input> track also fills it (`w-full`). Routing
          a width override onto the input alone would make the input narrower
          than its overlay container, so the bubble's `pct%` would resolve
-         against the WIDER container and float far to the side of the thumb.
+         against the wider container and float far to the side of the thumb.
          Sizing the wrapper keeps the input, the overlay container, and
-         therefore the bubble + marks all at ONE width.
+         therefore the bubble + marks all at one width.
          Input-semantic attributes (wire:model, aria-*, data-*) still flow to
          the <input> below via except(['class','style']). --}}
-    {{-- A parent's hand-written `x-model` answers `x-modelable` above, so it belongs HERE
+    {{-- A parent's hand-written `x-model` answers `x-modelable` above, so it belongs here
          and not on the range input with the rest. On the input it still tracks a drag -- both
          sides listen to the same event -- but the other direction is silent: Alpine sets
          `el.value` without dispatching, so there a programmatic change from the parent would move
@@ -566,7 +566,7 @@
     data-wk-sr-host {{ $attributes->only(['class', 'style'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
 @if($optimisticConfig)
-    {{-- The layer nests INSIDE the component that owns the mirror: a nested
+    {{-- The layer nests inside the component that owns the mirror: a nested
          Alpine component reads and writes its parent's properties through
          `this` and never the reverse, so `bind: 'current'` only resolves this
          way round.
@@ -584,7 +584,7 @@
         @endif
         {{-- Its own label rather than the label component: it stands beside the track in this row,
              not above a control, and takes the row's smaller type. --}}
-        <label data-wk-field-label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</label>
+        <label data-wk-field-label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</label>
         @if($helpId || $hasLabelAfter)
             @if($helpId)
                 @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
@@ -607,7 +607,7 @@
         @if($tooltip)
             {{-- Value bubble that follows the thumb. Decorative — the native input
                  already exposes the value to AT. The bubble moves back by its own pct
-                 so it stays WITHIN the track at the extremes instead of overhanging:
+                 so it stays within the track at the extremes instead of overhanging:
                  at the lowest value it starts where the thumb starts and extends inward,
                  at the highest it ends where the thumb ends, and it centers in the middle.
                  (The native thumb has no JS-readable width, so pct doubles as the shift.) --}}
@@ -619,19 +619,19 @@
         <input
             type="range"
             @if($name) name="{{ $name }}" @endif
-            {{-- aria-required, NOT the native attribute.
+            {{-- aria-required, not the native attribute.
 
                  HTML's `required` does not apply to `type="range"`: a range always has a
                  value, so the constraint can never fail and the browser ignores the
                  attribute outright. Before `required` was a declared prop it reached this
-                 input through the bag, which made the slider LOOK compliant to any check
+                 input through the bag, which made the slider look compliant to any check
                  asking "is there a required on an input?" while nothing was constrained —
                  the exact trap the audit warned a naive guard would fall into.
 
                  aria-required is the honest form: it tells assistive technology the field
                  must be answered, which is true and trivially satisfied here. --}}
             @if($required || $fieldRequired) aria-required="true" @endif
-            {{-- On the input itself: unlike the grouped controls, this IS the single
+            {{-- On the input itself: unlike the grouped controls, this is the single
                  element the message is about. --}}
             @if($error) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
@@ -640,13 +640,13 @@
             max="{{ $max }}"
             step="{{ $step }}"
             x-ref="control"
-            {{-- NOT `:value="current"`. Binding the mirror back onto the element
+            {{-- Not `:value="current"`. Binding the mirror back onto the element
                  makes Alpine re-assert the stale value over whatever Livewire just
                  wrote, which is the other half of the same bug. The element owns
                  its value; the mirror follows it.
 
                  initResync() above re-reads it after every Livewire commit — a
-                 server-side change writes el.value and fires NO input event, so
+                 server-side change writes el.value and fires no input event, so
                  that is the one moment the two can silently diverge. --}}
             value="{{ $currentValue }}"
             @input="current = $event.target.value"
@@ -659,14 +659,14 @@
                 x-on:change="run($event.target.value)"
                 {{-- The gesture begins here, before the mirror moves. A drag
                      writes `current` on every frame via @input above, so a
-                     baseline read at commit time would already BE the committed
+                     baseline read at commit time would already be the committed
                      value. keydown lands before the browser applies the step,
                      for the same reason. --}}
                 x-on:pointerdown="mark()"
                 x-on:keydown="mark()"
             @endif
             {{-- Labeled discrete slider: announce the mark's label, not the bare
-                 number. Only bound for a labeled MAP: on a plain slider the
+                 number. Only bound for a labeled map: on a plain slider the
                  number already is the value. --}}
             @if($bindValueText) :aria-valuetext="valueText" @endif
             @if($disabled) disabled @endif
@@ -678,12 +678,12 @@
 
         @if(! empty($normalizedMarks))
             {{-- Tick marks under the track. Decorative; the native input announces value/min/max. --}}
-            <div data-wk-slider-marks class="pointer-events-none absolute inset-x-0 top-full mt-1" aria-hidden="true">
+            <div data-wk-slider-marks class="pointer-events-none absolute inset-x-0 top-full mt-[var(--space-wk-xs)]" aria-hidden="true">
                 @foreach($normalizedMarks as $mark)
                     {{-- `title` for a pointer. `title` is a hover affordance and there is
                          no hover on touch, so assistive technology gets the same text
                          through `aria-valuetext` on the input instead (see below). --}}
-                    {{-- `pointer-events-auto` ONLY on a tick that carries a title, and only
+                    {{-- `pointer-events-auto` only on a tick that carries a title, and only
                          because the container above is `pointer-events-none` so ticks cannot
                          swallow a drag. Without it the title can never appear: no pointer
                          event reaches the element, so the browser has nothing to show a
@@ -712,9 +712,9 @@
                         @endif
                     >
                         <span class="relative h-1 w-px translate-x-[calc(var(--wk-slider-run,1)*-50%)] bg-[var(--color-wk-border)]" style="inset-inline-start: {{ $mark['pct'] }}%"></span>
-                        @if($mark['label'] !== '')
+                        @wirekitLast($mark['label'] !== '')
                             <span data-wk-slider-mark-label="{{ $loop->index }}" x-bind:style="markLabelStyle({{ $loop->index }})" class="mt-0.5 whitespace-nowrap text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
-                        @endif
+                        @endwirekitLast
                         {{-- No `sr-only` description span here, and no `aria-describedby`:
                              this whole container is `aria-hidden="true"` — correctly, because
                              a tick label duplicates the value — so a span here would be dropped
@@ -722,7 +722,7 @@
                              non-focusable div is inert regardless.
                              The description reaches assistive technology through
                              `aria-valuetext` on the input, which announces the meaning of the
-                             CURRENT position rather than reading every mark at once. --}}
+                             current position rather than reading every mark at once. --}}
                     </div>
                 @endforeach
             </div>
@@ -732,7 +732,7 @@
         {{-- aria-live="polite" so screen readers get the updated value when
              the user releases the slider, not on every tick. --}}
         {{-- `data-wk-slider-value` is the styling hook for the box. The `aria-live` element
-             inside it is the announced TEXT, and beside its width reservation it is a grid
+             inside it is the announced text, and beside its width reservation it is a grid
              child, so a rule aimed at it does not reach the box. --}}
         <span data-wk-slider-value class="{{ $valueClasses }}">
             {{-- The reservation. `aria-hidden` because it is the same value said twice, and
@@ -741,7 +741,7 @@
             <span aria-hidden="true" class="col-start-1 row-start-1 invisible whitespace-nowrap">{{ $widestValueText }}</span>
             {{-- aria-live="polite" so screen readers get the updated value when the user
                  releases the slider, not on every tick. It stays on the element whose text
-                 changes, which is right for the announcement. It is NOT a styling hook for the
+                 changes, which is right for the announcement. It is not a styling hook for the
                  box: that is `data-wk-slider-value` on the parent. This comment offered the
                  attribute as one until the box became a grid, and a rule written against it then
                  moved the text inside the box instead of the box. --}}
@@ -763,12 +763,12 @@
     {{-- The layout keys are written out in each `@class` rather than kept in one array and
          spread in: a class that exists only in a PHP variable is one the drift audit cannot
          trace to this file, and Tailwind would still compile it. --}}
-    @if($error)
+    @wirekitLast($error)
         <p data-wk-prose-skip id="{{ $sliderId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif @class([
             'col-span-full' => $valueBelow,
             'basis-full' => ! $valueBelow,
             'mt-7' => ! $valueBelow && $hasLabeledMarks,
-            'mt-2' => ! $valueBelow && ! $hasLabeledMarks && ! empty($normalizedMarks),
+            'mt-[var(--space-wk-sm)]' => ! $valueBelow && ! $hasLabeledMarks && ! empty($normalizedMarks),
             'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]',
         ])>{{ $error }}</p>
     @elseif($hint)
@@ -776,8 +776,8 @@
             'col-span-full' => $valueBelow,
             'basis-full' => ! $valueBelow,
             'mt-7' => ! $valueBelow && $hasLabeledMarks,
-            'mt-2' => ! $valueBelow && ! $hasLabeledMarks && ! empty($normalizedMarks),
+            'mt-[var(--space-wk-sm)]' => ! $valueBelow && ! $hasLabeledMarks && ! empty($normalizedMarks),
             'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]',
         ])>{{ $hint }}</p>
-    @endif
+    @endwirekitLast
 </div>

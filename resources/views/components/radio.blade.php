@@ -2,7 +2,7 @@
      This was classified as supported once, and a rendered browser test refuted it
      the same day — which is what that test is for.
 
-     A radio is a GROUP control and this component is one element of it. Each
+     A radio is a group control and this component is one element of it. Each
      radio would carry its own optimistic layer holding its own `value`
      attribute — not the group's selection — so there is nothing for a layer to
      roll back to: by the time any handler runs the browser has already
@@ -45,7 +45,7 @@
     $value = \Pushery\WireKit\Support\FieldValue::one($value, 'radio');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -59,7 +59,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -93,7 +93,7 @@
     $attributes = $attributes->except('lang');
 
     // Size scale (aligned with toggle/checkbox): the circle + its inner accent dot
-    // scale together. The dot lives INSIDE the circle and is flex-centered by the
+    // scale together. The dot lives inside the circle and is flex-centered by the
     // circle (items-center/justify-center), so it only needs a size — no left/top
     // offsets. (Absolute offsets relative to the label mis-centered the dot in the
     // `card` variant, whose label padding insets the circle.)
@@ -132,11 +132,12 @@
     //
     // Routed through the class seam, like the checkbox's label: a scope or a personalization
     // reaches the label's display mode, gap and padding under `radio.label`. A card rings for a
-    // radio the arrow keys reached as well, which WebKit does not count as `:focus-visible`
+    // radio the arrow keys reached as well, which WebKit does not count as `:focus-visible`: the
+    // stylesheet draws that ring once for the page, on a card that carries `data-wk-arrow-ring`
     // (utils/arrow-focus.js).
     $labelClasses = WireKit::resolveClasses('radio', 'label', $variantValue === 'card'
-        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)] in-data-[wk-arrow-focus]:has-[:focus]:ring-[length:var(--ring-wk-width)] in-data-[wk-arrow-focus]:has-[:focus]:ring-[var(--color-wk-ring)]'
-        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top', $scope);
+        ? 'group flex items-start gap-[var(--gap-wk-md)] cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
+        : 'group inline-flex items-start gap-[var(--gap-wk-sm)] cursor-pointer relative align-top', $scope);
 
     // The visible label text, under `radio.text` as on the checkbox: the surface a row layout
     // needs, where `min-w-0 flex-1` gives a trailing element the edge to sit against.
@@ -164,11 +165,11 @@
     // Auto-generate ID: a radio set shares one `name` by definition, so the default
     // folds the value in — that part was always right and is unchanged.
     //
-    // What it did NOT do is go through the page-unique registry the other fourteen
-    // name-derived controls use, so two IDENTICAL sets on one page (a filter bar and
+    // What it did not do is go through the page-unique registry the other fourteen
+    // name-derived controls use, so two identical sets on one page (a filter bar and
     // the same filter inside a modal) still emitted the same ids. Radio's hint and
     // error ids derive from $id too, so the second set's aria-describedby pointed at
-    // the FIRST set's help text — the reader hears the wrong hint, and nothing looks
+    // the first set's help text — the reader hears the wrong hint, and nothing looks
     // broken. The 2.20.0 changelog already promised "input, textarea, select and the
     // other name-derived controls", so this was a shipped claim the component did
     // not honor.
@@ -198,10 +199,10 @@
     $fieldGroup = $wkFieldSet instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
     $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($errorName) ?? false);
 
-    // Error detection: explicit prop OR Laravel validation bag (grouped by name)
+    // Error detection: explicit prop or Laravel validation bag (grouped by name)
     $errorMessage = \Pushery\WireKit\Support\FieldError::message($groupOwnsBagEntry ? null : ($errors ?? null), $errorName, $error);
     $hasError = $errorMessage !== null;
-    // Whether this radio answers for the group's message. A group error can be true of SOME of
+    // Whether this radio answers for the group's message. A group error can be true of some of
     // its controls; announced on one that cannot resolve it, the reader hears "invalid" and a
     // sentence that selecting it will not satisfy. `covers()` is not gated on this, so a
     // declining control does not start printing the group's message under itself.
@@ -258,9 +259,9 @@
     }
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
-    // The hit-area reserve, on the BOX rather than the label: the label is the box PLUS
+    // The hit-area reserve, on the box rather than the label: the label is the box plus
     // its text, so an area centered on it sits over the words instead of over the control.
-    // Not in the `card` variant — there the label IS the target, already bordered and
+    // Not in the `card` variant — there the label is the target, already bordered and
     // full-width, and a 2.75rem area hung off the 20px box inside it reaches past the
     // card's own edge, so a tap in the gap between two stacked cards lands on the upper
     // one. Same split, and the same reasoning, as `checkbox.blade.php`.
@@ -282,7 +283,7 @@
         'bg-[var(--color-wk-bg-input)]',
         'peer-checked:border-[var(--color-wk-accent)]',
         // A selected radio keeps its accent ring under the pointer. The hover border above is a
-        // LATER rule of the same specificity, so on its own it turned the ring of a selected radio
+        // later rule of the same specificity, so on its own it turned the ring of a selected radio
         // gray, and the circle that marks "this one" did so only while the pointer was elsewhere.
         // The compound variant outranks it exactly when both states hold, as in checkbox.
         'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
@@ -290,12 +291,9 @@
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',
         'peer-focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
-        // The same ring for a radio the arrow keys reached: WebKit does not count that focus as
-        // `:focus-visible`, and the scripts mark the page while it lasts (utils/arrow-focus.js).
-        'in-data-[wk-arrow-focus]:peer-focus:ring-[length:var(--ring-wk-width)]',
-        'in-data-[wk-arrow-focus]:peer-focus:ring-offset-[length:var(--ring-wk-offset)]',
-        'in-data-[wk-arrow-focus]:peer-focus:ring-[var(--color-wk-ring)]',
-        'in-data-[wk-arrow-focus]:peer-focus:ring-offset-[var(--color-wk-ring-offset)]',
+        // A radio the arrow keys reached rings the same: WebKit does not count that focus as
+        // `:focus-visible`, the scripts mark the page while it lasts, and the stylesheet draws the
+        // ring on the `wk-choice-frame` of a focused radio under the mark (utils/arrow-focus.js).
         'peer-disabled:opacity-[var(--opacity-wk-disabled)]',
         'peer-disabled:cursor-not-allowed',
         'transition-colors',
@@ -314,7 +312,7 @@
     @if($helpId || $labelAfterGiven)
     <div data-wk-label-row class="{{ $labelAfterGiven ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($labelAfterGiven)<span class="{{ $variantValue === 'card' ? 'inline-flex min-w-0 flex-1 items-center gap-[var(--gap-wk-xs)]' : 'inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]' }}">@endif
     @endif
-    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif class="{{ $rowMarkers }}{{ $labelClasses }}">
+    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif @if($variantValue === 'card') data-wk-arrow-ring @endif class="{{ $rowMarkers }}{{ $labelClasses }}">
         {{-- Native radio input — visually hidden but accessible + Livewire wire:model compatible --}}
         <input
             type="radio"
@@ -331,7 +329,7 @@
         />
 
         {{-- Visual circle — sibling of .peer, consumes peer-checked border. The
-             inner accent dot is nested HERE and flex-centered by the circle's
+             inner accent dot is nested here and flex-centered by the circle's
              items-center/justify-center, so it stays centered in both the default
              and card variants. It toggles via the label's group-has-[:checked]
              (a nested element isn't a sibling of .peer, so peer-checked can't
@@ -341,7 +339,7 @@
              `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet brings it back. --}}
         <span class="wk-choice-frame {{ $boxClasses }}" aria-hidden="true">
             {{-- `wk-radio-dot` is the marker the stylesheet's forced-colors rule selects: the
-                 dot's fill IS the selected state, and a background is the one paint that
+                 dot's fill is the selected state, and a background is the one paint that
                  mode takes away — so selected and empty render identically without it. --}}
             <span class="wk-radio-dot hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent)]"></span>
         </span>
@@ -358,16 +356,16 @@
         @if($cardHint)
         <span class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
             @if($label)
-                <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+                <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
             @endif
             <span data-wk-choice-description id="{{ $id }}-hint" class="{{ $descriptionClasses }}">{{ $hint }}</span>
         </span>
         @elseif($label)
-            <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
         @endif
-        @if($hasTrailing)
+        @wirekitLast($hasTrailing)
             <span data-wk-choice-trailing class="{{ $trailingClasses }}">{{ $trailing }}</span>
-        @endif
+        @endwirekitLast
     </label>
     @if($helpId || $labelAfterGiven)
         @if($helpId)
@@ -378,9 +376,13 @@
     @endif
 
     {{-- Error message or hint text. A card's hint stands inside the card, as its description. --}}
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint && ! $cardHint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint && ! $cardHint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

@@ -34,18 +34,14 @@
 @endphp
 
 <li data-wk-prose-skip data-wk-team-member {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
-    {{-- The portrait is decorative HERE, and only here, because the name it would
-         announce is the very next thing in the card. Named, this row read "Ada
-         Lovelace, Ada Lovelace, Head of Platform" — once from the avatar and once
-         from the text — and a roster multiplies that by everyone on it.
+    {{-- The portrait is decorative here, because the name it would announce is the
+         very next thing in the card: named, a row would read the person twice, and a
+         roster multiplies that by everyone on it.
 
-         BOTH attributes are needed, and `alt=""` alone would make it worse. The
-         avatar has three branches: a portrait (`alt=""` is the decorative-image
-         marker it wants), derived initials, and the fallback silhouette. The
-         initials branch hides itself only WHILE a name is present — drop the name
-         and it stops hiding, so the reader hears "A L" instead. `aria-hidden` on
-         the element covers whichever branch renders. Nothing focusable lives
-         inside it, which is the condition that makes hiding a subtree legal. --}}
+         `alt=""` marks a portrait and derived initials decorative, and `aria-hidden`
+         on the element covers whichever of the avatar's branches renders, the
+         fallback silhouette included. Nothing focusable lives inside it, which is the
+         condition that makes hiding a subtree legal. --}}
     <x-wirekit::avatar
         :src="$avatar"
         alt=""
@@ -57,16 +53,16 @@
 
     <span class="min-w-0">
         <span data-wk-team-member-name class="block text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $name }}</span>
-        @if($role)
+        @wirekitLast($role)
             <span data-wk-team-member-role class="block text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $role }}</span>
-        @endif
+        @endwirekitLast
     </span>
 
     {{-- Links slot: put real <x-wirekit::link> elements here. Icon-only links
          need their own accessible name — see the docs page. --}}
-    @if($slot->hasActualContent())
+    @wirekitLast($slot->hasActualContent())
         <span data-wk-team-member-links class="flex items-center gap-[var(--gap-wk-sm)]">
             {{ $slot }}
         </span>
-    @endif
+    @endwirekitLast
 </li>

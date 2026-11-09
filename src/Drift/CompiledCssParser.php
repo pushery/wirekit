@@ -53,7 +53,7 @@ final class CompiledCssParser
 
         /*
          * Pre-pass: decode hex escapes (\HHHHHH with optional trailing
-         * whitespace) on the WHOLE CSS before the selector match runs.
+         * whitespace) on the whole CSS before the selector match runs.
          * Without this, `\32 xl:text-lg` truncates at the space because
          * the selector regex treats whitespace as a selector boundary —
          * the space is actually the hex-escape terminator, not a delimiter.
@@ -75,7 +75,7 @@ final class CompiledCssParser
 
         /*
          * Pre-pass 3: blank function-call bodies. Without this,
-         * `oklch(57.7% 0.245 27.325)` inside a SELECTOR string (e.g.
+         * `oklch(57.7% 0.245 27.325)` inside a selector string (e.g.
          * `.foo[data-color="oklch(50% 0 0)"]`) would still produce
          * phantom `.245` / `.325` matches. Tailwind v4 doesn't put
          * functions in selectors, but defending in depth is cheap.

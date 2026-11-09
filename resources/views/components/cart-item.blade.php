@@ -1,5 +1,5 @@
 {{-- optimistic-ui: candidate — the quantity field is the only asynchronous surface here, and
-     `number-input` already carries `optimistic`/`optimisticArgs`. Deliberately NOT opted in yet:
+     `number-input` already carries `optimistic`/`optimisticArgs`. Deliberately not opted in yet:
      the optimistic contract has to be satisfied first, and a rollback that moves focus or
      announces twice is worse than no optimism at all. With `stepper="buttons"` nothing is shown
      ahead of the application either: the quantity there is the one it answered with. --}}
@@ -20,7 +20,7 @@
     'image' => null,
     'imageAlt' => '',
     // Unit price, and the struck-through previous price. Both go straight through to `price`,
-    // which already draws the strike AND an sr-only "Previous price" — this component does not
+    // which already draws the strike and an sr-only "Previous price" — this component does not
     // re-solve that, and must not.
     'price' => null,
     'compareAt' => null,
@@ -33,7 +33,7 @@
     // currency, and the quantity. Unset, they follow the application's locale, as a `price` of
     // its own would.
     'locale' => null,
-    // What the line costs at this quantity. The APPLICATION computes it. A cart that multiplies
+    // What the line costs at this quantity. The application computes it. A cart that multiplies
     // here would own state, and cart state belongs to Livewire rather than to this library —
     // every second application has to take an assumption like that back out.
     'lineTotal' => null,
@@ -85,6 +85,10 @@
     // the line's key. Every press counts, and the quantity shown is the one the application
     // answers with. `field` is the number field a `wire:model` binds.
     'stepper' => 'field',
+    // The surface of the − and + of `stepper="buttons"`, as on a button: `outline`, `soft`,
+    // `filled` or `ghost`. Without it the configured surface, `outline` unless the project names
+    // another, so a project whose buttons all carry a fill sets it once.
+    'stepperSurface' => config('wirekit.components.cart-item.stepper-surface', 'outline'),
     // Whether the application takes the line out when its quantity reaches zero. With
     // `stepper="buttons"` and `:min="0"`, the − whose press brings the line to zero then draws the
     // remove glyph and is named "Remove", because that is what the press does. It still dispatches
@@ -125,6 +129,12 @@
     $hideQuantity = BooleanProp::from($hideQuantity, false, 'cart-item', 'hideQuantity') && $readonly;
     $layoutValue = WireKit::validateProp('cart-item', 'layout', $layout, ['default', 'compact']);
     $stepperValue = WireKit::validateProp('cart-item', 'stepper', $stepper, ['field', 'buttons']);
+    // `link` is no surface for these: it has no height, and the − and + are targets for a finger.
+    // `outlined`, the spelling `card` takes, draws `outline`, as it does on a button.
+    $stepperSurfaceAliases = ['outlined' => 'outline'];
+    $stepperSurface = \Pushery\WireKit\Support\NumericProp::key($stepperSurface);
+    $stepperSurface = is_string($stepperSurface) ? ($stepperSurfaceAliases[$stepperSurface] ?? $stepperSurface) : $stepperSurface;
+    $stepperSurfaceValue = WireKit::validateProp('cart-item', 'stepperSurface', $stepperSurface, ['outline', 'soft', 'filled', 'ghost']);
     $totalSizeValue = $totalSize === null
         ? config('wirekit.components.price.size', 'md')
         : WireKit::validateProp('cart-item', 'totalSize', $totalSize, ['xs', 'sm', 'md', 'lg', 'xl']);
@@ -199,7 +209,7 @@
         ? new \Illuminate\Support\HtmlString(e($quantityNumber)."\u{00A0}".$unit->toHtml())
         : $quantityNumber.(filled($unit) ? "\u{00A0}".$unit : '');
 
-    // A stable identity for the row, so the remove dispatch says WHICH line and a Livewire
+    // A stable identity for the row, so the remove dispatch says which line and a Livewire
     // re-render keeps the quantity field's DOM. Derived from the name when the caller gives no
     // id, because `uniqid()` would differ between two renders of the same page.
     $itemKey = $attributes->get('id') ?: 'wk-cart-item-'.substr(md5((string) ($name ?? '')), 0, 8);
@@ -287,11 +297,11 @@
     @if($hasMedia || $image)
         {{-- The height of a control, so the thumbnail follows the size scale with the stepper. --}}
         <div data-wk-cart-item-media class="shrink-0 w-[var(--size-wk-md)]">
-            @if($hasMedia)
+            @wirekitLast($hasMedia)
                 {{ $media }}
             @else
                 <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded />
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
@@ -304,7 +314,7 @@
                 <x-wirekit::text :as="$nameHref !== null ? 'a' : 'span'" :href="$nameHref" :lang="$nameLangValue" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" data-wk-cart-item-name class="{{ $compactNameClasses }}">{{ $name }}</x-wirekit::text>
             @endif
 
-            @if($lineTotal !== null)
+            @wirekitLast($lineTotal !== null)
                 <span data-wk-cart-item-total @if($totalLive) aria-live="polite" @endif @class(['shrink-0' => $totalFit === null, 'text-end'])>
                     <x-wirekit::price
                         :amount="$lineTotal"
@@ -315,7 +325,7 @@
                         :fit="$totalFit"
                     />
                 </span>
-            @endif
+            @endwirekitLast
         </div>
 
         {{-- `flex-wrap` for the column that is narrower still: the controls then take a row of
@@ -330,7 +340,7 @@
                     <x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="contain-inline-size">{{ $slot }}</x-wirekit::text>
                 @endif
 
-                @if($price !== null)
+                @wirekitLast($price !== null)
                     <span data-wk-cart-item-unit-price>
                         <x-wirekit::price
                             :amount="$price"
@@ -344,7 +354,7 @@
                             size="sm"
                         />
                     </span>
-                @endif
+                @endwirekitLast
             </div>
 
             <div class="ms-auto flex shrink-0 items-center gap-[var(--gap-wk-xs)]">
@@ -360,9 +370,9 @@
             </div>
         </div>
 
-        @if(isset($details) && $details->hasActualContent())
+        @wirekitLast(isset($details) && $details->hasActualContent())
             <div data-wk-cart-item-details class="{{ $metaClasses }}">{{ $details }}</div>
-        @endif
+        @endwirekitLast
     </div>
 </li>
 @else
@@ -373,11 +383,11 @@
 >
     @if($hasMedia || $image)
         <div data-wk-cart-item-media class="shrink-0 w-16">
-            @if($hasMedia)
+            @wirekitLast($hasMedia)
                 {{ $media }}
             @else
                 <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded />
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
@@ -416,9 +426,9 @@
         {{-- Further lines about this line: what it saves, the promotion it is part of. Display
              copy the application composes, for the reason the variant line above is a slot, and
              it may hold components of its own, a badge for the promotion. --}}
-        @if(isset($details) && $details->hasActualContent())
+        @wirekitLast(isset($details) && $details->hasActualContent())
             <div data-wk-cart-item-details class="{{ $metaClasses }}">{{ $details }}</div>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- `@max-lg` is 32rem = 512px, which is the arithmetic rather than a round number: 64px of
@@ -437,7 +447,7 @@
     <div class="flex shrink-0 flex-wrap items-center gap-[var(--gap-wk-md)] @max-lg/wk-cart-list:w-full @max-lg/wk-cart-list:justify-between">
         @include('wirekit::components.partials.cart-item-quantity')
 
-        {{-- The line total. `aria-live="polite"` sits HERE and on nothing else in the row: a
+        {{-- The line total. `aria-live="polite"` sits here and on nothing else in the row: a
              quantity change moves this number and the cart's grand total, and announcing both
              speaks twice for one click. The line is the one the person just acted on. With
              `stepper="buttons"` the quantity is the region instead (see the partial). --}}

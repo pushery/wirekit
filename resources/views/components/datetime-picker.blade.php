@@ -101,7 +101,7 @@
     // component, so they go on the outermost element (Support\OuterAttributes).
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so each flag is read
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy, so each flag is read
     // against its own default.
     $disabled = BooleanProp::from($disabled, false, 'datetime-picker', 'disabled');
     $readonly = BooleanProp::from($readonly, false, 'datetime-picker', 'readonly');
@@ -906,7 +906,7 @@
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
-    @if($requiredMessageId)
-        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
-    @endif
+    {{-- The required message stands last, so it is included without a block, and Livewire
+         writes no morph markers around it: an include is not one of the blocks it marks. --}}
+    @includeWhen($requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
 </div>

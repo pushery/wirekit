@@ -112,10 +112,10 @@ export default function wirekitSidebarDisclosure(config = {}) {
         /**
          * Whether the child container shows.
          *
-         * Inside a COLLAPSED icon rail the children are force-shown as a flat
+         * Inside a collapsed icon rail the children are force-shown as a flat
          * icon list: the trigger is unreadable at rail width, and hiding the
          * section outright would strand its items. But `collapsed` lives on an
-         * ANCESTOR, and this same component is valid inside a plain sidebar
+         * ancestor, and this same component is valid inside a plain sidebar
          * where no such ancestor exists.
          *
          * The template guarded that with `typeof collapsed !== 'undefined'`,

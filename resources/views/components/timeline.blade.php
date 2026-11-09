@@ -17,7 +17,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('timeline', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $before = BooleanProp::from($before, false, 'timeline', 'before');
@@ -43,23 +43,23 @@
 {{-- `role="list"` is not the redundancy it looks like on an `<ol>` that removes its
      markers. WebKit drops list semantics from a list whose `list-style` is `none` —
      deliberately, so a decorative list is not announced — and the consequence for a list
-     that IS one is that VoiceOver stops saying "list, N items" and stops offering list
+     that is one is that VoiceOver stops saying "list, N items" and stops offering list
      navigation. No other engine shows it. --}}
 <ol data-wk-prose-skip @unless($attributes->has('role')) role="list" @endunless {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} data-wk-timeline="{{ $variant }}" >
     {{-- Optional "before" continuation line — indicates earlier events exist --}}
     @if($before)
         <li data-wk-prose-skip aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">
             {{-- Dashed line with fade-in from top --}}
-            <div style="width: 0; height: 2rem; border-left: 1px dashed var(--color-wk-border); mask-image: linear-gradient(to bottom, transparent, black); -webkit-mask-image: linear-gradient(to bottom, transparent, black);"></div>
+            <div style="width: 0; height: 2rem; border-inline-start: 1px dashed var(--color-wk-border); mask-image: linear-gradient(to bottom, transparent, black); -webkit-mask-image: linear-gradient(to bottom, transparent, black);"></div>
         </li>
     @endif
 
     {{ $slot }}
 
     {{-- Optional "after" continuation line — indicates later events exist --}}
-    @if($after)
+    @wirekitLast($after)
         <li data-wk-prose-skip aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">
-            <div style="width: 0; height: 2rem; border-left: 1px dashed var(--color-wk-border); mask-image: linear-gradient(to top, transparent, black); -webkit-mask-image: linear-gradient(to top, transparent, black);"></div>
+            <div style="width: 0; height: 2rem; border-inline-start: 1px dashed var(--color-wk-border); mask-image: linear-gradient(to top, transparent, black); -webkit-mask-image: linear-gradient(to top, transparent, black);"></div>
         </li>
-    @endif
+    @endwirekitLast
 </ol>

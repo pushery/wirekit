@@ -25,26 +25,23 @@
     'scope' => null,
 ])
 
+{{-- Read from the sidebar, a group or a section around this one: whether a name that does not
+     fit is cut with an ellipsis (the argument is at the sidebar's `truncate`). --}}
+@aware(['truncate' => false])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.collapsible', $attributes->getAttributes());
-
-    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
-    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
-
-    use Pushery\WireKit\Support\BooleanProp;
-    use Pushery\WireKit\Support\DomId;
-    use Pushery\WireKit\WireKit;
-
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
-    // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.sidebar.collapsible.open', false)), 'sidebar.collapsible', 'open');
-    $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.collapsible', 'forceOpen');
-    $foldable = BooleanProp::from($foldable, true, 'sidebar.collapsible', 'foldable');
-    $open = $open || $forceOpen;
+    $truncate = \Pushery\WireKit\Support\BooleanProp::from(
+        \Pushery\WireKit\Support\AwareProp::read('truncate', ['sidebar'], false, ['sidebar.group', 'sidebar.collapsible']),
+        false,
+        'sidebar.collapsible',
+        'truncate',
+    );
+    // `@aware` leaves its key in the bag, where it would render as a stray attribute.
+    $attributes = $attributes->except(['truncate']);
 
     // The folded column's layout is written only where the sidebar can fold, as sidebar.item
     // decides it: a sidebar that is not `collapsible` never carries `data-collapsed`, and a section
@@ -53,15 +50,30 @@
         || \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false), false);
     $foldFlat = $folds ? ' group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0' : '';
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\DomId;
+    use Pushery\WireKit\WireKit;
+
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.sidebar.collapsible.open', false)), 'sidebar.collapsible', 'open');
+    $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.collapsible', 'forceOpen');
+    $foldable = BooleanProp::from($foldable, true, 'sidebar.collapsible', 'foldable');
+    $open = $open || $forceOpen;
+
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
 
-    // The `label` names the trigger BUTTON — it is that button's accessible name and
+    // The `label` names the trigger button — it is that button's accessible name and
     // nothing else. Without these two values a section of four links would reach
     // assistive tech as a button followed by four links, with nothing binding them
     // together.
     //
-    // Read THROUGH the bag rather than written before it. A hardcoded attribute followed
-    // by the bag's own emits the attribute twice and the FIRST one wins, so a developer's
+    // Read through the bag rather than written before it. A hardcoded attribute followed
+    // by the bag's own emits the attribute twice and the first one wins, so a developer's
     // own name would be present in the markup and still never reach the reader, which is
     // why sidebar.toggle reads it the same way. A caller supplying
     // aria-labelledby gets no aria-label from us, so the two never compete for one name.
@@ -69,7 +81,7 @@
         ? null
         : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: (\Pushery\WireKit\Support\SlotContent::textOf($label) !== '' ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null));
 
-    // The role is coupled to the NAME instead of being emitted unconditionally. A
+    // The role is coupled to the name instead of being emitted unconditionally. A
     // role="group" nothing can name announces a boundary and then cannot say what the
     // boundary is for — noise in the accessibility tree of every page that uses one.
     // bento-grid and accordion couple it the same way.
@@ -87,7 +99,7 @@
     // instead of holding the open height. With neither a label nor an icon, `stableId`
     // counts instead, which is page-unique and the same on the next render.
     //
-    // Suffixed rather than reused: the bag emits a caller-supplied `id` on the ROOT, and
+    // Suffixed rather than reused: the bag emits a caller-supplied `id` on the root, and
     // two elements sharing one id is a defect of its own.
     //
     // A seed can still repeat on one page: the same label in two sidebars, or in two
@@ -111,7 +123,7 @@
     // The layout every row of this section shares, the trigger in both variants and the head of a
     // section that does not fold: an icon and a label one sidebar item's gap apart, as sidebar.item
     // draws them. One string, so the four rows cannot drift apart.
-    $rowLayout = 'flex items-center gap-[var(--padding-wk-x-sm)] w-full';
+    $rowLayout = 'flex items-center gap-[var(--space-wk-nav-icon-gap)] w-full';
 
     // Collapsible sidebar group — a disclosure widget that toggles child items.
     // The default trigger looks like a sidebar item but acts as an expand/collapse
@@ -122,7 +134,7 @@
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         // Same row-height floor as sidebar.item, and for the same reason: the label carries
         // `sr-only` in the collapsed rail, so without a floor this row is sized by its
-        // LABEL while expanded and by its ICON while collapsed — 2.75px per row on the
+        // label while expanded and by its icon while collapsed — 2.75px per row on the
         // shipped type ramp, which moves everything below the rail when it collapses.
         'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
         'rounded-[var(--radius-wk-nav-item)]',
@@ -137,8 +149,8 @@
         'cursor-pointer',
     ]), $scope);
 
-    // The 'heading' variant lives in its OWN resolvable block so a theme can restyle
-    // just the heading typography WITHOUT copying the ~12 default-trigger classes and
+    // The 'heading' variant lives in its own resolvable block so a theme can restyle
+    // just the heading typography without copying the ~12 default-trigger classes and
     // drifting on the next release. Mirrors sidebar.group's collapsible-trigger tokens
     // (small uppercase tracked label) while keeping the icon + label + chevron layout.
     $headingTriggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger-heading', implode(' ', [
@@ -187,13 +199,13 @@
     // child item, and the eye cannot tell a wrapped parent from a child. Every reference
     // console draws this line for exactly that reason.
     //
-    // It uses the LOGICAL inline-start edge (`border-s`, `ms-`, `ps-`) so a right-to-left
+    // It uses the logical inline-start edge (`border-s`, `ms-`, `ps-`) so a page that reads from the right
     // document gets the guide on the side its hierarchy actually grows from. Purely
     // decorative: the structure is already carried by aria-expanded on the trigger and by
     // the items being inside the disclosed region, so nothing is lost when it is not seen.
     $childClasses = WireKit::resolveClasses('sidebar.collapsible', 'children', implode(' ', [
         'flex flex-col gap-[2px]',
-        'ms-[var(--padding-wk-x-sm)]',
+        'ms-[var(--space-wk-nav-indent)]',
         'ps-[var(--padding-wk-x-md)]',
         'border-s-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
@@ -224,7 +236,7 @@
              (WCAG 4.1.2) — the same class as the sidebar's own collapse toggle. Fall
              back to a generic name, exactly as sidebar.group does for its twin.
              A caller's `aria-label` cannot serve here: it is read through the bag above
-             and names the ROOT, not this button. --}}
+             and names the root, not this button. --}}
         @if((string) $label === '') aria-label="{{ __('wirekit::Section') }}" @endif
         data-wk-rail-gone class="wk-touch-row {{ $triggerClasses }}"
     >
@@ -236,15 +248,15 @@
                  lifts it onto the label's letters, level with the item icons
                  in the same column. --}}
             <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
-                @if(is_string($icon) && ! str_contains($icon, '<'))
+                @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
                     {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
                 @else
                     {{ $icon }}
-                @endif
+                @endwirekitLast
             </span>
         @endif
-        {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
-        <span class="min-w-0 flex-1 break-words text-left wk-rail-hide">{{ $label }}</span>
+        {{-- Wraps unless `truncate` asks otherwise — see the sidebar's prop for the rule. --}}
+        <span class="min-w-0 flex-1 {{ $truncate ? 'truncate' : 'break-words' }} text-start wk-rail-hide"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"@endif>{{ $label }}</span>
         @if(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
             {{-- Anything the caller wants at the end of the trigger.
                  A group is collapsed to keep the list short — and if it contains items with
@@ -253,11 +265,11 @@
                  Collapsing stops being a decision about space and becomes one that destroys
                  information.
                  A slot rather than a `badge` prop, and the difference is not academic: a
-                 section often wants a SILENT DOT, not a sum — a total across three work
+                 section often wants a silent dot, not a sum — a total across three work
                  queues would assert an urgency the number cannot know. A prop
                  that takes a count cannot express "something is there" without saying how
                  much.
-                 Alpine's `isOpen` is in scope here, so the caller decides WHEN it shows —
+                 Alpine's `isOpen` is in scope here, so the caller decides when it shows —
                  `x-show="! isOpen"` gives the common case, where the individual counters are
                  already visible once the group is expanded and a second summary of the same
                  quantity is one too many. Deliberately not decided for them: a dot that
@@ -272,8 +284,8 @@
                  object form of the binding removes a class it did not add, so a section that closes
                  loses the rotation the markup gave it. --}}
             data-wk-disclosure-arrow
-            data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90' : '' }}"
-            :class="{ 'rotate-90': isOpen }"
+            data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 rtl:-scale-x-100 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90 rtl:-rotate-90' : '' }}"
+            :class="{ 'rotate-90 rtl:-rotate-90': isOpen }"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -282,7 +294,7 @@
 
     {{-- Collapsible children — shown/hidden with Alpine when the sidebar is expanded.
          In the collapsed rail they are FORCE-SHOWN as a flat, centered icon list
-         (the indent is dropped via pl-0) instead of being hidden: the section icons
+         (the indent is dropped via ps-0) instead of being hidden: the section icons
          stay reachable, matching the static sidebar.group. The `typeof collapsed`
          guard is mandatory — a sidebar.collapsible used inside a NON-collapsible
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
@@ -291,9 +303,9 @@
     <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="{{ $childClasses }}{{ $foldFlat }}">
         {{ $slot }}
     </div>
-    @if(is_string($persist) && $persist !== '' && ! $forceOpen)
+    @wirekitLast(is_string($persist) && $persist !== '' && ! $forceOpen)
         @include('wirekit::components.partials.disclosure-persist-seed', ['seedKey' => $persist, 'seedOn' => $open])
-    @endif
+    @endwirekitLast
 </div>
 @else
 {{-- A section that does not fold: the trigger's row to read and the entries indented below it,
@@ -308,19 +320,19 @@
     <div data-wk-rail-gone class="{{ $headClasses }}">
         @if($icon)
             <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
-                @if(is_string($icon) && ! str_contains($icon, '<'))
+                @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
                     {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
                 @else
                     {{ $icon }}
-                @endif
+                @endwirekitLast
             </span>
         @endif
-        {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
-        <span class="min-w-0 flex-1 break-words text-start">{{ $label }}</span>
-        @if(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
+        {{-- Wraps unless `truncate` asks otherwise — see the sidebar's prop for the rule. --}}
+        <span class="min-w-0 flex-1 {{ $truncate ? 'truncate' : 'break-words' }} text-start"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"@endif>{{ $label }}</span>
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
             {{-- Always shown: a section that does not fold never hides the entries it would sum. --}}
             <span class="shrink-0">{{ $trailing }}</span>
-        @endif
+        @endwirekitLast
     </div>
     <div class="{{ $childClasses }}{{ $foldFlat }}">
         {{ $slot }}

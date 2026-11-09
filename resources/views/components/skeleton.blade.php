@@ -11,7 +11,7 @@
     'scope' => null,
 ])
 
-{{-- Spacing reads TOKENS, not literals.
+{{-- Spacing reads tokens, not literals.
 
      These inline styles mixed the two in one declaration — `gap: 0.5rem` beside
      `background: var(--color-wk-bg-skeleton)` — so half of a skeleton's geometry followed a
@@ -19,7 +19,7 @@
      were matched against the declared ones rather than by name: `--gap-wk-sm` is 0.5rem and
      `--gap-wk-md` is 0.75rem, which is not what the names suggest at a glance.
 
-     The remaining literals are DELIBERATE and are the placeholder's own proportions — a bar
+     The remaining literals are deliberate and are the placeholder's own proportions — a bar
      0.75rem tall at 66% width is what a line of text looks like at this scale, and there is no
      token for "the height of a fake line". Those are the shape of the drawing, not the
      theme. --}}
@@ -41,7 +41,7 @@
     // a ceiling runs the request out of memory.
     $lines = max(0, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::from($lines, 3, 'skeleton', 'lines'), 100, 'skeleton', 'lines'));
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $shimmer = BooleanProp::from($shimmer, true, 'skeleton', 'shimmer');
@@ -54,7 +54,7 @@
         'shimmer', 'pulse', 'none' => $animation,
         default => WireKit::validateProp('skeleton', 'animation', $animation, ['shimmer', 'pulse', 'none']),
     };
-    // Legacy `:shimmer="false"` maps to pulse, but only when the caller did NOT
+    // Legacy `:shimmer="false"` maps to pulse, but only when the caller did not
     // explicitly pick an animation (animation still at its 'shimmer' default) —
     // the new `animation` prop always wins when set.
     if ($animationValue === 'shimmer' && ! filter_var($shimmer, FILTER_VALIDATE_BOOL)) {
@@ -103,7 +103,7 @@
     @unless($attributes->has('role')) role="status" @endunless
     @unless($attributes->has('aria-live')) aria-live="polite" @endunless
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
-    {{-- No aria-busy here, deliberately. This element IS the live region, and
+    {{-- No aria-busy here, deliberately. This element is the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells
          assistive technology to withhold the very announcement the region

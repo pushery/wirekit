@@ -13,20 +13,21 @@
  * root at the end of <body> so its `position: fixed` box escapes every ancestor
  * containing block — and sequential focus order follows the DOM, not the
  * screen. A reader who opened a panel and pressed Tab therefore landed on the
- * NEXT top-level item while the open panel sat in front of them, and its links
+ * next top-level item while the open panel sat in front of them, and its links
  * were reachable only after tabbing through the rest of the page. Escape left
  * focus on <body>. So the three edges the teleport broke are handled
  * explicitly: Tab off the trigger steps into the panel, Tab off the panel's
  * last link steps back out to the item after the trigger, and Escape returns
  * focus to the trigger (WCAG 2.4.3).
  *
- * Focus always moves BEFORE the panel hides. `x-show` writes `display: none`,
+ * Focus always moves before the panel hides. `x-show` writes `display: none`,
  * and hiding the subtree that holds focus makes the browser drop it on <body> —
  * after our own focus() call, which would then have accomplished nothing. Same
  * ordering, same reason, as dropdown.js.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  */
+import { inlineStep } from '../utils/inline-direction.js';
 import { focusClicked } from '../utils/focus-clicked.js';
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
@@ -51,7 +52,7 @@ export default function wirekitNavigationMenu() {
         // caller's. See init().
         landmarkName: null,
         _hideTimer: null,
-        // Whether the pointer has MOVED over the open panel since it opened (see leavePanel()).
+        // Whether the pointer has moved over the open panel since it opened (see leavePanel()).
         _pointerMovedInPanel: false,
         _navCleanup: null,
         _onScroll: null,
@@ -82,7 +83,7 @@ export default function wirekitNavigationMenu() {
             }
 
             // Release the placement observer whenever a panel closes, whichever way it closed.
-            // FOUR separate places clear `activeItem` — the SPA cleanup, the delayed close, the
+            // Four separate places clear `activeItem` — the SPA cleanup, the delayed close, the
             // immediate close and a switch to another item — so hooking one of them would leave
             // an observer alive on the other three.
             watchCurrent(this, 'activeItem', (name) => {
@@ -105,7 +106,7 @@ export default function wirekitNavigationMenu() {
             // its trigger scrolls away — it ends up hovering over unrelated
             // content. Closing on scroll is the disclosure-menu convention.
             // Capture + passive so it catches scroll on any ancestor scroll
-            // container; scrolls that originate INSIDE the open panel are
+            // container; scrolls that originate inside the open panel are
             // ignored so a long mega-menu can scroll internally.
             this._onScroll = (event) => {
                 if (!this.activeItem) return;
@@ -132,7 +133,7 @@ export default function wirekitNavigationMenu() {
             // ended outside, never on the press (utils/outside-release.js).
             this._stopOutsideRelease = closeOnOutsideRelease(document, {
                 // The flyout panel is teleported to the overlay root, so a tap inside it
-                // is NOT inside the nav root — without the panel here it would close
+                // is not inside the nav root — without the panel here it would close
                 // before an in-panel link/button click registered.
                 // The panel through the teleports, so a press in a panel opened from inside it counts too.
                 contains: (node) => this.$root.contains(node)
@@ -194,7 +195,7 @@ export default function wirekitNavigationMenu() {
             await this.$nextTick();
 
             // Trigger stays in the bar (not teleported). Query from $root (the
-            // nav element), NOT $el — open() runs off the trigger's x-on:click
+            // nav element), not $el — open() runs off the trigger's x-on:click
             // (and the wrapper's mouseenter), where Alpine binds $el to the
             // event element rather than the nav root, so $el.querySelector
             // would miss the trigger and positioning would never run. The panel is
@@ -216,7 +217,7 @@ export default function wirekitNavigationMenu() {
                     // Everything this call writes is inline style, and a framework update patches
                     // the panel against its own template, whose `style` attribute carries none of
                     // it. The placement is gone while the flyout is still open — and the panel is
-                    // teleported out of the bar, so with no `top` it sits at the END of the
+                    // teleported out of the bar, so with no `top` it sits at the end of the
                     // document instead of under its trigger. The box does not change.
                     //
                     // The unchanged box is why this is `repairErasure` and not
@@ -239,7 +240,7 @@ export default function wirekitNavigationMenu() {
                 if (placement && typeof placement.stop === 'function') {
                     // `activeItem` is compared rather than merely checked for truthiness: a
                     // reader who crossed to another item while this placement was in flight has
-                    // a DIFFERENT panel open, and storing this handle would leak one observer
+                    // a different panel open, and storing this handle would leak one observer
                     // and disconnect the wrong one on the next close.
                     if (this.activeItem === name) {
                         this._stopRepair = placement.stop;
@@ -302,7 +303,7 @@ export default function wirekitNavigationMenu() {
         },
 
         /**
-         * Top-level items in the bar, in DOM order — flyout triggers AND plain
+         * Top-level items in the bar, in DOM order — flyout triggers and plain
          * link items, because both are things a reader arrows across.
          *
          * `$root`, not `$el`: a keydown reaches this from the trigger button or
@@ -382,13 +383,13 @@ export default function wirekitNavigationMenu() {
         /**
          * Escape anywhere while a flyout is open.
          *
-         * Heard on the WINDOW: a flyout a pointer opened leaves the focus where it was, and a key
+         * Heard on the window: a flyout a pointer opened leaves the focus where it was, and a key
          * pressed there, on `<body>` or in the page's content, reaches neither the bar's handler
          * nor the teleported panel's. WCAG 1.4.13 asks for content shown on hover to be
          * dismissible without moving the pointer or the focus, and Escape is the mechanism it
          * names.
          *
-         * Heard in the CAPTURE phase, and a press that closes the flyout is marked as handled, so
+         * Heard in the capture phase, and a press that closes the flyout is marked as handled, so
          * a modal or a drawer around the reader leaves it alone. With the focus in the bar or in
          * the open panel this does nothing: their own handlers run next, close the flyout and hand
          * the focus back to its trigger.
@@ -444,7 +445,7 @@ export default function wirekitNavigationMenu() {
                     break;
 
                 case 'Tab': {
-                    // Step INTO the open panel. Without this the reader tabs to
+                    // Step into the open panel. Without this the reader tabs to
                     // the next top-level item instead, because the panel is
                     // teleported past the end of the nav.
                     if (!isOpen || event.shiftKey) break;
@@ -473,9 +474,10 @@ export default function wirekitNavigationMenu() {
                     event.preventDefault();
                     // A panel left open would cover the item focus is moving to.
                     this.closeAll();
+                    // The items stand in a row that runs from the right on a right-to-left page.
                     this._focusTopLevel({
-                        ArrowRight: current + 1,
-                        ArrowLeft: current - 1,
+                        ArrowRight: current + inlineStep(event, event.target ?? this.$el),
+                        ArrowLeft: current + inlineStep(event, event.target ?? this.$el),
                         Home: 0,
                         End: items.length - 1,
                     }[event.key]);
@@ -554,7 +556,7 @@ export default function wirekitNavigationMenu() {
 
         /**
          * The same rule seen from the other side of the teleport: focus leaving
-         * the BAR for something that is neither the bar nor the open panel
+         * the bar for something that is neither the bar nor the open panel
          * closes the panel too. Without it a reader who opened a flyout and then
          * shift-tabbed back off its trigger left it hanging over the page with
          * nothing focused inside it — the panel never saw a focusout, because

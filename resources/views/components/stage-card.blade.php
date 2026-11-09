@@ -40,7 +40,7 @@
     };
 
     $classes = WireKit::resolveClasses('stage-card', 'base', implode(' ', [
-        'flex flex-col gap-3',
+        'flex flex-col gap-[var(--gap-wk-md)]',
         'rounded-[var(--radius-wk-lg)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
@@ -68,13 +68,13 @@
     @if($label) @unless($attributes->has('role')) role="group" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless @endif
 >
     @if($label || $count !== null)
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center justify-between gap-[var(--gap-wk-sm)]">
             @if($label)
                 <span class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
                     {{ $label }}
                 </span>
             @endif
-            @if($count !== null)
+            @wirekitLast($count !== null)
                 {{-- The count is shown as a number and read with its unit, in the form its
                      number takes: "1 item", "3 items". The unit travels as hidden text beside
                      the number, because ARIA gives an element without a role no name, and a
@@ -83,7 +83,7 @@
                     <span aria-hidden="true">{{ \Pushery\WireKit\Support\LocalizedNumber::count($count) }}</span>
                     <span class="sr-only">{{ \Pushery\WireKit\Support\Plural::choice('wirekit:::count items', \Pushery\WireKit\Support\NumericProp::int($count, 0, 'stage-card', 'count'), ['count' => $count]) }}</span>
                 </span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
@@ -91,9 +91,9 @@
         <x-wirekit::progress :value="$progressValue" :intent="$validIntent" size="sm" aria-label="{{ $label ? __('wirekit:::label progress', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($label)]) : __('wirekit::Stage progress') }}" />
     @endif
 
-    @if($slot->hasActualContent())
-        <div class="flex flex-col gap-2">
+    @wirekitLast($slot->hasActualContent())
+        <div class="flex flex-col gap-[var(--gap-wk-sm)]">
             {{ $slot }}
         </div>
-    @endif
+    @endwirekitLast
 </div>

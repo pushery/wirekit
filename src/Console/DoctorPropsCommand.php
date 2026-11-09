@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\AttributeTarget;
 use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\ConventionHints;
 use Pushery\WireKit\Support\LegacyAxisProps;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\StrictnessGate;
@@ -26,11 +27,11 @@ use Throwable;
  *
  * An unknown prop on a WireKit component is not an error at runtime. Blade passes it
  * through to the attribute bag, so `<x-wirekit::button intnet="danger">` renders a
- * perfectly good button in the WRONG intent, and the only trace is a log line the
+ * perfectly good button in the wrong intent, and the only trace is a log line the
  * developer has to already suspect exists in order to look for it.
  *
  * The strictness gate has known how to detect this since it shipped. What was missing is a
- * way to ASK: the knowledge only fired while a page was being rendered, so finding a typo
+ * way to ask: the knowledge only fired while a page was being rendered, so finding a typo
  * required visiting the page that carried it — which is exactly the visit somebody skips
  * when a page looks right.
  *
@@ -41,7 +42,7 @@ use Throwable;
  * It reports a second shape, and that one is a compiler rule rather than a typo: a slot
  * closing tag followed directly by a word is not a closing tag any more. Blade rewrites it
  * to `@endslot` with nothing after it, the word joins the directive name, and the slot never
- * closes — its content is captured into the DEFAULT slot, the component receives an empty
+ * closes — its content is captured into the default slot, the component receives an empty
  * string where it expected the slot, and the directive is printed on the page as text. The
  * failure has no error and no log line of its own; it was found through a test runner
  * reporting an unclosed output buffer, which an application has no equivalent of.
@@ -67,7 +68,8 @@ class DoctorPropsCommand extends Command
         {path? : Path to scan (defaults to resources/views in the host app)}
         {--fail-on= : Treat findings as a non-zero exit. One of `error` (default) or `none`.}
         {--require-in-scope : Fail when no scanned template uses a WireKit component. For an application that uses WireKit everywhere, an empty scope means the linter went blind.}
-        {--fail-on-legacy-axis : Also exit 1 on an older prop spelling. Off by default, because both spellings are supported API for the whole of v2.}';
+        {--fail-on-legacy-axis : Also exit 1 on an older prop spelling. Off by default, because both spellings are supported API for the whole of v2.}
+        {--fail-on-convention : Also exit 1 on a house-convention hint: an outlined button, a field of a settings page outside a card, a date or a time that may break. Off by default, because each is valid markup.}';
 
     protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, HTML attributes the rendered element does not use, slots passed as attributes, slot closing tags Blade does not compile as one, elements written into a data-list or timeline where its item belongs, and older prop spellings on the shared semantic axes';
 
@@ -86,7 +88,7 @@ class DoctorPropsCommand extends Command
         if (! in_array($failOn, ['error', 'none'], true)) {
             $this->error("Invalid --fail-on value: {$failOn}. Allowed: error / none.");
 
-            // FAILURE, never INVALID. Every wirekit:* command exits 1 on every error path.
+            // Failure, never invalid. Every wirekit:* command exits 1 on every error path.
             return self::FAILURE;
         }
 
@@ -99,6 +101,7 @@ class DoctorPropsCommand extends Command
         $inertAttributeFindings = [];
         $legacyFindings = [];
         $listChildFindings = [];
+        $conventionFindings = [];
         $scanned = 0;
 
         // Per component, the named slots that are not also props: read from the component's
@@ -159,16 +162,20 @@ class DoctorPropsCommand extends Command
                 $listChildFindings[] = ['file' => str_replace(base_path().'/', '', $file)] + $child;
             }
 
+            foreach (ConventionHints::find(str_replace(base_path().'/', '', $file), $contents) as $hint) {
+                $conventionFindings[] = ['file' => str_replace(base_path().'/', '', $file)] + $hint;
+            }
+
             foreach (BladeParser::extractWireKitComponentUsagesFromSource($contents) as $usage) {
-                // A flat LIST of names, and getting this shape wrong is silent in both
-                // directions. `extractProps` returns prop RECORDS (name, default, type_hint
+                // A flat list of names, and getting this shape wrong is silent in both
+                // directions. `extractProps` returns prop records (name, default, type_hint
                 // …), while `unknownPropNames` compares with `in_array($key, $declared)` —
-                // against the VALUES. Hand it the records and every attribute is unknown;
+                // against the values. Hand it the records and every attribute is unknown;
                 // hand it a name-keyed map and every attribute is unknown again, because the
                 // names are then keys. Neither mistake throws; both just report a correct
                 // template as full of typos.
                 // Read before the unknown-prop pass, and deliberately not inside it: an older
-                // spelling IS a declared prop, so it never reaches `unknownPropNames` and
+                // spelling is a declared prop, so it never reaches `unknownPropNames` and
                 // cannot be found by widening that check.
                 foreach (LegacyAxisProps::findIn($usage['name'], $usage['attributes']) as $legacy => $canonical) {
                     $legacyFindings[] = [
@@ -220,7 +227,7 @@ class DoctorPropsCommand extends Command
                 }
 
                 // An empty declared list means the component has no `@props` to
-                // resolve (`glass`), and against an empty list EVERY attribute
+                // resolve (`glass`), and against an empty list every attribute
                 // reads as unknown. The gate returns early on exactly this, so the wave of
                 // phantom findings cannot happen here — but say so, because a reader
                 // wondering why a file is quiet deserves the reason in the code.
@@ -244,7 +251,7 @@ class DoctorPropsCommand extends Command
                         'file' => str_replace(base_path().'/', '', $file),
                         'component' => $usage['name'],
                         'attribute' => $attribute,
-                        'element' => (string) AttributeTarget::elementFor($usage['name']),
+                        'elements' => AttributeTarget::elementsFor($usage['name']) ?? [],
                     ];
                 }
             }
@@ -287,7 +294,7 @@ class DoctorPropsCommand extends Command
             }
         }
 
-        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === [] && $listChildFindings === [] && $legacyFindings === []) {
+        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === [] && $listChildFindings === [] && $legacyFindings === [] && $conventionFindings === []) {
             // Two different clean results, and collapsing them is how the first one
             // hides. Templates exist but none of them use a WireKit component: the
             // run is honest, there was simply nothing in scope — so it succeeds and
@@ -297,7 +304,7 @@ class DoctorPropsCommand extends Command
                 // caller rather than on us. For a library, "nothing in scope" is
                 // not a fault: an application may simply not use the components,
                 // and a linter that failed there would be switched off. For an
-                // application that uses them EVERYWHERE, the same state means the
+                // application that uses them everywhere, the same state means the
                 // linter went blind — a second view path, a renamed directory, a
                 // `path` argument pointing somewhere empty.
                 //
@@ -308,7 +315,7 @@ class DoctorPropsCommand extends Command
                 // the same dependency the empty-directory and no-templates cases
                 // were given exits for; this is the third layer.
                 //
-                // Deliberately NOT a scraped count. "Scanned N template(s)"
+                // Deliberately not a scraped count. "Scanned N template(s)"
                 // answers the neighboring question — how many files ran, not how
                 // many were in scope — and a tree full of templates and no
                 // WireKit component reads as a large number and looks healthy.
@@ -387,7 +394,8 @@ class DoctorPropsCommand extends Command
                 $finding['file'],
                 $finding['component'],
                 $finding['attribute'],
-                OutputFormatter::escape('<'.$finding['element'].'>')
+                // A template that picks between two elements is named with both.
+                OutputFormatter::escape(implode(' or ', array_map(static fn (string $element): string => '<'.$element.'>', $finding['elements'])))
             ));
         }
 
@@ -491,6 +499,23 @@ class DoctorPropsCommand extends Command
             }
         }
 
+        foreach ($conventionFindings as $finding) {
+            $this->line(sprintf('  %s:%d  [%s] %s', $finding['file'], $finding['line'], $finding['rule'], $finding['message']));
+        }
+
+        if ($conventionFindings !== []) {
+            $this->line('');
+            $this->line(sprintf('%d place(s) that leave a house convention.', count($conventionFindings)));
+            $this->line('Each is valid markup and renders, so none of them fails the lint unless asked to. The');
+            $this->line('conventions are what keeps one application reading as one: buttons are filled and take');
+            $this->line('their rank from `intent`, the fields of a settings page stand in cards, and a date or a');
+            $this->line('time a reader sees stays on one line.');
+
+            if (! $this->option('fail-on-convention')) {
+                $this->line('Pass --fail-on-convention to make these a failure.');
+            }
+        }
+
         // Two independent verdicts under one master switch. Folding them together is what
         // would make the advisory class dishonest: an older spelling is valid API, so it must
         // not turn a passing lint into a failing one unless the caller asked for exactly that.
@@ -502,6 +527,7 @@ class DoctorPropsCommand extends Command
             || $inertAttributeFindings !== []
             || $listChildFindings !== []
             || ($legacyFindings !== [] && $this->option('fail-on-legacy-axis'))
+            || ($conventionFindings !== [] && $this->option('fail-on-convention'))
         );
 
         return $failed ? self::FAILURE : self::SUCCESS;
@@ -651,7 +677,7 @@ class DoctorPropsCommand extends Command
      * lands in the attribute bag exactly as it does on the WireKit tag, so it is checked against
      * the same props, and against the props the wrapper declares for itself.
      *
-     * Only a template that passes `$attributes` to exactly ONE WireKit tag counts: with two, which
+     * Only a template that passes `$attributes` to exactly one WireKit tag counts: with two, which
      * of them a caller's attribute is meant for cannot be known. A wrapper of a wrapper is not
      * followed.
      *

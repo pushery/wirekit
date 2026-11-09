@@ -27,8 +27,8 @@
     // The `Schema` builders return bare `@type` fragments, so nesting an Offer
     // inside a Product needs no repeated context to strip. The context belongs
     // exactly once, at the top — so add it here when it is missing. This applies
-    // to BOTH shapes of a top-level schema.org document: a single node (`@type`)
-    // AND a `@graph` composition of several nodes — a bare `@graph`
+    // to both shapes of a top-level schema.org document: a single node (`@type`)
+    // and a `@graph` composition of several nodes — a bare `@graph`
     // with no `@context` is invalid JSON-LD.
     //
     // Back-compatible: data that already carries '@context' (every hand-written

@@ -5,17 +5,17 @@
     'separator' => config('wirekit.components.breadcrumb.separator', 'chevron'),
     // Emit BreadcrumbList JSON-LD for this trail.
     //
-    // Turn it OFF when the page already carries a breadcrumb elsewhere — a shell's top bar and
-    // the content body is the common case. A page must carry exactly ONE BreadcrumbList, and
+    // Turn it off when the page already carries a breadcrumb elsewhere — a shell's top bar and
+    // the content body is the common case. A page must carry exactly one BreadcrumbList, and
     // two of them compete rather than combine: a crawler shown two trails for one URL picks
     // one, or neither.
     //
-    // Defaults ON so nothing about an existing single breadcrumb changes. Same shape and same
+    // Defaults on so nothing about an existing single breadcrumb changes. Same shape and same
     // reasoning as the FAQ component's own `schema` prop, which is the house pattern for a
     // component that emits structured data without being asked.
     //
-    // (Its tag is deliberately NOT written here. Blade is a text preprocessor and does not
-    // know it is inside a PHP comment: an `x-wirekit::` tag in one gets COMPILED, and the
+    // (Its tag is deliberately not written here. Blade is a text preprocessor and does not
+    // know it is inside a PHP comment: an `x-wirekit::` tag in one gets compiled, and the
     // compiled construct lands in the middle of this array. The failure reads "Undefined
     // variable $component" and points at the render rather than at the sentence.)
     'schema' => true,
@@ -26,8 +26,8 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\ListProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `schema="false"` would otherwise KEEP emitting. Normalized against the prop's own
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
+    // `schema="false"` would otherwise keep emitting. Normalized against the prop's own
     // default so a cast never leaves a second BreadcrumbList competing with the first.
     $schema = BooleanProp::from($schema, true, 'breadcrumb', 'schema');
 
@@ -76,7 +76,7 @@
         // that already sits in a narrow scroll strip that hit box reaches past the strip's
         // edge. The expander is for a control with room around it.
         //
-        // Growing the LINE BOX instead adds four pixels of height and not one of width, so
+        // Growing the line box instead adds four pixels of height and not one of width, so
         // the trail keeps its density and nothing reaches past anything. `inline-flex`
         // makes the min-height apply to an inline element at all.
         'inline-flex items-center min-h-[1.5rem]',
@@ -96,7 +96,7 @@
     $currentClasses = WireKit::resolveClasses('breadcrumb', 'current', 'text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]', $scope);
 
     // A step with no page of its own — a navigation group between the home page and this one.
-    // It reads as plain text like the current page, but it is NOT the current page: borrowing
+    // It reads as plain text like the current page, but it is not the current page: borrowing
     // that block would show two crumbs in the emphasis color, and personalizing `current`
     // would restyle both. Muted like the links around it, without the
     // hover and focus a link carries, because there is nothing to activate.
@@ -119,12 +119,12 @@
     // Written as an implode array rather than one string, which is what `$linkClasses` above
     // does and is not only style: the drift inventory reads class literals out of an
     // `implode(' ', [...])` and out of a `class="…"` attribute, not out of a bare
-    // `resolveClasses()` string argument. `self-center` is the catalog's first BARE use — the
+    // `resolveClasses()` string argument. `self-center` is the catalog's first bare use — the
     // sidebar only has it behind a `group-data-` variant — so it compiled into a selector the
     // reverse diff could not trace back to any source.
     $actionsClasses = WireKit::resolveClasses('breadcrumb', 'actions', implode(' ', [
         'inline-flex items-center shrink-0',
-        // The wrapper aligns ITSELF, so the nav keeps its default alignment and a trail
+        // The wrapper aligns itself, so the nav keeps its default alignment and a trail
         // without this slot is unaffected.
         'self-center',
         'gap-[var(--padding-wk-x-xs)]',
@@ -176,7 +176,7 @@
                         {{ $label }}
                     </span>
                 @elseif($href === null)
-                    {{-- An unlinked crumb that is NOT the last one: a real position in
+                    {{-- An unlinked crumb that is not the last one: a real position in
                          the trail that simply has no page to point at. It reads as plain
                          text and carries no aria-current, because only one crumb in a
                          trail can be where the reader is. This branch was folded into
@@ -196,7 +196,7 @@
                 @endif
 
                 @unless($isLast)
-                    {{-- Separator rendered BETWEEN items only (never after the last). --}}
+                    {{-- Separator rendered between items only (never after the last). --}}
                     <span class="{{ $separatorClasses }}" aria-hidden="true">{{ $separatorChar }}</span>
                 @endunless
             </li>
@@ -204,11 +204,11 @@
     </ol>
     @endif
 
-    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         {{-- Inside the nav landmark, outside the list: the control belongs to the trail, but it
              is not a step in it and must never reach the structured data. --}}
         <div class="{{ $actionsClasses }}">{{ $actions }}</div>
-    @endif
+    @endwirekitLast
 </nav>
 
 {{-- Schema.org BreadcrumbList structured data (JSON-LD), delegated to

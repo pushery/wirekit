@@ -1,7 +1,7 @@
 {{-- optimistic-ui: candidate
      It already has a save seam with its own error and morph handling — the closest thing in the catalog to an optimistic component, and the one whose enablement needs the most care not to duplicate what it does. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade would fold
     // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk.
     'required' => false,
@@ -13,15 +13,15 @@
     // field's description (partials/field-help).
     'help' => null,
     'error' => null,
-    // Names the RECORD as well as the field. "Edit: Title" is useless in a list
+    // Names the record as well as the field. "Edit: Title" is useless in a list
     // of twenty rows — a screen reader then reads twenty identical entries and
     // the user cannot tell which one they are on.
     'context' => null,
-    // What the reader SEES. There is deliberately no `none`: plain text is not
+    // What the reader sees. There is deliberately no `none`: plain text is not
     // focusable, so a value with no button is unreachable by keyboard entirely
     // (WCAG 2.1.1). `focus-only` gives the quiet look without that defect.
     'trigger' => 'always',
-    // Whether clicking the VALUE opens the editor. Separate axis from `trigger`
+    // Whether clicking the value opens the editor. Separate axis from `trigger`
     // — one is what you see, the other is what acts.
     'openOnValueClick' => true,
     'exclusive' => true,
@@ -29,11 +29,11 @@
     'control' => 'text',
     // Options for control="select" — key => label.
     'options' => [],
-    // What READ MODE shows when the stored value is not the readable one: a
+    // What read mode shows when the stored value is not the readable one: a
     // select stores a key, an amount stores 1299, a date stores an ISO string.
     // Defaults to the value, and resolves itself for a select.
     'displayValue' => null,
-    // Read-mode text when there is no value. Deliberately NOT called
+    // Read-mode text when there is no value. Deliberately not called
     // `placeholder`: on input, textarea and select that name already means the
     // HTML attribute, and a second `placeholder` meaning something else would
     // damage the prop vocabulary rather than extend it.
@@ -45,7 +45,7 @@
     // sm / md / lg only: `md-compact` exists on input and select but not on
     // textarea or number-input, so offering it here would throw for two of the four.
     'size' => 'md',
-    // Cross-axis behavior. `auto` measures the content, so the width DOES jump
+    // Cross-axis behavior. `auto` measures the content, so the width does jump
     // when the editor opens and that is the honest choice for a short value in
     // running text. `full` takes the container width, and then read and edit
     // boxes are the same width — which is the half of layout stability that can
@@ -61,7 +61,7 @@
     // is no pencil, since editing is no action here.
     // Undeclared, the attribute landed on the wrapper div, where it stops nothing.
     'readonly' => false,
-    // NOTE: `loadingTarget`, not `target` — the same distinction the button
+    // Note: `loadingTarget`, not `target` — the same distinction the button
     // draws, so a page using both does not have to remember two spellings.
     'loadingTarget' => null,
     'announceError' => null,
@@ -77,7 +77,7 @@
     // answer is genuinely guaranteed.
     'saveTimeout' => 10000,
     // What the reader is told when that bound is reached. Without it the live
-    // region would fall back to the EMPTY STRING and abandon the save in silence.
+    // region would fall back to the empty string and abandon the save in silence.
     // A field that announced itself busy and then says nothing at all is the worst of the
     // three possible outcomes — a screen-reader user is left with no way to know
     // whether the edit was kept, and sighted readers only see a spinner stop.
@@ -125,13 +125,13 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // A validation failure returns as re-rendered HTML with a filled bag, NOT as
+    // A validation failure returns as re-rendered HTML with a filled bag, not as
     // a transport error — so the bag is where the message actually is. Read the
     // same way the form controls read it, under this field's name.
     //
     // Both reads are guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()` and `first(null)` returns
-    // the bag's FIRST message — so without the guard an inline-edit with no `name`
+    // the bag's first message — so without the guard an inline-edit with no `name`
     // would not merely turn red when an unrelated field failed, it would display
     // that other field's message as its own.
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
@@ -144,10 +144,10 @@
     // saying why — a WCAG 3.3.1 failure the markup looks fine in.
     $showsError = $hasError && $errorMessage;
 
-    // A caller-supplied `aria-label` names the CONTROL, and `{{ $attributes }}` lands on
+    // A caller-supplied `aria-label` names the control, and `{{ $attributes }}` lands on
     // the roleless root wrapper — so `<x-wirekit::inline-edit aria-label="Notes" />` would
     // otherwise render a name on a div while the <input> kept none at all (WCAG 4.1.2). It is
-    // NOT folded into `label`: that renders a VISIBLE label, and a caller reaching for
+    // not folded into `label`: that renders a visible label, and a caller reaching for
     // `aria-label` is asking for the opposite.
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     // A caller's `aria-labelledby` goes to the control the same way; on the wrapper it would
@@ -167,7 +167,7 @@
     $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
     $attributes = $attributes->except('autofocus');
 
-    // Read mode carries the SAME padding, text size and border width as the
+    // Read mode carries the same padding, text size and border width as the
     // control it will be replaced by, with the border transparent at rest. The
     // box is therefore already reserved: opening the editor recolors a border
     // rather than adding two pixels, and the focus ring lands on a box that was
@@ -184,10 +184,10 @@
 
     // ── The three forced rules, one per control type ─────────────────────
     //
-    // A textarea CANNOT have its action buttons switched off. Enter has to
+    // A textarea cannot have its action buttons switched off. Enter has to
     // insert a line there, so the only keyboard commit is Cmd/Ctrl+Enter — and
     // with the buttons gone and blur deliberately not committing, a reader who
-    // does not know that shortcut has NO way to save at all. The exits left are
+    // does not know that shortcut has no way to save at all. The exits left are
     // Escape, which discards. That is a data-loss shape, so the library refuses
     // to render it rather than documenting around it.
     $actionsForced = false;
@@ -214,7 +214,7 @@
             .($commitOnForced ? 'commitOn is forced to explicit on a select (arrow-key navigation would commit each option passed over). ' : ''));
     }
 
-    // The id is NOT derived from `name`. Twenty rows bound to `title` would
+    // The id is not derived from `name`. Twenty rows bound to `title` would
     // otherwise emit twenty identical ids, and `label[for]` resolves to the
     // first one — so every label in the list would point at row one.
     //
@@ -276,7 +276,7 @@
     $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hintId, $helpId ?? null);
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
-    // ── Read mode shows the READABLE value ───────────────────────────────
+    // ── Read mode shows the readable value ───────────────────────────────
     //
     // Almost no real field stores what it should display: a select stores a
     // key, money stores 1299, a date stores an ISO string, a relation stores an
@@ -331,7 +331,7 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // The trigger's visibility. `hover` is FORCED visible on focus and on a
+    // The trigger's visibility. `hover` is forced visible on focus and on a
     // coarse pointer — there is no hover on a touch screen, so without that the
     // control would be invisible and unreachable on a phone. Inside a touch surface
     // (`data-wk-touch`) too, which is worked by finger whatever pointer it reports.
@@ -352,7 +352,7 @@
         $triggerVisibility,
     ]), $scope);
 
-    // Deliberately says the state is UNKNOWN rather than claiming a failure. A
+    // Deliberately says the state is unknown rather than claiming a failure. A
     // timeout is not evidence that the save failed — the request may well have
     // landed and only the acknowledgment went missing, so telling the reader it
     // failed would invite a second edit over a value that was already stored.
@@ -402,7 +402,7 @@
     @wirekit:inline-edit-saved.window="onSaved($event)"
     @wirekit:inline-edit-failed.window="onFailed($event)"
 >
-    {{-- The label renders in BOTH modes and lives outside the part that toggles.
+    {{-- The label renders in both modes and lives outside the part that toggles.
          Inside it, the field would be unlabeled while reading and the label
          would jump into place on open — a layout shift caused by a11y markup. --}}
     @if($label)
@@ -421,7 +421,7 @@
              before it is edited, in the smaller type and heading weight of a caption, and stays in
              place when the editor opens. --}}
         <label data-wk-field-label @if($labelId) id="{{ $labelId }}" x-on:click="focusFromLabel()" @else for="{{ $controlId }}" @endif x-on:mousedown="keepFocusOnLabel($event)" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
-            {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
+            {{ $label }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast
         </label>
         @if($helpId || $hasLabelAfter)
             @if($helpId)
@@ -437,7 +437,7 @@
         x-show="!editing"
         class="flex items-center gap-[var(--gap-wk-sm)] {{ $width === 'full' ? 'w-full' : '' }}@if($disabled) opacity-[var(--opacity-wk-disabled)]@endif"
     >
-        {{-- role="presentation" and NOT a button. Making the value itself the
+        {{-- role="presentation" and not a button. Making the value itself the
              button would name it "Jane Doe" for a screen reader, which says
              nothing about the action, and would break voice control by giving
              the control a name that is not its visible text (WCAG 2.5.3). --}}
@@ -451,7 +451,7 @@
                 x-on:click="onValueClick($event)"
             @endif
         >
-            @if($hasValue && $displayIsMarkup)
+            @wirekitLast($hasValue && $displayIsMarkup)
                 {{-- `wk-editor-content` is the editor's own typography, so read mode and the
                      open editor show the same document the same way. --}}
                 <div class="wk-editor-content text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">{{ $resolvedDisplay }}</div>
@@ -461,7 +461,7 @@
                 <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text-muted)] italic">
                     {{ $emptyText ?? __('wirekit::Not set') }}
                 </span>
-            @endif
+            @endwirekitLast
         </div>
 
         {{-- No pencil on a read-only field: editing is no action there. --}}
@@ -483,7 +483,7 @@
         </button>
         @endunless
 
-        @if($width === 'full' && $actions)
+        @wirekitLast($width === 'full' && $actions)
             {{-- Reserves the second action slot that only edit mode fills.
                  `width="full"` promises that the read box and the edit box are the same
                  width, and read mode has one trailing button where edit mode has two
@@ -505,7 +505,7 @@
             <span class="{{ $actionClasses }} invisible" aria-hidden="true">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"></svg>
             </span>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- Edit mode. x-show rather than x-if: Livewire stops patching attributes
@@ -525,12 +525,12 @@
          one of text · textarea · number · select — there is no `editor` value in
          it, the slot is its own path. --}}
     <div x-show="editing" x-cloak class="flex {{ ($control === 'textarea' || \Pushery\WireKit\Support\SlotContent::given($editor ?? null)) ? 'items-start' : 'items-center' }} gap-[var(--gap-wk-sm)] {{ $width === 'full' ? 'w-full' : '' }}">
-        {{-- ONE partial for the built-in types and the developer's own control.
+        {{-- One partial for the built-in types and the developer's own control.
              Two branches here would let the slot path quietly lose a wiring
              detail the enum path sets, and nothing would look different enough
              to notice.
 
-             The buttons stay IN FLOW rather than overlaying the content below.
+             The buttons stay in flow rather than overlaying the content below.
              Overlaying avoids the reflow but covers whatever is underneath —
              and it does that in exactly the dense lists this component is for,
              which is WCAG 2.4.11. So the block-axis growth is deliberate, and
@@ -562,7 +562,7 @@
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
-    {{-- The save outcome is ANNOUNCED, never inferred from a round trip ending.
+    {{-- The save outcome is announced, never inferred from a round trip ending.
          role="status" is polite: it waits for the user to finish what they are
          doing rather than interrupting mid-word. --}}
     <p data-wk-prose-skip x-ref="status" role="status" aria-live="{{ $announceError ? 'polite' : 'off' }}" class="sr-only"></p>

@@ -1,25 +1,25 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
      shown early. --}}
-{{-- `legend` takes two shapes, and both render as the fieldset's FIRST child:
+{{-- `legend` takes two shapes, and both render as the fieldset's first child:
      the string prop `legend="Permissions"` (escaped), or the named slot
      `x-slot:legend` for rich content (markup, a badge, a help icon). The slot is
      the supported route for a rich caption; `x-wirekit::field.legend` written into
-     the DEFAULT slot is NOT — see the comment above the <fieldset> below.
+     the default slot is not — see the comment above the <fieldset> below.
 
      Written as a Blade comment and with the tag names unbracketed on purpose.
-     `compileString` strips Blade comments BEFORE it compiles component tags but
+     `compileString` strips Blade comments before it compiles component tags but
      leaves `@props` alone, so an `<x-…>` spelled inside the @props array — even in
      a `//` comment — is compiled as a real component tag and the view dies on an
      undefined `$component`. --}}
 {{-- The group error, and why this view has a class behind it.
 
-     A message can belong to the GROUP rather than to one control: "choose at least one
+     A message can belong to the group rather than to one control: "choose at least one
      role", or a rejected entry of an array field, which Laravel files under `roles.1` while
      every checkbox is bound to `roles`. The set renders that message once, and the
      checkboxes, radios and toggles inside point at it.
 
-     They cannot learn its id from this view, because a slot renders BEFORE the view of the
+     They cannot learn its id from this view, because a slot renders before the view of the
      component that holds it. `Pushery\WireKit\Components\FieldSet` takes `name`, `error` and
      `hint` in its constructor, which runs before the slot, and hands the controls a group
      object through `@aware`. Everything else stays here, and the props stay declared below,
@@ -43,7 +43,7 @@
     // Without it the event names the group's `name`; a set that stands for one field and reads
     // no error-bag key of its own names that field here.
     'helpField' => null,
-    // The set stands for ONE field whose parts are its controls, such as a value in every language:
+    // The set stands for one field whose parts are its controls, such as a value in every language:
     // the legend reads as a field's label, at a label's distance from the first control, and the
     // hint or the error follows the controls, as under a field. A field beside the set then stands
     // on the height of its first control.
@@ -63,7 +63,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('field.set', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -99,7 +99,7 @@
     // with nothing in the accessibility tree pointing at it.
     //
     // Through the same composer the controls use, so the order is the one they get and a
-    // caller's own `aria-describedby` is APPENDED rather than replaced: written twice, the
+    // caller's own `aria-describedby` is appended rather than replaced: written twice, the
     // parser keeps the first and the other description is lost. The two null arguments are
     // the fieldset having no error and no hint of its own — only the group's.
     $fieldsetDescribedBy = FieldGroup::describedBy($group, $errors ?? null, null, null, $attributes->get('aria-describedby'));
@@ -117,9 +117,9 @@
     // The caption and the group hint resolve through the configuration seam like every
     // other surface in the library, so a project whose group captions are `sm` overrides a
     // block here instead of rebuilding the <fieldset>. The one other caption component
-    // (`field.legend`) loses the caption ROLE when it is written into this component's
+    // (`field.legend`) loses the caption role when it is written into this component's
     // default slot.
-    $legendClasses = WireKit::resolveClasses('field.set', 'legend', 'mb-1 text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]', $scope);
+    $legendClasses = WireKit::resolveClasses('field.set', 'legend', 'mb-[var(--space-wk-xs)] text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]', $scope);
     $hintClasses = WireKit::resolveClasses('field.set', 'hint', 'mb-3 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]', $scope);
 
     // The group error takes the hint's place, the way a field's error replaces that field's
@@ -141,7 +141,7 @@
         $errorClasses = WireKit::resolveClasses('field.set', 'field-error', 'mt-1.5 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]', $scope);
     }
 
-    // How a slot is WRITTEN decides its TYPE (see Support\SlotAttributes): the block
+    // How a slot is written decides its type (see Support\SlotAttributes): the block
     // form yields a ComponentSlot, the one-line form a plain string. Only the object
     // carries markup that is meant to render as markup, so only it is emitted raw —
     // a string caption stays escaped, whether it arrived as the prop or as an inline
@@ -196,21 +196,21 @@
          put it, so it survives every look and every axe pass that scans for contrast
          and labels rather than for ancestry.
 
-         That is what a <x-wirekit::field.legend> written into the DEFAULT slot below
+         That is what a <x-wirekit::field.legend> written into the default slot below
          hits: the spacing <div> demotes it to a grandchild. Rich captions therefore go
-         through <x-slot:legend> and land HERE, ahead of that <div>. --}}
+         through <x-slot:legend> and land here, ahead of that <div>. --}}
     {{-- The legend is the label of the group, so on a touch surface it is as tall as a field's
          label: `data-wk-field-label` sits on the legend itself, or on its text where the legend is
          a row that also holds a question mark or a mark. --}}
     @if($hasLegend)
         @if($legendRow)
-            <legend data-wk-label-row data-wk-sr-host {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endif</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) (filled($helpField) ? $helpField : ($group->name ?? ''))])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
+            <legend data-wk-label-row data-wk-sr-host {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endwirekitLast</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) (filled($helpField) ? $helpField : ($group->name ?? ''))])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
         @else
             {{-- A required group says so in its caption: the asterisk is drawn and hidden from a
                  screen reader, as on a field's label, and the word in the legend is read instead.
                  `data-wk-required-word` keeps the word out of a name the kit shows on screen,
                  such as the question before leaving. --}}
-            <legend data-wk-field-label data-wk-sr-host {{ $legendAttributes }}>{{ $legend }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endif</legend>
+            <legend data-wk-field-label data-wk-sr-host {{ $legendAttributes }}>{{ $legend }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endwirekitLast</legend>
         @endif
     @endif
     @if(! $asField)
@@ -242,11 +242,11 @@
 
     {{-- The message of a set that stands for one field follows its controls, as a field's follows
          the field. --}}
-    @if($asField)
+    @wirekitLast($asField)
         @if($groupMessage !== null)
             <p data-wk-prose-skip id="{{ $group->errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="{{ $errorClasses }}">{{ $groupMessage }}</p>
         @elseif($group->hint !== null)
             <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
         @endif
-    @endif
+    @endwirekitLast
 </fieldset>

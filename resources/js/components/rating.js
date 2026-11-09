@@ -14,7 +14,7 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * function, optional chaining. Under a strict Content-Security-Policy the stars
  * rendered and did nothing at all.
  *
- * Arrow-key navigation MOVES FOCUS as well as changing the value. That is not
+ * Arrow-key navigation moves focus as well as changing the value. That is not
  * decoration: in a radio-group the selected option is the only tab stop, so a
  * value change that leaves focus behind strands the user on an element that is
  * no longer the one they selected.

@@ -13,7 +13,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  * at the end of <body> so its `position: fixed` box escapes every ancestor
  * containing block — and sequential focus order follows the DOM, not the
  * screen. A reader who focused the trigger and pressed Tab therefore landed on
- * the NEXT control on the page while the open card sat in front of them, and
+ * the next control on the page while the open card sat in front of them, and
  * the card's own buttons were reachable only after tabbing through the whole
  * rest of the document. That is the promise this component makes and Tooltip
  * does not — rich content, `role="dialog"`, interactive children — so the three
@@ -25,7 +25,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  * next control and the card closes behind it. Nothing is bridged that the
  * reader could not have used.
  *
- * Focus always moves BEFORE the panel hides. `x-show` writes `display: none`,
+ * Focus always moves before the panel hides. `x-show` writes `display: none`,
  * and hiding the subtree that holds focus makes the browser drop it on <body> —
  * after our own focus() call, which would then have accomplished nothing. Same
  * ordering, same reason, as navigation-menu.js.
@@ -126,7 +126,7 @@ export default function wirekitHoverCard(config = {}) {
          * Mouse leaves trigger or panel — hide with delay.
          * The delay allows moving between trigger and panel without closing.
          *
-         * A card the reader is FOCUSED inside is a card in use, so the pointer leaving does
+         * A card the reader is focused inside is a card in use, so the pointer leaving does
          * not dismiss it. This path asks the same question as the keyboard path beside it,
          * and the two answers are not separable: a reader who hovers the trigger, Tabs into
          * the card — which this component's documentation invites, and which is the whole
@@ -167,7 +167,7 @@ export default function wirekitHoverCard(config = {}) {
         /**
          * Arm the hide timer, and close only if the card is not in use when it fires.
          *
-         * ONE implementation for both dismissal paths, deliberately. Pointer-leaves and
+         * One implementation for both dismissal paths, deliberately. Pointer-leaves and
          * focus-leaves are the same question asked by two different inputs — "is the reader
          * still using this card?" — and they were written twice, whereupon one of them
          * stopped asking. Everything the card promises about interactive content depends on
@@ -191,7 +191,7 @@ export default function wirekitHoverCard(config = {}) {
         /**
          * Is the reader's focus inside this card — either half of it?
          *
-         * The panel is teleported to the overlay root, so it is NOT a
+         * The panel is teleported to the overlay root, so it is not a
          * descendant of the trigger the blur fired on. Asking that one element
          * whether it `contains()` the focused node is therefore false the
          * moment somebody Tabs into the card, and the card hid itself one
@@ -235,7 +235,7 @@ export default function wirekitHoverCard(config = {}) {
          * The control the reader actually focused to open the card.
          *
          * The trigger slot wraps whatever the developer passed, so the tab stop
-         * is the button or link INSIDE it — the wrapper `<span>` carries no
+         * is the button or link inside it — the wrapper `<span>` carries no
          * tabindex and `focus()` on it would do nothing, which is a silently
          * lost focus rather than a visible failure.
          */
@@ -335,13 +335,13 @@ export default function wirekitHoverCard(config = {}) {
         /**
          * Escape anywhere while the card is on screen.
          *
-         * Heard on the WINDOW, because a hover card opens on a pointer or on the focus
+         * Heard on the window, because a hover card opens on a pointer or on the focus
          * reaching its trigger, and neither puts the focus inside the teleported panel:
          * the panel's own handler never hears that key. WCAG 1.4.13 requires content
          * shown on hover or focus to be dismissible without moving the pointer or the
          * focus, and Escape is the mechanism it names.
          *
-         * Heard in the CAPTURE phase, and the press that closes the card is marked as
+         * Heard in the capture phase, and the press that closes the card is marked as
          * handled. A modal or a drawer around the reader reads Escape later, on the
          * document and on the window, and leaves a marked press alone: the reader asked
          * the card to go, and nothing else. A card only shows for what the reader points
@@ -376,7 +376,7 @@ export default function wirekitHoverCard(config = {}) {
         },
 
         /**
-         * Move to the control that FOLLOWS the trigger on the page.
+         * Move to the control that follows the trigger on the page.
          *
          * Where forward-Tab out of the card belongs: the panel is drawn beside
          * the trigger, so leaving it should continue from the trigger, not from
@@ -442,7 +442,7 @@ export default function wirekitHoverCard(config = {}) {
                     // Everything this call writes is inline style, and a framework update patches
                     // the panel against its own template, whose `style` attribute carries none of
                     // it. The placement is gone while the card is still open — and this panel is
-                    // teleported to the overlay root, so with no `top` it sits at the END of the
+                    // teleported to the overlay root, so with no `top` it sits at the end of the
                     // document rather than a few pixels off its trigger, with its box unchanged.
                     //
                     // That unchanged box is why `repairErasure` is needed beside `autoReposition`
@@ -451,7 +451,7 @@ export default function wirekitHoverCard(config = {}) {
                     // and report nothing.
                     //
                     // A hover card is not transient either. It holds itself open while the
-                    // pointer rests on it, and it is focusable — the reader tabs INTO it, which
+                    // pointer rests on it, and it is focusable — the reader tabs into it, which
                     // is the whole reason `tabFromTrigger` exists.
                     repairErasure: true,
                     // It also follows the trigger: the placement is viewport-relative (`fixed`),

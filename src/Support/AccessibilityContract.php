@@ -31,8 +31,8 @@ use Pushery\WireKit\ComponentRegistry;
  * ## Why comments are stripped first
  *
  * Key names appear in these factories in three shapes — as an object key
- * (`ArrowDown: 'next'`), inside a `case 'ArrowRight':`, and in PROSE explaining
- * why a key is deliberately NOT handled. `accordion.js` carries exactly that
+ * (`ArrowDown: 'next'`), inside a `case 'ArrowRight':`, and in prose explaining
+ * why a key is deliberately not handled. `accordion.js` carries exactly that
  * third form. A scanner reading raw text reports keys the component ignores,
  * and an assistant then assumes a keyboard model that is not there.
  */
@@ -90,7 +90,7 @@ final class AccessibilityContract
     /**
      * The `aria-*` attributes it sets, by name.
      *
-     * The VALUE is deliberately not reported. It is a Blade expression more
+     * The value is deliberately not reported. It is a Blade expression more
      * often than a constant, and an assistant that read one would be reading
      * this component's internals rather than its contract.
      *
@@ -104,7 +104,7 @@ final class AccessibilityContract
     }
 
     /**
-     * The accessible names the CALLER has to pass, rather than the component.
+     * The accessible names the caller has to pass, rather than the component.
      *
      * Derived from the shape rather than from a list: an `aria-*` attribute
      * interpolating a prop is one the component cannot fill by itself. That is
@@ -153,7 +153,7 @@ final class AccessibilityContract
     }
 
     /**
-     * Keys the component handles — from its Alpine factory AND from its template.
+     * Keys the component handles — from its Alpine factory and from its template.
      *
      * Empty is a real answer: a component with no keyboard model of its own is
      * relying on the browser's, which is the correct design for a native control

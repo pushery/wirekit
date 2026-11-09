@@ -2,11 +2,11 @@
      Its state is whether the action stack is open. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
 @props([
-    // What the trigger does. REQUIRED in spirit: the trigger is an icon, so
+    // What the trigger does. Required in spirit: the trigger is an icon, so
     // without this it announces as "button" and nothing else.
     'label' => __('wirekit::Actions'),
     // Where it floats. 'end' is the inline-end corner — it follows the writing
-    // direction rather than assuming everyone reads left-to-right.
+    // direction rather than assuming every page reads from the left.
     'position' => config('wirekit.components.fab.position', 'end'),
     'scope' => null,
 ])
@@ -28,14 +28,14 @@
     $positionClass = match ($position) {
         'start' => 'start-[var(--padding-wk-x-lg)]',
         'center' => 'left-1/2 -translate-x-1/2',
-        // The gutter term is on the END arm only: a classic scrollbar sits on the inline-end
+        // The gutter term is on the end arm only: a classic scrollbar sits on the inline-end
         // edge in both directions, so the start arm has no gutter under it. Same shape as
         // `fab/button`, which explains when the term is non-zero.
         default => 'end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
 
     $classes = 'wk-fab '.WireKit::resolveClasses('fab', 'base', implode(' ', [
-        // The TOKEN, not its number. This was `z-40` — the value --z-wk-sticky happens to
+        // The token, not its number. This was `z-40` — the value --z-wk-sticky happens to
         // hold — while scroll-to-top, a fixed overlay in the same corner of the same page,
         // reads the token. Retheming the layer moved everything except this one.
         'fixed z-[var(--z-wk-sticky)]',
@@ -78,7 +78,7 @@
     data-wk-fab-lifted
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    {{-- flex-col-reverse above means the actions render BEFORE the trigger in the
+    {{-- flex-col-reverse above means the actions render before the trigger in the
          DOM but appear above it. That is deliberate: the trigger stays the first
          thing in the tab order, which is what the reader reaches for, and the
          actions follow it in the order they are read. --}}
@@ -139,7 +139,7 @@
 
     {{-- `role="group"`, not `role="menu"`.
          
-         A `menu` is a keyboard CONTRACT, not a shape: one tab stop for the whole menu, arrow
+         A `menu` is a keyboard contract, not a shape: one tab stop for the whole menu, arrow
          keys to move inside it, Escape to leave, and focus leaving it closes it. This panel
          does none of those — every action is an ordinary link or button with its own tab
          stop — so the role promised a model that was not there, and a reader following it

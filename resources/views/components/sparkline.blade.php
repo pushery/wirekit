@@ -9,7 +9,7 @@
     'scope' => null,
     // Per-instance chart-library override pass-through. See the `library`
     // prop on src/Components/Chart.php for full semantics. Without explicit
-    // declaration here the prop would NOT reach the inner chart — sparkline
+    // declaration here the prop would not reach the inner chart — sparkline
     // is an anonymous Blade wrapper, so attribute-bag flow is opt-in per prop.
     'library' => null,
 ])
@@ -23,7 +23,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sparkline', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $inline = BooleanProp::from($inline, false, 'sparkline', 'inline');
@@ -173,7 +173,7 @@
     // sparkline never imposes the ApexCharts canvas's fixed intrinsic width
     // (~300px) as the min-content floor of a surrounding CSS-grid track. Without
     // it, a `repeat(2, 1fr)` KPI grid floors each column at the chart's 300px
-    // intrinsic width and clips the right-hand cells off-screen on narrow
+    // intrinsic width and clips the last cells off-screen on narrow
     // viewports (the inner <x-wirekit-chart> wrapper already does this, but the
     // sparkline's own outer wrapper sat between the grid track and that
     // protection and re-leaked the intrinsic width). Inline mode keeps its fixed
@@ -204,7 +204,7 @@
         ),
     );
 
-    // Stripped from the wrapper so the name is not ALSO emitted where it is
+    // Stripped from the wrapper so the name is not also emitted where it is
     // prohibited; the wrapper keeps every other attribute the caller passed.
     $sparklineAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
 

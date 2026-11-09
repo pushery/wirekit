@@ -7,8 +7,10 @@
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
+import { registerInlineStepMagic } from './utils/inline-direction.js';
 import { registerPagerFocusMagics } from './utils/pager-focus.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerGroupedDigitsDirective } from './utils/grouped-digits.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerCallerModelDirective } from './utils/caller-model.js';
 import { registerImeDirective } from './utils/ime.js';
@@ -29,6 +31,7 @@ import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerFocusUnitDirective } from './utils/focus-unit.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { registerFieldValidity } from './utils/field-validity.js';
 import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
@@ -43,7 +46,7 @@ import { installOverlayRoot } from './utils/overlay-root.js';
  * registrations so a developer who wants three components can obtain it without
  * referencing every other one.
  *
- * Called by the default installer AND by `register()`; it is idempotent, so using both
+ * Called by the default installer and by `register()`; it is idempotent, so using both
  * is harmless.
  */
 export function installRuntime(Alpine) {
@@ -57,7 +60,7 @@ export function installRuntime(Alpine) {
         window.wirekitShortcut = defineShortcut;
     }
 
-    // The overlay root BEFORE anything else: every teleported panel targets it, and
+    // The overlay root before anything else: every teleported panel targets it, and
     // `x-teleport` treats a selector that matches nothing as fatal.
     installOverlayRoot();
 
@@ -71,12 +74,12 @@ export function installRuntime(Alpine) {
     // The cost is part of every bundle's size in `dist/README.md`, paid by
     // developers who render no disclosure as well. The docs promise the animation,
     // so not paying it would ship a promise that is not true.
-    // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is not
+    // `collapse(Alpine)`, not `Alpine.plugin(collapse)`, and the difference is not
     // style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
-    // callback its OWN module singleton and ignores the receiver. This bundle is
+    // callback its own module singleton and ignores the receiver. This bundle is
     // itself an installer, called as `Alpine.plugin(WireKit)` with an Alpine the
     // developer imported from their own build, so going through `plugin` would
-    // register the directive on a DIFFERENT Alpine than the one running their
+    // register the directive on a different Alpine than the one running their
     // page. Calling the installer directly registers it on whichever Alpine is
     // actually in hand.
     collapse(Alpine);
@@ -84,12 +87,16 @@ export function installRuntime(Alpine) {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
     registerScrollToMagic(Alpine);
+    registerInlineStepMagic(Alpine);
     // A page turned under Livewire keeps the focus in its pager. See utils/pager-focus.js.
     registerPagerFocusMagics(Alpine);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
-    // apply it after EVERY render — not only the first. See utils/indeterminate.js.
+    // apply it after every render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(Alpine);
+    // An amount field that groups its digits while it is typed, and whose value stays the
+    // plain number. See utils/grouped-digits.js.
+    registerGroupedDigitsDirective(Alpine);
     // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
     // root the component renders. See utils/caller-ref.js.
     registerCallerRefDirective(Alpine);
@@ -134,6 +141,8 @@ export function installRuntime(Alpine) {
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // A field the browser holds invalid says why under the red it turns. See utils/field-validity.js.
+    registerFieldValidity();
     // An alert a Livewire render adds is announced. See utils/alert-arrival.js.
     installAlertArrival();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.

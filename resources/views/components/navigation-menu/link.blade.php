@@ -19,7 +19,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu.link', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -30,7 +30,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false, 'navigation-menu.link', 'active');
@@ -67,6 +67,13 @@
     // that passes rel="prev" would silently defeat our security injection.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -83,7 +90,4 @@
     {{-- One flex item for the whole label, so text and an inline mark beside it flow as they
          would in a block, and the row centers it when the touch floor makes the row taller. --}}
     <span class="min-w-0 flex-1">{{ $slot }}</span>
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</a>
+    {{ $newTabHint }}</a>

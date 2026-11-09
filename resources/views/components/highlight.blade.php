@@ -21,7 +21,7 @@
     ]), $scope);
 
     $markClasses = implode(' ', [
-        // No fallback. It read `oklch(0.905_0.093_102.1)`, which matches NEITHER declared
+        // No fallback. It read `oklch(0.905_0.093_102.1)`, which matches neither declared
         // value of this token — light is `oklch(96.4% 0.058 102.1)` and dark is
         // `oklch(32% 0.06 80)`. So in the one situation a fallback exists for, the highlight
         // came out a color the theme never chose, in both modes, and the palette guard
@@ -39,22 +39,22 @@
     /*
      * The highlighted markup, built here rather than in the template below.
      *
-     * The slot arrives as RENDERED HTML: Blade has already escaped whatever text the caller
+     * The slot arrives as rendered HTML: Blade has already escaped whatever text the caller
      * wrote and left whatever markup they wrote intact. Splitting that string on the query and
-     * printing each fragment through `{{ }}` would escape it a SECOND time, with three
+     * printing each fragment through `{{ }}` would escape it a second time, with three
      * consequences:
      *
      *   markup     `<em>note</em>` would come out as visible angle brackets
      *   entities   an `&amp;` the caller had escaped would come out as `&amp;amp;`
-     *   tags       splitting the HTML on the query alone cuts INSIDE a tag — `query="em"`
+     *   tags       splitting the HTML on the query alone cuts inside a tag — `query="em"`
      *              matches the `em` in `<em>` and wraps the halves in `<mark>`
      *
-     * So the content is split into TAG and TEXT segments first and only the text is searched;
+     * So the content is split into tag and text segments first and only the text is searched;
      * tags pass through untouched, and each text segment is decoded, searched and escaped once
      * on the way out, so it leaves as escaped as it arrived.
      *
      * Assembled into one string rather than emitted through a Blade `@foreach`: a loop puts a
-     * newline around every iteration, and in inline content a newline IS a space, so
+     * newline around every iteration, and in inline content a newline is a space, so
      * `foo<em>bar</em>` would come back with gaps the caller never wrote.
      */
     $highlighted = null;
@@ -70,7 +70,7 @@
                 continue;
             }
 
-            // Each text segment is searched DECODED and every part is escaped again on the way
+            // Each text segment is searched decoded and every part is escaped again on the way
             // out, so a match never falls inside an entity (`query="amp"` leaves `&amp;` whole)
             // and a query with an `&` in it finds the character the reader sees. `/u` folds
             // case beyond ASCII, so `query="über"` finds "Über".

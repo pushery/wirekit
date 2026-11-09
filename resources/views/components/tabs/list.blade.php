@@ -1,9 +1,9 @@
 {{-- optimistic-ui: n/a — navigation
-     The bar changes WHICH view the server renders; it does not submit a value the server
+     The bar changes which view the server renders; it does not submit a value the server
      stores. There is nothing to anticipate and nothing to roll back — and the request it
      triggers is the developer's own `wire:click`, which is theirs to make optimistic if
      their action warrants it. --}}
-{{-- A tab bar whose selection lives on the SERVER, with no panels underneath.
+{{-- A tab bar whose selection lives on the server, with no panels underneath.
 
      `<x-wirekit::tabs>` is the right component when the browser already holds every
      panel's content: it owns the selection in Alpine and shows the matching panel.
@@ -17,7 +17,7 @@
      around rather than markup that helps them. And the selection is not this
      component's to hold: the server just rendered it.
 
-     Why the focus model reads the DOM. Livewire REPLACES this markup on every
+     Why the focus model reads the DOM. Livewire replaces this markup on every
      selection. An index captured at init would outlive the elements it points at, and
      the failure is silent — focus lands on the wrong tab, or nowhere. So the keyboard
      handlers resolve the tabs at keypress time, every time. Shared with the full
@@ -26,8 +26,8 @@
      Why activation is manual. The APG allows selection to follow focus, and that is the
      nicer behavior when switching costs nothing. Here it costs a request: arrowing
      across five tabs would fire five round trips and render four pages nobody asked to
-     see. Arrows move focus; Enter or Space commits — and that needs no handler, because
-     each tab is a real button and the browser already does it. --}}
+     see. Arrows move focus; Enter or Space commits. A button tab needs no handler for that,
+     the browser does it; a link tab follows Enter on its own and gets Space from the list. --}}
 @props([
     // Names the bar for assistive technology. A tablist with no accessible name is
     // announced as an unlabeled group, which is worse than no landmark at all when a
@@ -73,7 +73,7 @@
     //
     // `tabs.tab` renders `tabindex="0"` for the selected tab and `-1` for the rest, which
     // is the roving model and is right — but `selected` defaults to false, so a bar where
-    // the server picked nothing puts EVERY tab at -1. Tab skips the bar entirely, and the
+    // the server picked nothing puts every tab at -1. Tab skips the bar entirely, and the
     // arrow keys cannot rescue it because `moveRovingFocus` refuses to guess a starting
     // item when focus is not already inside (roving-focus.js, the `current === -1` return).
     // WCAG 2.1.1 and 2.4.3, with no visible symptom: the bar looks perfectly normal.
@@ -88,11 +88,11 @@
     // again — the silent staleness this pair's own docblocks were written against. Doing
     // it in the render means the answer is recomputed exactly as often as the markup is.
     //
-    // `aria-selected` is deliberately NOT touched. Selection belongs to the server, and
+    // `aria-selected` is deliberately not touched. Selection belongs to the server, and
     // inventing one here would be the second answer to a settled question that this
     // component exists to avoid. A tab stop is reachability, not a choice.
     //
-    // The slot is stringified ONCE and echoed as a string below: reading a ComponentSlot
+    // The slot is stringified once and echoed as a string below: reading a ComponentSlot
     // and then also echoing it renders it twice. Same shape as `dropdown`.
     $slotHtml = (string) $slot;
 
@@ -106,7 +106,7 @@
             // a call site's own attributes land after the class list. So this window can
             // hold our `aria-disabled` and nothing a caller wrote — which matters, because
             // an `x-on:click="() => {…}"` in the bag would defeat any wider match. Bounded
-            // by the NEXT tab as well, so a caller who wrote their own `tabindex` after the
+            // by the next tab as well, so a caller who wrote their own `tabindex` after the
             // class list cannot make the window read the tab after this one.
             $ends = array_filter([
                 strpos($slotHtml, 'class="', $at),
@@ -139,7 +139,7 @@
     role="tablist"
     @if($label && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
     aria-orientation="{{ $isVertical ? 'vertical' : 'horizontal' }}"
-    {{-- Bound on the LIST rather than on each tab. The event originates at a tab and
+    {{-- Bound on the list rather than on each tab. The event originates at a tab and
          bubbles, so one pair of handlers covers every tab including the ones a later
          round trip adds — and a tab that Livewire replaces does not take its own
          handlers with it. --}}
@@ -147,11 +147,14 @@
         x-on:keydown.arrow-down.prevent="moveFocus('next')"
         x-on:keydown.arrow-up.prevent="moveFocus('prev')"
     @else
-        x-on:keydown.arrow-right.prevent="moveFocus('next')"
-        x-on:keydown.arrow-left.prevent="moveFocus('prev')"
+        x-on:keydown.arrow-right.prevent="moveFocus($wkInlineStep($event) === 1 ? 'next' : 'prev')"
+        x-on:keydown.arrow-left.prevent="moveFocus($wkInlineStep($event) === 1 ? 'next' : 'prev')"
     @endif
     x-on:keydown.home.prevent="moveFocus('first')"
     x-on:keydown.end.prevent="moveFocus('last')"
+    {{-- Without `.prevent`: a tab that is a button takes Space from the browser, and only a link
+         tab, which would scroll the page on it, is answered here. --}}
+    x-on:keydown.space="activateLink($event)"
     {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$listClasses, $wrapClasses])) }}
 >
     {!! $slotHtml !!}

@@ -52,7 +52,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
             // ordinarily spelled without an underscore, and `if (this.observer)` is the same
             // guard.
             //
-            // It does NOT require the condition to name the same field as the call: that would
+            // It does not require the condition to name the same field as the call: that would
             // reject the shapes a real teardown takes — a local alias, a destructured handle.
             //
             // A comparison with `null` or `undefined` is the same guard written out, in either
@@ -82,12 +82,12 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
      * contain `destroy() {` would make the file look like it has a teardown while a real leak
      * goes unreported.
      *
-     * Contents are replaced with SPACES rather than removed, and newlines are kept, because the
+     * Contents are replaced with spaces rather than removed, and newlines are kept, because the
      * disconnect scan reads "the three lines above this one". Deleting the lines would move every
      * call site away from its own context.
      *
      * Quote state is tracked so a `//` inside a string literal stays put — `'https://…'` would
-     * otherwise swallow the rest of its line, and with it any call that shares it. A REGEX literal
+     * otherwise swallow the rest of its line, and with it any call that shares it. A regex literal
      * carrying a quote (`/['"]/`) is the shape this does not model; it would flip the state and
      * blank too much or too little from there to the end of the file. Modeling it takes a real
      * tokenizer, and the cost of the gap is one file scanned wrongly, in a check whose own
@@ -172,16 +172,16 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
      * custom Alpine plugins extending WireKit) and flags two anti-patterns
      * that surface as console errors in a developer's browser tests:
      *
-     *  - **Observer instantiation WITHOUT a `destroy()` cleanup hook.** A
+     *  - **Observer instantiation without a `destroy()` cleanup hook.** A
      *    `new IntersectionObserver(...)` / `new MutationObserver(...)` /
      *    `new ResizeObserver(...)` stored on `this` survives the Alpine
      *    instance's GC eligibility because the observer holds a reference
      *    to the host element. Memory leak + future-callback timing
      *    surface. Without `destroy()` the observer is never disconnected.
      *
-     *  - **`disconnect()` call inside an observer callback WITHOUT a
+     *  - **`disconnect()` call inside an observer callback without a
      *    null-guard on the observer reference.** Browser-queued callbacks
-     *    can execute AFTER Alpine teardown set `this._observer = null`
+     *    can execute after Alpine teardown set `this._observer = null`
      *    (Livewire morph removing the host element pre-intersection is
      *    the canonical trigger). Without the guard, the callback throws
      *    `TypeError: Cannot read properties of null`.
@@ -238,13 +238,13 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
                     continue;
                 }
 
-                // Opt-out comment lets developers acknowledge intentional patterns. Read BEFORE
+                // Opt-out comment lets developers acknowledge intentional patterns. Read before
                 // the comments are blanked out below, since the marker is itself one.
                 if (str_contains($source, '// wirekit-doctor: cleanup-ok')) {
                     continue;
                 }
 
-                // Every pattern below is a plain text match, so prose that NAMES one would count
+                // Every pattern below is a plain text match, so prose that names one would count
                 // as the thing itself — loudly for `.disconnect()`, and silently for `destroy() {`,
                 // where a comment would hide a real leak. See stripJsComments().
                 $source = $this->stripJsComments($source);
@@ -261,7 +261,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
                     || preg_match('/\bdestroy\s*:\s*(?:function\s*)?\(/', $source) === 1
                 );
 
-                // An observer built at MODULE level is not the same finding as one
+                // An observer built at module level is not the same finding as one
                 // built per component instance, and only the second can accumulate.
                 // A page-lifetime observer — one MutationObserver on <html> or
                 // <body>, inside a top-level IIFE, driving something for as long as
@@ -284,14 +284,14 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
 
                 // Anti-pattern 2: a `disconnect()` that nothing guards.
                 //
-                // Checked PER CALL SITE rather than per file, and that distinction
+                // Checked per call site rather than per file, and that distinction
                 // is the whole correctness of this detector. A file-wide question —
                 // "is there a guard anywhere in here" — gets both answers wrong:
                 //
-                //   • It rejects the POSITIVE guard form, `if (this._observer) { … }`,
+                //   • It rejects the positive guard form, `if (this._observer) { … }`,
                 //     when the pattern knows only the negative and optional-chaining
                 //     spellings. That is the same check written the other way round,
-                //     and it usually does MORE (it nulls the reference afterwards).
+                //     and it usually does more (it nulls the reference afterwards).
                 //
                 //   • Teaching it the positive form file-wide is worse still:
                 //     a component that guards correctly in destroy() and calls
@@ -304,7 +304,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
                 // within the few lines above it. A heuristic, deliberately — but one
                 // whose failure mode is a warning rather than silence.
                 //
-                // And only in a file that builds its observer PER INSTANCE, the same
+                // And only in a file that builds its observer per instance, the same
                 // discriminator as the destroy() finding above. The TypeError the guard
                 // prevents comes from a callback queued before destroy() nulls the
                 // reference; a module-level observer is built once, never nulled, and has

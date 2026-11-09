@@ -25,14 +25,14 @@
     'multiple' => false,
     // Emit FAQPage JSON-LD for the questions rendered here.
     //
-    // Turn it OFF when the same questions already appear elsewhere on the page,
+    // Turn it off when the same questions already appear elsewhere on the page,
     // or when this FAQ is one of several: a page must carry exactly one FAQPage,
     // and two of them compete rather than combine.
     'schema' => true,
-    // Strip markup from the SCHEMA answer text (the visible answer is untouched).
+    // Strip markup from the schema answer text (the visible answer is untouched).
     // The schema is read outside the page, where the data-* attributes, Alpine
     // directives and utility classes of nested components mean nothing, and plain
-    // text is what every reader of it takes reliably. The schema text stays DERIVED
+    // text is what every reader of it takes reliably. The schema text stays derived
     // from what is rendered — same content, markup removed — so it cannot drift
     // from the page.
     'plainText' => false,
@@ -57,8 +57,8 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('faq', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `schema="false"` would switch the JSON-LD ON. That is the exact spelling a
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
+    // `schema="false"` would switch the JSON-LD on. That is the exact spelling a
     // developer reaches for when a page carries a second FAQ and must not emit two
     // competing FAQPage nodes, and the page renders normally either way, so
     // nothing would surface the mistake. Both spellings agree.
@@ -72,14 +72,14 @@
     $questions = FaqCollector::drain();
 
     // Their items still pushed even with schema off, so the buffer must be
-    // cleared either way; otherwise those questions would surface in the NEXT
+    // cleared either way; otherwise those questions would surface in the next
     // FAQ's JSON-LD, describing answers that live somewhere else entirely.
     $emitSchema = $schema && $questions !== [];
 
     $classes = WireKit::resolveClasses('faq', 'base', '', $scope);
 @endphp
 
-{{-- The questions ARE the accordion — this component adds the one thing an
+{{-- The questions are the accordion — this component adds the one thing an
      accordion cannot know: that these rows are questions, and that search
      engines should be told so. --}}
 @php
@@ -104,11 +104,11 @@
         {{ $slot }}
     </x-wirekit::accordion>
 
-    @if($emitSchema)
+    @wirekitLast($emitSchema)
         {{-- Built from the questions that just rendered above, never from a
              second hand-written list. That is the whole point: a question can be
              reworded or removed and the schema follows, because it is made out
              of the visible answer rather than a copy of it. --}}
         <x-wirekit::structured-data :data="Schema::faqPage($questions)" />
-    @endif
+    @endwirekitLast
 </div>

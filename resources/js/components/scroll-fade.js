@@ -7,9 +7,9 @@
  * unconditionally. That is the right default — no JavaScript, nothing to tear
  * down — but it cannot know two things the reader can see:
  *
- *     scrolled to the very top      the TOP edge is faded, with nothing above it
- *     scrolled to the very bottom   the BOTTOM edge is faded, with nothing below
- *     content that does not overflow  BOTH edges faded, and the area cannot scroll
+ *     scrolled to the very top      the top edge is faded, with nothing above it
+ *     scrolled to the very bottom   the bottom edge is faded, with nothing below
+ *     content that does not overflow  both edges faded, and the area cannot scroll
  *
  * The third is the one worth a plugin. A scroll area whose content fits has no
  * "more" to hint at, and the mask still dissolves its first and last line —
@@ -34,7 +34,7 @@
  *   - _resizeObserver (ResizeObserver, via safeObserver) — the container's own
  *     box changing. Stopped in destroy().
  *   - _mutationObserver (MutationObserver, via safeObserver) — content added or
- *     removed, which changes scroll size WITHOUT changing the box, so no
+ *     removed, which changes scroll size without changing the box, so no
  *     ResizeObserver on the container can see it. Stopped in destroy().
  *   - _ticking (rAF coalescing flag) — the frame is deliberately not canceled:
  *     its callback reads the DOM and writes one attribute, both inert once the
@@ -43,7 +43,7 @@
  * `safeObserver` carries the null-guard, so neither callback can fire into a
  * torn-down component.
  *
- * The mutation watch is `childList` + `subtree` and NOT `characterData`: a
+ * The mutation watch is `childList` + `subtree` and not `characterData`: a
  * transcript appending a message is the case that matters and it is a child
  * insertion, while watching every character of a long document would cost far
  * more than the hint is worth. Text edited in place is picked up by the next
@@ -154,7 +154,7 @@ export default function wirekitScrollFade() {
 
             /*
              * `Math.abs` is for right-to-left. A horizontal container in RTL
-             * reports 0 at its start — the RIGHT edge — and counts DOWN into
+             * reports 0 at its start — the right edge — and counts down into
              * negative numbers as the reader moves left. The distance traveled
              * from the start is the magnitude either way, and the stylesheet
              * already maps start and end onto the correct physical side under
@@ -171,7 +171,7 @@ export default function wirekitScrollFade() {
              * under two pixels — so there is no "more" to hint at, and a mask
              * would take ink off text that is entirely visible.
              *
-             * It is ONE branch rather than an early `overflow <= tolerance`
+             * It is one branch rather than an early `overflow <= tolerance`
              * return, and that is a correction rather than a preference: the
              * early return was written first, and deleting it changed no
              * answer any test could see, because this comparison already
@@ -179,8 +179,8 @@ export default function wirekitScrollFade() {
              * branch nothing is testing.
              *
              * The other two are inverted on purpose: the edge that gets faded
-             * is the one the content CONTINUES past. At the start of the area
-             * everything is ahead, so the END edge fades; at the end it is the
+             * is the one the content continues past. At the start of the area
+             * everything is ahead, so the end edge fades; at the end it is the
              * other way around.
              */
             if (atStart && atEnd) {

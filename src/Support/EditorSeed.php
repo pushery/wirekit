@@ -14,7 +14,7 @@ use Dom\Text;
  *
  * `<x-wirekit::editor format="html">` renders its value into the page before the engine mounts, so
  * the body is not empty while the scripts load, and the factory removes that copy when it mounts.
- * The browser parses the copy in the LIVE document. The engine parses its own copy in an inert
+ * The browser parses the copy in the live document. The engine parses its own copy in an inert
  * one, so its schema never sees this one: an `<img src=x onerror=…>` in the value would run on
  * first paint, whatever the engine would have made of it. And a value is often not a stored
  * document at all but `old('body')`, the text of a request that just failed validation.

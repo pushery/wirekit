@@ -10,7 +10,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.toggle', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -25,7 +25,7 @@
     // Reads `sidebarOpen` from app-shell's x-data.
     $classes = WireKit::resolveClasses('sidebar.toggle', 'base', implode(' ', [
         'inline-flex items-center justify-center',
-        'p-2',
+        'p-[var(--space-wk-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-hover)]',
@@ -38,7 +38,7 @@
     ]), $scope);
 
     // Accessible name: translatable default, but a caller-supplied aria-label
-    // wins — and is emitted exactly once. Rendering the default AND letting the
+    // wins — and is emitted exactly once. Rendering the default and letting the
     // attribute bag add the caller's value produced two aria-label attributes,
     // the hardcoded English one winning.
     $ariaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label', __('wirekit::Toggle sidebar'));

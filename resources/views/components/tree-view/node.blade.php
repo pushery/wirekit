@@ -24,7 +24,7 @@
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $expanded = BooleanProp::from($expanded, false, 'tree-view.node', 'expanded');
@@ -52,7 +52,7 @@
     // visual rhythm for any list-style item inside a navigation
     // wrapper).
     /*
-     * A selected row is VISIBLE, not only announced.
+     * A selected row is visible, not only announced.
      *
      * `aria-selected="true"` went out on the row and no rule painted it, so a screen reader
      * was told which node is selected and a sighted reader was told nothing — the same fact,
@@ -65,7 +65,7 @@
      * and it survives forced-colors and grayscale, where the tint does not.
      */
     $labelClasses = implode(' ', array_filter([
-        'flex items-center gap-1',
+        'flex items-center gap-[var(--gap-wk-xs)]',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'cursor-pointer select-none',
@@ -77,7 +77,7 @@
 
     $hasChildren = $slot->hasActualContent();
 
-    // A screen reader announces the role and state of the element that RECEIVES focus,
+    // A screen reader announces the role and state of the element that receives focus,
     // and focus lands on the label row. With `role="treeitem"` one level up on the <li>,
     // a reader heard the label text alone — no "tree item, collapsed", and no
     // announcement when ArrowRight/ArrowLeft changed the expansion state. So the role,
@@ -85,12 +85,12 @@
     // and the <li> steps out of the way with role="none" so the tree keeps owning
     // treeitems directly rather than list items that merely contain them.
     //
-    // The child group is a block BENEATH the row rather than inside it — the row is a
+    // The child group is a block beneath the row rather than inside it — the row is a
     // flex line — so the DOM cannot express that the branch owns its children. aria-owns
     // restores it, which is the same shape the ARIA authoring practices use for a tree
     // whose rows are single elements.
     //
-    // The id is COUNTED rather than random: a fresh id per render makes a Livewire morph
+    // The id is counted rather than random: a fresh id per render makes a Livewire morph
     // replace the node instead of patching it, and leaves the aria-owns written on the
     // previous render pointing at an element that no longer exists.
     $groupId = $hasChildren ? DomId::unique(null, 'wk-tree-group-') : null;
@@ -104,8 +104,9 @@
     x-data="wirekitTreeViewNode({ expanded: {{ $expanded ? 'true' : 'false' }} })"
 >
     {{-- Label row — click toggles expansion for branch nodes.
-         Leaf nodes use margin-left instead of an inline spacer so the
-         hover background does not cover empty whitespace. --}}
+         Leaf nodes use a start margin instead of an inline spacer so the
+         hover background does not cover empty whitespace; it stands at the
+         start of the line in either writing direction. --}}
     {{-- Roving tabindex, the APG tree model: every row is `-1` and the container's
          Alpine factory promotes exactly one of them to `0` so the tree is a single tab
          stop. A `selected` row renders the `0` here as well, which is the hint the
@@ -126,7 +127,7 @@
         tabindex="{{ $selected ? '0' : '-1' }}"
         data-wk-tree-node
         @if($nodeValue !== null) data-wk-tree-value="{{ $nodeValue }}" @endif
-        @if(!$hasChildren) style="margin-left: 1.25rem;" @endif
+        @if(!$hasChildren) style="margin-inline-start: 1.25rem;" @endif
         @if($hasChildren)
             @click="toggle()"
         @endif
@@ -155,7 +156,7 @@
     </div>
 
     {{-- Nested children group --}}
-    @if($hasChildren)
+    @wirekitLast($hasChildren)
         <ul data-wk-prose-skip
             role="group"
             id="{{ $groupId }}"
@@ -163,10 +164,10 @@
             {{-- Hidden from the first paint while collapsed, rather than once Alpine has read the state. --}}
             @unless($expanded) x-cloak @endunless
             x-collapse
-            class="list-none m-0 pl-4"
-            style="list-style: none; margin: 0; padding-left: 1rem;"
+            class="list-none m-0 ps-[var(--padding-wk-x-lg)]"
+            style="list-style: none; margin: 0; padding-inline-start: 1rem;"
         >
             {{ $slot }}
         </ul>
-    @endif
+    @endwirekitLast
 </li>

@@ -20,14 +20,14 @@ use Pushery\WireKit\WireKit;
  *
  * `--base` defaults:
  *   1. Explicit --base= wins.
- *   2. Self-derivation: if `name` IS itself a valid component (e.g.
+ *   2. Self-derivation: if `name` is itself a valid component (e.g.
  *      `wirekit:component button`), use it. Most common case.
  *   3. Right-segment derivation: `my-button` → `button`,
  *      `custom-card` → `card`. Verified against ComponentRegistry::has()
  *      before use.
  *   4. If derivation produces no real component, fall back to a
  *      Levenshtein suggestion against ComponentRegistry::names().
- *   5. If TTY-detected, --no-interaction is NOT set, AND we are not in a
+ *   5. If TTY-detected, --no-interaction is not set, and we are not in a
  *      unit test (Pest), prompt the user with the suggestion list.
  *
  * Usage:
@@ -39,7 +39,7 @@ use Pushery\WireKit\WireKit;
  */
 class ComponentMakeCommand extends Command
 {
-    // NO BRACES INSIDE A DESCRIPTION. Laravel's signature parser closes an option at the
+    // No braces inside A description. Laravel's signature parser closes an option at the
     // first `}` it meets, so `{name}` written inside the `--base` text ended the definition
     // mid-sentence: `--help` printed "…the rightmost dash-segment of {name" and dropped the
     // example and the Levenshtein fallback — the two things a developer needs in order to
@@ -65,7 +65,7 @@ class ComponentMakeCommand extends Command
         $base = $this->resolveBase($name);
         if ($base === null) {
             // resolveBase() already printed the actionable error including
-            // a Did-you-mean line; return INVALID semantics (FAILURE) here.
+            // a Did-you-mean line; return invalid semantics (failure) here.
             return self::FAILURE;
         }
 
@@ -98,7 +98,7 @@ class ComponentMakeCommand extends Command
         // Copy, minus our own bookkeeping.
         //
         // The optimistic-UI marker is an internal WireKit convention: it records
-        // that somebody asked whether THAT component could show its result before
+        // that somebody asked whether that component could show its result before
         // the server confirms it. Copied verbatim into a developer's file it
         // would assert the same about a component nobody has looked at — a claim
         // that is wrong the moment the copy is edited, and one they never made.
@@ -127,7 +127,7 @@ class ComponentMakeCommand extends Command
      *      In a TTY (and unless --no-interaction is set), prompt the
      *      user to pick from the top suggestions.
      *
-     * Returns null when no base can be derived AND the user declined
+     * Returns null when no base can be derived and the user declined
      * the interactive prompt (or non-interactive mode rejects every
      * candidate). The caller treats null as "exit with failure" — the
      * actionable error message is already printed here.
@@ -140,8 +140,8 @@ class ComponentMakeCommand extends Command
 
             // `name` has been validated since this command shipped and `--base`
             // never was, and the two feed the same kind of path: `name` names a
-            // file we CREATE under views/components/custom/, `--base` names one
-            // we READ. Unvalidated, its dots and slashes are just path — so
+            // file we create under views/components/custom/, `--base` names one
+            // we read. Unvalidated, its dots and slashes are just path — so
             // `--base=../../../../resources/views/admin/panel` walks out of the
             // package's component tree and copies an application's own Blade
             // file into a new one.
@@ -160,7 +160,7 @@ class ComponentMakeCommand extends Command
             return $explicit;
         }
 
-        // 1. Self-derivation: name itself IS a valid component. Common case:
+        // 1. Self-derivation: name itself is a valid component. Common case:
         //    `wirekit:component button` to scaffold a custom variant of the
         //    button component. Unambiguous — no prompt needed.
         if ($this->resolveBladeSource($name) !== null) {

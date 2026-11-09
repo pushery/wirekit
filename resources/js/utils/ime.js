@@ -43,7 +43,7 @@ export function stopCompositionKey(event) {
  *
  * The listener is a capture listener on the field itself, and at the field every capture listener
  * runs before every other listener registered there, whatever order they were added in; Alpine's
- * `@keydown` is one of the latter. A listener in the capture phase of an ANCESTOR still runs first,
+ * `@keydown` is one of the latter. A listener in the capture phase of an ancestor still runs first,
  * so a component that hears keys at the window in that phase checks `isComposing()` itself.
  *
  * Idempotent: a second bundle registers the same handler.

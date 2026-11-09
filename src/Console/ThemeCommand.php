@@ -160,9 +160,9 @@ class ThemeCommand extends Command
             $darkVars = ltrim(rtrim((string) $darkVars)."\n".self::derivedBlocks($colors, true, self::resolved($dark), $kept), "\n");
         }
 
-        // Emit the LIGHT palette as a plain unlayered `:root {}` block — NOT a
+        // Emit the light palette as a plain unlayered `:root {}` block — not a
         // Tailwind `@theme {}` block. `@theme` compiles into the `theme` cascade
-        // LAYER, and unlayered CSS always beats layered CSS, so dist/wirekit.css's
+        // layer, and unlayered CSS always beats layered CSS, so dist/wirekit.css's
         // own unlayered `:where(:root)` defaults would override a layered preset
         // and the light palette would silently no-op on the `@wirekitStyles`
         // <link> path. A plain `:root {}` (specificity 0,1,0, unlayered) wins over
@@ -280,7 +280,7 @@ class ThemeCommand extends Command
      * A kept fill is the brand color in dark mode too, and the tints are drawn with it, so the
      * text colors are read on the fills the block really writes.
      *
-     * @param  array<string, string>  $colors  the color given for each name, in the order of COLORS
+     * @param  array<string, string>  $colors  the color given for each name, in the order of colors
      * @param  array<string, string>  $theme  the tokens in force in this mode, their references filled in
      * @param  array<string, true>  $kept  the colors whose fill stays as given on a dark page
      */
@@ -358,8 +358,7 @@ class ThemeCommand extends Command
      *
      * It stays for the reason PersistedToggle states for itself: this is an
      * MIT package on Packagist, so removing a public method is a backward-compatibility
-     * decision rather than a cleanup, and it is not this file's to make. It goes in the
-     * next MAJOR.
+     * decision rather than a cleanup, and it is not this file's to make.
      *
      * Nothing in the package calls it.
      */

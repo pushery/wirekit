@@ -6,7 +6,7 @@
  * registers it under `wirekitApexChart` — the name ApexChartsAdapter.alpineComponent()
  * returns and the chart Blade template wires into x-data.
  *
- * This bundle ships ZERO ApexCharts code. The developer installs apexcharts
+ * This bundle ships zero ApexCharts code. The developer installs apexcharts
  * via npm and exposes it on window before this script loads:
  *
  *   import ApexCharts from 'apexcharts';
@@ -21,7 +21,7 @@ import { registeredNames, reportLateRegistration } from './utils/late-registrati
 // How many times this file is on the page — which is the question the warning below was
 // always trying to ask, and the one it could never answer.
 //
-// Counting REGISTRATIONS would not answer it, because this file registers twice by design:
+// Counting registrations would not answer it, because this file registers twice by design:
 // once eagerly when Alpine is already present, once again on `alpine:init`. In a Livewire app
 // both always happen, because Livewire assigns `window.Alpine` long before it calls `start()` —
 // so a registration count would warn on every page of every Livewire application, including
@@ -29,7 +29,7 @@ import { registeredNames, reportLateRegistration } from './utils/late-registrati
 // there.
 //
 // A module-scope counter answers the real question. The body runs once per copy of the script,
-// so two is two script tags, which IS the misconfiguration the text describes.
+// so two is two script tags, which is the misconfiguration the text describes.
 if (typeof window !== 'undefined') {
     window.__wirekitApexLoads = (window.__wirekitApexLoads || 0) + 1;
 
@@ -46,7 +46,7 @@ if (typeof window !== 'undefined') {
 function registerApexChartComponent() {
     // Detect a second registration instead of asserting it is fine.
     //
-    // `Alpine.data()` is idempotent as a CALL — the second one simply overwrites the first —
+    // `Alpine.data()` is idempotent as a call — the second one simply overwrites the first —
     // but a double registration is not safe as a situation. Two entry paths registering the
     // same name means the
     // adapter arrived twice — typically `scripts.apex` emitting it while the app also
@@ -57,7 +57,7 @@ function registerApexChartComponent() {
     // A flag on window rather than asking Alpine, because Alpine exposes no way to ask
     // whether a data name is taken. The honest limit: this sees WireKit's own two paths
     // and cannot see an app-side factory registered under the same name by other code.
-    // Reaching here twice from THIS file's two paths is the designed shape, not a fault, so
+    // Reaching here twice from this file's two paths is the designed shape, not a fault, so
     // the second call returns rather than warning about itself. What a genuine second copy of
     // the adapter looks like is counted at module scope above.
     if (window.__wirekitApexRegistered) {

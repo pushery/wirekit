@@ -19,11 +19,11 @@
     // be cut mid-word by the scroll area. A table that fits keeps a caption as wide as itself.
     $classes = WireKit::resolveClasses('table.caption', 'base', implode(' ', [
         'caption-bottom',
-        'mt-2',
+        'mt-[var(--space-wk-sm)]',
         'max-w-[100cqi]',
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'text-left',
+        'text-start',
     ]), $scope);
 @endphp
 

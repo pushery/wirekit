@@ -152,7 +152,7 @@ export default function wirekitRangeSlider(config = {}) {
          * The three document-level drag listeners, held so a teardown can reach them.
          *
          * Closures inside `_startDrag`, removed by the `onUp` that ends the gesture, are
-         * fine for every drag that ENDS. A component torn down mid-gesture (a Livewire
+         * fine for every drag that ends. A component torn down mid-gesture (a Livewire
          * morph, a conditional render flipping, an SPA navigation) never gets that
          * pointerup: three handlers would stay on `document`, each closing over a dead
          * scope, and the next pointer move anywhere on the page would run `_onDrag`
@@ -177,18 +177,18 @@ export default function wirekitRangeSlider(config = {}) {
         _trackPressed: false,
 
         // True when the two thumbs are close enough that their individual value
-        // badges would overlap — the blade then shows ONE merged "min – max"
+        // badges would overlap — the blade then shows one merged "min – max"
         // badge instead. Set by _measureBubbles() from the badges' real boxes.
         _merged: false,
 
         /**
-         * Gates the badge fade so it never runs on the FIRST measurement.
+         * Gates the badge fade so it never runs on the first measurement.
          *
          * `_merged` starts false and the first measurement may immediately flip
          * it, which — with the fade applied unconditionally — animated the
          * merged badge in from nothing on page load. Two costs: the reader sees
          * a blink where the layout was never in doubt, and for the duration of
-         * that fade the text sits at a PARTIAL opacity. A near-black at partial
+         * that fade the text sits at a partial opacity. A near-black at partial
          * opacity over white is mid-gray, so an accessibility scan that samples
          * mid-fade reads ~4.3:1 against a token that is 15:1 when settled — that
          * is what reddened CI on the storefront blueprint while every local run
@@ -199,7 +199,7 @@ export default function wirekitRangeSlider(config = {}) {
         /**
          * Value-text overrides, keyed by value.
          *
-         * What a thumb ANNOUNCES. The map wins where it has an entry, otherwise
+         * What a thumb announces. The map wins where it has an entry, otherwise
          * the number is the value. Live, so dragging and arrow keys update the
          * announcement as the thumb moves — the same contract the single-value
          * slider keeps.
@@ -253,7 +253,7 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * The highest value the LOWER handle can hold — what it announces as
+         * The highest value the lower handle can hold — what it announces as
          * `aria-valuemax`.
          *
          * Not the track's `_max`: `_setMin` clamps at `maxVal - _step`, and so
@@ -262,7 +262,7 @@ export default function wirekitRangeSlider(config = {}) {
          * upper one, and a reader told otherwise hears a control that appears to
          * hang at a value the announcement never acknowledges.
          *
-         * The bound is EXACT rather than an upper estimate — the clamp is a
+         * The bound is exact rather than an upper estimate — the clamp is a
          * `Math.min` against this very number, so the handle lands on it whether
          * or not it sits on the step grid.
          *
@@ -279,7 +279,7 @@ export default function wirekitRangeSlider(config = {}) {
             return this._toPlaces(Math.max(this._min, this.maxVal - this._step));
         },
 
-        /** The lowest value the UPPER handle can hold — the mirror of `minThumbCeiling`. */
+        /** The lowest value the upper handle can hold — the mirror of `minThumbCeiling`. */
         get maxThumbFloor() {
             return this._toPlaces(Math.min(this._max, this.minVal + this._step));
         },
@@ -287,7 +287,7 @@ export default function wirekitRangeSlider(config = {}) {
         /**
          * Step the minimum value by direction.
          *
-         * `direction` is a MULTIPLIER on the step, not a sign: the arrow keys
+         * `direction` is a multiplier on the step, not a sign: the arrow keys
          * pass ±1 and the page keys pass ±10, so PageUp/PageDown reuse this path
          * instead of introducing a second clamp that could drift from it.
          */
@@ -317,7 +317,7 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * Jump the minimum handle to one end of ITS OWN travel (Home / End).
+         * Jump the minimum handle to one end of its own travel (Home / End).
          *
          * The travel a handle owns is not the whole track. The lower handle's
          * ceiling is the upper handle — one step below it, because the pair may
@@ -347,7 +347,7 @@ export default function wirekitRangeSlider(config = {}) {
          *
          * Every key path funnels through here so the clamp, the gesture mark, the
          * hidden-input dispatch and the commit boundary are stated once. A key
-         * press IS a completed decision, so it commits immediately — unlike a
+         * press is a completed decision, so it commits immediately — unlike a
          * drag, which commits at pointerup. A click on the track is one as well.
          */
         _setMin(value) {
@@ -370,7 +370,7 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * Tell the optimistic layer the gesture starts HERE, before the pair
+         * Tell the optimistic layer the gesture starts here, before the pair
          * moves.
          *
          * Both commit paths change `minVal`/`maxVal` before `_commit()` runs —
@@ -392,7 +392,7 @@ export default function wirekitRangeSlider(config = {}) {
          * Hand the pair to the optimistic layer, if one is nested here.
          *
          * The commit boundary. A keypress calls this at once, because one
-         * press IS a completed decision; a drag calls it only at pointerup, not
+         * press is a completed decision; a drag calls it only at pointerup, not
          * per frame. There is no timer either way.
          *
          * `run` is looked up rather than assumed: without the layer this
@@ -460,7 +460,7 @@ export default function wirekitRangeSlider(config = {}) {
             // the thumb either, as a disabled control is not focused by a press.
             if (this._locked()) return;
 
-            // Canceling pointerdown also cancels the FOCUS it would have given
+            // Canceling pointerdown also cancels the focus it would have given
             // this element — moving focus to the pressed control is part of that
             // default action, and a `div[tabindex="0"]` has no other route to it.
             // Without this line the thumb the reader just grabbed is not the
@@ -479,7 +479,7 @@ export default function wirekitRangeSlider(config = {}) {
             this._markGesture();
             this._dragging = handle;
 
-            // Cache the track's rect ONCE per drag — the track is stationary while
+            // Cache the track's rect once per drag — the track is stationary while
             // dragging, so re-reading getBoundingClientRect on every pointermove (a
             // hot path) would force a needless layout read per frame. Mirrors the
             // color-picker drag optimization.
@@ -668,7 +668,7 @@ export default function wirekitRangeSlider(config = {}) {
          * `this.$refs.track`, so the leak is not merely idle: every pointer move on the
          * page ran a measurement against a detached element.
          *
-         * `_commit()` is deliberately NOT called here. Teardown is not a commit boundary
+         * `_commit()` is deliberately not called here. Teardown is not a commit boundary
          * — the component is going away, and sending a value the reader never let go of
          * would be the optimistic layer's worst case: a write nobody asked for, on a
          * surface that no longer exists to roll it back.
@@ -768,7 +768,7 @@ export default function wirekitRangeSlider(config = {}) {
             const need = (lo.offsetWidth + hi.offsetWidth) / 2 + 6;
             this._merged = (maxCenter - minCenter) < need;
 
-            // Enable the fade only AFTER the first measurement has painted.
+            // Enable the fade only after the first measurement has painted.
             // Deferring by a frame is what makes the initial state a paint
             // rather than an animation — setting it synchronously here would
             // still let the very first `_merged` flip transition.
@@ -780,10 +780,10 @@ export default function wirekitRangeSlider(config = {}) {
         /**
          * Re-measure whenever either handle moves.
          *
-         * Bound to `x-effect`, which re-runs whatever its expression READ. Spelled
+         * Bound to `x-effect`, which re-runs whatever its expression read. Spelled
          * out in the template as `minVal; maxVal; remeasure()` it would be three
          * statements, which Alpine's CSP build does not parse. The reads
-         * have to stay, and stay BEFORE the call: an effect only tracks what it
+         * have to stay, and stay before the call: an effect only tracks what it
          * actually touches, so dropping them would leave the geometry stale
          * until something else happened to re-run it.
          */

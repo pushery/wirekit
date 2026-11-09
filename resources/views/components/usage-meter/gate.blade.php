@@ -16,7 +16,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $over = BooleanProp::from($over, false, 'usage-meter.gate', 'over');
@@ -31,7 +31,7 @@
 @endphp
 
 <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($isOver) data-over-limit="true" @endif>
-    @if($isOver)
+    @wirekitLast($isOver)
         {{-- Gated: the action is visible but inert (aria-disabled + inert so it is
              skipped by AT and unclickable). Dimmed via the muted opacity token. --}}
         <div aria-disabled="true" inert
@@ -40,16 +40,16 @@
         </div>
         {{-- Reason + upgrade CTA. The reason is the accessible explanation that
              pairs with aria-disabled (color alone never conveys the gate — a11y). --}}
-        <div class="mt-2 flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
+        <div class="mt-[var(--space-wk-sm)] flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
             @if($reason)
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $reason }}</span>
             @endif
-            @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
+            @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
                 <span>{{ $action }}</span>
-            @endif
+            @endwirekitLast
         </div>
     @else
         {{-- Under limit — render the action untouched. --}}
         {{ $slot }}
-    @endif
+    @endwirekitLast
 </div>

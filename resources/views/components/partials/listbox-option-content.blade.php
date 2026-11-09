@@ -6,7 +6,7 @@
 
      The label and the description each carry an id, and the row points at them with
      `aria-labelledby` and `aria-describedby`. Without that the option's name would be computed
-     from its content, which is the label AND the description run together, so a screen reader
+     from its content, which is the label and the description run together, so a screen reader
      would announce "Starred Only projects you marked" as one name.
 
      Params: $idExpression (the JS expression of the row's id), $media, $descriptions (whether the
@@ -35,12 +35,12 @@
     @endif
 @endif
 <span class="block min-w-0 flex-1">
-    @if($descriptions)
+    @wirekitLast($descriptions)
         <span class="block" x-bind:id="{{ $idExpression }} + '-label'" x-text="opt.label"></span>
         <template x-if="opt.description">
             <span class="block {{ $descriptionClasses }}" x-bind:id="{{ $idExpression }} + '-desc'" x-text="opt.description"></span>
         </template>
     @else
         <span class="block" x-text="opt.label"></span>
-    @endif
+    @endwirekitLast
 </span>

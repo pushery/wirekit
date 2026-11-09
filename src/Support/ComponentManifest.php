@@ -21,7 +21,7 @@ final class ComponentManifest
      * Every component, in the manifest shape.
      *
      * `$publicOnly` drops a component whose page exists but is not publicly rendered —
-     * ENTIRELY, never merely with `docs_url` nulled. A page-less sub-component (`toast-region`,
+     * entirely, never merely with `docs_url` nulled. A page-less sub-component (`toast-region`,
      * `glass`, the `reading-*` parts) is a different case and stays: it is documented on a
      * parent page, so it is public, it just has no page of its own.
      *
@@ -73,7 +73,7 @@ final class ComponentManifest
 
             /*
              * How the component exposes its API. An anonymous Blade component carries props via
-             * an `@props([...])` block AND accepts named template slots; a class-based one
+             * an `@props([...])` block and accepts named template slots; a class-based one
              * carries them via its constructor signature and typically has no developer-facing
              * slots. A tool that knows which it is generates the right wrapping shape instead of
              * guessing from prop names.
@@ -105,7 +105,7 @@ final class ComponentManifest
         return [
             'version' => VersionResolver::resolve(),
             /*
-             * The newest RELEASED version, which is a different question from `version` above:
+             * The newest released version, which is a different question from `version` above:
              * that one is the build installed here, and on a deployment pinned to a development
              * branch it is literally that branch name, so it cannot be compared against a
              * version a page claims to show. This field is the comparable half, so a page that

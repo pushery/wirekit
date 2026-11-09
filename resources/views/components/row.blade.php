@@ -4,7 +4,7 @@
 @props([
     'gap' => config('wirekit.components.row.gap', 'md'),
     'align' => 'center',
-    // Line the CONTROLS up when this row holds form fields.
+    // Line the controls up when this row holds form fields.
     //
     // A labeled field is taller than an unlabeled one and a field with a hint is taller
     // still, so any single `align` value lines up the wrong edge for some mix of them:
@@ -53,7 +53,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('row', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     // TRI-STATE, not a boolean: `false` (default) · `true` · `"responsive"`.
@@ -66,7 +66,7 @@
     // multi-item row an application already lays out.
     //
     // `toolbar` wraps unconditionally, so there is no inconsistency to resolve there. `stack` is `flex-col`,
-    // where wrapping means additional COLUMNS rather than additional rows, and `badge`'s
+    // where wrapping means additional columns rather than additional rows, and `badge`'s
     // `wrap` is about a label breaking inside one badge — neither is this concept.
     //
     // `true`, `false` or `responsive`, the last in any case. Another word is reported
@@ -123,7 +123,7 @@
 
     $alignFields = BooleanProp::from($alignFields, false, 'row', 'alignFields');
 
-    // Aligned AND wrapping: the fields wrap into bands of three shared tracks each, and every band
+    // Aligned and wrapping: the fields wrap into bands of three shared tracks each, and every band
     // lines up on its own controls (`.wk-form-row[data-wk-form-row-wrap]` in dist/wirekit.css).
     // `responsive` is left out on purpose: below the breakpoint an aligned row stacks anyway, and
     // above it `responsive` holds one line, which is what an aligned row already does.
@@ -149,7 +149,7 @@
         $gapClasses,
         $alignFields ? '' : $alignClasses,
         $alignFields ? '' : $justifyClasses,
-        // Both literals are written out. Tailwind scans source TEXT, so a class assembled
+        // Both literals are written out. Tailwind scans source text, so a class assembled
         // from `'flex-wrap md:flex-'.$x` is never generated and the binding does nothing.
         $alignFields ? '' : match ($wrapMode) {
             'always' => 'flex-wrap',

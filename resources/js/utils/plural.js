@@ -3,7 +3,7 @@ import { formatCount } from './locale-number.js';
 /**
  * Pick a translated plural form in the browser, for a value that changes there.
  *
- * A component whose accessible name embeds a COUNT cannot build that name on
+ * A component whose accessible name embeds a count cannot build that name on
  * the server once an optimistic layer can change the count: the page would show
  * six and announce five, and the rollback would put back a number the user was
  * never told about. So the forms travel to the client and the choosing happens
@@ -15,7 +15,7 @@ import { formatCount } from './locale-number.js';
  * without ever looking wrong to a developer who reads English. `Intl.PluralRules`
  * is the rule, and every browser in WireKit's support baseline has it.
  *
- * The server sends a map of SAMPLE COUNT to template, not a map of category to
+ * The server sends a map of sample count to template, not a map of category to
  * template, and that is deliberate: PHP's intl extension does not expose CLDR
  * plural categories, so the server cannot name them. It can render the same
  * translation key for a handful of counts, and the client — which has the rule —

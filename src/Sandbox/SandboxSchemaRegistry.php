@@ -19,13 +19,13 @@ namespace Pushery\WireKit\Sandbox;
  *     ...
  *   ]
  *
- * Every component that the sandbox can render MUST register its schema
+ * Every component that the sandbox can render must register its schema
  * here. The `ComponentAllowlist` consults this registry to decide
  * whether a component name is sandbox-renderable.
  *
- * Schemas are seeded LAZILY, on the first read: `ensureSeeded()` runs
+ * Schemas are seeded lazily, on the first read: `ensureSeeded()` runs
  * `seed()` once and every accessor goes through it. `register()` seeds first
- * too, so a custom schema always lands ON TOP of the built-in of the same name,
+ * too, so a custom schema always lands on top of the built-in of the same name,
  * and registering at boot is not undone by the first read. There is no boot hook
  * and no service-provider call: the provider does not reference this class.
  *
@@ -41,7 +41,7 @@ namespace Pushery\WireKit\Sandbox;
  * own `validateProp()` list, no value more and none less. Every prop of a
  * registered component is offered here or left out on purpose.
  *
- * `allowed_schemes` is REQUIRED on every prop whose value reaches an `href`,
+ * `allowed_schemes` is required on every prop whose value reaches an `href`,
  * `src` or `action` attribute, in a schema you register as much as in a built-in
  * one. It lists the URL schemes a value may carry (`['http', 'https', 'mailto']`),
  * and it is the only thing between `javascript:` and that attribute: the
@@ -70,7 +70,7 @@ final class SandboxSchemaRegistry
         // otherwise be overwritten by the built-in the moment anything reads the
         // registry, with nothing failing and nothing logged.
         //
-        // This cannot recurse: `ensureSeeded()` sets its flag BEFORE calling `seed()`,
+        // This cannot recurse: `ensureSeeded()` sets its flag before calling `seed()`,
         // so the nested `register()` calls the seed makes short-circuit here.
         // That ordering was already re-entrancy protection; it just had no second
         // caller until now.
@@ -127,7 +127,7 @@ final class SandboxSchemaRegistry
 
     private static function seed(): void
     {
-        // The SIX canonical intents, which is what callout and alert actually
+        // The six canonical intents, which is what callout and alert actually
         // accept — they run their `variant` through validateProp against exactly
         // this list and throw on anything else.
         //
@@ -146,16 +146,15 @@ final class SandboxSchemaRegistry
             'wrapLabel' => ['type' => 'bool', 'default' => false],
             'touchTextFloor' => ['type' => 'bool', 'default' => false],
             'touchFloor' => ['type' => 'bool', 'default' => false],
-            // Offered rather than refused, even though the sandbox renders at ONE width and
+            // Offered rather than refused, even though the sandbox renders at one width and
             // the swap it drives happens at another. What the reader sees change is the class
             // list and the box, which is what the prop is about; a refusal would have had to
             // claim the prop does nothing here, and it does.
             'iconOnlyBelow' => ['type' => 'string', 'default' => null, 'allowed_values' => ['xs', 'sm', 'md', 'lg', 'xl', '2xl']],
             // `body` is the SandboxRenderer convention for slot content —
-            // `<x-wirekit::button>{body}</x-wirekit::button>`. Earlier
-            // iterations used `label` here, which the renderer treated as
-            // an attribute and never inserted into the slot, producing an
-            // empty button under live preview.
+            // `<x-wirekit::button>{body}</x-wirekit::button>`. The renderer writes
+            // any other key as an attribute, so a `label` here would leave the
+            // live preview an empty button.
             'body' => ['type' => 'string', 'default' => 'Click me'],
         ]);
 
@@ -171,15 +170,15 @@ final class SandboxSchemaRegistry
             'body' => ['type' => 'string', 'default' => 'Badge'],
         ]);
 
-        // Callout `title` is a NAMED SLOT (`@isset($title)` in
+        // Callout `title` is a named slot (`@isset($title)` in
         // callout.blade.php), not a `@props` entry — the SandboxRenderer
         // emits string props as HTML attributes, so a `title` schema entry
         // would silently render as `<aside title="Note">` instead of
         // populating the slot. Named-slot support is a future renderer
         // feature; until then the title is intentionally not addressable.
-        // Note: Alert.title IS a real `@props` (different shape) — its
+        // Note: Alert.title is a real `@props` (different shape) — its
         // schema below correctly carries the title prop.
-        // The prop editor offers the CANONICAL spelling of the axis, the same one button and
+        // The prop editor offers the canonical spelling of the axis, the same one button and
         // badge already offer. `variant` still works on the component and is deliberately not
         // a second control: two controls for one axis let a developer set both, and the schema
         // is read as the API — it should show the name the kit asks people to write.
@@ -205,16 +204,14 @@ final class SandboxSchemaRegistry
             'icon' => ['type' => 'bool', 'default' => true],
         ]);
 
-        // The Card primitive accepts ONE surface prop (outline / elevated / flat),
-        // NOT separate padded / bordered / elevated booleans — earlier schema
-        // iterations declared three booleans that the Card component never
-        // read, producing a no-padding bare-pill render in both static and
-        // live sandbox modes. Card body content also requires the
+        // The Card primitive takes one surface prop (outline / elevated / flat),
+        // not separate padded / bordered / elevated booleans: the component reads
+        // no such booleans, so the schema offers none. Card body content also requires the
         // `<x-wirekit::card.body>` sub-component for proper padding; the
         // SandboxRenderer's BODY_WRAPPERS map handles that wrap automatically
         // for this schema entry.
         // `surface`, spelled the way button spells it, with `outline` rather than `outlined` —
-        // the one pair in the catalog that renames the VALUE as well as the prop. The component
+        // the one pair in the catalog that renames the value as well as the prop. The component
         // accepts all four spellings; the editor offers the canonical one.
         self::register('card', [
             'surface' => ['type' => 'string', 'default' => 'outline', 'allowed_values' => ['outline', 'elevated', 'flat']],
@@ -232,13 +229,13 @@ final class SandboxSchemaRegistry
 
         self::register('code', [
             // No default: an unset break keeps `break-word`, as the component does.
-            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
+            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all', 'address']],
             'body' => ['type' => 'string', 'default' => '$value'],
         ]);
 
         self::register('code-block', [
             // `language` is a hint for developer-side syntax highlighters
-            // (Prism / Shiki / highlight.js). The component itself does NOT
+            // (Prism / Shiki / highlight.js). The component itself does not
             // ship a highlighter — it just emits `data-language` for developers
             // to pick up. The allowed_values list mirrors the highlighter
             // grammars most developers actually wire (matches the highlight.js
@@ -275,7 +272,7 @@ final class SandboxSchemaRegistry
             'accent' => ['type' => 'bool', 'default' => false],
             'tracking' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'tight', 'tighter']],
             // No default: an unset break keeps the browser's own rules, as it does on text.
-            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
+            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all', 'address']],
             // No default: an unset fit keeps the heading at its size. Offered as on and off; a
             // floor of its own is a length, which the endpoint does not take as free input.
             'fit' => ['type' => 'bool'],
@@ -284,10 +281,9 @@ final class SandboxSchemaRegistry
             'body' => ['type' => 'string', 'default' => 'Heading'],
         ]);
 
-        // Text uses a string `variant` (default/muted/subtle/accent/success/
-        // warning/danger), NOT a `muted` boolean. Earlier schema declared
-        // `muted: bool` which the renderer emitted as `muted="false"` on the
-        // `<p>` tag — silently no-op. Replaced with the real prop.
+        // Text's color axis is a string, offered under the spelling `variant`, which the
+        // component reads as an alias of `intent`. A `muted` boolean is no prop of text: the
+        // renderer would write it onto the element as an attribute, where it changes nothing.
         self::register('text', [
             // `inherit` on an axis writes no class for it: the text takes that axis from the control
             // it sits in.
@@ -295,10 +291,10 @@ final class SandboxSchemaRegistry
             'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger', 'inherit']],
             'weight' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'medium', 'semibold', 'bold', 'inherit']],
             // No default for the three the component leaves unset unless asked, so an unset value keeps that.
-            'align' => ['type' => 'string', 'allowed_values' => ['left', 'center', 'right']],
+            'align' => ['type' => 'string', 'allowed_values' => ['start', 'center', 'end', 'left', 'right']],
             'truncate' => ['type' => 'bool', 'default' => false],
             'lineClamp' => ['type' => 'int', 'allowed_values' => [1, 2, 3, 4, 5, 6]],
-            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
+            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all', 'address']],
             // No default: an unset leading keeps the theme's own line height.
             'leading' => ['type' => 'string', 'allowed_values' => ['tight', 'normal', 'relaxed', 'inherit']],
             'wrap' => ['type' => 'bool', 'default' => true],
@@ -323,7 +319,7 @@ final class SandboxSchemaRegistry
                 'default' => '#',
                 'allowed_schemes' => ['http', 'https', 'mailto', 'tel'],
             ],
-            'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'subtle', 'muted']],
+            'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'subtle', 'muted', 'text']],
             // No default: an unset size inherits the surrounding text, which is what the component does.
             'size' => ['type' => 'string', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl']],
             'external' => ['type' => 'bool', 'default' => false],

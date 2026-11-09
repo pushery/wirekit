@@ -174,7 +174,7 @@ final class Diff
     }
 
     /**
-     * Variant-scope marker classes that Tailwind v4 does NOT generate a
+     * Variant-scope marker classes that Tailwind v4 does not generate a
      * standalone utility rule for — they exist purely as selector anchors
      * for `group-*` / `peer-*` variants. Forward-diff would always flag
      * them (in source, never in compiled), so we exclude them upfront.

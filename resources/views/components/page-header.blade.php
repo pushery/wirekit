@@ -9,7 +9,7 @@
     // sibling screens that each build their own title end up with different levels and
     // sizes. A screen has one title, and that title is the document's heading.
     'level' => 1,
-    // Optional sentence under the title. A `description` SLOT takes the same place when
+    // Optional sentence under the title. A `description` slot takes the same place when
     // the text needs markup.
     'description' => null,
     // The heading's id, settable because something else has to be able to name it: a
@@ -22,7 +22,7 @@
     //
     // A heading is not focusable, and a dialog that returns focus with `focus-return-to`
     // needs a target that is. The case is a delete confirmation that sits in the row it
-    // deletes: on confirm, the dialog AND its trigger both disappear, so focus has nowhere
+    // deletes: on confirm, the dialog and its trigger both disappear, so focus has nowhere
     // to go back to and the page title is the nearest honest place (WCAG 2.4.3).
     //
     // A prop rather than "the overlay sets it at runtime", and the difference is the
@@ -35,7 +35,7 @@
     'headingFocusable' => false,
     // Put the actions on their own line below this width, whatever they are wide.
     //
-    // Without it the break depends on the LABEL: the title column asks for 16rem and the row
+    // Without it the break depends on the label: the title column asks for 16rem and the row
     // wraps when 16rem plus the gap plus the actions no longer fit, which on a phone comes down to
     // a few pixels either way. A shorter label, a narrower face or a `sm` button stays beside the
     // title, and then a two-line description lives in 16rem.
@@ -45,8 +45,8 @@
     // (`max-sm:`, as `button.group` uses) would change nothing in a 375px-wide container inside
     // a wide window. The data table's `hide-below-container` answers the same way.
     //
-    // So the scale is Tailwind's container ladder, which shares its NAMES with the viewport one
-    // and not its meanings: `sm` here is 24rem of HEADER, where a viewport `sm` is 40rem of
+    // So the scale is Tailwind's container ladder, which shares its names with the viewport one
+    // and not its meanings: `sm` here is 24rem of header, where a viewport `sm` is 40rem of
     // window. Null sets no width, so the actions wrap only when they do not fit beside the title.
     'stackBelow' => null,
     // Stick to the top of the box the page scrolls in, `--wk-strip-inset` below a strip of chrome.
@@ -64,7 +64,7 @@
     // Dev-only — flags unknown props in debug (silent in prod).
     WireKit::warnUnknownProps('page-header', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `heading-focusable="false"` would mean the opposite of what the call site reads as.
     $headingFocusable = BooleanProp::from($headingFocusable, false, 'page-header', 'headingFocusable');
     $sticky = BooleanProp::from($sticky, false, 'page-header', 'sticky');
@@ -76,7 +76,7 @@
     }
 
     /*
-     * The forced break, and it works through the SAME mechanism the natural one does: the title
+     * The forced break, and it works through the same mechanism the natural one does: the title
      * column's flex-basis. At a full-width basis the column asks for the whole row, so the actions
      * have nowhere to go but the next line — no second layout, no `flex-direction` switch that
      * would then have to restate the gap.
@@ -89,7 +89,7 @@
      * Written out per size because Tailwind reads a literal class name and never an assembled
      * one, the same reason `hide-below` spells its five out.
      *
-     * The container is NAMED (`@container/wk-page-header` on the root below), for the reason the
+     * The container is named (`@container/wk-page-header` on the root below), for the reason the
      * table's frame carries a name too: an anonymous container would also become the measuring
      * context for every `@`-variant a caller nests in the actions slot, and silently retarget it.
      */
@@ -171,7 +171,7 @@
     ]), $scope) : '';
 
     /*
-     * The two structures BESIDE the root, named so a call site can reach them.
+     * The two structures beside the root, named so a call site can reach them.
      *
      * Naming them is the point: without a resolvable block for the title column, the only way
      * to tune it is a descendant selector against this component's internal markup, which
@@ -182,7 +182,7 @@
      */
     // Whether the title and the description come from their slots, asked as `hasActualContent()`.
     // `filled()` counts the comment markers Livewire writes around an `@if` as content, and a
-    // call site that makes its `actions` slot conditional leaves two of them in the DEFAULT slot:
+    // call site that makes its `actions` slot conditional leaves two of them in the default slot:
     // the heading would render those instead of the `title` prop. A `description` passed as a
     // slot has the same exposure; passed as a prop it is a string, and `filled()` is right for it.
     $titleFromSlot = $slot->hasActualContent();
@@ -250,18 +250,18 @@
             </div>
         @endif
 
-        @if($hasDescription)
-            {{-- `mt` from the SPACE ladder, which is the family a margin reads; a margin
+        @wirekitLast($hasDescription)
+            {{-- `mt` from the space ladder, which is the family a margin reads; a margin
                  never takes a `--gap-wk-*` value. The tight end of it, because the sentence belongs to
                  the title above it: a distance the size of the row's own gap would read as
                  a third block rather than as the title's second line. The sentence keeps to the
                  wide reading measure: in a page's full width it ran to two lines of about 190
                  characters, which the eye cannot follow back to the start of the next. --}}
             <x-wirekit::text intent="muted" measure="wide" class="mt-[var(--space-wk-xs)]" :scope="$scope">{{ $description }}</x-wirekit::text>
-        @endif
+        @endwirekitLast
     </div>
 
-    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         @if($actionsBesideTitle)
             {{-- The frame grows to fill its line, which is how the stylesheet tells beside the
                  title from wrapped below it. The row keeps its name and its block, so a call site
@@ -272,5 +272,5 @@
         @else
             <div data-wk-page-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
         @endif
-    @endif
+    @endwirekitLast
 </div>

@@ -2,7 +2,7 @@
  * WireKit color conversion utilities — shared by the popover color picker.
  *
  * The picker holds its state as HSV (the natural space for a saturation/value
- * plane + hue slider) plus an alpha channel, and converts to/from RGB, HEX, HSL and
+ * plane + hue slider) plus an alpha channel, and converts to/from RGB, hex, HSL and
  * OKLCH for display and parsing. All channels: h ∈ [0,360], s/v/l ∈ [0,100],
  * r/g/b ∈ [0,255], a ∈ [0,1]; OKLCH carries its own ranges (L ∈ [0,1], C unitless,
  * H in degrees) and is documented at its converters below.

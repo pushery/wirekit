@@ -78,7 +78,7 @@ class InstallCommand extends Command
         }
 
         // Mutually-exclusive flag validation — flag combinations that don't
-        // semantically compose are rejected at boot, NOT silently honored.
+        // semantically compose are rejected at boot, not silently honored.
         if ($this->option('force') && $this->option('no-strict')) {
             $this->error('--force and --no-strict are mutually exclusive. Pick one — see `wirekit:install --help`.');
 
@@ -100,7 +100,7 @@ class InstallCommand extends Command
 
         $this->maybeRunInteractivePrompts();
 
-        // Pre-flight validation — collects EVERY error in one pass so the
+        // Pre-flight validation — collects every error in one pass so the
         // user sees the full picture, not just the first failure. Errors
         // always abort. Warnings abort by default and proceed under
         // `--no-strict` or `--force`. Decision matrix documented in
@@ -169,7 +169,7 @@ class InstallCommand extends Command
             // Snapshot app.css before delegating to wirekit:theme so rollback
             // can reverse the preset injection. Dedupe in trackInstallAction
             // means if app.css is already tracked (from addTailwindSource /
-            // font-injection earlier), this is a no-op — the FIRST snapshot
+            // font-injection earlier), this is a no-op — the first snapshot
             // wins and represents the true pre-install state.
             $appCssForTheme = resource_path('css/app.css');
             if (file_exists($appCssForTheme)) {
@@ -234,7 +234,7 @@ class InstallCommand extends Command
      * Returns true when the install stops here. Under --ignore-failed-flags the failure is
      * counted and the remaining steps still run; the count decides the exit code at the end,
      * which is 1 whenever it is above zero. Without the option the install log is closed as
-     * failed and the caller returns FAILURE.
+     * failed and the caller returns failure.
      *
      * The font flags count their own failures, one per flag, in processFontFlags().
      */
@@ -270,7 +270,7 @@ class InstallCommand extends Command
         $errors = [];
         $warnings = [];
 
-        // 0) Tailwind CSS v4+ is a HARD requirement — WireKit's CSS uses the v4
+        // 0) Tailwind CSS v4+ is a hard requirement — WireKit's CSS uses the v4
         //    engine (@theme, @source, color-mix(), @property) and cannot run on
         //    v3. Composer can't gate it (Tailwind is an npm dependency, and
         //    WireKit is not an npm package) and `wirekit:doctor` runs only
@@ -377,7 +377,7 @@ class InstallCommand extends Command
         }
 
         // 5) @import-aware advisory (warning) — only when --font* is set
-        //    AND the app.css uses @import to a NON-tailwindcss source.
+        //    and the app.css uses @import to a NON-tailwindcss source.
         //    Token-clobber scan only looks at app.css; transitive imports
         //    are out of scope (tracked as a future enhancement). The
         //    advisory is scoped narrowly so the canonical
@@ -422,7 +422,7 @@ class InstallCommand extends Command
 
     /**
      * Scan resources/css/app.css for `--font-wk-{category}:` declarations
-     * OUTSIDE the wirekit:font-{category}:start/end marker pair. Returns
+     * outside the wirekit:font-{category}:start/end marker pair. Returns
      * the first match with line + value + file path, or null when clean.
      *
      * @return array{file: string, line: int, value: string}|null
@@ -473,9 +473,9 @@ class InstallCommand extends Command
     /**
      * Append a tracked file-mutation to the pending install log. Flushed
      * on closeInstallLog(failed: false). Each entry captures the file
-     * path + the BEFORE content snapshot so rollback can restore.
+     * path + the before content snapshot so rollback can restore.
      *
-     * Dedupe rule: only the FIRST track call per file in this session
+     * Dedupe rule: only the first track call per file in this session
      * is recorded — the before-snapshot it captured is the canonical
      * pre-install state. Subsequent modifications of the same file
      * (e.g. app.css edited by addTailwindSource, then injectFontOverrides,
@@ -519,7 +519,7 @@ class InstallCommand extends Command
      * the verify step fails, the config, the assets and the edits to app.css
      * and the layout are already on disk, and each entry holds what its file
      * looked like before. Discarding them left those changes with no record,
-     * and `--rollback` then reversed the session BEFORE the failed one,
+     * and `--rollback` then reversed the session before the failed one,
      * restoring files to an older state while the failed run stayed. A run
      * that stops before its first change (pre-flight) has nothing pending and
      * writes nothing.
@@ -553,10 +553,10 @@ class InstallCommand extends Command
     /**
      * Is this absolute path inside the project root?
      *
-     * The comparison is on RESOLVED paths, so `..` segments, a symlinked parent and a
+     * The comparison is on resolved paths, so `..` segments, a symlinked parent and a
      * `/private/var` vs `/var` divergence on macOS all collapse to the same answer. A string
      * prefix check on the unresolved path answers a different question — whether the path was
-     * WRITTEN to look local — which is exactly what an attacker controls.
+     * written to look local — which is exactly what an attacker controls.
      *
      * The trailing separator matters: without it `/project-evil` passes a prefix test against
      * `/project`.
@@ -569,7 +569,7 @@ class InstallCommand extends Command
             return false;
         }
 
-        // The file itself may not exist on the restore branch, so the PARENT is resolved and
+        // The file itself may not exist on the restore branch, so the parent is resolved and
         // the basename appended back.
         $parent = realpath(dirname($absolutePath));
 
@@ -643,7 +643,7 @@ class InstallCommand extends Command
         $failed = 0;
         foreach ($lastSession['actions'] as $action) {
             /*
-             * The path is CONFINED to the project before anything is written or deleted.
+             * The path is confined to the project before anything is written or deleted.
              *
              * `$action['file']` comes out of `.wirekit-install.log`, a JSON file in the
              * project root — so it is data this command reads, not data it produced in this
@@ -651,7 +651,7 @@ class InstallCommand extends Command
              * happily, and the two branches below are `File::delete()` and `File::put()`. A
              * log that arrives with a repository, or that anything else with write access to
              * the project root has touched, therefore turns `--rollback` into an arbitrary
-             * overwrite the moment a developer runs the command to UNDO something.
+             * overwrite the moment a developer runs the command to undo something.
              *
              * `realpath()` on the parent rather than the file itself: the file may legitimately
              * not exist yet on the restore branch, and a non-existent path has no realpath.
@@ -710,7 +710,7 @@ class InstallCommand extends Command
         $this->line('');
         if ($failed === 0) {
             // Consume the session, so a second --rollback says so instead of replaying it.
-            // Only on a CLEAN rollback: a partial one left the tree half-restored, and
+            // Only on a clean rollback: a partial one left the tree half-restored, and
             // re-running it is then the reasonable next move rather than a mistake.
             InstallLog::append($logPath, (string) json_encode([
                 'rolled_back' => $lastSession['session_id'] ?? '?',
@@ -728,7 +728,7 @@ class InstallCommand extends Command
     }
 
     /**
-     * Render the dry-run diff preview: what WOULD change in each
+     * Render the dry-run diff preview: what would change in each
      * touched file under the current flag combination. Read-only — no
      * filesystem writes happen.
      */
@@ -770,7 +770,7 @@ class InstallCommand extends Command
             $this->line('    <fg=cyan>~</> resources/css/app.css (would inject theme preset '.$preset.')');
         }
 
-        // Layout files — Blade directives. Report the files the REAL install would edit: the
+        // Layout files — Blade directives. Report the files the real install would edit: the
         // shells the layout hands its page to, from the same directiveTargets() the install
         // uses — or, when no layout exists yet, the full candidate list it probes. A dry run
         // that names a different file than the install then touches is worse than none.
@@ -815,7 +815,7 @@ class InstallCommand extends Command
      * Interactive prompt mode for `wirekit:install`.
      *
      * Fires when:
-     *   1. No flags are passed (preset is default, all --font* options empty), AND
+     *   1. No flags are passed (preset is default, all --font* options empty), and
      *   2. The command is running in an interactive TTY ($this->input->isInteractive()).
      *
      * In CI / --no-interaction / scripted contexts, this method is a no-op and
@@ -916,7 +916,7 @@ class InstallCommand extends Command
      * Record the developer's chosen ApexCharts license tier in the published config.
      *
      * Returns SUCCESS when the flag is absent — the tier is opt-in, and an installer run
-     * without it is not a failure. An unknown tier is a FAILURE with the allowed values
+     * without it is not a failure. An unknown tier is a failure with the allowed values
      * named, because a typo here would otherwise be written into the config silently.
      *
      * The notice is printed before the config is touched, and that order is the point:
@@ -942,7 +942,7 @@ class InstallCommand extends Command
         }
 
         // Echo the License Notice once before mutating config/wirekit.php so
-        // every developer who picks an apexcharts tier sees it AT LEAST ONCE.
+        // every developer who picks an apexcharts tier sees it AT least once.
         // The notice is also rendered on docs/components/chart.md and emitted
         // by wirekit:doctor, so a developer who skips the installer still meets
         // it — the flag records acceptance, it does not gate the notice.
@@ -975,7 +975,7 @@ class InstallCommand extends Command
     }
 
     /**
-     * Persist charts.library => 'apexcharts' AND charts.apex_license => <tier>
+     * Persist charts.library => 'apexcharts' and charts.apex_license => <tier>
      * to the developer's config/wirekit.php. Falls back to a console hint when
      * the file is missing, cannot be rewritten or cannot be written (e.g. a
      * read-only deploy), and returns false in each of those cases.
@@ -1009,7 +1009,7 @@ class InstallCommand extends Command
         //
         // `preg_match` answers 1, 0 **or false**, and only the third is an error. Read
         // as a boolean, a failed scan is indistinguishable from "no apex_license line",
-        // which sends it down the INSERT branch — and that branch's own `preg_replace`
+        // which sends it down the insert branch — and that branch's own `preg_replace`
         // then fails for the same reason and returns NULL. Compared against 1 explicitly,
         // the error is a third state and gets its own answer below.
         $hasLicense = preg_match("/'apex_license'\s*=>/u", $replaced);
@@ -1047,7 +1047,7 @@ class InstallCommand extends Command
          * configuration was gone with a green run on top of it.
          *
          * An empty `$replaced` covers the second way in as well: an existing file that
-         * cannot be READ makes `(string) file_get_contents()` above `''`, and writing
+         * cannot be read makes `(string) file_get_contents()` above `''`, and writing
          * that back is the same truncation by another route.
          */
         if ($hasLicense === false || $replaced === '') {
@@ -1061,7 +1061,7 @@ class InstallCommand extends Command
         }
 
         /*
-         * Tracked BEFORE the write, so `--rollback` can undo it.
+         * Tracked before the write, so `--rollback` can undo it.
          *
          * This is the mutation most worth undoing: `--apex-license` edits `config/wirekit.php`,
          * a file the developer owns and may have hand-tuned. Like every other config-touching
@@ -1075,7 +1075,7 @@ class InstallCommand extends Command
         $this->trackInstallAction('apex-license', $configPath, $contents);
 
         /*
-         * Checked, and it was not. `@file_put_contents` discards the warning AND the return
+         * Checked, and it was not. `@file_put_contents` discards the warning and the return
          * value, so a read-only `config/wirekit.php` — the ordinary case on a deployed tree,
          * or after a `chmod` somebody forgot — produced "Set charts.library => apexcharts"
          * and exit 0 over a file that never changed. The developer then looks for the reason
@@ -1096,7 +1096,7 @@ class InstallCommand extends Command
      * Apply font overrides for each --font* flag set. Returns the count
      * of failures encoded as a Symfony exit code: 0 on clean run,
      * self::FAILURE on any per-flag exception. Pre-flight validation
-     * catches unknown keys / wrong categories BEFORE this method runs,
+     * catches unknown keys / wrong categories before this method runs,
      * so any exception here represents a runtime-side failure (file-
      * system, CSS-shape mismatch, etc.) rather than a typo.
      */
@@ -1339,7 +1339,7 @@ CSS;
     }
 
     /**
-     * Publish ONE font preset's directory — its CSS and that family's woff2 files.
+     * Publish one font preset's directory — its CSS and that family's woff2 files.
      *
      * One preset, not the whole tree: `--tag=wirekit-fonts` copies every preset directory,
      * several megabytes, while an app that activates two families uses a small part of it,
@@ -1375,8 +1375,8 @@ CSS;
 
     private function publishAssets(): void
     {
-        // Snapshot the published-assets directory BEFORE publish so rollback
-        // can remove files that didn't exist before AND restore files that
+        // Snapshot the published-assets directory before publish so rollback
+        // can remove files that didn't exist before and restore files that
         // were overwritten. Re-runs of wirekit:install always force-overwrite,
         // so an upgrade flow needs the before-snapshot too — not just the
         // first-install "delete if absent before" semantic.
@@ -1477,10 +1477,10 @@ CSS;
     {
         $layoutFile = $this->resolveLayoutFile();
 
-        // Fresh Laravel + Livewire 4 projects (no starter kit) ship NO app layout
+        // Fresh Laravel + Livewire 4 projects (no starter kit) ship no app layout
         // at any canonical path, so Livewire page components fail at runtime with
         // "Livewire page component layout view not found: [layouts::app]".
-        // Livewire OWNS layout creation via its own `livewire:layout` command (it
+        // Livewire owns layout creation via its own `livewire:layout` command (it
         // writes the layout at the config('livewire.component_layout') convention —
         // by default resources/views/layouts/app.blade.php, Livewire 4's 'layouts::app').
         // Delegate to it (fix at the source — don't hand-roll a layout template that
@@ -1568,14 +1568,27 @@ CSS;
         $added = [];
 
         if ($closesHead && ! $shells->carries($file, 'wirekitStyles')) {
-            $content = self::insertDirectiveBefore($content, '</head>', '@wirekitStyles', nested: true);
-            $added[] = '@wirekitStyles';
+            // In front of the application's stylesheet, so the package's sheets load first and a
+            // utility of the application's own wins a tie with a compact class of the kit's.
+            // Where the head takes its `@vite` from a view it includes (the starter kit's
+            // `partials/head`), the directive goes into that view, and every shell including it
+            // carries the directive from then on.
+            $stylesheet = $shells->applicationStylesheet($file);
+
+            if ($stylesheet !== null && $stylesheet['file'] !== $file) {
+                $this->wireStylesheetInto($stylesheet['file'], $stylesheet['line']);
+            } else {
+                $content = $stylesheet !== null
+                    ? self::insertDirectiveBeforeLine($content, $stylesheet['line'], '@wirekitStyles')
+                    : self::insertDirectiveBefore($content, '</head>', '@wirekitStyles', nested: true);
+                $added[] = '@wirekitStyles';
+            }
         }
 
         if ($closesBody && ! $shells->carries($file, 'wirekitScripts')) {
             // Critical order: @wirekitScripts registers WireKit's Alpine plugins on the
-            // alpine:init event, which MUST run before Livewire boots Alpine. Where the layout
-            // emits @livewireScripts, the directive goes immediately BEFORE it. Otherwise just
+            // alpine:init event, which must run before Livewire boots Alpine. Where the layout
+            // emits @livewireScripts, the directive goes immediately before it. Otherwise just
             // before </body> — Livewire injects its own script at the end of the body, after
             // everything the template put there, so the order holds either way.
             $content = str_contains($content, '@livewireScripts')
@@ -1593,6 +1606,38 @@ CSS;
         $this->trackInstallAction('add-blade-directives', $file, $contentBefore);
         File::put($file, $content);
         $this->line('  <fg=green>✓</> Added '.implode(' + ', $added).' to '.$this->projectRelativePath($file));
+    }
+
+    /**
+     * Put `@wirekitStyles` into the view a page's head includes, in front of its `@vite` line.
+     */
+    private function wireStylesheetInto(string $file, string $line): void
+    {
+        $contentBefore = (string) file_get_contents($file);
+        $content = self::insertDirectiveBeforeLine($contentBefore, $line, '@wirekitStyles');
+
+        if ($content === $contentBefore) {
+            return;
+        }
+
+        $this->trackInstallAction('add-blade-directives', $file, $contentBefore);
+        File::put($file, $content);
+        $this->line('  <fg=green>✓</> Added @wirekitStyles to '.$this->projectRelativePath($file));
+    }
+
+    /**
+     * Put `$directive` on a line of its own in front of the first line that begins with `$line`,
+     * at that line's indentation. Anchored to the start of a line, so a commented-out copy of
+     * the same text, which begins with the comment's opening, is never the one matched.
+     */
+    private static function insertDirectiveBeforeLine(string $content, string $line, string $directive): string
+    {
+        return preg_replace_callback(
+            '/^([ \t]*)'.preg_quote($line, '/').'/m',
+            static fn (array $m): string => $m[1].$directive."\n".$m[0],
+            $content,
+            1,
+        ) ?? $content;
     }
 
     /**
@@ -1674,7 +1719,7 @@ CSS;
      * Re-running `wirekit:install` regenerates the file (the manifest
      * changes with every package upgrade). Developers can either commit
      * the file (stable autocomplete across CI / teammates) or gitignore
-     * it (re-generated on every install). The default is to NOT
+     * it (re-generated on every install). The default is to not
      * gitignore — most IDE-extension authors expect the file to be
      * checked in.
      *

@@ -41,7 +41,7 @@ export default function wirekitDataTableColumnMenu() {
         _stopRepair: null,
 
         init() {
-            // Anchor AFTER the menu has been rendered: it is x-show'd, so at the
+            // Anchor after the menu has been rendered: it is x-show'd, so at the
             // moment `open` flips it still has no box to measure.
             watchCurrent(this, 'isOpen', (isOpen) => {
                 if (isOpen) {
@@ -67,7 +67,7 @@ export default function wirekitDataTableColumnMenu() {
         /**
          * Move focus into the panel on open.
          *
-         * The panel is a disclosed GROUP of checkboxes, not a menu, so it owns no
+         * The panel is a disclosed group of checkboxes, not a menu, so it owns no
          * roving-focus model of its own — the checkboxes are ordinary tab stops and
          * the browser scrolls them into view. What a group cannot do is put the
          * reader anywhere near them: without this, focus stayed on the trigger and
@@ -93,12 +93,12 @@ export default function wirekitDataTableColumnMenu() {
         },
 
         /**
-         * Hand focus back to the trigger when the panel closes — but ONLY if it is
+         * Hand focus back to the trigger when the panel closes — but only if it is
          * still inside the panel.
          *
          * Escape and a second click on the trigger both close from within, and
          * leaving focus on a hidden checkbox drops the reader at the top of the
-         * document. A click OUTSIDE also closes the panel, and there the user has
+         * document. A click outside also closes the panel, and there the user has
          * already chosen where to go; pulling focus back to the trigger would undo
          * their own click.
          */
@@ -148,7 +148,7 @@ export default function wirekitDataTableColumnMenu() {
                 repairErasure: true,
             });
 
-            // The global is documented as something a component asks for WITHOUT depending
+            // The global is documented as something a component asks for without depending
             // on it, so it may be absent — and by the same reasoning it may be something other
             // than this package's own helper. A stub that returns a non-thenable makes `.then`
             // throw, which is a worse failure than the missing placement it replaces.

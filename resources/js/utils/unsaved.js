@@ -96,8 +96,19 @@ export const WK_UNSAVED_DIALOG_TEXT_ATTRIBUTE = 'data-wk-unsaved-question-text';
 export const WK_UNSAVED_DIALOG_LIST_ATTRIBUTE = 'data-wk-unsaved-question-list';
 export const WK_UNSAVED_DIALOG_ITEM_ATTRIBUTE = 'data-wk-unsaved-question-item';
 export const WK_UNSAVED_DIALOG_MORE_ATTRIBUTE = 'data-wk-unsaved-question-more';
+// The template of the box the fields of one place stand in, headed by that place, and the list in
+// it that takes their entries.
+export const WK_UNSAVED_DIALOG_GROUP_ATTRIBUTE = 'data-wk-unsaved-question-group';
+export const WK_UNSAVED_DIALOG_ENTRIES_ATTRIBUTE = 'data-wk-unsaved-question-entries';
+// The sentence under the question, shown only when a page sets one, and the label of Leave.
+export const WK_UNSAVED_DIALOG_DESCRIPTION_ATTRIBUTE = 'data-wk-unsaved-question-description';
+export const WK_UNSAVED_DIALOG_LEAVE_ATTRIBUTE = 'data-wk-unsaved-question-leave';
 /** The most unsaved fields the question names before it counts the rest. */
 export const WK_UNSAVED_DIALOG_LIMIT = 5;
+// What a scope dispatches, bubbling, just before its question opens, with a `detail` a listener may
+// change for this opening: `question`, `description`, `leave` (the label of Leave) and `shortcut`
+// (whether ⌘↵ / Ctrl+Enter presses Leave), beside `fields`, what is unsaved and where.
+export const WK_UNSAVED_QUESTION_EVENT = 'wirekit:unsaved-question';
 // What the dialog's Leave dispatches, from its button, bubbling. The listener below names it
 // literally, so the event names it listens for can be read off the source.
 export const WK_UNSAVED_LEAVE_EVENT = 'wirekit:unsaved-leave';
@@ -151,6 +162,7 @@ const DESCRIBED_KEY = '__wirekitUnsavedDescribed';
 const DESCRIPTIONS_KEY = '__wirekitUnsavedDescriptions';
 const TITLED_KEY = '__wirekitUnsavedTitled';
 const PAGE_KEY = '__wirekitUnsavedPage';
+const QUESTION_IDS_KEY = '__wirekitUnsavedQuestionIds';
 
 /** How long a submit or a click waits for the request it starts before it is taken for something else. */
 const SUBMIT_WINDOW_MS = 2000;
@@ -236,6 +248,33 @@ function componentOf(el) {
  */
 export function differsFromServer(component, path) {
     return JSON.stringify(valueAt(component.reactive, path)) !== JSON.stringify(valueAt(component.canonical, path));
+}
+
+/**
+ * A value in the form a field and its saved value are compared in, so that a value in another form
+ * counts as the same value: `null`, `undefined` and an empty text are one empty value, a number or a
+ * boolean counts as its text, and a list or an object is compared entry by entry the same way, an
+ * object's keys in order and its empty entries left out.
+ *
+ * @param {unknown} value
+ * @returns {unknown}
+ */
+function comparable(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map(comparable);
+    }
+
+    if (typeof value === 'object') {
+        return Object.fromEntries(Object.keys(value).sort()
+            .map((key) => [key, comparable(value[key])])
+            .filter(([, entry]) => entry !== null));
+    }
+
+    return String(value);
 }
 
 /** Whether two JSON texts hold the same value, a number and its text counting as one. */
@@ -428,8 +467,10 @@ export function savedValueOf(component, path) {
 
 /**
  * Whether the page holds a value for this path other than the one it counts as saved. Reads the
- * reactive side, so an Alpine effect that calls this runs again when the field changes. The field
- * is remembered under its path, so a later response is weighed by the scope it answers to.
+ * reactive side, so an Alpine effect that calls this runs again when the field changes. The two
+ * values are compared in their comparable form: a field emptied over a property that holds `null`,
+ * or a number the field holds as its text, holds the saved value. The field is remembered under its
+ * path, so a later response is weighed by the scope it answers to.
  *
  * @param {object} component
  * @param {string} path
@@ -446,7 +487,10 @@ export function differsFromSaved(component, path, el = null) {
         store.get(component).set(path, el);
     }
 
-    return JSON.stringify(valueAt(component.reactive, path)) !== savedValueOf(component, path);
+    const saved = savedValueOf(component, path);
+
+    return JSON.stringify(comparable(valueAt(component.reactive, path)))
+        !== JSON.stringify(comparable(saved === undefined ? undefined : JSON.parse(saved)));
 }
 
 /**
@@ -743,9 +787,40 @@ export function unsavedFieldsOf(scopes) {
 }
 
 /**
- * Fill the list under the question from the dialog's own item template: the first fields, each a
- * button that calls `pick` with its field, and the line with the number of the rest in the
- * dialog's language. A dialog without the list leaves it at the question.
+ * Ids for the parts of a mounted question, unique on the page however many dialogs it holds: one
+ * base per panel, and from it the description's id and one id per box of an opening. Kept on
+ * `window`, so a second copy of this module counts on from the first.
+ *
+ * @param {Element} panel
+ * @returns {{description: string, next: () => string}}
+ */
+function idsOf(panel) {
+    const store = shared(QUESTION_IDS_KEY, () => ({ count: 0, bases: new WeakMap() }));
+    let base = store.bases.get(panel);
+
+    if (! base) {
+        store.count += 1;
+        base = `wk-unsaved-question-${store.count}`;
+        store.bases.set(panel, base);
+    }
+
+    let boxes = 0;
+
+    return {
+        description: `${base}-description`,
+        next: () => {
+            boxes += 1;
+
+            return `${base}-place-${boxes}`;
+        },
+    };
+}
+
+/**
+ * Fill the list under the question from the dialog's own templates: the first fields, each a
+ * button that calls `pick` with its field, the fields of one place in a box headed by it, and the
+ * line with the number of the rest in the dialog's language. A dialog without the list leaves it
+ * at the question.
  *
  * @param {Element} panel
  * @param {Array<{el: Element, path: string, component: object}>} fields
@@ -754,8 +829,10 @@ export function unsavedFieldsOf(scopes) {
 export function listUnsaved(panel, fields, pick) {
     const list = panel.querySelector(`[${WK_UNSAVED_DIALOG_LIST_ATTRIBUTE}]`);
     const item = panel.querySelector(`[${WK_UNSAVED_DIALOG_ITEM_ATTRIBUTE}]`);
+    const group = panel.querySelector(`[${WK_UNSAVED_DIALOG_GROUP_ATTRIBUTE}]`);
     const more = panel.querySelector(`[${WK_UNSAVED_DIALOG_MORE_ATTRIBUTE}]`);
     const blueprint = item && item.content ? item.content.firstElementChild : null;
+    const boxBlueprint = group && group.content ? group.content.firstElementChild : null;
 
     if (! list || ! blueprint) {
         return;
@@ -763,27 +840,53 @@ export function listUnsaved(panel, fields, pick) {
 
     list.textContent = '';
 
+    // The fields of one place stand together in one box headed by that place, in the order the
+    // first of them stands, and the box's list is named by its heading. A field without a place
+    // stands outside every box.
+    const boxes = new Map();
+    const ids = idsOf(panel);
+
     for (const field of fields.slice(0, WK_UNSAVED_DIALOG_LIMIT)) {
         const entry = blueprint.cloneNode(true);
         const button = entry.querySelector('[data-wk-unsaved-question-field]') ?? entry;
         const name = entry.querySelector('[data-wk-unsaved-question-name]');
-        const place = entry.querySelector('[data-wk-unsaved-question-place]');
-        const comma = entry.querySelector('[data-wk-unsaved-question-comma]');
         const where = placeOf(field);
 
         if (name) {
             name.textContent = nameOf(field);
         }
 
-        if (where === '') {
-            place?.remove();
-            comma?.remove();
-        } else if (place) {
-            place.textContent = where;
+        button.addEventListener('click', () => pick(field));
+
+        if (where === '' || ! boxBlueprint) {
+            list.appendChild(entry);
+
+            continue;
         }
 
-        button.addEventListener('click', () => pick(field));
-        list.appendChild(entry);
+        let entries = boxes.get(where);
+
+        if (! entries) {
+            const box = boxBlueprint.cloneNode(true);
+            const place = box.querySelector('[data-wk-unsaved-question-place]');
+            const heading = box.querySelector('[data-wk-unsaved-question-heading]');
+
+            entries = box.querySelector(`[${WK_UNSAVED_DIALOG_ENTRIES_ATTRIBUTE}]`) ?? box;
+
+            if (place) {
+                place.textContent = where;
+            }
+
+            if (heading && entries !== box) {
+                heading.setAttribute('id', ids.next());
+                entries.setAttribute('aria-labelledby', heading.getAttribute('id'));
+            }
+
+            list.appendChild(box);
+            boxes.set(where, entries);
+        }
+
+        entries.appendChild(entry);
     }
 
     list.hidden = fields.length === 0;
@@ -1168,6 +1271,92 @@ export function questionFor(scope) {
     return hint ? hint.getAttribute(WK_UNSAVED_QUESTION_ATTRIBUTE) : WK_UNSAVED_DEFAULT_QUESTION;
 }
 
+/**
+ * What the question says at this opening. The scope dispatches `wirekit:unsaved-question` with its
+ * question and what is unsaved, and a listener may set the question, a description, the label of
+ * Leave and whether ⌘↵ / Ctrl+Enter presses it, since only the page knows at that moment whether
+ * leaving keeps the work, as a draft, or loses it. What a listener leaves unset, or sets to
+ * something other than text, keeps its default: the scope's question, no description, the
+ * dialog's own label and no shortcut.
+ *
+ * @param {Element} scope
+ * @param {Array<{el: Element, path: string, component: object}>} fields
+ * @returns {{question: string, description: string, leave: string, shortcut: boolean}}
+ */
+export function askedFor(scope, fields) {
+    const question = questionFor(scope);
+    const detail = {
+        question,
+        description: '',
+        leave: '',
+        shortcut: false,
+        fields: fields.map((field) => ({ name: nameOf(field), place: placeOf(field) })),
+    };
+
+    if (typeof scope.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+        scope.dispatchEvent(new CustomEvent('wirekit:unsaved-question', { bubbles: true, detail }));
+    }
+
+    const text = (value) => (typeof value === 'string' ? value.trim() : '');
+
+    return {
+        question: text(detail.question) || question,
+        description: text(detail.description),
+        leave: text(detail.leave),
+        shortcut: detail.shortcut === true,
+    };
+}
+
+/**
+ * Write what the question says at this opening into the mounted dialog, starting from its
+ * defaults every time, so one opening's answer never reaches the next: the title, the description
+ * and the panel's `aria-describedby` only while there is one, the label of Leave, and the mark
+ * `data-wk-dialog-primary` that lets ⌘↵ / Ctrl+Enter press Leave.
+ *
+ * @param {Element} panel
+ * @param {{question: string, description: string, leave: string, shortcut: boolean}} asked
+ */
+export function writeQuestion(panel, asked) {
+    const title = panel.querySelector(`[${WK_UNSAVED_DIALOG_TEXT_ATTRIBUTE}]`);
+    const description = panel.querySelector(`[${WK_UNSAVED_DIALOG_DESCRIPTION_ATTRIBUTE}]`);
+    const leave = panel.querySelector(`[${WK_UNSAVED_DIALOG_LEAVE_ATTRIBUTE}]`);
+
+    if (title) {
+        title.textContent = asked.question;
+    }
+
+    if (description) {
+        const id = description.getAttribute('id') || idsOf(panel).description;
+
+        description.setAttribute('id', id);
+        description.textContent = asked.description;
+        description.hidden = asked.description === '';
+
+        if (asked.description === '') {
+            panel.removeAttribute('aria-describedby');
+        } else {
+            panel.setAttribute('aria-describedby', id);
+        }
+    }
+
+    if (leave) {
+        const label = leave.querySelector('[data-wk-unsaved-question-leave-text]') ?? leave;
+
+        // The label the dialog was rendered with is its default, kept on first use.
+        if (! leave.hasAttribute('data-wk-unsaved-question-leave-default')) {
+            leave.setAttribute('data-wk-unsaved-question-leave-default', label.textContent.trim());
+        }
+
+        label.textContent = asked.leave || leave.getAttribute('data-wk-unsaved-question-leave-default');
+
+        if (asked.shortcut) {
+            leave.setAttribute('data-wk-dialog-primary', '');
+        } else {
+            leave.removeAttribute('data-wk-dialog-primary');
+        }
+    }
+}
+
 /** @returns {Set<{el: Element, confirm: boolean, rerun: Function}>} */
 function registry() {
     if (! window[REGISTRY_KEY]) {
@@ -1432,16 +1621,14 @@ function install() {
         heldVisit = visit;
 
         const panel = dialog.$refs?.panel;
-        const text = panel?.querySelector?.(`[${WK_UNSAVED_DIALOG_TEXT_ATTRIBUTE}]`);
+        const fields = unsavedFieldsOf(registry());
 
-        if (text) {
-            text.textContent = questionFor(scope);
-        }
-
-        // What is unsaved and where. An entry gives up the visit, as Stay does, and goes to its
-        // field: the dialog lets go of the focus without handing it back, since the field takes it.
+        // What is unsaved and where, and what the page says about leaving at this moment. An entry
+        // gives up the visit, as Stay does, and goes to its field: the dialog lets go of the focus
+        // without handing it back, since the field takes it.
         if (panel && typeof panel.querySelector === 'function') {
-            listUnsaved(panel, unsavedFieldsOf(registry()), (field) => {
+            writeQuestion(panel, askedFor(scope, fields));
+            listUnsaved(panel, fields, (field) => {
                 const held = heldVisit;
                 heldVisit = null;
 

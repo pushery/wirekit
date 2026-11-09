@@ -1,8 +1,8 @@
 {{-- optimistic-ui: supported
      Pass `optimistic="method"` and the date lands the moment a day is clicked.
      A discrete server value, and the previous one is the server's — so an undo
-     destroys nothing the user typed. The optimistic scope nests INSIDE this
-     component and binds to `selected`; the DISPLAYED month is deliberately
+     destroys nothing the user typed. The optimistic scope nests inside this
+     component and binds to `selected`; the displayed month is deliberately
      outside the snapshot, so a refused pick leaves you looking at the month you
      paged to rather than snapping back. --}}
 @props([
@@ -13,7 +13,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'value' => null,
@@ -23,7 +23,7 @@
     // `YYYY-MM-DD/YYYY-MM-DD`, the spelling the date-picker's own range flag
     // already uses — a value moved between the two keeps its meaning.
     //
-    // Written WITHOUT the component tag on purpose: Blade compiles component tags
+    // Written without the component tag on purpose: Blade compiles component tags
     // across the whole file before a PHP comment means anything, so naming one
     // here compiles it, and the failure arrives as `Undefined variable $component`
     // from a line that is not code.
@@ -89,7 +89,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('calendar', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $selectableHeader = BooleanProp::from($selectableHeader, false, 'calendar', 'selectableHeader');
@@ -211,7 +211,7 @@
     ]), $scope);
 
     $navBtnClasses = implode(' ', [
-        'p-1',
+        'p-[var(--space-wk-xs)]',
         'cursor-pointer',
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
@@ -258,7 +258,7 @@
         'border-[var(--color-wk-border-strong)]',
         'hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-muted)]',
-        'pl-[var(--padding-wk-x-md)] pr-7 py-1',
+        'ps-[var(--padding-wk-x-md)] pe-7 py-[var(--padding-wk-y-xs)]',
         'text-[length:var(--text-wk-sm)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[color:var(--color-wk-text)]',
@@ -379,7 +379,7 @@
     $todayButtonLiteral = \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Today, :date'));
     $openToLiteral = \Pushery\WireKit\Support\AlpinePayload::from($openToDay);
 
-    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // The optimistic layer nests inside this component, and the direction is not
     // interchangeable: a nested Alpine component's method reads and writes its
     // parent's properties through `this`, never the other way around. So it has
     // to be the child to reach `selected`, and the day buttons have to be inside
@@ -389,7 +389,7 @@
     // synced there, and without the call a rollback would leave the form
     // submitting the date that was just taken back.
     //
-    // `viewYear` / `viewMonth` are NOT in the snapshot, and that is the design:
+    // `viewYear` / `viewMonth` are not in the snapshot, and that is the design:
     // a reader who paged to March and had their pick refused should still be
     // looking at March. The date rolls back; the place you are looking does not.
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
@@ -490,7 +490,7 @@
     <div class="{{ $headerClasses }}">
         @unless($flush)
             <button type="button" @disabled($disabled) x-on:click="prevMonth()" :aria-disabled="prevDisabled" class="wk-touch-target {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <svg class="w-5 h-5 rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg>
             </button>
@@ -517,7 +517,7 @@
                         </template>
                     </select>
                     {{-- Chevron overlay — same glyph + token color as the select component. --}}
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2">
                         <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                         </svg>
@@ -530,7 +530,7 @@
                             <option :value="y" x-text="y"></option>
                         </template>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2">
                         <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                         </svg>
@@ -556,7 +556,7 @@
                  beside them hides because each grid names its own. --}}
             <div class="ms-auto flex items-center gap-[var(--gap-wk-xs)]">
                 <button type="button" @disabled($disabled) x-on:click="prevMonth()" :aria-disabled="prevDisabled" class="wk-touch-target wk-touch-row {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <svg class="w-5 h-5 rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                     </svg>
                 </button>
@@ -580,7 +580,7 @@
                 </button>
         @endif
         <button type="button" @disabled($disabled) x-on:click="nextMonth()" :aria-disabled="nextDisabled" @class(['wk-touch-target', 'wk-touch-row' => $withToday || $flush, $navBtnClasses]) aria-label="{{ __('wirekit::Next month') }}">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <svg class="w-5 h-5 rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
         </button>
@@ -701,7 +701,7 @@
                         <th data-wk-prose-skip scope="row" class="text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="weekNumber(week)"></th>
                     @endif
                     <template x-for="day in week" :key="day.date">
-                        {{-- aria-selected lives on the gridcell, NOT the button.
+                        {{-- aria-selected lives on the gridcell, not the button.
                              Per the WAI-ARIA grid pattern, `aria-selected` is
                              only allowed on gridcell/option/row/rowheader/tab/
                              treeitem roles — placing it on a <button> fails
@@ -723,7 +723,7 @@
                                 :disabled="!day.isCurrentMonth || disabled"
                                 :aria-disabled="day.ariaDisabled"
                                 class="wk-calendar-day {{ $dayBtnClasses }}"
-                                {{-- The in-between days get a TINT, not the accent, so the two ends
+                                {{-- The in-between days get a tint, not the accent, so the two ends
                                      stay what the eye lands on. --}}
                                 x-on:mouseenter="hoverDay(day.date)"
                                 :data-wk-in-range="day.rangeMarker"
@@ -764,7 +764,7 @@
         </div>
     @endif
 
-    @if($requiredMessageId)
-        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
-    @endif
+    {{-- The required message stands last, so it is included without a block, and Livewire
+         writes no morph markers around it: an include is not one of the blocks it marks. --}}
+    @includeWhen($requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
 </div>

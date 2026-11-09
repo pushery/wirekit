@@ -4,7 +4,7 @@
 @props([
     'scope' => null,
     /*
-     * A SECOND row under this one, carrying what `hide-below[-container]` took off the
+     * A second row under this one, carrying what `hide-below[-container]` took off the
      * remaining columns.
      *
      * It is a slot on this component rather than a sibling `table.details`. A sibling
@@ -58,7 +58,7 @@
     }
 
     /*
-     * The details row is the INVERSE of a column's `hide-below`: a column disappears below a
+     * The details row is the inverse of a column's `hide-below`: a column disappears below a
      * size, this appears there. Written out per size because Tailwind reads a literal class
      * name and never an assembled one -- the same reason `table/td.blade.php` spells its
      * ladder out.
@@ -87,10 +87,10 @@
     /*
      * The two border corrections a details row needs, emitted here so no call site writes them.
      *
-     * 1. While the details row is VISIBLE it continues its record, so the line between the two
+     * 1. While the details row is visible it continues its record, so the line between the two
      *    has to go -- and that line is the record's own `border-bottom` from `divide-y`.
-     * 2. While it is HIDDEN, `divide-y`'s `:not(:last-child)` still counts it: a `display: none`
-     *    row is a child like any other, so the last RECORD is `:nth-last-child(2)` and keeps a
+     * 2. While it is hidden, `divide-y`'s `:not(:last-child)` still counts it: a `display: none`
+     *    row is a child like any other, so the last record is `:nth-last-child(2)` and keeps a
      *    bottom border with nothing under it. `nth-last-2` is exactly that row.
      *
      * Both are conditioned on the ladder rather than applied flat, so a row whose details are
@@ -143,7 +143,7 @@
     $detailsColspan = $detailsColspan === null ? null : \Pushery\WireKit\Support\NumericProp::cast($detailsColspan);
 @endphp
 
-<tr data-wk-table-row @if(filled($stackBelow)) role="row" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $detailsBorderFix])) }}>
+<tr data-wk-table-row @if(filled($stackBelow)) role="row" @endif @if($detailsBelowContainer !== null) data-wk-table-measures @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $detailsBorderFix])) }}>
     {{ $slot }}
 </tr>
 
@@ -152,7 +152,7 @@
          is told which record it continues. Without it the row is an orphan announcing values
          with no subject. --}}
     {{-- The key is derived, not declared, and the defect it prevents is silent. Livewire pairs
-         an UNKEYED sibling by position, which is right exactly as long as every record emits one
+         an unkeyed sibling by position, which is right exactly as long as every record emits one
          details row, always immediately behind itself. A row that carries details beside a row
          that does not breaks that, and both rows still render: only their pairing would be
          wrong, so nothing is red and the screen shows one record's details under another's name.

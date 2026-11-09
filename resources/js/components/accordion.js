@@ -6,7 +6,7 @@
  * of its grammar too. Under a strict Content-Security-Policy no panel opened —
  * the headers rendered, the chevrons sat still, and nothing said why.
  *
- * `opened` is an ARRAY rather than a single id even in single mode. That looks
+ * `opened` is an array rather than a single id even in single mode. That looks
  * redundant and is not: the template asks `isOpen(id)` per item, and one shape
  * for both modes keeps that question answerable without the item knowing which
  * mode it is in.
@@ -198,11 +198,11 @@ export default function wirekitAccordion(config = {}) {
          * The WAI-ARIA accordion pattern calls these keys optional and the
          * documented keyboard model promises them, so they belong in the
          * behavior rather than only in the prose. Focus only: arrowing to a
-         * header does NOT open its panel — the same manual-activation model the
+         * header does not open its panel — the same manual-activation model the
          * tablist uses, because a panel can be expensive to reveal and a reader
          * passing through should not pay for every panel on the way.
          *
-         * The target check is what keeps Home and End usable INSIDE an open
+         * The target check is what keeps Home and End usable inside an open
          * panel. Those two directions are absolute, so without it a caret in a
          * text field would be dragged to the first accordion header instead of
          * to the start of the line. ArrowUp and ArrowDown are safe by
@@ -211,14 +211,14 @@ export default function wirekitAccordion(config = {}) {
          *
          * Nesting: the event is stopped once it has been acted on, so an inner
          * accordion owns its own keys and the outer one never moves focus a
-         * second time on the way up. The outer traversal still SEES an open
+         * second time on the way up. The outer traversal still sees an open
          * inner accordion's headers, and that is the honest reading of the
          * pattern — on screen they are the next headers.
          *
          * @param {KeyboardEvent} event
          */
         handleKeydown(event) {
-            // The key name is a LOOKUP, so an inherited property name such as
+            // The key name is a lookup, so an inherited property name such as
             // `toString` would come back truthy and read as a direction. The
             // check is on the type rather than on truthiness for that reason.
             const direction = HEADER_DIRECTIONS[event && event.key];

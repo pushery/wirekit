@@ -7,7 +7,7 @@
     'offset' => '2rem',
     // Explicit max-height override (CSS length); null = the calc above.
     'maxHeight' => null,
-    // The panel's width CEILING, not a fixed width. It fills the column it is
+    // The panel's width ceiling, not a fixed width. It fills the column it is
     // given and stops growing here — so a two-column desktop layout gets exactly
     // this, and a stacked mobile layout gets the full width instead of a narrow
     // card floating in a wide space. `width: <this>; max-width: 100%` would cap
@@ -18,12 +18,12 @@
     'hideBelow' => 'md',
     // Below the breakpoint: 'inline' (un-stick, render in flow) or 'hide' (display:none).
     'mobileBehavior' => 'inline',
-    // Accessible name for the panel AND for its scrollable body — and the switch that makes
-    // that body a LANDMARK. It fell back to "Panel content", so two panels on one page were two
+    // Accessible name for the panel and for its scrollable body — and the switch that makes
+    // that body a landmark. It fell back to "Panel content", so two panels on one page were two
     // rotor entries with the same name (axe: `landmark-unique`). Unnamed, the body keeps
     // `tabindex="0"` and no role: reachable per WCAG 2.1.1, deliberately not a destination.
     'label' => null,
-    // Show top/bottom overflow shadows on the body. They render as OVERLAYS above
+    // Show top/bottom overflow shadows on the body. They render as overlays above
     // the content (.wk-scroll-shadow-top/-bottom + an IntersectionObserver over
     // edge sentinels), so hovered rows/buttons never cover them. For a plain-CSS
     // variant on your own containers, the .wk-scroll-shadow utility still exists.
@@ -40,7 +40,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sticky-panel', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $scrollShadow = BooleanProp::from($scrollShadow, true, 'sticky-panel', 'scrollShadow');
@@ -113,7 +113,7 @@
     ]), $scope);
 @endphp
 
-{{-- `<aside>` IS a `complementary` landmark, unconditionally and whether or not it has a
+{{-- `<aside>` is a `complementary` landmark, unconditionally and whether or not it has a
      name. Two unnamed panels on one page are therefore two anonymous landmarks with the
      same built-in name, which is what axe reports as `landmark-unique` — and a landmark a
      reader cannot tell from its neighbor is worse than no landmark, because it appears in
@@ -138,9 +138,9 @@
         @endif
 
         @if($scrollShadow)
-            {{-- Scrollable body with OVERLAY scroll shadows. The shadows are absolute
-                 siblings painted ABOVE the content (.wk-scroll-shadow-top/-bottom) —
-                 the earlier background-based approach sat UNDER children, so a hovered
+            {{-- Scrollable body with overlay scroll shadows. The shadows are absolute
+                 siblings painted above the content (.wk-scroll-shadow-top/-bottom) —
+                 the earlier background-based approach sat under children, so a hovered
                  row/button at a scroll edge covered the affordance. An
                  IntersectionObserver over the two 1px edge sentinels drives each
                  side's visibility (a sentinel out of the scrollport = more content
@@ -149,14 +149,14 @@
                  overscroll-contain. --}}
             {{-- The wrapper is itself a flex column so the scroller's height resolves
                  through the flex chain (flex-1 min-h-0 at every level). A plain
-                 wrapper + h-full scroller does NOT constrain: a percentage height
+                 wrapper + h-full scroller does not constrain: a percentage height
                  can't resolve against a flex-grown (indefinite) parent, so the
                  scroller silently grew to its content and never scrolled. --}}
             <div class="relative flex flex-col flex-1 min-h-0" x-data="wirekitStickyPanelShadows()">
                 <div
                     x-ref="scroller"
                     data-wk-print-expand
-                    {{-- Reachability unconditional, landmark opt-in — and BOTH branches of this
+                    {{-- Reachability unconditional, landmark opt-in — and both branches of this
                          `@if($scrollShadow)` carry the same shape, so `:scroll-shadow="false"`
                          behaves like the default. --}}
                     tabindex="0"
@@ -182,11 +182,11 @@
             </div>
         @endif
 
-        @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
             {{-- Non-scrolling footer, pinned to the bottom of the panel. --}}
             <div class="shrink-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{ $footer }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 </{{ filled($label) ? 'aside' : 'div' }}>

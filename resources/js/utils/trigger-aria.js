@@ -1,5 +1,5 @@
 /**
- * Put the popup ARIA on the trigger's interactive CHILD, not on the wrapper.
+ * Put the popup ARIA on the trigger's interactive child, not on the wrapper.
  *
  * `aria-haspopup` and `aria-expanded` have to sit on an element with an
  * interactive role — on a generic `<div>` they fail axe-core's
@@ -13,7 +13,7 @@
  * under a strict Content-Security-Policy. Written once here, it is also the same
  * behavior in both places rather than two copies that can drift.
  *
- * The dropdown trigger was a THIRD copy, and it had already drifted: its popup
+ * The dropdown trigger was a third copy, and it had already drifted: its popup
  * is a menu rather than a dialog, it points at the panel with `aria-controls`,
  * and it names an icon-only trigger from a fallback label. Those are real
  * differences, so they became options here rather than a reason to keep a
@@ -28,12 +28,12 @@
  *        cannot open it at all. A hover-card also opens on hover, so the same
  *        markup is merely suboptimal there and stays quiet.
  * @param {string}   [options.haspopup]  the popup's role — 'dialog' by default,
- *        'menu' for a dropdown. It describes what OPENS, so it is not cosmetic:
+ *        'menu' for a dropdown. It describes what opens, so it is not cosmetic:
  *        a screen reader announces the wrong kind of thing when it is wrong.
  * @param {?string}  [options.controls]  id of the panel the trigger opens, set
  *        as `aria-controls`. Omitted when there is no id to point at — an
  *        aria-controls naming nothing is worse than none.
- * @param {?string}  [options.labelFallback]  accessible name to apply ONLY when
+ * @param {?string}  [options.labelFallback]  accessible name to apply only when
  *        the trigger has none of its own. An icon-only trigger is otherwise
  *        announced as an unnamed button.
  * @returns {Function} stops putting the attributes back; the caller keeps it under a `_` name and
@@ -51,7 +51,7 @@ export function applyTriggerAria(el, watch, options = {}) {
         return () => {};
     }
 
-    // Only when the trigger has NO name of its own. `textContent` is the right
+    // Only when the trigger has no name of its own. `textContent` is the right
     // test rather than visible text: it includes sr-only nodes, which are
     // exactly how a well-built icon-only control is usually named.
     const unnamed = () => ! interactive.hasAttribute('aria-labelledby') && (interactive.textContent || '').trim().length === 0;

@@ -4,13 +4,13 @@
      putting it back costs the reader nothing.
 
      The structural obstacle was real and is resolved by decision rather than by
-     cleverness: this component IS the button, so there is nowhere inside it to
+     cleverness: this component is the button, so there is nowhere inside it to
      put the announcer — a live region there becomes part of the accessible name.
      A `display: contents` wrapper gives the announcer a sibling without changing
      the layout, and it is the mechanism the other optimistic components use too.
 
-     THE PRICE, and it belongs on this page rather than in a commit message:
-     `display: contents` preserves the LAYOUT, not the selector structure. With
+     The price, and it belongs on this page rather than in a commit message:
+     `display: contents` preserves the layout, not the selector structure. With
      `optimistic` set, the button is no longer a direct child of its container, so
      `.toolbar > button`, `:first-child`, `+` and `~` stop matching it. Without the
      prop the button stays a direct child, so only opting in pays. --}}
@@ -22,16 +22,16 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // The two-state truth. In the controlled default, bind it to your own state —
     // the pressed state of a formatting control lives in the document, not in the
     // button. It also seeds the initial state in self-toggle mode.
     'pressed' => false,
-    // Uncontrolled convenience. When true the button flips its OWN aria-pressed on
+    // Uncontrolled convenience. When true the button flips its own aria-pressed on
     // click (Alpine), so it works standalone — a formatting toolbar, a docs demo —
-    // with no Livewire wiring. Default is controlled: a bare click must NOT flip it
+    // with no Livewire wiring. Default is controlled: a bare click must not flip it
     // locally and drift from the document's truth.
     'selfToggle' => false,
     // Visual weight, forwarded to the underlying button.
@@ -43,7 +43,7 @@
     // one glyph would not, so a second alias is how a state gets its own shape.
     'onIcon' => null,
     'offIcon' => null,
-    // A hint shown on hover and focus. On a toggle with no visible label it is ALSO the accessible
+    // A hint shown on hover and focus. On a toggle with no visible label it is also the accessible
     // name, because a glyph is not a name and a hover never happens on a touch screen.
     'tooltip' => null,
     // The color of the icon while pressed: `accent` or one of the four status intents, with
@@ -51,7 +51,7 @@
     // on its own here: the surface changes either way.
     'activeIntent' => 'accent',
     // A label per state, such as "Sound on" and "Sound off". A button whose label says its state
-    // is not a toggle in the ARIA sense, so it renders WITHOUT aria-pressed: announcing "Sound on,
+    // is not a toggle in the ARIA sense, so it renders without aria-pressed: announcing "Sound on,
     // pressed" would say the state twice, and the APG button pattern rules the pairing out.
     'onLabel' => null,
     'offLabel' => null,
@@ -67,7 +67,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('toggle-button', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -76,7 +76,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $pressed = BooleanProp::from($pressed, false, 'toggle-button', 'pressed');
@@ -119,7 +119,7 @@
     $hasVisibleLabel = $labelsChange || $slot->hasActualContent();
     $callerNamed = filled(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) || filled($attributes->get('aria-labelledby'));
 
-    // A label that changes with the state IS the name, so a constant aria-label beside it would
+    // A label that changes with the state is the name, so a constant aria-label beside it would
     // name the control with words that are not on it (WCAG 2.5.3 Label in Name).
     if ($labelsChange && $callerNamed) {
         $refuse('`aria-label` would replace the visible `on-label`/`off-label` as the name. The visible label is the name, so the attribute is dropped.');
@@ -127,7 +127,7 @@
         $callerNamed = false;
     }
 
-    // With no visible label the tooltip names the control, and then must not also DESCRIBE it:
+    // With no visible label the tooltip names the control, and then must not also describe it:
     // a control described by its own name is read twice.
     $tooltipIsName = filled($tooltip) && ! $hasVisibleLabel && ! $callerNamed;
     if ($tooltipIsName) {
@@ -153,13 +153,13 @@
     $hasModel = $attributes->whereStartsWith(['wire:model', 'x-model'])
         ->whereDoesntStartWith('x-modelable')->getAttributes() !== [];
 
-    // The pressed LOOK is the neutral FILLED surface; unpressed is OUTLINE. Rather
+    // The pressed look is the neutral filled surface; unpressed is outline. Rather
     // than baking the surface in from PHP (which only the initial server render can
-    // know), the button always renders the OUTLINE base and the pressed look is
+    // know), the button always renders the outline base and the pressed look is
     // applied by CSS from aria-pressed (see dist/wirekit.css). That way the visual
-    // follows the state from ANY source — the app in controlled mode, an Alpine
+    // follows the state from any source — the app in controlled mode, an Alpine
     // binding, or the built-in self-toggle below — and the state is carried by the
-    // SHAPE, never a tint alone (WCAG 1.4.1). aria-pressed stays the authoritative
+    // shape, never a tint alone (WCAG 1.4.1). aria-pressed stays the authoritative
     // signal; it is rendered statically for the no-JS / pre-Alpine paint and, in
     // self-toggle mode, bound reactively.
     //
@@ -253,12 +253,12 @@
 @endphp
 
 {{-- Composes the button rather than re-implementing it: intents, sizes, focus
-     ring, loading and the disabled model all stay in ONE place. The only thing
+     ring, loading and the disabled model all stay in one place. The only thing
      added here is the WAI-ARIA toggle-button contract (aria-pressed) and the
      optional self-toggle.
 
-     This is NOT <x-wirekit::toggle> (a form switch, role=switch, with a label)
-     and NOT <x-wirekit::segmented-control> (a group of mutually exclusive
+     This is not <x-wirekit::toggle> (a form switch, role=switch, with a label)
+     and not <x-wirekit::segmented-control> (a group of mutually exclusive
      options). It is a single control that stays pressed — the bold/italic/mute
      shape. --}}
 {{-- `display: contents` so the announcer gets a sibling without the button

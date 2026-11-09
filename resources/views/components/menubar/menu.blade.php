@@ -69,7 +69,7 @@
         x-on:focus="markRovingTrigger({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         aria-expanded="false"
         :aria-expanded="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
-        {{-- ROVING TABINDEX — the bar is ONE tab stop, not one per menu. Without this
+        {{-- Roving tabindex — the bar is one tab stop, not one per menu. Without this
              binding every trigger is a native <button> and therefore its own stop, so a
              reader tabbing past a five-menu bar pressed Tab five times; the menubar
              pattern moves between menus with the arrow keys instead, and the component's
@@ -102,7 +102,7 @@
         <div
             x-ref="panel-{{ $name }}"
             x-show="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}"
-            {{-- Keydown is ALSO wired here, not only on the menubar root: once
+            {{-- Keydown is also wired here, not only on the menubar root: once
                  the panel teleports out of the document flow it is no longer a DOM descendant
                  of the root, so arrow-key / Escape keydowns fired while a panel
                  item has focus would never bubble to the root's

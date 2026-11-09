@@ -12,19 +12,19 @@ use IntlDatePatternGenerator;
 use IntlTimeZone;
 
 /**
- * A date whose ORDER follows the locale, not only its words.
+ * A date whose order follows the locale, not only its words.
  *
- * `Carbon::translatedFormat('M j')` translates the month NAME and keeps the English
+ * `Carbon::translatedFormat('M j')` translates the month name and keeps the English
  * arrangement, so a German page would render "Sep. 7" where German writes "7. Sep.", and a
  * full date would come out as "Sonntag, September 7, 2026": the words right and the
  * sentence not — which reads worse than an untranslated date, because it looks like the
  * locale was applied and got it wrong.
  *
- * The answer is a CLDR SKELETON: a description of which fields are wanted (`MMMd` =
+ * The answer is a CLDR skeleton: a description of which fields are wanted (`MMMd` =
  * abbreviated month plus day) that ICU turns into the pattern that locale actually uses. The
  * order is never spelled out here, which is the point — spelling it out would be the bug.
  *
- * Two things this deliberately does NOT do, both mirroring {@see LocalizedNumber}:
+ * Two things this deliberately does not do, both mirroring {@see LocalizedNumber}:
  *
  * 1. It does not require `ext-intl`. The extension is not a WireKit dependency, and making
  *    it one would break every application without it. Without intl the output is

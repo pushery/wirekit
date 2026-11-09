@@ -3,7 +3,7 @@
  *
  * Card and the plain-HTML table warn about a composition mistake that renders
  * without visibly failing, and neither element carries any other Alpine state —
- * so the warning IS the component. Where the element already has a factory
+ * so the warning is the component. Where the element already has a factory
  * (tabs, the sortable table) the same message is passed into that factory
  * instead, because an element cannot carry two `x-data`.
  *

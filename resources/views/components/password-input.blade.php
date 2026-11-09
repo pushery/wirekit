@@ -1,5 +1,5 @@
 {{-- optimistic-ui: supported
-     Uses the `keep` failure exit — a refusal KEEPS what was typed and says so,
+     Uses the `keep` failure exit — a refusal keeps what was typed and says so,
      because for a typed value the previous one belongs to the server and the
      new one is the user's work.
 
@@ -10,22 +10,22 @@
      and no path builds a message from the value. The wording names no value
      either.
 
-     Nor does the VALUE reach the markup: this binds to the `password` property
-     the component already declares, so the config carries a property NAME rather
+     Nor does the value reach the markup: this binds to the `password` property
+     the component already declares, so the config carries a property name rather
      than a value. `value` in the config would have serialized a typed password
      into an x-data attribute — correct for every other field, disqualifying
      here. Binding also keeps one truth for the value instead of two, whether or
      not the strength meter is on. --}}
 @props([
     // The Livewire method to call when the field should show the new value
-    // before the server has agreed to it. A refusal KEEPS what was typed — see
+    // before the server has agreed to it. A refusal keeps what was typed — see
     // the note above. Null leaves the component exactly as it has always
     // rendered.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -47,7 +47,7 @@
     'toggle' => config('wirekit.components.password-input.toggle', true),
     'strengthMeter' => config('wirekit.components.password-input.strength-meter', false),
     'scope' => null,
-    // WCAG 1.3.5 (Identify Input Purpose): a password field has to say WHICH password it is,
+    // WCAG 1.3.5 (Identify Input Purpose): a password field has to say which password it is,
     // or a password manager and an autofill heuristic have to guess — and they guess wrong on
     // a change-password form, where three fields look identical and only one is the new one.
     //
@@ -63,7 +63,7 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $toggle = BooleanProp::from($toggle, true, 'password-input', 'toggle');
@@ -71,7 +71,7 @@
     $hideLabel = BooleanProp::from($hideLabel, false, 'password-input', 'hideLabel');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -85,7 +85,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -136,7 +136,7 @@
     // Without a `name`, the bag files this field's error under the property its `wire:model`
     // binds (FieldError::nameOf).
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
-    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // Strip the caller's `id` and `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
@@ -187,7 +187,7 @@
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
-        $toggle ? 'pr-[var(--size-wk-md)]' : '',
+        $toggle ? 'pe-[var(--size-wk-md)]' : '',
     ]), $scope);
 
     // Each state names its own focus-ring color and the base list names none: two ring colors on
@@ -246,7 +246,7 @@
     // the toggle's labels are: the package has no locale at the moment its
     // JavaScript is bundled.
     //
-    // Each rung names the SUBJECT, not just the grade. A live region reads its text
+    // Each rung names the subject, not just the grade. A live region reads its text
     // with no surrounding context, so a lone "Good" tells a reader nothing about
     // what was good — and a one-word entry in a flat catalog is also the shape an
     // application most easily re-words underneath us.
@@ -294,11 +294,11 @@
 {{-- The toggle and the meter live in resources/js/components/password-input.js.
      They cannot live here: an inline object literal carrying a getter and a
      method is not an expression Alpine's CSP parser accepts, and under a strict
-     policy the element would get an EMPTY scope, leaving the show/hide button and
+     policy the element would get an empty scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
 <div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
-    {{-- The layer nests INSIDE the component that owns the value, because a
+    {{-- The layer nests inside the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
          through `this` and never the reverse — so `bind: 'password'` only
          resolves in this direction.
@@ -309,8 +309,8 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
-             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+        {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
@@ -318,7 +318,7 @@
 
     <div class="relative">
         <input
-            {{-- The STATIC type comes first and is not decoration. With only the binding,
+            {{-- The static type comes first and is not decoration. With only the binding,
                  an <input> has no type until Alpine builds the scope — and an input with
                  no type is `text` per HTML. So the field rendered the password in the
                  clear on first paint, under a CSP that blocks the expression, and with
@@ -351,16 +351,16 @@
         />
 
         {{-- Toggle visibility button --}}
-        @if($toggle)
+        @wirekitLast($toggle)
             <button
                 type="button"
                 {{-- wk-touch-target: a centered, invisible 44x44 ::before under `pointer: coarse`.
                      The button is 36px wide at phone widths -- narrower than the bar this library
                      states for itself -- and the expander is exactly the mechanism for that: an
-                     icon button whose painted box stays small. It is OUTSIDE any class seam a
+                     icon button whose painted box stays small. It is outside any class seam a
                      developer can replace, like `wk-field`, because a floor that an override can
                      remove is not a floor. --}}
-                class="wk-touch-target absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
+                class="wk-touch-target absolute inset-y-0 end-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
                 @if($fieldDisabled) disabled @endif
                 @click="showPassword = !showPassword"
                 {{-- The static aria-label guards the pre-Alpine render (axe scans the
@@ -391,7 +391,7 @@
                     <path d="M2 14L14 2" stroke-width="2"/>
                 </svg>
             </button>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- Strength meter — 4 bars that fill based on password complexity score.
@@ -414,20 +414,20 @@
             aria-valuenow="0"
             :aria-valuenow="strength"
             {{-- Its own getter, not `strengthLabel`: the label is '' on an untouched
-                 field, and Alpine SETS an empty string rather than removing the
+                 field, and Alpine sets an empty string rather than removing the
                  attribute, so the label would ship `aria-valuetext=""`, which looks
                  in the DOM exactly like an attribute somebody thought about.
                  The getter returns false there, which is what Alpine removes on,
                  and the hydrated meter then matches the static one above. --}}
             :aria-valuetext="strengthValueText"
-            class="flex gap-1"
+            class="flex gap-[var(--gap-wk-xs)]"
         >
             {{-- The bars the standalone strength-meter draws too, from one partial. --}}
             @include('wirekit::components.partials.strength-bars', ['count' => 4, 'colors' => []])
         </div>
 
         {{-- The described-by target, and the only thing a reader hears when the
-             score changes while the field has focus. It renders EMPTY and stays in
+             score changes while the field has focus. It renders empty and stays in
              the DOM: a live region that arrives together with its text is a new
              node, and a new node announces nothing.
 

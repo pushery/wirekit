@@ -12,18 +12,18 @@
     // status on the messages the current user sent.
     'status' => null,
     // When the status was reached (Carbon|string). Given → the status glyph
-    // carries a tooltip AND its accessible text reads "Read at 9:15 AM" instead
+    // carries a tooltip and its accessible text reads "Read at 9:15 AM" instead
     // of just "Read". Formatted with the same locale-aware short time as the
     // message timestamp (or `timeFormat`).
     'statusTime' => null,
-    // How the actions slot is revealed. 'hover' (default) shows it on hover OR
+    // How the actions slot is revealed. 'hover' (default) shows it on hover or
     // keyboard focus; 'always' keeps it visible — the accessible path for touch
     // (no hover) and for surfaces where the actions should always be reachable.
     'actionsReveal' => config('wirekit.components.message.actions-reveal', 'hover'),
     // Carbon format string for the timestamp. Null (default) renders the
-    // locale-aware short time via isoFormat('LT') — "9:15 PM" for en, "21:15"
-    // for de and other 24h locales. Pass an explicit format (e.g. 'H:i') to
-    // override.
+    // locale-aware short time, the `LT` format with the word the language puts
+    // after the hour — "9:15 PM" for en, "21:15 Uhr" for de. Pass an explicit
+    // format (e.g. 'H:i') to override.
     'timeFormat' => null,
     // The zone the timestamp and the status time are written in for the reader, a name such as
     // "Europe/Berlin". Null → the zone of the value given.
@@ -41,14 +41,18 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('message', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $edited = BooleanProp::from($edited, false, 'message', 'edited');
 
-    $sideValue = match ($side) {
-        'left', 'right' => $side,
-        default => WireKit::validateProp('message', 'side', $side, ['left', 'right']),
+    // `start` and `end` name the side by the direction of the page. `left` and `right` are the same
+    // two sides under their first names: the row is a flexbox, so a message on the left stands at the
+    // start of a conversation that reads from the right as well.
+    // The subject is validated first, so a refused value renders what the fallback `left` renders.
+    $sideValue = match (WireKit::validateProp('message', 'side', $side, ['left', 'right', 'start', 'end'])) {
+        'right', 'end' => 'right',
+        default => 'left',
     };
 
     // 'primary' aligns the intent enum with <x-wirekit::button> and the
@@ -60,7 +64,7 @@
         default => WireKit::validateProp('message', 'intent', $intent, ['neutral', 'primary', 'info', 'success', 'warning', 'danger']),
     };
 
-    // Actions reveal. 'hover' reveals on hover, on keyboard focus (focus-within), AND on
+    // Actions reveal. 'hover' reveals on hover, on keyboard focus (focus-within), and on
     // a coarse pointer. A phone has no hover, and `focus-within` needs the user to first
     // tap a control they cannot see, so without the coarse-pointer arm every message's
     // action slot would sit at opacity 0 on a phone with no discoverable way to reveal
@@ -98,13 +102,12 @@
     $formattedTime = '';
     if ($carbonTimestamp !== null) {
         $carbonTimestamp = Moment::in($carbonTimestamp, $timezone, 'message');
-        // Locale-aware short time by default (isoFormat('LT') honors the Carbon
-        // locale): "9:15 PM" for en, "21:15" for de and other 24h
-        // locales. An explicit
-        // timeFormat overrides with a raw Carbon format string.
+        // Locale-aware short time by default (the `LT` format of the Carbon locale, with the
+        // word the language puts after the hour): "9:15 PM" for en, "21:15 Uhr" for de. An
+        // explicit timeFormat overrides with a raw Carbon format string.
         $formattedTime = $timeFormat !== null
             ? $carbonTimestamp->format($timeFormat)
-            : $carbonTimestamp->isoFormat('LT');
+            : Moment::clock($carbonTimestamp, 'LT');
     }
 
     // Alignment
@@ -114,7 +117,7 @@
     // Bubble background + border based on side and intent.
     // 'primary' tints with --color-wk-accent and 'info' with --color-wk-info-tone, which
     // aliases the accent until an application gives info a hue of its own.
-    // Non-neutral intents tint BOTH the background AND the border (mirrors the
+    // Non-neutral intents tint both the background and the border (mirrors the
     // callout palette) so a system message reads as a colored callout rather
     // than a tinted bubble inside a generic gray frame.
     $bubbleClasses = match (true) {
@@ -143,9 +146,9 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // Delivery status. Each rung carries its OWN text — the color and glyph are
+    // Delivery status. Each rung carries its own text — the color and glyph are
     // support, never the only signal (WCAG 1.4.1). `failed` shows its text
-    // VISIBLY because it needs the user to act; the rest are visually a glyph
+    // visibly because it needs the user to act; the rest are visually a glyph
     // and announce their wording to assistive technology.
     $statusValue = ($status === null || $status === '')
         ? null
@@ -169,8 +172,8 @@
         default => null,
     };
 
-    // The delivery convention every messaging client shares: ONE check = sent to
-    // the server, TWO checks = delivered to the recipient, two ACCENT checks =
+    // The delivery convention every messaging client shares: one check = sent to
+    // the server, two checks = delivered to the recipient, two accent checks =
     // read. delivered + read render the double-check glyph; the rung color
     // ($statusClass) is what separates read (accent) from delivered (muted).
     // sent keeps the single check.
@@ -185,7 +188,7 @@
     };
 
     // Status time. When given, the glyph's accessible text and tooltip read
-    // "Read at 9:15 AM" — the WHEN behind the rung. Same locale-aware format as
+    // "Read at 9:15 AM" — the when behind the rung. Same locale-aware format as
     // the message timestamp; an explicit timeFormat overrides.
     $statusTimeText = '';
     $statusRead = $statusValue !== null ? Moment::of($statusTime, component: 'message', prop: 'statusTime') : null;
@@ -193,7 +196,7 @@
         $statusCarbon = Moment::in($statusRead, $timezone, 'message');
         $statusTimeText = $timeFormat !== null
             ? $statusCarbon->format($timeFormat)
-            : $statusCarbon->isoFormat('LT');
+            : Moment::clock($statusCarbon, 'LT');
     }
     $statusHasTime = $statusTimeText !== '';
     // "Read at 9:15 AM" when a time is present, else just "Read".
@@ -201,7 +204,7 @@
         ? $statusText.' '.__('wirekit::at').' '.$statusTimeText
         : $statusText;
 
-    // STABLE across re-renders. With a $timestamp the hash is deterministic; without one a
+    // Stable across re-renders. With a $timestamp the hash is deterministic; without one a
     // `uniqid()` would make it fresh on every render — and a message list is typically
     // inside a polled thread, so that is the common path rather than the rare one.
     // `aria-labelledby` and the header's id would then name different things every tick,
@@ -218,7 +221,7 @@
 @endphp
 
 {{-- The three `data-wk-message-*` markers are how `x-wirekit::message-group` reaches in: a
-     run of messages from one sender prints the avatar and the name ONCE, and the stylesheet
+     run of messages from one sender prints the avatar and the name once, and the stylesheet
      silences the repeats and rounds the stack's inner corners. They are attributes rather
      than classes so a caller's own class list cannot collide with them, and they render
      unconditionally — a marker that appears only inside a group would make the group's
@@ -263,9 +266,9 @@
                     {{ $formattedTime }}
                 </time>
             @endif
-            @if($edited)
+            @wirekitLast($edited)
                 <span class="text-[color:var(--color-wk-text-muted)] italic">{{ __('wirekit::(edited)') }}</span>
-            @endif
+            @endwirekitLast
         </span>
 
         {{-- Body bubble — border color comes from $bubbleClasses (intent-tinted for
@@ -292,7 +295,7 @@
             @endphp
             @if($statusHasTime)
                 {{-- With a status time, the glyph gets a tooltip ("Read at 9:15
-                     AM"). The time is ALSO in the sr-only / visible text, so
+                     AM"). The time is also in the sr-only / visible text, so
                      assistive technology gets it without the (mouse-only) hover —
                      the tooltip is pure visual enhancement, no keyboard trap. --}}
                 <x-wirekit::tooltip :text="$statusFullText" :placement="$sideValue === 'right' ? 'left' : 'right'">
@@ -302,11 +305,11 @@
                         class="flex items-center gap-[var(--space-wk-xs,0.25rem)] text-[length:var(--text-wk-xs)] {{ $statusClass }}"
                     >
                         @if($statusGlyph){!! $statusGlyph !!}@else<x-wirekit::icon :name="$statusIcon" size="xs" aria-hidden="true" />@endif
-                        @if($statusValue === 'failed')
+                        @wirekitLast($statusValue === 'failed')
                             <span>{{ $statusFullText }}</span>
                         @else
                             <span class="sr-only">{{ $statusFullText }}</span>
-                        @endif
+                        @endwirekitLast
                     </span>
                 </x-wirekit::tooltip>
             @else
@@ -316,35 +319,35 @@
                     class="flex items-center gap-[var(--space-wk-xs,0.25rem)] text-[length:var(--text-wk-xs)] {{ $statusClass }}"
                 >
                     @if($statusGlyph){!! $statusGlyph !!}@else<x-wirekit::icon :name="$statusIcon" size="xs" aria-hidden="true" />@endif
-                    @if($statusValue === 'failed')
+                    @wirekitLast($statusValue === 'failed')
                         <span>{{ $statusText }}</span>
                     @else
                         <span class="sr-only">{{ $statusText }}</span>
-                    @endif
+                    @endwirekitLast
                 </span>
             @endif
         @endif
 
         {{-- Reactions slot --}}
         @if(\Pushery\WireKit\Support\SlotContent::given($reactions ?? null))
-            <div class="flex flex-wrap gap-1 mt-[var(--space-wk-xs,0.25rem)]">
+            <div class="flex flex-wrap gap-[var(--gap-wk-xs)] mt-[var(--space-wk-xs,0.25rem)]">
                 {{ $reactions }}
             </div>
         @endif
 
         {{-- Attachments slot --}}
-        @if(\Pushery\WireKit\Support\SlotContent::given($attachments ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($attachments ?? null))
             <div class="flex flex-wrap gap-[var(--space-wk-sm,0.5rem)] mt-[var(--space-wk-xs,0.25rem)]">
                 {{ $attachments }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 
-    {{-- Actions slot (dropdown menu). Revealed on hover OR keyboard focus by
+    {{-- Actions slot (dropdown menu). Revealed on hover or keyboard focus by
          default; actions-reveal="always" keeps it visible (touch surfaces). --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div class="shrink-0 {{ $actionsRevealClasses }}">
             {{ $actions }}
         </div>
-    @endif
+    @endwirekitLast
 </article>

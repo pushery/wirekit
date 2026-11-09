@@ -106,7 +106,7 @@ export default function wirekitLightbox(config = {}) {
      * This component's own scope, bound once it starts, and what every method that changes state
      * writes through.
      *
-     * A method called from an expression runs with `this` set to the MERGED scope of the element
+     * A method called from an expression runs with `this` set to the merged scope of the element
      * the expression is on. A trigger inside a tooltip (the house shape for an icon button) sees
      * the tooltip's scope first, and the tooltip has an `open` of its own, so `this.open = true`
      * in `openAt()` would open the tooltip and leave the gallery closed, with no error. The same
@@ -175,12 +175,12 @@ export default function wirekitLightbox(config = {}) {
          * not the position, not the alt text, not the caption. This is what the
          * live region in the template says.
          *
-         * The position arrives as a TEMPLATE the server already translated: a
+         * The position arrives as a template the server already translated: a
          * sentence assembled from fragments here cannot be, and "of" is not a word
          * every language puts in the middle. The English fallback covers a caller
          * who constructs the factory by hand rather than through the component.
          *
-         * The slide's own text is appended as a SECOND sentence rather than folded
+         * The slide's own text is appended as a second sentence rather than folded
          * into the first. A full stop is punctuation in every language this ships
          * to, so joining two finished sentences is safe where joining two fragments
          * would not be — and a reader gets a pause between where they are and what
@@ -230,7 +230,7 @@ export default function wirekitLightbox(config = {}) {
             return slide.caption ? (slide.captionLang || null) : null;
         },
         _trap: null,
-        // Whether THIS lightbox is currently holding the shared scroll lock. Not a
+        // Whether this lightbox is currently holding the shared scroll lock. Not a
         // boolean about the page — several overlays can hold it at once, and the count
         // lives in `overlay.js`.
         _holdsScrollLock: false,
@@ -253,7 +253,7 @@ export default function wirekitLightbox(config = {}) {
             host = this;
 
             // Page-level open: any control can dispatch
-            // wirekit-lightbox-open { name, index } to open THIS instance.
+            // wirekit-lightbox-open { name, index } to open this instance.
             this._openHandler = (e) => {
                 const d = e.detail || {};
                 if (sameName(d.name, this._name)) {
@@ -329,11 +329,11 @@ export default function wirekitLightbox(config = {}) {
             self._resetZoom();
 
             /*
-             * Already open? Then this is a NAVIGATION, not an opening.
+             * Already open? Then this is a navigation, not an opening.
              *
              * Called on a viewer that is already up — a second thumbnail clicked behind the
              * overlay, a `wirekit-lightbox-open` event fired twice, a developer calling
-             * `openAt()` to jump — arming again would build a SECOND focus trap over the same
+             * `openAt()` to jump — arming again would build a second focus trap over the same
              * container and assign it over `this._trap`. The first would stay active with
              * nobody holding it: `close()` deactivates one trap, so the orphan would keep its
              * document-level keydown listener and go on trapping Tab inside markup the reader

@@ -9,11 +9,11 @@ namespace Pushery\WireKit\Support;
  *
  * A prop that only accepts a fixed set of values has exactly one place where that set is written
  * down: the fourth argument of its `validateProp()` call. Nothing machine-readable carried it —
- * the docs page restates it in prose, and a reader that wants to OFFER the values (the docs app's
+ * the docs page restates it in prose, and a reader that wants to offer the values (the docs app's
  * props playground, an agent picking one) had to guess from that prose. This class is the source
  * the manifest publishes from.
  *
- * FOUR SPELLINGS, and a reader that knows only one is worse than none: a short allow-list looks
+ * Four spellings, and a reader that knows only one is worse than none: a short allow-list looks
  * exactly like a complete one, and nothing goes red over it.
  *
  *   1. A literal array — `['sm', 'md', 'lg']`, the common case.
@@ -21,7 +21,7 @@ namespace Pushery\WireKit\Support;
  *      `spinner` picks its intents that way, `grid` its column tokens.
  *   3. A variable holding a literal array assigned earlier in the same template.
  *   4. A class constant — `\Pushery\WireKit\VariantResolver::INTENTS`, which `button` uses for
- *      the two props every other component's button copies. Resolved THROUGH the constant, so a
+ *      the two props every other component's button copies. Resolved through the constant, so a
  *      seventh intent arrives here the day it is added rather than when somebody retypes it.
  *
  * A fifth spelling must not pass silently, so an argument this class cannot resolve comes back
@@ -72,13 +72,13 @@ final class PropValidationParser
 
             $component = self::stringLiteral($arguments[0]);
 
-            // A call whose COMPONENT is not a literal is a different function that happens to end in
+            // A call whose component is not a literal is a different function that happens to end in
             // the same name, and there is nothing to publish it under.
             if ($component === null) {
                 continue;
             }
 
-            // Once per call: the map feeds the VALUE, and a value does not know which of the call's
+            // Once per call: the map feeds the value, and a value does not know which of the call's
             // names it arrived under, so every name accepts the same spellings.
             $aliases = self::aliasesOf($arguments[2], $source);
 
@@ -135,7 +135,7 @@ final class PropValidationParser
      * The resolved allow-lists of one template, as prop => values.
      *
      * A prop validated in more than one place — a sub-component that re-checks what its parent
-     * checked — keeps the FIRST list, because that is the one its own `@props` entry sits under.
+     * checked — keeps the first list, because that is the one its own `@props` entry sits under.
      *
      * @return array<string, list<string>>
      */
@@ -158,7 +158,7 @@ final class PropValidationParser
      * The call's arguments as source text, or null when the call never closes.
      *
      * Lexed from the opening paren so the prose above it cannot be misread as code, and split on
-     * commas the LEXER saw at argument depth — a comma inside a nested array, a string or a
+     * commas the lexer saw at argument depth — a comma inside a nested array, a string or a
      * closure is part of one argument, not a separator.
      *
      * @return list<string>|null
@@ -208,7 +208,7 @@ final class PropValidationParser
      * The prop name or names one call validates under, each paired with the allow-list it uses.
      *
      * A literal name is the common case: one pair, the list as written. The other case is a call
-     * that names the prop the CALLER wrote. `callout` accepts `intent` and its older `variant`, and
+     * that names the prop the caller wrote. `callout` accepts `intent` and its older `variant`, and
      * reports an error under whichever one was set, so the name is a variable a ternary picks:
      *
      *     $intentPropName = $intent !== null ? 'intent' : 'variant';
@@ -373,7 +373,7 @@ final class PropValidationParser
     /**
      * The spellings a template maps onto an allowed value before the call validates it.
      *
-     * The map is found through the VALUE the call checks: `$tone` is validated, so `$toneAliases`
+     * The map is found through the value the call checks: `$tone` is validated, so `$toneAliases`
      * is what feeds it. Never through a prop name. `feature` validates one value under `intent` and
      * under `tone`, and a read keyed by the map's own name gave its spellings to `tone` alone, so a
      * guard widened by it accused ten code blocks that pass `intent="primary"` or `intent="info"`
@@ -396,7 +396,7 @@ final class PropValidationParser
 
     /**
      * The allow-list an argument stands for: its values, an empty list when the argument is a
-     * MESSAGE rather than an enumeration, or null when the shape is one this class cannot prove.
+     * message rather than an enumeration, or null when the shape is one this class cannot prove.
      *
      * The message shape is not an allow-list, and reading it as one publishes nonsense.
      * Some call sites hand `validateProp()` a single sentence — `['a CSS length such as 14rem,
@@ -436,7 +436,7 @@ final class PropValidationParser
     }
 
     /**
-     * The strings of a literal list. A `=>` makes it a map, and then the VALUES are the
+     * The strings of a literal list. A `=>` makes it a map, and then the values are the
      * allow-list — the keys are whatever the author indexed it by.
      *
      * @return list<string>
@@ -499,7 +499,7 @@ final class PropValidationParser
     /**
      * The `[…]` starting at `$openBracket`, brackets included, or null when it never closes.
      *
-     * Counted over the tokens the LEXER treated as brackets, so a `]` inside a string, a comment
+     * Counted over the tokens the lexer treated as brackets, so a `]` inside a string, a comment
      * or a heredoc body cannot move the depth.
      */
     private static function balancedBody(string $source, int $openBracket): ?string

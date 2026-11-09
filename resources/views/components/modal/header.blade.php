@@ -14,7 +14,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $close = BooleanProp::from($close, true, 'modal.header', 'close');
@@ -108,7 +108,7 @@
         {{ $slot }}
     </div>
 
-    @if ($close)
+    @wirekitLast ($close)
         {{-- Auto close-X — hidden via Alpine when the parent modal is
              non-dismissible, so confirmation dialogs stay escape-free. --}}
         <button
@@ -130,5 +130,5 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
-    @endif
+    @endwirekitLast
 </div>

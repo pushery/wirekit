@@ -18,7 +18,7 @@ use Illuminate\View\ComponentAttributeBag;
  * comes from a block a developer can personalize, the component cannot know what the block holds,
  * and these methods take the competing utilities out of it.
  *
- * Only utilities WITHOUT a variant are read. `hover:p-2` or `sm:h-6` applies in a state or at a
+ * Only utilities without a variant are read. `hover:p-2` or `sm:h-6` applies in a state or at a
  * width of its own, so it does not compete with the base utility, and it stays. An inline style is
  * the exception: it wins over a utility under a variant as well, so `yieldStyleToCaller()` reads
  * those too.
@@ -51,7 +51,7 @@ final class UtilityClasses
     private const LENGTH_UNITS = 'cm|mm|Q|in|pc|pt|px|em|ex|ch|rem|lh|rlh|vw|vh|vmin|vmax|vb|vi|svw|svh|lvw|lvh|dvw|dvh|cqw|cqh|cqi|cqb|cqmin|cqmax';
 
     /**
-     * A background COLOR: a palette color or a keyword, an arbitrary color (`bg-[#fff]`,
+     * A background color: a palette color or a keyword, an arbitrary color (`bg-[#fff]`,
      * `bg-[oklch(…)]`, `bg-[var(--x)]`, a named color), the custom-property form (`bg-(--x)`), each
      * with or without an opacity (`bg-white/80`). An image, a size or a position does not match:
      * `bg-cover`, `bg-center`, `bg-linear-to-r`, `bg-[url(…)]`, `bg-[length:…]`, `bg-[50%]`.
@@ -62,14 +62,14 @@ final class UtilityClasses
     public const BACKGROUND_COLOR = '/^bg-(?:'.self::COLOR.'|\[(?!(?:left|right|top|bottom|center|cover|contain|auto)\])[a-z]+\])'.self::OPACITY.'$/';
 
     /**
-     * A text COLOR, in the same forms as a background color: `text-red-500/50`, `text-[#333]`,
+     * A text color, in the same forms as a background color: `text-red-500/50`, `text-[#333]`,
      * `text-[var(--x)]`, `text-(--x)`. A size (`text-sm`, `text-[15px]`, `text-[length:…]`, a size
      * keyword such as `text-[larger]`) or an alignment does not match.
      */
     public const TEXT_COLOR = '/^text-(?:'.self::COLOR.'|\[(?!(?:small|medium|large|smaller|larger)\])[a-z]+\])'.self::OPACITY.'$/';
 
     /**
-     * A font SIZE: a size keyword, with or without a line height (`text-sm`, `text-lg/7`), a typed
+     * A font size: a size keyword, with or without a line height (`text-sm`, `text-lg/7`), a typed
      * arbitrary value (`text-[length:…]`, `text-(length:…)`, a percentage or a size keyword), or an
      * arbitrary length, percentage, math function or size keyword, again with or without a line
      * height (`text-[15px]`, `text-[1.25rem]/7`, `text-[clamp(…)]`, `text-[larger]`). A color, an
@@ -80,7 +80,7 @@ final class UtilityClasses
         .'|\[(?:\d*\.?\d+(?:'.self::LENGTH_UNITS.'|%)|(?:calc|min|max|clamp)\([^\]]*|xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large|smaller|larger)\](?:\/\S+)?$)/';
 
     /**
-     * A font WEIGHT: a weight keyword, a typed arbitrary value (`font-[number:…]`, `font-(number:…)`),
+     * A font weight: a weight keyword, a typed arbitrary value (`font-[number:…]`, `font-(number:…)`),
      * a number (`font-[550]`), or an untyped `var()` or custom property (`font-[var(--x)]`,
      * `font-(--x)`), which Tailwind reads as a weight. A family (`font-sans`, `font-[Inter]`,
      * `font-[family-name:…]`) does not match.
@@ -110,6 +110,101 @@ final class UtilityClasses
     public const POSITION = '/^(?:static|fixed|absolute|relative|sticky)$/';
 
     /**
+     * A spacing value: a number of spacing steps, `px`, `auto`, an arbitrary value or a custom
+     * property. A word after the prefix is not one, so a class of the application's own such as
+     * `my-card` is no margin.
+     */
+    private const SPACING = '(?:\d+(?:\.\d+)?|px|auto|\[[^\]]+\]|\([^)]+\))$';
+
+    /**
+     * A size value: a spacing value, a fraction, a keyword of the viewport, the content or the line,
+     * `none`, `prose`, or a container size from `3xs` to `7xl`.
+     */
+    private const SIZE = '(?:\d+(?:\.\d+)?|px|auto|full|screen|[sld]?v[wh]|min|max|fit|lh|none|prose|\d+\/\d+|[23]?xs|sm|md|lg|[2-7]?xl|\[[^\]]+\]|\([^)]+\))$';
+
+    /**
+     * The value groups in which a caller's class replaces a component's own: each maps the utilities
+     * of one property family to the sides of it they set.
+     *
+     * A component writes its values from tokens, `p-[var(--padding-wk-x-md)]`, and Tailwind writes
+     * such a value after a named one of the same property, so a caller's `p-0` lost beside it. A
+     * caller's utility therefore takes out each utility of the component in the same group that sets
+     * nothing it does not set itself: `p-0` takes the component's `p-…`, `px-…` and `pt-…`, and
+     * `px-0` its `px-…` and `pl-…`, but neither its `py-…` nor its `p-…`. The component's `p-…`
+     * also sets the block axis, which the caller left alone, and it loses where the two overlap
+     * anyway: Tailwind writes a utility of more properties before one of fewer, `p-…` before
+     * `px-0`, `size-…` before `h-0`.
+     *
+     * Overflow, the layer and the border width are not in the list. Each says what the component
+     * needs to work, not how it looks.
+     *
+     * @var array<string, array<string, list<string>>>
+     */
+    private const GROUPS = [
+        'padding' => [
+            '/^p-'.self::SPACING.'/' => ['t', 'r', 'b', 'l', 's', 'e', 'bs', 'be'],
+            '/^px-'.self::SPACING.'/' => ['r', 'l', 's', 'e'],
+            '/^py-'.self::SPACING.'/' => ['t', 'b', 'bs', 'be'],
+            '/^pt-'.self::SPACING.'/' => ['t'],
+            '/^pr-'.self::SPACING.'/' => ['r'],
+            '/^pb-'.self::SPACING.'/' => ['b'],
+            '/^pl-'.self::SPACING.'/' => ['l'],
+            '/^ps-'.self::SPACING.'/' => ['s'],
+            '/^pe-'.self::SPACING.'/' => ['e'],
+            '/^pbs-'.self::SPACING.'/' => ['bs'],
+            '/^pbe-'.self::SPACING.'/' => ['be'],
+        ],
+        'margin' => [
+            '/^m-'.self::SPACING.'/' => ['t', 'r', 'b', 'l', 's', 'e', 'bs', 'be'],
+            '/^mx-'.self::SPACING.'/' => ['r', 'l', 's', 'e'],
+            '/^my-'.self::SPACING.'/' => ['t', 'b', 'bs', 'be'],
+            '/^mt-'.self::SPACING.'/' => ['t'],
+            '/^mr-'.self::SPACING.'/' => ['r'],
+            '/^mb-'.self::SPACING.'/' => ['b'],
+            '/^ml-'.self::SPACING.'/' => ['l'],
+            '/^ms-'.self::SPACING.'/' => ['s'],
+            '/^me-'.self::SPACING.'/' => ['e'],
+            '/^mbs-'.self::SPACING.'/' => ['bs'],
+            '/^mbe-'.self::SPACING.'/' => ['be'],
+        ],
+        'gap' => [
+            '/^gap-'.self::SPACING.'/' => ['x', 'y'],
+            '/^gap-x-'.self::SPACING.'/' => ['x'],
+            '/^gap-y-'.self::SPACING.'/' => ['y'],
+        ],
+        'size' => [
+            '/^w-'.self::SIZE.'/' => ['w'],
+            '/^h-'.self::SIZE.'/' => ['h'],
+            '/^size-'.self::SIZE.'/' => ['w', 'h'],
+        ],
+        'min-width' => ['/^min-w-'.self::SIZE.'/' => ['all']],
+        'max-width' => ['/^max-w-'.self::SIZE.'/' => ['all']],
+        'min-height' => ['/^min-h-'.self::SIZE.'/' => ['all']],
+        'max-height' => ['/^max-h-'.self::SIZE.'/' => ['all']],
+        'font-size' => [self::FONT_SIZE => ['all']],
+        'font-weight' => [self::FONT_WEIGHT => ['all']],
+        'text-align' => ['/^text-(?:left|center|right|justify|start|end)$/' => ['all']],
+        'justify-content' => ['/^justify-(?:start|end|end-safe|center|center-safe|between|around|evenly|stretch|baseline|normal)$/' => ['all']],
+        'justify-items' => ['/^justify-items-(?:start|end|end-safe|center|center-safe|stretch|normal)$/' => ['all']],
+        'justify-self' => ['/^justify-self-(?:auto|start|end|end-safe|center|center-safe|stretch)$/' => ['all']],
+        'align-items' => ['/^items-(?:start|end|end-safe|center|center-safe|baseline|baseline-last|stretch)$/' => ['all']],
+        'align-self' => ['/^self-(?:auto|start|end|end-safe|center|center-safe|stretch|baseline|baseline-last)$/' => ['all']],
+        'flex-direction' => ['/^flex-(?:row|col)(?:-reverse)?$/' => ['all']],
+        'white-space' => ['/^whitespace-(?:normal|nowrap|pre|pre-line|pre-wrap|break-spaces)$/' => ['all']],
+    ];
+
+    /** How many class strings `replacedBy()` keeps an answer for before it starts again. */
+    private const REMEMBERED = 512;
+
+    /**
+     * The answer of `replacedBy()` for each class string read: the same `class` on a thousand table
+     * cells is read once. An answer depends on the string alone, so it holds across requests.
+     *
+     * @var array<string, list<string>>
+     */
+    private static array $replaced = [];
+
+    /**
      * The class string without the variant-free utilities whose name matches `$pattern`.
      *
      * The pattern is matched against the utility alone: an important marker (`!p-0`, `p-0!`) and the
@@ -128,37 +223,31 @@ final class UtilityClasses
      * caller's `class` replaces, in the shape they came in: a string, or a list for
      * `$attributes->class()`, conditional entries included.
      *
-     * Two kinds are replaced. A display (`SETS_DISPLAY`) takes out the component's own (`DISPLAY`):
-     * `class="hidden md:inline-flex"` on a button is how a developer hides it on a phone, and the
-     * button's own `inline-flex` would keep it on screen. A position (`POSITION`) takes out the
-     * component's own: `class="absolute top-2 right-2"` on a tooltip would otherwise stay in the flow
-     * beside its own `relative`. The caller's class decides, as a font size in `class` replaces a
-     * table head's own. A utility under a variant (`md:hidden`, `lg:absolute`) is not read; it already
-     * applies at its width.
+     * A display (`SETS_DISPLAY`) takes out the component's own (`DISPLAY`): `class="hidden
+     * md:inline-flex"` on a button is how a developer hides it on a phone, and the button's own
+     * `inline-flex` would keep it on screen. A position (`POSITION`) takes out the component's own:
+     * `class="absolute top-2 right-2"` on a tooltip would otherwise stay in the flow beside its own
+     * `relative`. A spacing, a size, a type or an alignment takes out the component's utilities it
+     * covers in its group (`GROUPS`): `class="p-0"` on a card, `gap-2` on a stack and `text-xs` on a
+     * badge would otherwise lose to the component's token value. A utility under a variant
+     * (`md:hidden`, `lg:p-0`) is not read, since it applies at a width or in a state of its own, and
+     * a component's own utility under a variant stays for the same reason.
      *
      * @param  string|array<array-key, string|bool|null>  $classes
      * @return string|array<array-key, string|bool|null>
      */
     public static function yieldToCaller(ComponentAttributeBag $attributes, string|array $classes): string|array
     {
-        $callerClasses = self::callerClasses($attributes);
-
-        $replaced = array_values(array_filter([
-            self::has($callerClasses, self::SETS_DISPLAY) ? self::DISPLAY : null,
-            self::has($callerClasses, self::POSITION) ? self::POSITION : null,
-        ]));
+        $replaced = self::replacedBy(self::callerClasses($attributes));
 
         if ($replaced === []) {
             return $classes;
         }
 
-        $yield = static function (string $list) use ($replaced): string {
-            foreach ($replaced as $pattern) {
-                $list = self::without($list, $pattern);
-            }
-
-            return $list;
-        };
+        $yield = static fn (string $list): string => implode(' ', array_filter(
+            self::tokens($list),
+            static fn (string $token): bool => ! array_any($replaced, static fn (string $pattern): bool => self::matches($token, $pattern)),
+        ));
 
         if (is_string($classes)) {
             return $yield($classes);
@@ -237,6 +326,69 @@ final class UtilityClasses
         }
 
         return false;
+    }
+
+    /**
+     * The patterns of the component's utilities that a caller's class string replaces: its own
+     * display beside a display of the caller's, its own position beside a position, and in each
+     * value group the utilities whose sides the caller's cover.
+     *
+     * @return list<string>
+     */
+    private static function replacedBy(string $callerClasses): array
+    {
+        if (trim($callerClasses) === '') {
+            return [];
+        }
+
+        if (isset(self::$replaced[$callerClasses])) {
+            return self::$replaced[$callerClasses];
+        }
+
+        $utilities = [];
+
+        foreach (self::tokens($callerClasses) as $token) {
+            if (! self::hasVariant($token)) {
+                $utilities[] = ltrim(trim($token, '!'), '-');
+            }
+        }
+
+        $sets = static fn (string $pattern): bool => array_any($utilities, static fn (string $utility): bool => preg_match($pattern, $utility) === 1);
+        $replaced = [];
+
+        if ($sets(self::SETS_DISPLAY)) {
+            $replaced[] = self::DISPLAY;
+        }
+
+        if ($sets(self::POSITION)) {
+            $replaced[] = self::POSITION;
+        }
+
+        foreach (self::GROUPS as $members) {
+            $covered = [];
+
+            foreach ($members as $pattern => $sides) {
+                if ($sets($pattern)) {
+                    array_push($covered, ...$sides);
+                }
+            }
+
+            if ($covered === []) {
+                continue;
+            }
+
+            foreach ($members as $pattern => $sides) {
+                if (array_diff($sides, $covered) === []) {
+                    $replaced[] = $pattern;
+                }
+            }
+        }
+
+        if (count(self::$replaced) >= self::REMEMBERED) {
+            self::$replaced = [];
+        }
+
+        return self::$replaced[$callerClasses] = $replaced;
     }
 
     /** The caller's `class`, a list bound as an array included, as one class string. */

@@ -4,7 +4,7 @@
 @props([
     'orientation' => 'horizontal',
     'sortable' => false,
-    // Cards may move BETWEEN sortable columns: dragged onto another one, or moved with
+    // Cards may move between sortable columns: dragged onto another one, or moved with
     // ArrowLeft/ArrowRight while lifted. Opt-in, because it changes what those two keys do
     // on this board — without it they move a lifted card within its own column, which is
     // what every board shipped so far has taught its users.
@@ -21,7 +21,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('kanban', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false, 'kanban', 'sortable');
@@ -34,13 +34,13 @@
 
     /*
      * A `match` rather than a ternary, and the reason is the Drift inventory: its Blade
-     * class extractor harvests match ARMS and `implode([...])` arrays, not the branches of
+     * class extractor harvests match arms and `implode([...])` arrays, not the branches of
      * a ternary assignment. `contain-paint` below is the one class in this file that
      * appears nowhere else in the library, so it was the first to expose the gap — the
      * reverse diff reported a compiled selector it could not trace to any source.
      */
     $layoutClasses = match ($orientationValue) {
-        // `contain-paint` is what keeps the board's scrollable width off the PAGE.
+        // `contain-paint` is what keeps the board's scrollable width off the page.
         //
         // A horizontal scroller clips its own painting, but its scrollable overflow still
         // counts toward the document's, so on a phone the whole page could be panned
@@ -51,11 +51,11 @@
         //
         // Safe below the support floor — Chrome 52 / Safari 15.4 / Firefox 69, well under
         // the Tailwind v4 baseline this library pins to — and visually a no-op, because a
-        // scroll container already clips what it paints. It is NOT applied to the vertical
+        // scroll container already clips what it paints. It is not applied to the vertical
         // orientation, which does not scroll and would only gain a clip it never wanted.
         //
         // `snap-x snap-mandatory`, which is what Tailwind actually ships. This read
-        // `scroll-snap-x-mandatory` — the CSS PROPERTY name with a dash in front, not a
+        // `scroll-snap-x-mandatory` — the CSS property name with a dash in front, not a
         // utility — so Tailwind compiled nothing for it and the container had no snap type
         // at all. The `snap-start` on every kanban-column then had nothing to align against
         // and did nothing either: a two-file feature, silently absent, with both halves

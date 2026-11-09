@@ -1,7 +1,7 @@
 /**
  * Reaction — an emoji, a count, and one boolean that both of them follow.
  *
- * This factory mounts ONLY when the component opts into optimistic UI. Without
+ * This factory mounts only when the component opts into optimistic UI. Without
  * it the reaction is server-rendered markup with no Alpine at all, exactly as it
  * has always been.
  *
@@ -12,7 +12,7 @@
  * 0)`, so putting `active` back puts the count back with it, and no code has to
  * remember to.
  *
- * The accessible name is built HERE rather than on the server, which is the
+ * The accessible name is built here rather than on the server, which is the
  * whole reason this file exists. `trans_choice` on the server would name the
  * count the server saw: the page would show six and announce five, and the
  * rollback would restore a number the user was never told about. The forms and
@@ -21,7 +21,7 @@
  *
  * @param {Object}  config
  * @param {boolean} config.active   whether the current reader has reacted
- * @param {number}  config.count    the total INCLUDING the reader's own
+ * @param {number}  config.count    the total including the reader's own
  * @param {string}  config.emoji    read before the count, e.g. "👍, 5 people reacted"
  * @param {Object}  config.phrases  sample count -> template, from PluralPhrases
  * @param {string}  config.locale   the application's locale
@@ -34,7 +34,7 @@ export default function wirekitReaction(config = {}) {
     return {
         active: config.active === true,
 
-        // The total WITHOUT the reader's own reaction. Derived once at mount so
+        // The total without the reader's own reaction. Derived once at mount so
         // the count can be recomputed from `active` alone from then on.
         _base: Math.max(0, Number(config.count || 0) - (config.active === true ? 1 : 0)),
         _emoji: config.emoji || '',

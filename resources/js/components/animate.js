@@ -61,7 +61,7 @@ export default (preset, options = {}) => ({
 
     /**
      * Alpine teardown hook — disconnect the observer / remove handlers.
-     * Without this, components torn down BEFORE their trigger fired
+     * Without this, components torn down before their trigger fired
      * (Livewire morph that removes the host element while it's still
      * off-screen, or before the user clicked, or before the manual
      * event was dispatched) leaked the observer/listener references
@@ -94,7 +94,7 @@ export default (preset, options = {}) => ({
         // target taller than `innerHeight / threshold` can never be `threshold` in view at
         // once — a wrapped section of stacked paragraphs on a phone is — so an observer
         // watching the ratio alone never fired and the section stayed at opacity 0 for good,
-        // with nothing logged. It now also fires once the target FILLS `threshold` of the
+        // with nothing logged. It now also fires once the target fills `threshold` of the
         // viewport's height, and watches a ladder of thresholds so the growing overlap is
         // reported at all (with only `[threshold]` a target that never crosses it is never
         // reported again after the first observation).
@@ -107,7 +107,7 @@ export default (preset, options = {}) => ({
             ladder.push(step / 20);
         }
         let firstReport = true;
-        // Fire on ENTERING the in-view state, not on every rung of the ladder: with
+        // Fire on entering the in-view state, not on every rung of the ladder: with
         // `once: false` each fire restarts the animation, and a scroll through the ladder
         // would restart it at every step. Leaving the state re-arms it.
         let inView = false;

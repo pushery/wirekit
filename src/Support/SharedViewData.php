@@ -19,7 +19,7 @@ use WeakMap;
  * filter builder, and a text shared under the name of a slot whose content a view inspects would
  * end the page. Each shared name the caller did not write is given to the view as null before it
  * runs, so a prop takes its default and a slot reads as not given. The few shared values the views
- * read on purpose are left alone (KEPT).
+ * read on purpose are left alone (kept).
  *
  * The view's own data takes precedence over shared data, so the shared value stays available to
  * every other view, the content of a slot included, which renders in its caller's view. A prop or

@@ -25,14 +25,14 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('page-progress', $attributes->getAttributes());
 
     // Page-progress — a viewport-pinned bar that reports the request the reader is
-    // waiting on. Mount it ONCE per layout. It takes no per-screen opt-in, which is
+    // waiting on. Mount it once per layout. It takes no per-screen opt-in, which is
     // the whole design: the factory hooks Livewire's message lifecycle and the
     // navigate events, so a screen built tomorrow is covered without anyone
     // remembering to add anything to it.
     //
-    // It is NOT `progress`, and the difference is the axis rather than the look:
+    // It is not `progress`, and the difference is the axis rather than the look:
     // `progress` shows a value somebody knows, this shows waiting whose length nobody
-    // knows. It is NOT `reading-progress` either — that one is driven by scroll
+    // knows. It is not `reading-progress` either — that one is driven by scroll
     // position and says where you are, not that something is in flight.
 
     $heightToken = match (WireKit::validateProp('page-progress', 'height', (string) $height, ['sm', 'md', 'lg'])) {
@@ -88,12 +88,12 @@
          theme-aware either way.
 
          It does not carry `--wk-scrollbar-inset`, and that is deliberate. That token exists for a
-         fixed surface that keeps a GAP from the inline edge, where a gutter inside the viewport
+         fixed surface that keeps a gap from the inline edge, where a gutter inside the viewport
          eats into the gap. This bar keeps no gap — it is full bleed across the viewport box, so
          its width follows whatever that box is. The components that do take the inset all sit
          inset from an edge.
 
-         It DOES take `--wk-strip-inset`, which is the other edge and a different question: a
+         It does take `--wk-strip-inset`, which is the other edge and a different question: a
          strip above the page is browser chrome, and the bar reports the application's request,
          so it runs along the top of the application — directly under the strip, not across it. --}}
     {{ $attributes->except('aria-hidden')
@@ -108,7 +108,7 @@
          bar's anchor uses, and it needs `!important` there because this inline declaration
          outranks a stylesheet rule.
          The inline copy is unavoidable: the fill color varies per render and has to be
-         inline anyway, and Alpine's object-form style binding MERGES with static declarations
+         inline anyway, and Alpine's object-form style binding merges with static declarations
          rather than replacing them, so the anchor survives every reactive update. --}}
     <div
         x-bind:style="fillStyle()"

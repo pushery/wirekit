@@ -19,11 +19,11 @@
     // region, such as a preview, where the page around it has to keep scrolling.
     'lockScroll' => true,
     'describedby' => null,
-    // An explicit accessible name, for a drawer composed WITHOUT `drawer.header`.
+    // An explicit accessible name, for a drawer composed without `drawer.header`.
     //
     // Without it such a drawer announces as a bare "dialog": `aria-labelledby` points at
     // an id the header would have bound at runtime, and a caller `aria-label` lands on
-    // the outer x-data wrapper — which carries no role — while the element that IS the
+    // the outer x-data wrapper — which carries no role — while the element that is the
     // dialog keeps the unresolvable reference. WCAG 2.1 4.1.2, Level A.
     //
     // A prop rather than server-side detection of the header: the header binds its id
@@ -46,10 +46,10 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `dismissible="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
-    // the only reason the coverage guard did not see it. It defaults ON, so turning it off
+    // the only reason the coverage guard did not see it. It defaults on, so turning it off
     // is the direction a developer chooses deliberately — and Escape and the backdrop both
     // kept closing the drawer, which is the whole of what the prop suppresses. Same shape,
     // same fix as the modal beside it.
@@ -65,14 +65,14 @@
     // `size` and `position` are resolved by a `match` with a `default` arm below, and a
     // default arm is silent by construction: `size="xl"` rendered `md` and
     // `position="diagonal"` rendered `right`, in every environment, with nothing anywhere
-    // to read. `warnUnknownProps` cannot see it either — it flags unknown prop KEYS, and
-    // both of these are declared props carrying an out-of-set VALUE.
+    // to read. `warnUnknownProps` cannot see it either — it flags unknown prop keys, and
+    // both of these are declared props carrying an out-of-set value.
     //
     // The gate supplies the signal without changing what renders. By default it throws in a
     // console or test run with APP_DEBUG on, logs an error and continues in a request with
     // APP_DEBUG on, and logs a warning and continues with APP_DEBUG off. The fallback is
     // assigned here rather than taken from the gate's return, because the gate falls back to
-    // the FIRST allowed value and this component's default is `md` / `right` — reordering the
+    // the first allowed value and this component's default is `md` / `right` — reordering the
     // allowed set to steer that would make the error message lie about which value is
     // canonical.
     if (! in_array($size, ['sm', 'md', 'lg'], true)) {
@@ -80,8 +80,10 @@
         $size = 'md';
     }
 
-    if (! in_array($position, ['left', 'right', 'top', 'bottom'], true)) {
-        WireKit::validateProp('drawer', 'position', (string) $position, ['left', 'right', 'top', 'bottom']);
+    // `start` and `end` name the edge where the lines of the page begin and the one across from it,
+    // and follow the direction of the page; `left` and `right` name a physical edge.
+    if (! in_array($position, ['left', 'right', 'top', 'bottom', 'start', 'end'], true)) {
+        WireKit::validateProp('drawer', 'position', (string) $position, ['left', 'right', 'top', 'bottom', 'start', 'end']);
         $position = 'right';
     }
 
@@ -103,7 +105,7 @@
     $dialogId = filled($name) ? \Pushery\WireKit\Support\DomId::distinct('wk-drawer-dialog-'.$name) : null;
 
     // Backdrop classes — semi-transparent overlay behind the drawer
-    // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
+    // A caller-supplied `aria-label` names the dialog, not the wrapper it was landing on.
     // `{{ $attributes }}` sits on the roleless outer element, so `<x-wirekit::drawer
     // aria-label="…">` rendered a name on something no assistive technology reads as a
     // dialog — WCAG 4.1.2. It is pulled out here and applied to the panel below, where
@@ -165,11 +167,13 @@
         'right' => 'wk-drawer-panel-right inset-y-0 right-0',
         'top' => 'wk-drawer-panel-top inset-x-0 top-0',
         'bottom' => 'wk-drawer-panel-bottom inset-x-0 bottom-0',
+        'start' => 'wk-drawer-panel-start inset-y-0 start-0',
+        'end' => 'wk-drawer-panel-end inset-y-0 end-0',
         default => 'wk-drawer-panel-right inset-y-0 right-0',
     };
 
     // Size classes — width for left/right, height for top/bottom
-    $isHorizontal = in_array($position, ['left', 'right']);
+    $isHorizontal = in_array($position, ['left', 'right', 'start', 'end'], true);
     $sizeClass = match (true) {
         $isHorizontal && $size === 'sm' => 'wk-drawer-panel-w-sm w-[var(--size-wk-drawer-sm)]',
         $isHorizontal && $size === 'md' => 'wk-drawer-panel-w-md w-[var(--size-wk-drawer-md)]',
@@ -188,7 +192,7 @@
     // is relative to the element's own, now-clamped, size) while leaving a
     // strip of backdrop (`--size-wk-drawer-inset`) so the overlay still reads as a sheet.
     $sizeClass .= $isHorizontal
-        // `dvh`/`dvw`, not `vh`/`vw`. `vh` is defined against the LARGE viewport — toolbars
+        // `dvh`/`dvw`, not `vh`/`vw`. `vh` is defined against the large viewport — toolbars
         // retracted — which is the whole reason `dvh` exists. Clamping to `100vh - 3rem`
         // reserved the inset against a height the user cannot see while Safari's toolbars are
         // shown, and the toolbar delta on iOS is larger than 48px: for a top or bottom
@@ -215,16 +219,19 @@
         default => '',
     };
 
-    // Slide transition classes — direction depends on position
+    // Slide transition classes — direction depends on position. A translation is physical, so an
+    // edge that follows the direction of the page slides from the other side on a page read from the right.
     $enterStart = match ($position) {
         'left' => '-translate-x-full',
         'right' => 'translate-x-full',
+        'start' => '-translate-x-full rtl:translate-x-full',
+        'end' => 'translate-x-full rtl:-translate-x-full',
         'top' => '-translate-y-full',
         'bottom' => 'translate-y-full',
         default => 'translate-x-full',
     };
     $enterEnd = match ($position) {
-        'left', 'right' => 'translate-x-0',
+        'left', 'right', 'start', 'end' => 'translate-x-0',
         'top', 'bottom' => 'translate-y-0',
         default => 'translate-x-0',
     };
@@ -264,7 +271,7 @@
                  Leave transition intentionally omitted: pest-plugin-browser's
                  `assertDontSee()` is synchronous (no auto-wait), and any fade-out
                  (even 150ms) races against the assertion. Instant close is also
-                 better here in its own right: a dialog that lingers on the way out
+                 better here on its own merits: a dialog that lingers on the way out
                  delays the thing the reader asked for, and the close is not the
                  moment to be decorative. --}}
             <div
@@ -318,7 +325,7 @@
     </template>
 
     {{-- The dialog the question about discarded changes is asked in, when the drawer asks one. --}}
-    @if($discardQuestionText !== null)
+    @wirekitLast($discardQuestionText !== null)
         @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope])
-    @endif
+    @endwirekitLast
 </div>

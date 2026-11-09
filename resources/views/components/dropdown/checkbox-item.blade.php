@@ -1,13 +1,13 @@
 {{-- optimistic-ui: supported
      Its checked state is a server value even though the menu around it is not, so
-     `undo` is right: a single boolean whose previous value belongs to the server,
+     `undo` fits: a single boolean whose previous value belongs to the server,
      and putting it back costs the reader nothing — the same call toggle-button makes.
 
-     This component IS the button, so the announcer has nowhere to go inside it —
+     This component is the button, so the announcer has nowhere to go inside it —
      a live region there becomes part of the accessible name. It sits in a
      `display: contents` wrapper instead, which lands between the panel's
      `role="menu"` and this `role="menuitemcheckbox"`, and a menu owns its
-     menuitems DIRECTLY. Break that and the item stops being part of the menu for
+     menuitems directly. Break that and the item stops being part of the menu for
      a screen reader, silently — the DOM looks identical.
 
      A role-less `display: contents` element leaves the accessibility tree along
@@ -29,7 +29,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'checked' => false,
@@ -47,7 +47,7 @@
     // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
     $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -55,7 +55,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $checked = BooleanProp::from($checked, false, 'dropdown.checkbox-item', 'checked');
@@ -89,7 +89,7 @@
         'text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
         'transition-colors duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
-        // `focus-visible` plus a RING, which is the shape dropdown/item.blade.php
+        // `focus-visible` plus a ring, which is the shape dropdown/item.blade.php
         // carries with its full reasoning — read it there rather than here.
         //
         // A surface alone cannot mark focus in this menu. The background is
@@ -113,7 +113,7 @@
     $disabledClasses = $disabled ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none' : '';
     $checkedBool = (bool) $checked;
 
-    // ONE name for the visual bindings, so the box and the checkmark follow the
+    // One name for the visual bindings, so the box and the checkmark follow the
     // value whichever scope owns it — the layer's `value` when optimistic, the
     // local `on` otherwise. Without this the bindings would keep reading a
     // property that does not exist in the optimistic render, and Alpine resolves
@@ -123,6 +123,13 @@
     // The keys of the shortcut hint, one text or a list (Support\KeyShortcuts::hintKeys()),
     // drawn as one line, a space between the keys.
     $shortcutText = implode(' ', \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut));
+
+    // The shortcut hint after the label is an echo rather than a block, so Livewire writes no
+    // morph markers around it: it comes or goes after the label and moves nothing before it. Its
+    // class goes through CompactClasses, as a class attribute in the markup does.
+    $shortcutPart = $shortcutText === '' ? '' : new \Illuminate\Support\HtmlString(
+        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums')).'" aria-hidden="true">'.e($shortcutText).'</span>'
+    );
 @endphp
 
 @if($optimisticConfig)
@@ -149,12 +156,12 @@
     aria-checked="{{ $checkedBool ? 'true' : 'false' }}"
     @if($disabled) aria-disabled="true" @endif
     {{ $attributes->except(['role', 'tabindex', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $disabledClasses])) }}
->
-    {{-- Checkbox box — a bordered square that is ALWAYS visible (mirrors the
-         radio-item's always-visible circle), filled with the accent + a
-         checkmark when on. With only the checkmark, an UNCHECKED item would
-         show no box at all, and the control would be invisible. --}}
-    <span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
+>{{--
+    Checkbox box — a bordered square that is always visible (mirrors the
+    radio-item's always-visible circle), filled with the accent + a
+    checkmark when on. With only the checkmark, an unchecked item would
+    show no box at all, and the control would be invisible.
+--}}<span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
         <span
             class="w-3.5 h-3.5 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
             :class="{{ $stateExpr }} ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]' : 'border-[var(--color-wk-border-strong)]'"
@@ -163,14 +170,11 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
         </span>
-    </span>
-
-    {{ $slot }}
-
-    @if($shortcutText !== '')
-        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcutText }}</span>
-    @endif
-</button>
+    </span>{{--
+    The parts of the item touch: no text of this template stands between them, so a `<button>`,
+    which keeps a run of white space as a flex item, sets no gap beside an empty item before or
+    after the label. Every echo is followed by the next directive or tag on its line.
+--}}{{ $slot }}{{ $shortcutPart }}</button>
 @if($optimisticConfig)
     {{-- Rendered unconditionally and starting empty: a live region that arrives
          together with its text is a new node, and nothing is announced at all. --}}

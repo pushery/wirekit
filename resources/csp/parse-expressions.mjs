@@ -30,12 +30,14 @@
  *    "prohibited": { "directives": [{ "name", "message" }, …], "tags": [{ "name", "message" }, …] },
  *    "results": [{ "ok": bool, "error": string|null }, …] }` on
  * stdout — one result per input, in order. `grammar` describes the parser that
- * produced those results, so advice derived from them can be true for THIS
+ * produced those results, so advice derived from them can be true for this
  * installation rather than for the version somebody happened to test against.
  * `prohibited` is what the same build refuses whatever an expression says: a
  * directive it throws on before reading the value, and elements on which it
  * evaluates nothing. Grammar cannot find either, because neither depends on
- * how the expression is written.
+ * how the expression is written. A result is also `ok: false` for an
+ * expression that assigns a property of an element, which the build refuses
+ * when it runs although the expression parses (element-property-writes.mjs).
  * On a setup problem it writes
  * `{ "ok": false, "error": "…" }` and exits 1, because a run that could not
  * measure must never look like a run that found nothing.
@@ -43,6 +45,7 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
+import { elementPropertyWritesIn } from './element-property-writes.mjs';
 import { forbiddenGlobalsIn, globalReachingMembersIn } from './unresolvable-globals.mjs';
 
 /**
@@ -67,7 +70,7 @@ const CANARY = '() => 1';
  * Lift Alpine's Tokenizer + Parser out of the CSP bundle.
  *
  * They are module-private, so there is no import to use. Slicing the source is
- * deliberate AND checked: the boundaries are asserted, so an Alpine upgrade that
+ * deliberate and checked: the boundaries are asserted, so an Alpine upgrade that
  * moves or renames them fails loudly instead of silently auditing nothing.
  */
 function loadCspParser() {
@@ -75,14 +78,14 @@ function loadCspParser() {
 
     let bundlePath;
     try {
-        // Resolved from the CALLING project, not from this package: the developer
+        // Resolved from the calling project, not from this package: the developer
         // installs @alpinejs/csp, and their version is the one their build ships.
         bundlePath = require.resolve('@alpinejs/csp/dist/module.esm.js', {
             paths: [process.cwd()],
         });
     } catch (error) {
         // The resolve failure is kept as the cause. The message below is the one a
-        // developer can act on; the original says WHERE resolution stopped, which is
+        // developer can act on; the original says where resolution stopped, which is
         // what distinguishes "not installed" from "installed somewhere this cannot see".
         throw new Error(
             'Alpine\'s CSP build is not installed. Add it as a dev dependency:\n'
@@ -156,7 +159,12 @@ try {
     const { Tokenizer, Parser, source } = loadCspParser();
     const prohibited = prohibitedBy(source);
 
-    // Prove the instrument still IS an instrument before reading anything off
+    // Whether this build refuses to assign a property of a DOM object, read off its own message
+    // the way prohibitedBy() reads the directives it refuses: a build without the check assigns
+    // such a property, and an assignment it carries out is no finding.
+    const refusesElementWrites = source.includes('Property assignments on DOM objects are prohibited in the CSP build');
+
+    // Prove the instrument still is an instrument before reading anything off
     // it. Everything below this line is a verdict from it.
     let canaryRejected = false;
     try {
@@ -175,7 +183,7 @@ try {
         );
     }
 
-    // Does THIS parser accept a reserved word as a member name?
+    // Does this parser accept a reserved word as a member name?
     //
     // The answer depends on the installed version. Up to `@alpinejs/csp` 3.17.2 the tokenizer
     // emits a keyword for `delete`, `new`, `typeof` and the rest of that set wherever they appear,
@@ -225,8 +233,26 @@ try {
             };
         }
 
+        // Grammar and names are not the whole restriction either. The evaluator refuses to
+        // assign a property of a DOM object, whatever the value: `$el.indeterminate = x` parses,
+        // resolves and throws each time it runs. Which object a member reaches is decided as far
+        // as the source decides it (element-property-writes.mjs), so this is a violation rather
+        // than a warning: each target it names is an element or a DOM object of one.
+        const writes = refusesElementWrites ? elementPropertyWritesIn(ast) : [];
+
+        if (writes.length > 0) {
+            return {
+                ok: false,
+                globals: [],
+                warnings: [],
+                error: `assigns ${writes.join(', ')}, a property of an element or of a DOM object of one, `
+                    + 'which Alpine\'s CSP evaluator refuses each time the expression runs '
+                    + '("Property assignments on DOM objects are prohibited in the CSP build")',
+            };
+        }
+
         // Resolvable is not the same as evaluable, and the gap between them is where
-        // a control dies quietly. The evaluator refuses a VALUE, not a name: it
+        // a control dies quietly. The evaluator refuses a value, not a name: it
         // throws on any property access that lands in the set built from
         // `globalThis`, so a chain can resolve completely, run, and be rejected at
         // the moment it touches something that happens to be global.

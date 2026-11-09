@@ -20,7 +20,7 @@
     // Menubar — horizontal menu bar with dropdown menus (File, Edit, View pattern).
     // Follows WAI-ARIA menubar pattern with arrow key navigation between menus.
     $classes = WireKit::resolveClasses('menubar', 'base', implode(' ', [
-        'flex items-center gap-1',
+        'flex items-center gap-[var(--gap-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',

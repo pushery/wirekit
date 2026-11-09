@@ -115,13 +115,13 @@ export default function wirekitPasswordInput(config = {}) {
 
         /**
          * The same verdict, for the meter's `aria-valuetext` — `false` where the
-         * label is empty, so the attribute is ABSENT rather than empty.
+         * label is empty, so the attribute is absent rather than empty.
          *
          * Two getters for one string, because the two surfaces need opposite
          * things out of "there is nothing to say yet". The polite region beside
          * the meter is `x-text`, and `x-text` on `false` writes the word "false"
          * into it; the meter is `x-bind`, and Alpine removes a bound attribute
-         * only for `null`, `undefined` or `false` — an empty string it SETS.
+         * only for `null`, `undefined` or `false` — an empty string it sets.
          * Binding the label directly therefore shipped `aria-valuetext=""` on
          * every untouched field.
          *

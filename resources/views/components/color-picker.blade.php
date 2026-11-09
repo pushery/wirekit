@@ -1,8 +1,8 @@
 {{-- optimistic-ui: supported
-     A value stream commits at an EVENT, never a timer, and `_endDrag()` is one (it also
+     A value stream commits at an event, never a timer, and `_endDrag()` is one (it also
      ends on pointercancel, so no listener outlives a canceled drag).
 
-     This control is MIXED. The plane, the hue strip and the swatches are discrete picks
+     This control is mixed. The plane, the hue strip and the swatches are discrete picks
      whose previous value belongs to the server, so an undo there costs nothing. **The hex
      field is typed**, and a rollback may never delete what the user wrote: a value typed
      into the field while a drag's request is in flight would be overwritten by that
@@ -10,8 +10,8 @@
      destroyed. The price is that a refused color stays on screen and says it was not
      saved, which the reader can act on: the previous color is one click away in recents.
 
-     The layer WRAPS this component instead of nesting inside it, because the value is
-     DERIVED. With `h`/`s`/`v`/`a` and `formattedValue` computed from them there is no
+     The layer wraps this component instead of nesting inside it, because the value is
+     derived. With `h`/`s`/`v`/`a` and `formattedValue` computed from them there is no
      single writable property to bind, so the layer holds the value and the component
      hands it up through `run()`. A child reaches its parent, never the reverse, which
      puts the layer on the outside.
@@ -22,19 +22,19 @@
      nothing failing. `_commitRecent()` is where a color is settled in all four cases,
      which is why a color lands in "recents" there and nowhere else. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade would fold
     // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk.
     'required' => false,
     // The Livewire method to call once a color is settled — a released drag, a
-    // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
+    // swatch, an arrow-key nudge. A refusal keeps the color and says it was not
     // saved: the hex field is typed, and a rollback may never delete what the
     // reader wrote. See the note at the top of this file.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'name' => null,
@@ -45,7 +45,7 @@
     // never shown.
     //
     // No `label` prop comes with them, deliberately. The accessible name here is the
-    // DEFAULT SLOT (rendered `sr-only` beside the swatch, documented on the component
+    // default slot (rendered `sr-only` beside the swatch, documented on the component
     // page and sanctioned in the accessibility rules), and a second naming path would
     // give the component two ways to be named with nothing deciding between them.
     'error' => null,
@@ -90,7 +90,7 @@
     // `name[]`, is reported and read as no value (Support\FieldValue).
     $value = \Pushery\WireKit\Support\FieldValue::one($value, 'color-picker');
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, true, 'color-picker', 'showValue');
@@ -122,9 +122,9 @@
     use Pushery\WireKit\WireKit;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` — it does
-    // NOT remove that key from the attribute bag, so written on the tag it survives into
+    // not remove that key from the attribute bag, so written on the tag it survives into
     // `{{ $attributes }}` and renders as a stray HTML attribute. Blade accepts both
-    // spellings, so both are dropped. BEFORE the unknown-prop warning below, as in every
+    // spellings, so both are dropped. Before the unknown-prop warning below, as in every
     // sibling control: the key is understood here, and warning about it would be noise.
     $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
@@ -146,7 +146,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -181,7 +181,7 @@
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // Page-unique. The name still shapes the id — `name="brand"` is still `wk-color-brand`,
-    // which is what makes it readable — but it goes through the deduper, so a SECOND picker
+    // which is what makes it readable — but it goes through the deduper, so a second picker
     // bound to the same field (which is what a repeater row is) becomes `wk-color-brand-2`
     // instead of colliding, where the second one's `<label for>` would point at the first
     // one's input and a click on it would focus the wrong control.
@@ -194,7 +194,7 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Explicit prop OR the Laravel validation bag, keyed by `name`. The read is
+    // Explicit prop or the Laravel validation bag, keyed by `name`. The read is
     // guarded on the name being there: `MessageBag::has(null)` falls through to
     // `any()`, so an unnamed picker would paint itself invalid the moment any
     // unrelated field on the page failed validation.
@@ -202,11 +202,11 @@
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
     $hasError = $errorMessage !== null;
 
-    // The error REPLACES the hint in the single paragraph below, so the description
+    // The error replaces the hint in the single paragraph below, so the description
     // names whichever id is actually on the page. An idref pointing at nothing is not
     // a partial description — assistive technology drops it in silence.
     //
-    // Composed once because this component has FOUR shapes that can be the control:
+    // Composed once because this component has four shapes that can be the control:
     // the native input, the nativeOnMobile input, the trigger-slot button and the
     // default swatch button. Spelling the wiring out four times is how three of them
     // end up out of step with the fourth.
@@ -269,8 +269,8 @@
     $wrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--padding-wk-x-sm)]', $scope);
     $nativeWrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--gap-wk-md)]', $scope);
 
-    // One stacking wrapper around BOTH render branches, so the hint / error paragraph
-    // has somewhere to go: the picker's own root is an inline-flex ROW, and a message
+    // One stacking wrapper around both render branches, so the hint / error paragraph
+    // has somewhere to go: the picker's own root is an inline-flex row, and a message
     // dropped into it would render beside the swatch instead of under it. Inline-level
     // for the same reason the root is — a picker sits inside a form row, not on a line
     // of its own — and `items-start` keeps the swatch at its intrinsic width.
@@ -282,7 +282,7 @@
         'border-[length:var(--border-wk-width)]',
         // The swatch ring is this control's boundary, so it carries the error state the
         // way every sibling control does. Outside the error state it stays on the
-        // decorative token: a ring around an ARBITRARY user-chosen color cannot be held
+        // decorative token: a ring around an arbitrary user-chosen color cannot be held
         // to a contrast floor against what is inside it.
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
         'overflow-hidden',
@@ -301,7 +301,7 @@
     // overflow-hidden keeps the visual swatch unchanged.
     $inputClasses = WireKit::resolveClasses('color-picker', 'input', implode(' ', [
         // Replaced elements don't stretch between insets — height must be
-        // EXPLICIT: label height + 4px top overhang + 12px bottom extension.
+        // explicit: label height + 4px top overhang + 12px bottom extension.
         'absolute -inset-x-1 -top-1',
         'w-[calc(100%+0.5rem)] h-[calc(100%+1rem)]',
         'cursor-pointer',
@@ -343,7 +343,7 @@
     }
 @endphp
 
-{{-- The field wrapper wraps BOTH branches so the hint / error paragraph below is a
+{{-- The field wrapper wraps both branches so the hint / error paragraph below is a
      sibling of whichever picker rendered, never a child of its inline-flex row. It is
      unconditional on purpose: a wrapper that only appears when a message does gives the
      component two DOM shapes, and the one a developer inspects is whichever they hit
@@ -385,21 +385,21 @@
                 {{ \Pushery\WireKit\Support\CallerModel::onField($attributes->except('type')->except('aria-describedby'))->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$inputClasses])) }}
                 @if($formOwner) form="{{ $formOwner }}" @endif
             />
-            @if($slot->hasActualContent())
+            @wirekitLast($slot->hasActualContent())
                 <span class="sr-only">{{ $slot }}</span>
             @elseif($fieldLabelId === null && ! filled($id))
                 {{-- With no `id` of the caller's, whose label would name the field, this is the
-                     ONLY accessible name the native `<input type="color">` gets — there is no
+                     only accessible name the native `<input type="color">` gets — there is no
                      visible label beside it. It goes through the catalog for the same reason the
                      popover branch below does: both keys already ship in every locale, so a
                      literal here would hand a translated application a fully localized picker
                      with one English name on it. --}}
                 <span class="sr-only">{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}</span>
-            @endif
+            @endwirekitLast
         </label>
-        @if($showValue)
+        @wirekitLast($showValue)
             <span class="{{ $valueClasses }}" x-text="current" aria-live="polite"></span>
-        @endif
+        @endwirekitLast
     </div>
 @else
     @php
@@ -419,28 +419,28 @@
         // shows "No color" while cleared); otherwise the plain formattedValue.
         $readoutExpr = $withClear ? 'displayValue' : 'formattedValue';
         // Checkerboard backdrop so alpha is legible — a structural transparency
-        // grid (like the SV-plane white/black axes, it is NOT themeable).
+        // grid (like the SV-plane white/black axes, it is not themeable).
         $checker = 'background-image: linear-gradient(45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(-45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-wk-border) 75%), linear-gradient(-45deg, transparent 75%, var(--color-wk-border) 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0;';
 
-        // `value` rather than `bind`: the color here is DERIVED (h/s/v/a with
+        // `value` rather than `bind`: the color here is derived (h/s/v/a with
         // formattedValue computed from them), so there is no single writable
         // property for a layer to hold on the component's behalf. The layer keeps
         // it, and the component hands it up through `run()` — which also decides
         // the nesting: the component calls `this.run`, a child reaches its parent,
         // so the layer wraps this one instead of nesting inside it.
         //
-        // `keep`, not `undo`, and the hex field being TYPED is why: a rollback
+        // `keep`, not `undo`, and the hex field being typed is why: a rollback
         // may never destroy what the reader wrote. The price is that a refused
         // color stays on screen and says it was not saved — actionable, because
         // the previous color is one click away in the recents strip.
         //
         // The JS calls `mark()` at pointerdown although `keep` never rolls back:
-        // `keep` covers only the SERVER's refusal. A CANCELED request still
+        // `keep` covers only the SERVER's refusal. A canceled request still
         // restores — and a second drag started during the first one's round trip
         // is exactly that. Without the mark, the restore would write back the value
         // the drag produced, so the marker would stay put and the cancellation
         // would be invisible. The rule
-        // that a baseline belongs to the START of the gesture holds for every
+        // that a baseline belongs to the start of the gesture holds for every
         // streaming control, regardless of which failure exit it takes.
         $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
             'value' => $value,
@@ -485,7 +485,7 @@
              listener written on the tag hears one field (utils/focus-unit.js). --}}
         x-wk-focus-unit
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-        {{-- Resolves because the layer WRAPS this element: `isPending` lives on
+        {{-- Resolves because the layer wraps this element: `isPending` lives on
              the parent, and a child reads its parent through the scope chain. --}}
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
         {{-- escape is window-scoped: the panel teleports out of the document flow, so a keydown
@@ -498,10 +498,10 @@
     >
         @if($nativeOnMobile)
             {{-- nativeOnMobile trigger: on touch-primary devices (useNative, decided
-                 once at init via `(pointer: coarse)`) the swatch IS the native-mode
+                 once at init via `(pointer: coarse)`) the swatch is the native-mode
                  label + <input type="color"> — a direct tap opens the OS color sheet,
                  no programmatic click needed, so it works in every mobile browser.
-                 x-if (not x-show) keeps exactly ONE interactive trigger in the live
+                 x-if (not x-show) keeps exactly one interactive trigger in the live
                  DOM. The input's own color well fills the clipped circle, and its
                  input/change events feed the same HSV state + hidden form field the
                  popover path uses (change commits to recents). Native sheets pick
@@ -591,7 +591,7 @@
         {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking
              ancestor and sits a clear gap below the swatch. click.outside lives
-             HERE (on the panel),
+             here (on the panel),
              not the root, because teleporting moves the panel out of the subtree. --}}
         <template x-teleport="#wk-overlay-root">
         <div
@@ -613,7 +613,7 @@
                 role="slider"
                 tabindex="0"
                 aria-label="{{ __('wirekit::Saturation and brightness') }}"
-                {{-- `aria-valuenow` is REQUIRED on `slider` — a slider without it is
+                {{-- `aria-valuenow` is required on `slider` — a slider without it is
                      malformed to a conformance checker and announces no numeric
                      position at all. This one control moves on two axes, so the
                      number carries saturation (the inline axis, the one the
@@ -639,7 +639,7 @@
                 <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to right, #fff, transparent);"></div>
                 <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to top, #000, transparent);"></div>
                 {{-- Thumb ring stays theme-independent white (+ shadow) on all three
-                     sliders: it must contrast against ARBITRARY colors underneath, so a
+                     sliders: it must contrast against arbitrary colors underneath, so a
                      themed border would vanish against same-toned regions. --}}
                 <div class="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[var(--shadow-wk-sm)]" :style="planeMarkerStyle"></div>
             </div>
@@ -712,12 +712,12 @@
                  hidden from sight. One element in the panel's stack either way, so a panel
                  without the message keeps its spacing. --}}
             <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-[var(--gap-wk-sm)]">
                 <button
                     type="button"
                     @click="cycleFormat()"
-                    class="wk-touch-row shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    {{-- The name STARTS with the word the button shows. A static
+                    class="wk-touch-row shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    {{-- The name starts with the word the button shows. A static
                          `aria-label` would override the visible "hex"/"rgb" entirely,
                          so someone using voice control could not activate the control
                          by the word in front of them, and a reader would hear a
@@ -738,14 +738,14 @@
                     :aria-invalid="invalidInput ? 'true' : 'false'"
                     {{-- Without the region below the field would say "invalid" and nothing
                          else: a reader would hear that their value was wrong with no way to
-                         learn WHY or what a right one looks like, which is what WCAG 3.3.1
+                         learn why or what a right one looks like, which is what WCAG 3.3.1
                          asks for in text. The region is always present and always
                          referenced, so the description resolves — a `describedby`
                          pointing at a `display: none` element is ignored by assistive
                          technology, which is why it is emptied rather than hidden. --}}
                     aria-describedby="{{ $pickerId }}-hex-error"
                     spellcheck="false"
-                    class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :class="invalidInput ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]'"
                 />
                 <span id="{{ $pickerId }}-hex-error" class="sr-only" role="alert" x-text="hexError"></span>
@@ -754,10 +754,10 @@
                         type="button"
                         x-show="hasEyeDropper"
                         @click="eyedropper()"
-                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--space-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ __('wirekit::Pick a color from the screen') }}"
                     >
-                        {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip):
+                        {{-- A recognizable pipette silhouette (angled dropper barrel + tip):
                              a pencil would read as "edit", never as "pick a color from the
                              screen". --}}
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2 22 1-1h3l9-9"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-3l9-9"/><path stroke-linecap="round" stroke-linejoin="round" d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
@@ -766,7 +766,7 @@
                 <button
                     type="button"
                     @click="copy()"
-                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--space-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($copyColorLabel) }}"
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
@@ -787,7 +787,7 @@
                     <button
                         type="button"
                         @click="clear()"
-                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--space-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ $clearColorLabel }}"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
@@ -796,7 +796,7 @@
                 @endif
             </div>
             <template x-if="hexError">
-                <p data-wk-prose-skip aria-hidden="true" class="mt-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]" x-text="hexError"></p>
+                <p data-wk-prose-skip aria-hidden="true" class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]" x-text="hexError"></p>
             </template>
             </div>
 
@@ -844,12 +844,16 @@
 
 {{-- One region, the error winning over the hint — the same shape every sibling
      control renders, and the reason `$controlDescribedBy` names only one id of its own. It sits
-     OUTSIDE the optimistic wrapper deliberately: the rejected-state outline in the
+     outside the optimistic wrapper deliberately: the rejected-state outline in the
      stylesheet selects that wrapper's own children, and the field's error paragraph is
      not part of what the optimistic layer withdrew. --}}
-@if($hasError && $errorMessage)
-    <p data-wk-prose-skip id="{{ $pickerId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-@elseif($hint)
-    <p data-wk-prose-skip id="{{ $pickerId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-@endif
+@php
+    // The message stands last, after the field and every part with a state of its own, so it
+    // is an echo rather than a block and Livewire writes no morph markers around it. It is
+    // built right before the echo, so it runs on the path and in the scope the echo does.
+    $messagePart = $hasError && $errorMessage
+        ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($pickerId).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+        : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($pickerId).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+@endphp
+{{ $messagePart }}
 </div>

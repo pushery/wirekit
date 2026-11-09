@@ -14,7 +14,7 @@ use function Illuminate\Support\enum_value;
  *
  * A retrieval layer hands back whatever it hands back: a list of titles, a list of arrays with a
  * link and a snippet, a list of models. This turns all three into one shape so the template has no
- * branching in it, and numbers them in the order they were given — the number IS the marker the
+ * branching in it, and numbers them in the order they were given — the number is the marker the
  * reader sees next to the answer, so it follows the list rather than anything inside an entry.
  *
  * An entry without a label is dropped rather than rendered. A chip whose accessible name is empty

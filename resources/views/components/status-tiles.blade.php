@@ -1,8 +1,8 @@
 {{-- optimistic-ui: n/a — navigation
      Tiles that link somewhere. They navigate. --}}
 @props([
-    // The empty state. `empty` REPLACES the body rather than sitting beside it: the screen a
-    // new user sees FIRST is the one with no data, and a single muted sentence can only say
+    // The empty state. `empty` replaces the body rather than sitting beside it: the screen a
+    // new user sees first is the one with no data, and a single muted sentence can only say
     // that nothing is here — it cannot say what to do about it, which is the whole job of that
     // screen. `emptyText` is the default, so a caller that does not care changes nothing.
     // Same shape as data-table.
@@ -25,7 +25,7 @@
     // Let the caption wrap instead of clamping it to one line. Off by default, and
     // that default is load-bearing rather than caution: a wrapping caption grows the
     // whole grid row, so flipping it for everyone would move every dashboard that
-    // uses this. On for the case the clamp destroys — when the caption IS the
+    // uses this. On for the case the clamp destroys — when the caption is the
     // message ("Used disk space: 87% on /var") rather than a two-word count.
     'wrapMeta' => false,
     'scope' => null,
@@ -45,7 +45,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $legend = BooleanProp::from($legend, false, 'status-tiles', 'legend');
@@ -58,7 +58,7 @@
     $metaClamp = $wrapMeta ? 'break-words' : 'truncate';
 
     // Status-Tiles — N entities as colored status tiles, one glance (a fleet light).
-    // Each tile is colored by its intent AND carries a distinct icon SHAPE plus a
+    // Each tile is colored by its intent and carries a distinct icon shape plus a
     // spoken status word, so status never depends on color alone — WCAG 1.4.1. The
     // soft tinted surface + 25%-tinted border mirror the badge component's soft
     // intents so the whole library reads with one visual grammar.
@@ -83,7 +83,7 @@
         default => 'var(--color-wk-text-muted)',
     };
 
-    // A DISTINCT icon shape per intent — the shape (not the color) is what survives a
+    // A distinct icon shape per intent — the shape (not the color) is what survives a
     // monochrome (color-stripped) render, so a colorblind reader still tells the states apart.
     $intentIcon = fn (string $intent): string => match ($intent) {
         'success' => '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.7a1 1 0 00-1.4-1.4L9 10.2 7.7 8.9a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" clip-rule="evenodd"/></svg>',
@@ -104,21 +104,21 @@
 
     // Shared tile-box classes; link tiles additionally get hover elevation + a focus ring.
     // justify-center: the grid stretches every tile to the row's tallest (the ones with
-    // a `meta` caption), so a tile WITHOUT meta would otherwise top-align its single line
+    // a `meta` caption), so a tile without meta would otherwise top-align its single line
     // and leave a lopsided gap below. Centering the content balances the vertical spacing
     // in every tile regardless of whether it has a caption.
-    // The tile is a BLOCK outer carrying the real padding, wrapping an inner flex
+    // The tile is a block outer carrying the real padding, wrapping an inner flex
     // centerer ($tileInner). This is deliberate: a flex column used directly as a
-    // stretched grid item sizes the auto row to its CONTENT height and then border-box
+    // stretched grid item sizes the auto row to its content height and then border-box
     // squeezes the vertical padding to zero, so a two-line tile would jam its label against
     // the top edge, and a fixed min-height would hold for one font size only. A block
-    // outer's padding IS counted in the grid row, so it always applies and adapts to the
+    // outer's padding is counted in the grid row, so it always applies and adapts to the
     // real content; the inner flex then vertically centers, balancing both the two-line
     // tiles and the single-line (no-caption) ones at the same row height.
     // h-full so the tile fills the listitem wrapper the grid stretches (the wrapper, not
     // the tile, is the grid item: role="listitem" sits on the wrapper so the <a> keeps
     // its native link role).
-    $tileBase = 'block h-full rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-1';
+    $tileBase = 'block h-full rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]';
     $tileInner = 'flex h-full flex-col justify-center gap-[var(--gap-wk-xs)]';
     $tileLink = ' transition-shadow hover:shadow-[var(--shadow-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
 
@@ -128,21 +128,26 @@
     $tiles = [];
     $counts = array_fill_keys($intents, 0);
     foreach (\Pushery\WireKit\Support\ListProp::from($items, 'status-tiles', 'items') as $item) {
-        // A tile without an intent, or with one outside the list, is neutral.
-        $intent = in_array($item['intent'] ?? null, $intents, true) ? $item['intent'] : 'neutral';
+        // A tile without an intent is neutral. One outside the list is reported and neutral as well.
+        $givenIntent = $item['intent'] ?? null;
+        $intent = in_array($givenIntent, $intents, true) ? $givenIntent : 'neutral';
+
+        if ($givenIntent !== null && $givenIntent !== '' && $intent !== $givenIntent) {
+            \Pushery\WireKit\Support\StrictnessGate::reject('status-tiles', 'items', 'intent '.(is_bool($givenIntent) ? ($givenIntent ? 'true' : 'false') : \Pushery\WireKit\Support\NumericProp::text($givenIntent)), 'an intent of success, warning, danger, info or neutral', 'neutral');
+        }
         // Tiles come from a database, and a target that could run script draws as a tile
         // without a link, the same as a tile that never had one.
         // Compared with '' rather than tested for truth: `0` is a relative URL.
         $href = \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? null);
         $href = $href === '' ? null : $href;
 
-        // The word the tile SAYS, which is not the same question as how severe it is.
+        // The word the tile says, which is not the same question as how severe it is.
         //
         // Derived from the intent unless the caller states it. There are five words on
         // the intent axis and domains have more states than that, so deriving forces
         // two of them onto one word — and the pair it collapses is usually the one that
-        // matters. A health check that RAN and reports a problem and a check that
-        // CRASHED are both `danger`: the first points at the application, the second at
+        // matters. A health check that ran and reports a problem and a check that
+        // crashed are both `danger`: the first points at the application, the second at
         // the monitoring. Shown as one word, an operator is sent to the wrong place, and
         // the color cannot rescue it because the color is the same by construction.
         //
@@ -189,30 +194,30 @@
         </div>
     @endif
 
-    {{-- The tile grid IS the ARIA list (role on the grid element itself, so the
+    {{-- The tile grid is the ARIA list (role on the grid element itself, so the
          tiles are its direct listitem children). The caller's aria-label + other
          attributes forward onto it. --}}
-    @if($tiles === [])
-        {{-- The empty state REPLACES the grid rather than sitting inside it: a `role="list"`
+    @wirekitLast($tiles === [])
+        {{-- The empty state replaces the grid rather than sitting inside it: a `role="list"`
              with no listitem is a list that promises entries and has none, and axe reports it.
              The container keeps the centering and padding either way, so a slot holding an
              `<x-wirekit::empty-state>` lands where the sentence does. --}}
-        <div {{ $attributes->except('class')->class(['flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
-            @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
+        <div {{ $attributes->except('class')->class(['flex flex-col items-center justify-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
+            @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
                 {{ $empty }}
             @else
                 <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-            @endif
+            @endwirekitLast
         </div>
     @else
         <x-wirekit::grid role="list" :cols="$columns" :gap="$gap" {{ $attributes->except('class') }}>
         @foreach($tiles as $tile)
-            {{-- The listitem role sits on the WRAPPER, never on the <a> — an explicit
-                 role on a link REPLACES its implicit `link` role, so the tile would
+            {{-- The listitem role sits on the wrapper, never on the <a> — an explicit
+                 role on a link replaces its implicit `link` role, so the tile would
                  vanish from the link list and from "step through all links" navigation. Both branches share this wrapper so the linked and
                  non-linked tiles are structurally identical grid items. --}}
             <div role="listitem" @if($tile['key'] !== '') data-key="{{ $tile['key'] }}" @endif>
-                @if($tile['href'] !== null)
+                @wirekitLast($tile['href'] !== null)
                     <a data-wk-prose-skip href="{{ $tile['href'] }}" title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
                         <span class="{{ $tileInner }}">
                             <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
@@ -220,7 +225,7 @@
                                 <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
-                                {{-- Its OWN title when it clamps. The tile carries `title=label`,
+                                {{-- Its own title when it clamps. The tile carries `title=label`,
                                      so hovering a truncated meta caption would surface the
                                      label instead — a tooltip that answers a question the reader did
                                      not ask, and reads as a bug rather than as a missing
@@ -228,11 +233,11 @@
                                      caption wraps and needs no tooltip at all. --}}
                                 <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" @if(! $wrapMeta) title="{{ $tile['meta'] }}" @endif>{{ $tile['meta'] }}</span>
                             @endif
-                            @if($showStatus)
+                            @wirekitLast($showStatus)
                                 <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('wirekit::Status:') }}</span>{{ $tile['statusWord'] }}</span>
                             @else
                                 <span class="sr-only">{{ $tile['statusText'] }}</span>
-                            @endif
+                            @endwirekitLast
                         </span>
                     </a>
                 @else
@@ -243,7 +248,7 @@
                                 <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
-                                {{-- Its OWN title when it clamps. The tile carries `title=label`,
+                                {{-- Its own title when it clamps. The tile carries `title=label`,
                                      so hovering a truncated meta caption would surface the
                                      label instead — a tooltip that answers a question the reader did
                                      not ask, and reads as a bug rather than as a missing
@@ -251,16 +256,16 @@
                                      caption wraps and needs no tooltip at all. --}}
                                 <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" @if(! $wrapMeta) title="{{ $tile['meta'] }}" @endif>{{ $tile['meta'] }}</span>
                             @endif
-                            @if($showStatus)
+                            @wirekitLast($showStatus)
                                 <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('wirekit::Status:') }}</span>{{ $tile['statusWord'] }}</span>
                             @else
                                 <span class="sr-only">{{ $tile['statusText'] }}</span>
-                            @endif
+                            @endwirekitLast
                         </span>
                     </div>
-                @endif
+                @endwirekitLast
             </div>
         @endforeach
         </x-wirekit::grid>
-    @endif
+    @endwirekitLast
 </div>

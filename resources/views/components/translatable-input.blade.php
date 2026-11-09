@@ -337,7 +337,7 @@
          listener written on the tag hears one field (utils/focus-unit.js). --}}
     x-wk-focus-unit
 >
-    @if($primaryCode !== '' && $further === [])
+    @wirekitLast($primaryCode !== '' && $further === [])
     {{-- One language and no other: one field, drawn as `input` or `textarea` draws one, with its
          label in sight and no code beside it. The binding, the messages and the help are the ones
          the language would take in a row, so a form reads as it did before the shop had a second
@@ -448,12 +448,12 @@
                     </button>
                 @endforeach
 
-                @if($collapsible)
+                @wirekitLast($collapsible)
                     <x-wirekit::button size="xs" intent="neutral" surface="ghost" aria-expanded="false" x-bind:aria-expanded="all ? 'true' : 'false'" x-on:click="toggleAll()" :disabled="$disabled" :scope="$scope">
                         <span x-show="! all">{{ __('wirekit::Show all languages') }}</span>
                         <span x-cloak x-show="all">{{ __('wirekit::Show fewer languages') }}</span>
                     </x-wirekit::button>
-                @endif
+                @endwirekitLast
             </div>
 
             {{-- In two columns from `sm` on while every language is open. --}}
@@ -476,5 +476,5 @@
             </div>
         @endif
     </x-wirekit::field.set>
-    @endif
+    @endwirekitLast
 </div>

@@ -9,7 +9,7 @@
  * - Enter/Space: select focused node
  * - A printable character: type-ahead to the next visible node starting with it
  *
- * Focus management is the APG roving-tabindex model: exactly ONE node in the tree is a
+ * Focus management is the APG roving-tabindex model: exactly one node in the tree is a
  * tab stop, and it follows focus. Every node renders `tabindex="-1"`, so without the seed
  * below the tree has no tab stop at all — Tab walks straight past it and everything in
  * this file is reachable only by clicking a row first.
@@ -40,7 +40,7 @@ export default function wirekitTreeView() {
          * Give the tree its single tab stop.
          *
          * Deferred by a tick on purpose: a branch that ships collapsed is hidden by the
-         * child node's own `x-show`, and children initialize AFTER this container. Reading
+         * child node's own `x-show`, and children initialize after this container. Reading
          * visibility before that tick would hand the tab stop to a row that is about to
          * disappear, which is a tab stop the reader can neither see nor leave sensibly.
          *
@@ -244,7 +244,7 @@ export default function wirekitTreeView() {
          * often the only cheap way there. The docs page has listed the key row from the
          * start; nothing implemented it.
          *
-         * Scoped to the VISIBLE rows, which is the same set the arrows walk — a row inside
+         * Scoped to the visible rows, which is the same set the arrows walk — a row inside
          * a collapsed branch is not somewhere focus may land.
          *
          * The arithmetic lives in `typeAheadIndex` — pure, shared and unit-tested — so this

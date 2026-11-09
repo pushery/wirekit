@@ -39,8 +39,8 @@ system. Acceptable values:
 - **Intent:** `primary`, `neutral`, `success`, `warning`, `danger`, `info`
   (the shared set, from `VariantResolver::INTENTS`). `secondary` is NOT an
   intent and not a value of any other prop: for a secondary action write
-  `intent="neutral"` and pick the surface, `filled` by default or `outline` /
-  `soft` for less weight. `button` and `badge` have no `variant` prop, so
+  `intent="neutral"`, filled like the main one, since a button takes its rank
+  from its intent (see House conventions). `button` and `badge` have no `variant` prop, so
   `variant="secondary"` on them lands in the attribute bag and the component
   renders its default `intent="primary"`. Where `variant` survives as the
   older name of `intent` (the alias matrix in the prop-naming conventions),
@@ -61,6 +61,31 @@ NEVER apply Tailwind color utilities to recolor a component:
 
 {{-- ✅ RIGHT --}}
 <x-wirekit::button intent="primary">…</x-wirekit::button>
+```
+
+## House conventions
+
+Three rules keep an application reading as one. `php artisan wirekit:doctor:props`
+reports a place that leaves one of them as a hint.
+
+- **Buttons are filled.** An action takes its rank from `intent`: the main one in
+  the accent, another `intent="neutral"`, a destructive one `intent="danger"`. An
+  outline beside a filled button reads as a second style, not as a lower rank.
+- **Content stands in cards.** One card per part of a screen. A card of settings
+  has a head: `<x-wirekit::card.header :description="…">` with the icon in its
+  `iconSlot` and the name of the part as its heading.
+- **A date or a time does not break.** Write it into an element with
+  `whitespace-nowrap`, so a narrow column moves the whole value to the next line.
+
+```blade
+{{-- ✅ RIGHT --}}
+<x-wirekit::button type="submit">Save</x-wirekit::button>
+<x-wirekit::button intent="neutral" href="/back">Cancel</x-wirekit::button>
+<span class="whitespace-nowrap">{{ $session->last_active_at->isoFormat('lll') }}</span>
+
+{{-- ❌ WRONG: an outline as the lower rank, and a time free to break --}}
+<x-wirekit::button surface="outline" href="/back">Cancel</x-wirekit::button>
+{{ $session->last_active_at->format('d.m.Y H:i') }}
 ```
 
 ## Design tokens

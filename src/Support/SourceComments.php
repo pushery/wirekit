@@ -12,7 +12,7 @@ namespace Pushery\WireKit\Support;
  * A scanner that reads raw text cannot tell a comment from code, and the two
  * failure directions are both real and both silent:
  *
- *   A reference INSIDE a comment surfaces as a live one. `var(--color-wk-X)` in
+ *   A reference inside a comment surfaces as a live one. `var(--color-wk-X)` in
  *   a docblock reads as a token reference and reports a Tier-1 violation that
  *   does not exist, and a class inventory lists utilities only a comment names.
  *   Tailwind's own scanner shows the same class from the outside: it compiles a

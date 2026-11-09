@@ -14,7 +14,7 @@
     // bottom-corner FAB and is unchanged; `block-start` moves it to the top.
     'placement' => 'block-end',
     // What the button opens, so assistive tech announces it correctly. A
-    // single-action FAB is NOT a menu. Not given, a button opens a dialog (the
+    // single-action FAB is not a menu. Not given, a button opens a dialog (the
     // canonical use is a feedback / compose modal) and a link with `href`
     // navigates, so it announces nothing. Pass 'dialog' / 'menu' / 'listbox' /
     // 'grid' / 'tree' as needed, or a falsy value to omit aria-haspopup entirely
@@ -33,7 +33,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('fab.button', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -53,15 +53,15 @@
     // 2.5.3, Label in Name — and someone using voice control cannot activate a
     // control by the words they can see if it answers to something else.
     //
-    // Suppressing the label whenever the slot is FILLED would be wrong too: a
+    // Suppressing the label whenever the slot is filled would be wrong too: a
     // slot usually carries custom icon markup, which is non-empty and has nothing
     // to read, so those buttons would lose their name entirely. What decides is
-    // visible TEXT.
+    // visible text.
     $slotText = \Pushery\WireKit\Support\SlotContent::plain($slot);
     $ariaLabel = match (true) {
         // No words of its own — the canonical icon FAB. The label is the name.
         $slotText === '' => \Pushery\WireKit\Support\BlankName::first($label, __('wirekit::Action')),
-        // Words plus a label that CONTAINS them: allowed by 2.5.3 and useful,
+        // Words plus a label that contains them: allowed by 2.5.3 and useful,
         // since the name may add context as long as it starts from what is written.
         $label !== null && str_contains($label, $slotText) => $label,
         // Words plus a label that contradicts them: that is the failure itself.
@@ -70,10 +70,10 @@
 
     // Whether the icon wrapper below may be hidden from assistive tech.
     //
-    // `aria-hidden` is a claim that the content is DECORATIVE, and text is never
+    // `aria-hidden` is a claim that the content is decorative, and text is never
     // decorative. Carried unconditionally it would break the branch above:
     // `default => null` means "the visible text is the name", and text inside a
-    // hidden subtree leaves a FAB with words in it with NO accessible name at all,
+    // hidden subtree leaves a FAB with words in it with no accessible name at all,
     // which voice control cannot reach and a screen reader announces as nothing.
     //
     // Same value the name resolution keys off, so the two cannot disagree: the
@@ -81,36 +81,44 @@
     $slotIsDecorative = $slotText === '';
 
     // Positioning mirrors the speed-dial <x-wirekit::fab>: the shared `.wk-fab`
-    // class carries the block-end offset INCLUDING env(safe-area-inset-bottom) (so
+    // class carries the block-end offset including env(safe-area-inset-bottom) (so
     // the iOS home indicator never overlaps it), and the inline offset folds in the
-    // matching horizontal safe-area inset for a landscape notch on that side.
-    // `--wk-scrollbar-inset` is on the END arm ONLY, and that is not an oversight.
+    // horizontal safe-area inset of the edge the button stands at, for a landscape notch
+    // on that side. The device's insets are physical while `start` and `end` follow the
+    // reading direction, so each arm carries an `rtl:` twin with the other edge's inset: on
+    // a page that reads from the right the start is the right edge.
+    // `--wk-scrollbar-inset` is on the end arm only, and that is not an oversight.
     //
     // The document's own scrollbar is outside the viewport box a `position: fixed` box is laid
     // out against, and needs nothing. A scrollbar drawn by an inner scroll container is inside
-    // it, and so is the gutter the scroll lock takes away while an overlay is open: that gutter
-    // eats into the inline-end gap while the block-end gap loses nothing. The two axes read as
-    // symmetric and are not: at a 17px gutter the declared 16px inline offset would render as
-    // about -1px and the button would touch the scrollbar. `--wk-scrollbar-inset` carries it.
+    // it, and so is the gutter the scroll lock takes away while an overlay is open in a browser
+    // that cannot keep it: that gutter eats into the inline-end gap while the block-end gap loses
+    // nothing. The two axes read as symmetric and are not: at a 17px gutter the declared 16px
+    // inline offset would render as about -1px and the button would touch the scrollbar.
+    // `--wk-scrollbar-inset` carries it.
     //
     // `env(safe-area-inset-right)` does not cover it: it compensates a device notch and is 0 on
     // every desktop, in both engines.
     //
-    // The scrollbar sits on the inline-END edge in BOTH directions: LTR puts it right, which is
-    // inline-end, and an RTL document puts it left, which is also inline-end. So the START arm
-    // is genuinely unaffected and folding the term in there would push it away from a gutter
-    // that is not on that side.
+    // The token is a gutter at the end of the line. Blink draws an inner scroll container's
+    // scrollbar there in either reading direction, at the right from left to right and at the
+    // left from right to left, while the document's own stays at the right in both. So the
+    // scroll lock lends the document's gutter only on a page that reads from the left, and the
+    // start arm has no gutter to clear: folding the term in there would push it away from one
+    // that is not on its side.
     //
-    // Host-filled with a `0px` fallback, exactly like `--wk-fab-lift` one axis over: the kit
-    // ships no JavaScript for it, and with overlay scrollbars — the macOS default and every
-    // touch device — the gutter is 0 and nothing moves.
+    // The token defaults to `0px`, like `--wk-fab-lift` one axis over. While an overlay is open
+    // the scroll lock keeps the document's gutter where it was in every browser with
+    // `scrollbar-gutter`, and lends it here only in one without; an application publishes the
+    // gutter of an inner scroll container, and with overlay scrollbars — the macOS default and
+    // every touch device — the gutter is 0 and nothing moves.
     $positionClass = match ($position) {
-        'start' => 'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left))]',
+        'start' => 'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left))] rtl:start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right))]',
         'center' => 'left-1/2 -translate-x-1/2',
-        default => 'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right)_+_var(--wk-scrollbar-inset,0px))]',
+        default => 'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right)_+_var(--wk-scrollbar-inset,0px))] rtl:end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left)_+_var(--wk-scrollbar-inset,0px))]',
     };
 
-    // Resolved OUT of the class list, next to $positionClass, rather than as a
+    // Resolved out of the class list, next to $positionClass, rather than as a
     // ternary inside it. The drift guard reads bare quoted strings in that array
     // as emitted classes, so a comparison value written there is reported as a
     // class Tailwind never generated — a false positive that would have been
@@ -134,6 +142,13 @@
     // same pattern as sidebar.item / link / button.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -142,11 +157,11 @@
 
     $classes = 'wk-fab '.WireKit::resolveClasses('fab.button', 'base', implode(' ', [
         $placementClass,
-        // The layer TOKEN, as `fab` and the speed dial use: a number here stayed put when a theme
+        // The layer token, as `fab` and the speed dial use: a number here stayed put when a theme
         // moved the layer, and the FAB ended up above or below scroll-to-top.
         'fixed z-[var(--z-wk-sticky)]',
         // The box reads --size-wk-fab rather than a literal, because a developer laying out
-        // AROUND a fixed control needs to be able to read its size. `wk-fab-clearance` does
+        // around a fixed control needs to be able to read its size. `wk-fab-clearance` does
         // exactly that; before the token the only way was to copy 3.5rem out of this line.
         'flex h-[var(--size-wk-fab)] w-[var(--size-wk-fab)] cursor-pointer items-center justify-center',
         $positionClass,
@@ -187,13 +202,13 @@
     data-wk-fab-lifted
     {{ $attributes->except($href !== null ? ['rel'] : ['rel', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    {{-- Icon — decorative ONLY when there is nothing to read. A slot wins; then a
+    {{-- Icon — decorative only when there is nothing to read. A slot wins; then a
          bare icon name resolves via the WireKit icon system (consistent with
          sidebar.item / fab.action); otherwise a neutral plus stands in. The
          hidden-ness is conditional for the reason spelled out at $slotIsDecorative:
          hiding visible text is what left this button nameless. --}}
     <span class="inline-grid place-items-center" @if($slotIsDecorative) aria-hidden="true" @endif>
-        @if(isset($slot) && $slot->hasActualContent())
+        @wirekitLast(isset($slot) && $slot->hasActualContent())
             {{ $slot }}
         @elseif($iconSvg !== null)
             {{ $iconSvg }}
@@ -201,12 +216,11 @@
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-        @endif
+        @endwirekitLast
     </span>
     {{-- The other half of the `target="_blank"` rule, and the half that was missing here.
-         `rel="noopener noreferrer"` protects the OPENER; this tells the reader what is about
+         `rel="noopener noreferrer"` protects the opener; this tells the reader what is about
          to happen. A link that silently opens a new tab leaves a screen-reader user in a
          document they did not ask for, with Back doing nothing — and nothing in the page
          explains why. `link` has carried this hint all along; these did not. --}}
-    @if($opensNewTab)<span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>@endif
-</{{ $tag }}>
+    {{ $newTabHint }}</{{ $tag }}>

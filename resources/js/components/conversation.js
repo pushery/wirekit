@@ -6,7 +6,7 @@
  * in a live conversation:
  *
  *   1. FOLLOW-OUTPUT — pins the viewport to the bottom as messages (or streamed
- *      tokens) arrive, but ONLY while the reader is already at the bottom. The
+ *      tokens) arrive, but only while the reader is already at the bottom. The
  *      moment they scroll up to read back, the pin releases so their position
  *      is never yanked away mid-sentence.
  *   2. ANCHOR-PRESERVE — when older history is prepended, the reader's position
@@ -28,7 +28,7 @@
  *   - _scrollFrame (frameCoalesce, the scroll handler's frame) — canceled in destroy()
  *   - _releaseFocusRings (focusin listener on the viewport and its pending frame) — called in destroy()
  *   Every callback null-guards `_viewport` first: browser-queued observer and
- *   scroll callbacks can fire AFTER destroy() has torn the component down.
+ *   scroll callbacks can fire after destroy() has torn the component down.
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { formatCount } from '../utils/locale-number.js';
@@ -48,7 +48,7 @@ export default function wirekitConversation(config = {}) {
         // Translated accessible names for the jump-to-latest control, handed in
         // from Blade. They live in the Alpine scope rather than inside the
         // attribute binding because a Blade `::`-escaped attribute is passed
-        // through VERBATIM — an `@js()` inside it is never compiled, so the
+        // through verbatim — an `@js()` inside it is never compiled, so the
         // binding would carry the literal directive text, fail to evaluate, and
         // leave the button with no accessible name at all.
         jumpLabel: config.jumpLabel ?? 'Jump to latest',
@@ -77,8 +77,8 @@ export default function wirekitConversation(config = {}) {
         // Scroll anchor: the child currently at the top of the viewport, plus
         // its offset from the scroll position. Re-captured on every scroll and
         // restored after content changes — this is what distinguishes a history
-        // PREPEND (the anchor moves down → give the height back) from a new
-        // message APPENDED below (the anchor does not move → count it unread).
+        // prepend (the anchor moves down → give the height back) from a new
+        // message appended below (the anchor does not move → count it unread).
         // A naive "a prepend is coming" flag cannot tell those apart and
         // mis-scrolls on the first append after the reader reaches the top.
         _anchorEl: null,
@@ -101,12 +101,12 @@ export default function wirekitConversation(config = {}) {
             // wraps chrome (jump button) around the scroller; else the root.
             this._viewport = this.$refs.viewport || this.$el;
 
-            // Bind ONCE: addEventListener/removeEventListener identity-match on
+            // Bind once: addEventListener/removeEventListener identity-match on
             // the function reference, so an inline bind would make destroy()'s
             // removal a silent no-op and leak a listener per Livewire morph.
             //
             // Coalesced to one run a frame. `_onScroll` ends in `_captureAnchor()`,
-            // which walks EVERY child of the viewport reading two layout properties
+            // which walks every child of the viewport reading two layout properties
             // each — so in a long conversation the cost per scroll event grows with
             // the transcript, and scroll events arrive faster than frames do. The
             // work is idempotent over a burst (it answers "where are we now?"), so
@@ -122,7 +122,7 @@ export default function wirekitConversation(config = {}) {
             // childList = a new message row; characterData = streamed tokens
             // appended into an existing bubble.
             /*
-             * The records are READ, not discarded. Several paths lead into this callback,
+             * The records are read, not discarded. Several paths lead into this callback,
              * and only one of them is a new message.
              *
              * `characterData` fires once per streamed token, so counting every record would
@@ -133,7 +133,7 @@ export default function wirekitConversation(config = {}) {
              * report the length of the reply and the number of times they had turned their
              * phone.
              *
-             * A new message is a childList mutation that ADDS an element. Everything else
+             * A new message is a childList mutation that adds an element. Everything else
              * still runs the anchor restore and the follow-output, which is what those
              * events are genuinely for.
              */
@@ -288,7 +288,7 @@ export default function wirekitConversation(config = {}) {
         },
 
         /**
-         * @param {boolean} [isNewMessage=false] Whether this change ADDED a message row, as
+         * @param {boolean} [isNewMessage=false] Whether this change added a message row, as
          *   opposed to streaming tokens into an existing one or the viewport resizing. Only
          *   a real addition may move the unread counter.
          */
@@ -303,7 +303,7 @@ export default function wirekitConversation(config = {}) {
                 // Follow-output: stay pinned to the newest content.
                 //
                 // The re-capture is deferred rather than run inline. `scrollToBottom`
-                // WRITES scrollTop and `_captureAnchor` READS offsetTop off every
+                // writes scrollTop and `_captureAnchor` reads offsetTop off every
                 // child — back to back that is a write between two reads, which makes
                 // the browser recompute layout synchronously before the second one can
                 // answer, on every streamed token. A frame later the same walk reads a
@@ -325,13 +325,13 @@ export default function wirekitConversation(config = {}) {
 
             const addedAbove = this._anchorEl.offsetTop - this._anchorOffsetTop;
 
-            // Give back exactly the height that landed ABOVE the anchor, so the
+            // Give back exactly the height that landed above the anchor, so the
             // message the reader was on does not move a pixel.
             this._viewport.scrollTop = this._anchorEl.offsetTop - this._anchorDelta;
 
             if (addedAbove <= 0 && isNewMessage) {
                 // Nothing was inserted above → this is new content further down. And it has
-                // to BE a message: the anchor holding still is equally true of a token
+                // to be a message: the anchor holding still is equally true of a token
                 // streaming in below and of the viewport changing size.
                 this.unread += 1;
             }

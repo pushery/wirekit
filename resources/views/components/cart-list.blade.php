@@ -42,10 +42,9 @@
     ]), $scope);
 @endphp
 
-{{-- role="list" is NOT redundant beside the <ul>. WebKit drops list semantics from a list
+{{-- role="list" is not redundant beside the <ul>. WebKit drops list semantics from a list
 whose marker is removed, so a cart styled with `list-none` is announced as a run of text in
-Safari and on every iPhone — the engine this repository has an incident about. The explicit
-role puts the semantics back.
+Safari and on every iPhone. The explicit role puts the semantics back.
 
 The inline list-style is a separate belt again: `list-none` exists only where a Tailwind
 build scanned this view, and the inline rule keeps the cart unmarked in a page whose

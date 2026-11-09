@@ -6,7 +6,7 @@
  * value); the "Add filter" popover picks a field, then an operator valid for
  * that field's type, then a typed value editor (text / number / select / date /
  * bool). On every change the normalized filter array [{field, op, value}] is
- * emitted via a bubbling `filter-change` event AND written (as JSON) to a hidden
+ * emitted via a bubbling `filter-change` event and written (as JSON) to a hidden
  * input so the host can bridge it to Livewire / a form.
  *
  * Lifecycle resources held on `this`:
@@ -30,13 +30,13 @@
  *
  * The two lose focus by different mechanisms, which is why neither fix covers the other.
  * The chip loop is INDEX-keyed (`:key="i"`), so Alpine drops the element holding the
- * highest key and rewrites the survivors in place: removing the LAST chip destroys the
+ * highest key and rewrites the survivors in place: removing the last chip destroys the
  * button that was activated, while removing a middle one leaves it attached and silently
  * pointing at a different filter. `clearAll()` is unconditional — the Clear-all button is
  * `x-show`n on a non-empty set, `x-show` writes `display:none`, and the browser blurs a
  * focused element that becomes display:none.
  *
- * The sentences are TEMPLATES handed in from the Blade rather than built here. A sentence
+ * The sentences are templates handed in from the Blade rather than built here. A sentence
  * assembled from fragments in JavaScript cannot be translated, and word order is not the
  * same in every language — the shape `tags-input` and `wizard` both use.
  *
@@ -56,6 +56,7 @@ import { onFormReset } from '../utils/form-reset.js';
 import { sameValue } from '../utils/same-value.js';
 import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { pressedTrigger } from '../utils/trigger-press.js';
+import { switchWord } from '../utils/switch-word.js';
 
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
@@ -107,7 +108,7 @@ export default function wirekitFilterBuilder(config = {}) {
         ? config.announcements
         : {};
 
-    // The component's root element, resolved ONCE while something is still attached
+    // The component's root element, resolved once while something is still attached
     // to resolve it from.
     //
     // `$root` is resolved when it is read, by walking up from `$el` to the nearest
@@ -199,7 +200,7 @@ export default function wirekitFilterBuilder(config = {}) {
          * translation catalog — the same server-translates-then-hands-down shape
          * status-matrix uses for its state labels. They cannot be resolved here: this
          * file has no translator, and these strings are not decoration. Every one of
-         * them lands in `chipText()`, which IS the accessible name of a filter chip,
+         * them lands in `chipText()`, which is the accessible name of a filter chip,
          * so an untranslated word here is what a screen reader reads out.
          *
          * The English fallbacks stay so the factory is still usable when constructed
@@ -213,7 +214,7 @@ export default function wirekitFilterBuilder(config = {}) {
                 { op: 'ends', label: WORDS.endsWith },
             ],
             number: [
-                // Deliberately NOT translated: mathematical relation symbols are the
+                // Deliberately not translated: mathematical relation symbols are the
                 // same in every locale, and a "translation" of `≥` would be a mistake.
                 { op: 'eq', label: '=' },
                 { op: 'gt', label: '>' },
@@ -267,7 +268,8 @@ export default function wirekitFilterBuilder(config = {}) {
         displayValue(filter) {
             const def = this.fieldDef(filter.field);
             const v = filter.value;
-            if (def && def.type === 'bool') return v ? WORDS.yes : WORDS.no;
+            // A value from the server may name its switch as a word: 'false' and '0' are off.
+            if (def && def.type === 'bool') return switchWord(v) === true ? WORDS.yes : WORDS.no;
             if (Array.isArray(v)) return v.join(', ');
             if (def && Array.isArray(def.options)) {
                 const opt = def.options.find((o) => String(o.value) === String(v));
@@ -345,9 +347,9 @@ export default function wirekitFilterBuilder(config = {}) {
             });
 
             // Close on page scroll / viewport resize. The popover is teleported +
-            // position:fixed, anchored ONCE on open — a page scroll under it
+            // position:fixed, anchored once on open — a page scroll under it
             // strands the panel visually detached from the trigger (same class as
-            // the notification-center flyout). Scrolling INSIDE the
+            // the notification-center flyout). Scrolling inside the
             // panel keeps working — only outside scrolls dismiss. Capture catches
             // every scroller; passive per perf-hygiene.
             if (typeof window !== 'undefined') {
@@ -406,6 +408,11 @@ export default function wirekitFilterBuilder(config = {}) {
         openEdit(i) {
             this.editIndex = i;
             this.draft = { ...this.filters[i] };
+            // The menu of a bool field has an option for `true` and one for `false`, and none for
+            // a word such as '1' that a filter from the server may carry.
+            if (this.fieldDef(this.draft.field)?.type === 'bool') {
+                this.draft.value = switchWord(this.draft.value) === true;
+            }
             this._anchorAt = anchorSnapshot(this.$refs.trigger);
             this.isOpen = true;
             this._focusFirstControl();
@@ -465,7 +472,7 @@ export default function wirekitFilterBuilder(config = {}) {
         },
 
         /**
-         * Move to the control that FOLLOWS the trigger on the page.
+         * Move to the control that follows the trigger on the page.
          *
          * Where a forward Tab out of the popover belongs: the panel is drawn
          * beside the trigger, so leaving it should continue from the trigger and
@@ -528,7 +535,7 @@ export default function wirekitFilterBuilder(config = {}) {
 
             if (! event.shiftKey && document.activeElement === focusables[focusables.length - 1]) {
                 event.preventDefault();
-                // Focus moves BEFORE the panel hides. `x-show` writes
+                // Focus moves before the panel hides. `x-show` writes
                 // `display: none`, and hiding the subtree that holds focus makes
                 // the browser drop it on `<body>` — after our own focus() call,
                 // which would then have accomplished nothing.
@@ -620,7 +627,7 @@ export default function wirekitFilterBuilder(config = {}) {
         _coerceValue(field, value) {
             const def = this.fieldDef(field);
             if (def && def.type === 'bool') {
-                return typeof value === 'string' ? value === 'true' : Boolean(value);
+                return switchWord(value) === true;
             }
             return value;
         },
@@ -643,7 +650,7 @@ export default function wirekitFilterBuilder(config = {}) {
         /**
          * Drop one chip, then put focus somewhere and say what happened.
          *
-         * The chip text is read BEFORE the splice — afterwards the entry is gone and
+         * The chip text is read before the splice — afterwards the entry is gone and
          * the sentence would name nothing.
          */
         remove(i) {
@@ -656,7 +663,7 @@ export default function wirekitFilterBuilder(config = {}) {
             this.filters.splice(i, 1);
             this._emit();
             this._announce(announcements.removed, { name });
-            // Resolved HERE — synchronously, while the button that anchors the scope is
+            // Resolved here — synchronously, while the button that anchors the scope is
             // still in the document. The move itself waits for the tick.
             rootOf(this);
             this._focusAfterRemoval(i);
@@ -665,7 +672,7 @@ export default function wirekitFilterBuilder(config = {}) {
         /**
          * Empty the set.
          *
-         * Focus moves FIRST, and the order is the whole fix: the Clear-all button is
+         * Focus moves first, and the order is the whole fix: the Clear-all button is
          * `x-show`n on a non-empty set, so emptying it writes `display:none` onto the
          * element the reader just activated and the browser drops focus to `<body>`.
          * Moving to the trigger before that happens means there is nothing to blur.
@@ -692,7 +699,7 @@ export default function wirekitFilterBuilder(config = {}) {
          * Alpine there is no tick and no DOM — the guards make this a no-op there rather
          * than the throw a bare `this.$nextTick` would be.
          *
-         * The root comes from the cache the caller filled, NOT from `$root` read here:
+         * The root comes from the cache the caller filled, not from `$root` read here:
          * by then the button that anchored the scope may be detached.
          */
         _focusAfterRemoval(index) {

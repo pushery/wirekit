@@ -1,5 +1,6 @@
-{{-- optimistic-ui: n/a — client-only
-     The query and the rows it hides live in the browser, and nothing of it reaches a server. --}}
+{{-- optimistic-ui: n/a — query
+     In the browser the query and the rows it hides stay there. With `server` the query goes to the
+     application's own property, and the rows it renders are its answer: nothing to anticipate. --}}
 @props([
     // The id of the table whose rows the field shortens: the `id` on the table component, which
     // lands on its `<table>`. The id of an element around the table works as well.
@@ -10,6 +11,16 @@
     'placeholder' => null,
     // What the field says beside itself, and announces, when no row matches the query.
     'emptyText' => null,
+    // What the status region says when rows match, in place of "3 results": a translated line
+    // with `:count`, the rows that match, and `:total`, the rows the field searches, whose forms
+    // follow `:count`, such as "{1} :count of :total steps matches|[2,*] :count of :total steps match".
+    'found' => null,
+    // The application filters the rows, every one of them, also those the page does not render: the
+    // field binds a property of the Livewire component with `wire:model`, and `matches` and `total`
+    // give the counts of the answer, which the field says as it does in the browser.
+    'server' => false,
+    'matches' => null,
+    'total' => null,
     'scope' => null,
 ])
 
@@ -21,6 +32,7 @@
 
     use Pushery\WireKit\Support\AlpinePayload;
     use Pushery\WireKit\Support\BlankName;
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\IcuLocale;
     use Pushery\WireKit\Support\PluralPhrases;
     use Pushery\WireKit\Support\SlotContent;
@@ -39,11 +51,32 @@
     $labelText = BlankName::first($label, __('wirekit::Search…'));
     $placeholderText = BlankName::first($placeholder, $labelText);
     $emptyText = BlankName::first($emptyText, __('wirekit::No results'));
+    // A blank sentence is none, so the region keeps the library's.
+    $foundLine = BlankName::first($found, 'wirekit::{1} :count result|[2,*] :count results');
+
+    $server = BooleanProp::from($server, false, 'table.search', 'server');
+    // A count that holds no number is reported, and read as PHP casts it, the number it starts with.
+    // One no integer holds reads as none: `(int)` on it ends the page in PHP 8.5, and below 8.5 it
+    // gives an unrelated number.
+    \Pushery\WireKit\Support\NumericProp::check($matches, 'table.search', 'matches', whole: true);
+    \Pushery\WireKit\Support\NumericProp::check($total, 'table.search', 'total', whole: true);
+    $matches = is_numeric($matches) || is_string($matches) ? \Pushery\WireKit\Support\NumericProp::cast($matches) : null;
+    $total = is_numeric($total) || is_string($total) ? \Pushery\WireKit\Support\NumericProp::cast($total) : null;
+    $matches = $matches === null ? null : max(0, $matches);
+    $total = $total === null ? null : max(0, $total);
+
+    // A `wire:model` binds the field, where the query is typed; every other attribute stays on the
+    // root, so a caller's class, id and listeners keep the element they were written for.
+    $isModel = static fn ($value, $key): bool => is_string($key) && str_starts_with($key, 'wire:model');
+    $fieldAttributes = $attributes->filter($isModel);
+    $attributes = $attributes->filter(static fn ($value, $key): bool => ! $isModel($value, $key));
 
     $config = [
         'table' => $for,
-        // The count only exists in the browser, so the plural forms travel there.
-        'phrases' => PluralPhrases::from('wirekit::{1} :count result|[2,*] :count results'),
+        'server' => $server,
+        // The count only exists in the browser, so the plural forms travel there, with `:total`
+        // left for the browser to fill as well.
+        'phrases' => PluralPhrases::from($foundLine),
         'empty' => $emptyText,
         'locale' => IcuLocale::tag(),
     ];
@@ -75,6 +108,8 @@
     x-data="wirekitTableSearch({{ AlpinePayload::from($config) }})"
     data-wk-table-search
     data-wk-sr-host
+    {{-- The counts of the server's answer, written on every render and read once it is rendered. --}}
+    @if($server) data-wk-search-counts="{{ \Pushery\WireKit\Support\AlpinePayload::json(['matches' => $matches ?? 0, 'total' => $total ?? 0]) }}" @endif
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <input
@@ -86,6 +121,7 @@
         @if($for !== '') aria-controls="{{ $for }}" @endif
         autocomplete="off"
         class="wk-field {{ $fieldClasses }}"
+        {{ $fieldAttributes }}
     >
     <p data-wk-prose-skip x-show="isEmpty" x-cloak class="{{ $emptyClasses }}">{{ $emptyText }}</p>
     <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="announcement"></p>

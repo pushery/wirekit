@@ -22,9 +22,9 @@
     // Only pass what the developer actually set — the plugin owns the defaults.
     // Cast to object so an empty config encodes as `{}` (a JS object literal),
     // not `[]` — the plugin signature takes a config object.
-    // The jump-to-latest labels are translated HERE and handed to the plugin,
+    // The jump-to-latest labels are translated here and handed to the plugin,
     // never written into the attribute binding. A Blade `::`-escaped attribute on
-    // a component is passed through VERBATIM: a Blade directive inside it is not
+    // a component is passed through verbatim: a Blade directive inside it is not
     // compiled, so the binding would carry the literal directive text, Alpine
     // would fail to evaluate it, and the control would ship with no accessible
     // name — silent, and exactly what happened.
@@ -55,7 +55,7 @@
     // keyboard contract together with tabindex="0" + aria-label: the region is
     // reachable and operable by keyboard (WCAG 2.1.1).
     //
-    // The live region is ALWAYS present in the DOM — it is not conditionally
+    // The live region is always present in the DOM — it is not conditionally
     // rendered — so a Livewire/wire:stream text swap inside it actually
     // announces. A region that appears at the same moment its text does is
     // inert to assistive technology.
@@ -104,13 +104,13 @@
         {{ $slot }}
 
         {{-- Pinned streaming footer (typing indicator / "assistant is thinking…").
-             It lives INSIDE the viewport so it participates in follow-output —
+             It lives inside the viewport so it participates in follow-output —
              the reader stays glued to it while it is showing. The top margin
              matches the inter-message rhythm (space-md), so the footer reads as
              the next line in the thread instead of crowding the last message. --}}
-        @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
             <div data-wk-conversation-footer class="mt-[var(--space-wk-md,1rem)]">{{ $footer }}</div>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- Jump-to-latest. Only offered while the reader is scrolled away, and the

@@ -1,14 +1,14 @@
 {{-- optimistic-ui: supported
-     Pass `optimistic="method"` and the range is sent when the gesture ENDS —
+     Pass `optimistic="method"` and the range is sent when the gesture ends —
      pointerup for a drag, each keypress for the keyboard (the boundary is
      an event, never a timer). The method receives the pair `[min, max]`,
      because the pair is one value: a rollback restores both, and an untouched
      handle's restore is a no-op.
 
-     The optimistic scope nests INSIDE the slider and binds to the tuple
+     The optimistic scope nests inside the slider and binds to the tuple
      `['minVal', 'maxVal']`. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
     // complain either, because `required` is in its HTML passthrough list — so it looked like
@@ -21,7 +21,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'label' => null,
@@ -32,7 +32,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out —
-    // an app that runs its OWN error summary would otherwise double-announce here.
+    // an app that runs its own error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
@@ -45,7 +45,7 @@
     'maxValue' => null,
     'showValues' => null,
     // Spoken value per stop, e.g. [0 => 'Free', 100 => 'Enterprise']. Each thumb
-    // announces its OWN value through it — the dual-handle equivalent of the same
+    // announces its own value through it — the dual-handle equivalent of the same
     // prop on the single-value slider component. (Written without the tag syntax
     // on purpose: Blade compiles component tags even inside comments.) Without it
     // a screen reader reads the bare number, which is right for a price and wrong
@@ -56,7 +56,7 @@
     // or keyboard handlers, and the group dims via --opacity-wk-disabled.
     // Undeclared, the flag would land in the attribute bag and render on the wrapper
     // `<div>`, where `disabled` means nothing: the control would look untouched and
-    // stay fully operable by pointer AND keyboard.
+    // stay fully operable by pointer and keyboard.
     'disabled' => false,
     'scope' => null,
 ])
@@ -69,7 +69,7 @@
     use Pushery\WireKit\WireKit;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -78,13 +78,13 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would mean the opposite of what the call site reads as.
     // Normalized against the prop's own default so a cast never turns the control off.
     $disabled = BooleanProp::from($disabled, false, 'range-slider', 'disabled');
     $required = BooleanProp::from($required, false, 'range-slider', 'required');
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -180,9 +180,9 @@
     $resolvedShowValues = $showValues ?? config('wirekit.components.range-slider.show_values', true);
 
     $wrapperClasses = WireKit::resolveClasses('range-slider', 'base', implode(' ', [
-        'space-y-2',
+        'space-y-[var(--space-wk-sm)]',
         'font-[family-name:var(--font-wk-sans)]',
-        // Usability floor. The track is a full-width block with NO intrinsic
+        // Usability floor. The track is a full-width block with no intrinsic
         // width of its own, so in any shrink-to-fit context — a flex/grid auto
         // item, a table cell, or a `width: fit-content` wrapper — the slider
         // collapses to the width of its widest text row (the two bound labels,
@@ -246,7 +246,7 @@
     // Thumb classes — shared for both handles
     $thumbClasses = implode(' ', [
         'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
-        // wk-range-thumb owns the thumb SIZE (20px default, 28px on coarse
+        // wk-range-thumb owns the thumb size (20px default, 28px on coarse
         // pointers) + touch-action:none, shipped in dist/wirekit.css. Sizing
         // there (not via Tailwind width/height utilities) keeps the
         // coarse-pointer override deterministic regardless of stylesheet
@@ -282,7 +282,7 @@
     }
 
     // Accessibility — a caller's aria-* must reach the focusable sliders /
-    // the group, NOT the role-less outer wrapper. A dual-thumb slider is a
+    // the group, not the role-less outer wrapper. A dual-thumb slider is a
     // group of two `role="slider"` thumbs (WAI-ARIA range pattern): the
     // wrapper carries `role="group"` + an accessible name, and each thumb's
     // name embeds that context ("<label> minimum" / "<label> maximum").
@@ -307,7 +307,7 @@
     $clickLabelId = filled($label) ? $id.'-label' : $fieldLabelId;
     // The two thumbs name themselves by gluing a direction word onto the caller's label.
     // Concatenating an English word onto a translated label produces a half-translated
-    // name in every locale AND fixes the word ORDER to English — so the direction goes
+    // name in every locale and fixes the word order to English — so the direction goes
     // through a placeholder key, which lets a locale put it wherever its grammar wants.
     $minThumbLabel = $groupLabel !== null
         ? __('wirekit:::label minimum', ['label' => trim((string) $groupLabel)])
@@ -321,7 +321,7 @@
     // the thumbs (and off the wrapper) lands it on the element the user
     // actually focuses.
     //
-    // The hint id is named only while the hint is on the page. An error REPLACES
+    // The hint id is named only while the hint is on the page. An error replaces
     // the hint in this catalog, and an idref pointing at nothing is not a partial
     // description — assistive technology drops it in silence, so a thumb naming
     // one id and rendering none is described by nothing at all. The error message
@@ -364,13 +364,13 @@
 @endphp
 
 @php
-    // The optimistic layer NESTS INSIDE the slider's own scope, and the
+    // The optimistic layer nests inside the slider's own scope, and the
     // direction is not interchangeable: a nested Alpine component's method
     // reads and writes its parent's properties through `this`, never the other
     // way around. So it has to be the child to reach `minVal`/`maxVal`, and the
     // thumbs have to be inside it to reach its `run()`.
     //
-    // The bind is a TUPLE: a range is one value, not two — snapshot the
+    // The bind is a tuple: a range is one value, not two — snapshot the
     // pair, restore the pair, and let an unchanged half be a no-op. A tuple of
     // plain property names rather than a getter pair on the component, because
     // that does not depend on how the two scopes get merged.
@@ -381,7 +381,7 @@
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => ['minVal', 'maxVal'],
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
@@ -402,15 +402,15 @@
 <div
     @unless($attributes->has('role')) role="group" @endunless
     @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $id }}-label" @endunless @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
-    {{-- On the GROUP rather than on either thumb: the message is about the range, and a
+    {{-- On the group rather than on either thumb: the message is about the range, and a
          thumb-level describedby would read it out on both ends of it. --}}
     @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
-    {{-- On the GROUP as well as on the thumbs: a reader who lands on the group before
+    {{-- On the group as well as on the thumbs: a reader who lands on the group before
          reaching either handle has to hear that the range is not editable. --}}
     @if($disabled) aria-disabled="true" @endif
     {{-- The dim is a wrapper class rather than a `disabled:` variant, because nothing
          here is a native form control the variant could hang off — the thumbs are
-         `div[role="slider"]`, and the two inputs that DO carry `disabled` are hidden. --}}
+         `div[role="slider"]`, and the two inputs that do carry `disabled` are hidden. --}}
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : ''])) }}
     {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
          listener written on the tag hears one field (utils/focus-unit.js). --}}
@@ -484,13 +484,13 @@
 
         {{-- Track + thumbs.
 
-             The thumbs MUST live INSIDE the track div so their
+             The thumbs must live inside the track div so their
              `top-1/2 -translate-y-1/2` resolves relative to the
-             8px-tall track (centering the thumb vertically ON the
+             8px-tall track (centering the thumb vertically on the
              track line). As siblings of the track in the outer
              wrapper, their `top-1/2` would resolve to the middle of
              the full wrapper height (track + tooltip + edge labels +
-             sr-only region) and they would drop BELOW the track line
+             sr-only region) and they would drop below the track line
              instead of sitting centered on it.
 
              The inline `style="overflow: visible;"` on the track is
@@ -533,7 +533,7 @@
             {{-- Min thumb. Static aria-valuenow / aria-valuemax mirror
                  the initial state so axe-core's pre-Alpine-init scan
                  sees a complete slider; Alpine then overrides
-                 reactively. The current value bubbles ABOVE the thumb
+                 reactively. The current value bubbles above the thumb
                  as a tooltip-style badge that tracks the handle
                  horizontally (-translate-x-1/2 centers it on the thumb). --}}
             <div
@@ -573,24 +573,24 @@
                      about itself, and it is untrue in the direction a reader cannot
                      check.
 
-                     `maxVal - step` is EXACTLY reachable and not merely an upper
+                     `maxVal - step` is exactly reachable and not merely an upper
                      estimate — the clamp is `Math.min(value, maxVal - step)`, so
                      that number is the value the handle lands on, whether or not it
                      sits on the step grid. `max()` against the floor because nothing
                      clamps the initial values at mount: `:max-value` set nearer the
                      floor than one step would otherwise put valuemax below valuemin.
 
-                     Static AND bound, because they are two different moments. The
+                     Static and bound, because they are two different moments. The
                      static one is what a scan sees before Alpine builds the scope;
                      leaving it uncorrected would make the rendered document and the
                      hydrated one disagree. --}}
                 aria-valuemax="{{ max($min, $initialMax - $step) }}"
                 :aria-valuemax="minThumbCeiling"
-                {{-- BOTH thumbs report the same pending state, because
+                {{-- Both thumbs report the same pending state, because
                      a range is one value and one value is one flight. Putting it
                      on the thumb that happened to move would make the state
                      depend on which end the user grabbed. The `role="group"`
-                     wrapper cannot carry it either — that element sits OUTSIDE
+                     wrapper cannot carry it either — that element sits outside
                      this layer's Alpine scope, so a binding placed there has
                      nothing to read. The scope is the whole obstacle: a role on
                      a `display: contents` element is exposed in the platform
@@ -601,12 +601,12 @@
                      the sliders a reader actually lands on. --}}
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 {{-- The APG slider keyboard model, in full. Up/Down, Home and End
-                     are REQUIRED keys of that pattern, not extras: a reader who
+                     are required keys of that pattern, not extras: a reader who
                      presses Home to reach the low end, or ArrowUp out of the
                      habit every vertical slider teaches, has to move the handle.
                      Page keys step ten at a time — `stepMin` takes a multiplier
                      on the step, so they share its clamp rather than repeating it.
-                     Home/End land on the ends of THIS handle's travel, which for
+                     Home/End land on the ends of this handle's travel, which for
                      the lower handle stops one step below the upper one. --}}
                 @unless($disabled)
                     @keydown.arrow-right.prevent="stepMin(1)"
@@ -620,7 +620,7 @@
                     @pointerdown="startDrag('min', $event)"
                 @endunless
             >
-                @if($resolvedShowValues)
+                @wirekitLast($resolvedShowValues)
                     {{-- Edge-flush clamp. The bubble's containing block is the
                          thumb wrapper (a thumb-sized box centered on the
                          handle), so `left: ${minPercent}%` slides the bubble's
@@ -641,7 +641,7 @@
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(minVal)"
                     >{{ $valueText($initialMin) }}</span>
-                @endif
+                @endwirekitLast
             </div>
 
             {{-- Max thumb. Same static-fallback pattern as the min thumb. --}}
@@ -687,7 +687,7 @@
                     @pointerdown="startDrag('max', $event)"
                 @endunless
             >
-                @if($resolvedShowValues)
+                @wirekitLast($resolvedShowValues)
                     {{-- Edge-flush clamp — mirror of the min bubble, keyed to
                          maxPercent so the max thumb's bubble closes flush with the
                          circle's outer-right edge at 100% (and outer-left at 0%). --}}
@@ -699,40 +699,40 @@
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(maxVal)"
                     >{{ $valueText($initialMax) }}</span>
-                @endif
+                @endwirekitLast
             </div>
 
-            @if($resolvedShowValues)
+            @wirekitLast($resolvedShowValues)
                 {{-- Merged badge: when the thumbs sit close enough that the two
-                     individual badges would overlap (_measureBubbles), show ONE
+                     individual badges would overlap (_measureBubbles), show one
                      "min – max" badge centered between them instead.
 
-                     Structure MIRRORS a thumb + its badge: an outer wrapper at
+                     Structure mirrors a thumb + its badge: an outer wrapper at
                      `top-1/2 -translate-y-1/2` (vertically centered on the track,
                      exactly like a thumb div) carries the horizontal `:style`
                      left, and the inner badge sits at `-top-8 left-1/2
                      -translate-x-1/2` (exactly like the per-thumb badges). Sharing
                      the identical positioning recipe guarantees the merged badge
-                     sits at the SAME height as the individual badges — a bare
-                     `-top-8` off the TRACK sat ~4px lower, because the track top is
+                     sits at the same height as the individual badges — a bare
+                     `-top-8` off the track sat ~4px lower, because the track top is
                      above the thumb-centered origin the individual badges use.
 
-                     Visibility is an OPACITY toggle on the SAME `_merged` flag the
-                     individual badges read (they use `!_merged`) — NEVER `x-show`.
+                     Visibility is an opacity toggle on the same `_merged` flag the
+                     individual badges read (they use `!_merged`) — never `x-show`.
                      `x-show` writes `display:none` into the `style` attribute, but
                      this element also needs a `:style` left binding, and Alpine
                      re-renders `:style` on every thumb move — clobbering x-show's
-                     `display:none` and making the merged badge reappear, so BOTH
+                     `display:none` and making the merged badge reappear, so both
                      badge sets showed at once whenever a thumb moved. Keeping
                      opacity in `class` (via `:class`) leaves `:style` free for
                      `left`, so the two bindings never fight and the individual vs
                      merged badges stay strictly mutually exclusive. --}}
                 {{-- "Phantom thumb": same positioning + size recipe as a real
                      thumb (top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb)
-                     but invisible and non-interactive. It carries the SAME
+                     but invisible and non-interactive. It carries the same
                      `border-2` as a real thumb (transparent here) so its
                      border-box height is pixel-identical: -translate-y-1/2 then
-                     shifts this wrapper by the EXACT same amount as a real thumb,
+                     shifts this wrapper by the exact same amount as a real thumb,
                      landing the inner badge at the same Y as the per-thumb badges.
                      Without the matching border the real thumb's 2px border
                      nudged its badge ~2px off the merged badge's row. --}}
@@ -747,10 +747,10 @@
                         x-text="mergedBadgeText()"
                     ></span>
                 </div>
-            @endif
+            @endwirekitLast
         </div>
 
-        {{-- Edge labels show the slider BOUNDS ($min and $max) — never
+        {{-- Edge labels show the slider bounds ($min and $max) — never
              the current values. The current values bubble above each
              thumb (see badges above) and follow the handles when dragged.
              aria-live region keeps screen-readers in sync with the
@@ -768,7 +768,7 @@
         </div>
 
         @if($optimisticConfig)
-            {{-- Its own region, marked, and NOT the polite one above: that one
+            {{-- Its own region, marked, and not the polite one above: that one
                  tracks the value while you drag, this one carries the promise
                  and its withdrawal. Rendered unconditionally and starting
                  empty — a region that arrives with its text is a new node, and
@@ -781,13 +781,13 @@
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing.
 
-         This block ARRIVED to replace a standalone hint-only paragraph and the older one
+         This block arrived to replace a standalone hint-only paragraph and the older one
          was left standing, so for as long as the slider could show an error it also
-         printed its hint twice and minted `id="…-hint"` twice — an ambiguous IDREF for
+         printed its hint twice and minted `id="…-hint"` twice — an ambiguous idref for
          the very describedby composed above. One emitter, and only one. --}}
-    @if($error)
+    @wirekitLast($error)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @endwirekitLast
 </div>

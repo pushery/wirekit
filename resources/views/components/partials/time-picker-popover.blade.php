@@ -195,7 +195,7 @@
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
 
-            @if($popoverClearable)
+            @wirekitLast($popoverClearable)
                 <button
                     type="button"
                     x-show="! showsPlaceholder"
@@ -208,7 +208,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                     </svg>
                 </button>
-            @endif
+            @endwirekitLast
         </div>
 
         {{-- On a phone the dialog is a modal over the page (utils/picker-dialog.js, `modalMedia`): this
@@ -271,9 +271,13 @@
         @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $popoverFormOwner, 'requiredDisabled' => $popoverDisabled || $popoverReadonly])
     @endif
 
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

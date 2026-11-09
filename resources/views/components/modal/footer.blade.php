@@ -13,7 +13,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // Footer classes — bottom section with top border and right-aligned buttons
+    // Footer classes — bottom section with top border and buttons at the end
     $classes = WireKit::resolveClasses('modal.footer', 'base', implode(' ', [
         // One token on all four sides, and the header's. Wider side padding would start the content
         // further in than the title above it and sit it further from the sides than from the
@@ -22,7 +22,7 @@
         'p-[var(--padding-wk-x-lg)]',
         'border-t',
         'border-[var(--color-wk-border-subtle)]',
-        // Wrapping, because what does not fit a row packed to its end leaves on its START side,
+        // Wrapping, because what does not fit a row packed to its end leaves on its start side,
         // and nothing scrolls to that side: three actions on a phone cut the first one off the
         // panel, out of reach. Wrapped, they stack at the end; one line on a desktop.
         'flex flex-wrap items-center justify-end gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-md)]',

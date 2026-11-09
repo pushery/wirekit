@@ -59,7 +59,31 @@ final class SidebarGroup extends Component
         private readonly bool|int|float|string|null $open = true,
         private readonly bool|int|float|string|null $persist = null,
         private readonly ?string $scope = null,
+        private readonly bool|int|float|string|null $truncate = null,
     ) {}
+
+    /**
+     * The component's data, with `truncate` only when the tag sets it.
+     *
+     * The rows of the group read `truncate` through `@aware` (Support\AwareProp), which takes a
+     * value from the nearest member of the family that holds the key. A class component holds a
+     * key only when it is data, and an unknown attribute reaches its view through the bag, where
+     * the search cannot see it, so the group and its rows would never see the group's own value.
+     * A public property would hold the key always, and a group that sets nothing would hide the
+     * sidebar's value from its rows; so the key is added here, and only when it was written.
+     *
+     * @return array<string, mixed>
+     */
+    public function data(): array
+    {
+        $data = parent::data();
+
+        if ($this->truncate !== null) {
+            $data['truncate'] = $this->truncate;
+        }
+
+        return $data;
+    }
 
     public function render(): View
     {

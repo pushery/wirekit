@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Support;
 
 /**
- * The server's half of `persist-driver="cookie"`: the flag the browser stored, read while the
- * page renders, so the first paint already shows the reader's choice.
+ * The server's half of `persist-driver="cookie"`: what the browser stored, a folded state or a
+ * width, read while the page renders, so the first paint already shows the reader's choice.
  *
  * One read for every component that offers the driver (`sidebar`, `app-rail` and
  * `sidebar.collapse-toggle`). They must agree about a stored value, and each carrying its own copy
  * of this order is how one of them would quietly stop agreeing.
  *
- * The REQUEST is asked first and the superglobal only as a fallback, and that order is the point
+ * The request is asked first and the superglobal only as a fallback, and that order is the point
  * rather than a detail. PHP fills `$_COOKIE` when it starts a script. Under `fpm-fcgi` it starts
  * the script afresh for every HTTP request, even though one worker process serves many of them,
  * which is why reading the superglobal alone looks correct for as long as it does. A worker that
@@ -37,12 +37,32 @@ final class PersistedCookie
      */
     public static function flag(string $key): ?bool
     {
+        $stored = self::read($key);
+
+        return $stored === null ? null : $stored === '1';
+    }
+
+    /**
+     * A stored length in whole pixels, such as the width a reader dragged a sidebar to, or null
+     * when there is none or it is not one. Only digits read, so no arbitrary value reaches the
+     * style it is written into.
+     */
+    public static function pixels(string $key): ?int
+    {
+        $stored = self::read($key);
+
+        return $stored !== null && preg_match('/^\d{1,5}$/', $stored) === 1 ? (int) $stored : null;
+    }
+
+    /** The cookie's text, from the request first and the superglobal second, or null. */
+    private static function read(string $key): ?string
+    {
         $stored = request()->cookie($key);
 
         if (! is_string($stored)) {
             $stored = isset($_COOKIE[$key]) && is_string($_COOKIE[$key]) ? $_COOKIE[$key] : null;
         }
 
-        return $stored === null ? null : $stored === '1';
+        return $stored;
     }
 }

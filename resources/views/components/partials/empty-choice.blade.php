@@ -16,7 +16,7 @@
      It sits outside the control, which is disabled, so the link stays in the tab order, and the
      control names it in aria-describedby, so a screen reader on the field hears why it is empty. --}}
 <div data-wk-prose-skip @if($emptyFor === 'combobox') data-wk-combobox-empty @else data-wk-select-empty @endif id="{{ $emptyId }}" class="{{ trim('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] '.($emptyClass ?? '')) }}">
-    @if($emptySlot !== null)
+    @wirekitLast($emptySlot !== null)
         {{ $emptySlot }}
     @else
         {{ $emptyText }}
@@ -25,5 +25,5 @@
         @elseif(filled($emptyHref))
             <x-wirekit::link :href="$emptyHref">{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
         @endif
-    @endif
+    @endwirekitLast
 </div>

@@ -125,7 +125,7 @@ final class ConfigPublishedCheck extends VerifyCheck
     }
 
     /**
-     * Config nodes whose KEYS belong to the developer, not to this package.
+     * Config nodes whose keys belong to the developer, not to this package.
      *
      * An icon alias they invent, a font family they host. The stub can document
      * that such a map exists; it can never list what will be in it. So a diff of
@@ -278,8 +278,8 @@ final class ConfigPublishedCheck extends VerifyCheck
         // — `vendor:publish --force` — would overwrite the aliases it is complaining about.
         //
         // The mechanism is the leaf/branch case below, mirrored. The stub carries
-        // `icons.aliases => []`, a LEAF. A project that uses the feature carries
-        // `icons.aliases.slack`, `.discord`, …, a BRANCH. Flattened, the package name exists
+        // `icons.aliases => []`, a leaf. A project that uses the feature carries
+        // `icons.aliases.slack`, `.discord`, …, a branch. Flattened, the package name exists
         // and the project's does not, so a plain diff calls it missing.
         $publishedKeys = array_keys(self::flattenConfig($published));
 
@@ -295,7 +295,7 @@ final class ConfigPublishedCheck extends VerifyCheck
                 }
 
                 // Leaf here, branch there — the mirror of the case below. A package leaf the
-                // project has gone DEEPER on is not missing; it is in use.
+                // project has gone deeper on is not missing; it is in use.
                 foreach ($publishedKeys as $publishedKey) {
                     if (str_starts_with($publishedKey, $path.'.')) {
                         return false;
@@ -311,7 +311,7 @@ final class ConfigPublishedCheck extends VerifyCheck
         // silent forever, and it is the residue a major upgrade leaves behind: a knob
         // the developer believes is doing something, still sitting in their file.
         //
-        // A differing VALUE is deliberately NOT drift. The published file is where an
+        // A differing value is deliberately not drift. The published file is where an
         // application records its own decisions, and a check that objected to those
         // would be wrong about its own purpose. Only the presence of a name is
         // compared, in both directions.
@@ -346,7 +346,7 @@ final class ConfigPublishedCheck extends VerifyCheck
                 // puts `components.checkbox` on one side and `components.checkbox.size`
                 // on the other, and a plain diff calls the first an orphan.
                 //
-                // It is not: the key IS offered, at a different depth. An empty
+                // It is not: the key is offered, at a different depth. An empty
                 // override of a current component is a no-op, not residue from an
                 // earlier version — and the difference matters, because the remedy
                 // printed below is deletion.
@@ -396,7 +396,7 @@ final class ConfigPublishedCheck extends VerifyCheck
         // situations are different situations.
         //
         // The realistic one is an upgrade across a minor: one to five new options, and
-        // there the NAME is the whole message. "Missing options: 2 across 2 key(s)"
+        // there the name is the whole message. "Missing options: 2 across 2 key(s)"
         // hides which two, and the two can need very different attention — one may be a
         // real decision (`assets.middleware`, where the asset routes left the `web`
         // group and unnamed middleware is lost silently) and the other purely
@@ -481,7 +481,7 @@ final class ConfigPublishedCheck extends VerifyCheck
      * The point is that the reader does not have to open a file to find out what they
      * were just told about — so it has to be readable rather than complete. A long
      * array is summarized by its size: knowing an option defaults to eleven entries is
-     * the useful part, and printing all eleven would push the NEXT missing option off
+     * the useful part, and printing all eleven would push the next missing option off
      * the screen.
      *
      * `mixed`, because a config default is any value a PHP config file can return.
@@ -514,7 +514,7 @@ final class ConfigPublishedCheck extends VerifyCheck
     /**
      * Flatten a config array to dotted leaf paths.
      *
-     * A LEAF is any non-array value, plus an empty array — an empty array is a real, settable
+     * A leaf is any non-array value, plus an empty array — an empty array is a real, settable
      * option (`'presets' => []`), and treating it as "nothing below here" would drop it from
      * the comparison silently.
      *

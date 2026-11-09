@@ -63,8 +63,8 @@ final class FontAssetsCheck extends VerifyCheck
         if (is_dir($fontDir)) {
             // Font CSS publishes into nested category/name subdirs
             // (fonts/<category>/<name>/<name>.css — vendor:publish copies
-            // resources/fonts/ verbatim), so scan RECURSIVELY. A top-level
-            // glob("{$fontDir}/*.css") finds nothing even when fonts ARE
+            // resources/fonts/ verbatim), so scan recursively. A top-level
+            // glob("{$fontDir}/*.css") finds nothing even when fonts are
             // correctly published, producing a false "no CSS files found" warning.
             $cssFiles = $this->findFontCssFiles($fontDir);
             if ($cssFiles !== []) {
@@ -115,7 +115,7 @@ final class FontAssetsCheck extends VerifyCheck
             // in config/wirekit.php) + no published assets is the natural
             // state of a fresh install — emit an INFO hint, not a WARN,
             // so the doctor summary doesn't read as if something failed.
-            // Anything OTHER than the package default IS a real warning
+            // Anything other than the package default is a real warning
             // (the developer asked for a non-default font but the assets
             // never got published, which means it won't render).
             if ($this->isPackageDefaultFontConfig($fontConfig)) {
@@ -129,7 +129,7 @@ final class FontAssetsCheck extends VerifyCheck
     }
 
     /**
-     * Configured font families whose PUBLISHED bytes differ from the bundled
+     * Configured font families whose published bytes differ from the bundled
      * release — the stale-after-`composer update` state that presence alone does
      * not show. Mirrors checkAssetFreshness's md5 compare for the font tree.
      *

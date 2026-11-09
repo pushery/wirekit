@@ -270,7 +270,8 @@ final class ChartPointLinks
     }
 
     /**
-     * A value as the tooltip writes it: a number in the page's locale, a range as its two ends.
+     * A value as the tooltip writes it: a number in the page's locale, a range as its two ends, and
+     * an empty text for a value that is no finite number, as for none.
      * `mixed`, here and for each end of a range, because a point holds what the chart's data holds.
      * ChartDataTable writes its cells with it.
      */
@@ -278,6 +279,12 @@ final class ChartPointLinks
     {
         if (is_array($value)) {
             return implode(' – ', array_map(fn (mixed $part): string => self::value($part, $decimals), array_values($value)));
+        }
+
+        // A value that is no finite number is no value: the script receives it as null and the
+        // chart leaves a gap where it stands.
+        if (is_float($value) && ! is_finite($value)) {
+            return '';
         }
 
         if (is_int($value) || is_float($value) || (is_string($value) && is_numeric($value))) {

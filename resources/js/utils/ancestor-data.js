@@ -4,7 +4,7 @@
  *
  * Six sub-components (modal/header, drawer/header, alert-dialog/title,
  * alert-dialog/description, dropdown/panel, dropdown/trigger) need the id their
- * PARENT generated, and each one crawled for it by hand:
+ * parent generated, and each one crawled for it by hand:
  *
  *     x-bind:id="$el.closest('[data-wk-title-id]')?.dataset.wkTitleId"
  *

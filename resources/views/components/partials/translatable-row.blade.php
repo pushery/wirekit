@@ -55,7 +55,7 @@
              the rules after "The words beside the label". --}}
         <span aria-hidden="true" data-wk-translation-code class="{{ $codeClasses }}">{{ strtoupper($code) }}</span>
 
-        @if($multiline)
+        @wirekitLast($multiline)
             <x-wirekit::textarea
                 :id="$field['id']"
                 :name="$field['name']"
@@ -89,6 +89,6 @@
                 :scope="$scope"
                 :attributes="$bag"
             />
-        @endif
+        @endwirekitLast
     </div>
 </div>

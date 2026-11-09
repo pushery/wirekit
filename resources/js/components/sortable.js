@@ -3,13 +3,15 @@
  *
  * Module state, not instance state, because a drag can end in a list that never
  * started it. `dragend` fires on the dragged node and bubbles through the list the
- * node sits in AT THAT MOMENT — after a move between columns that is the target
+ * node sits in AT that moment — after a move between columns that is the target
  * column, whose instance knew nothing about the drag — and the column it left would
  * keep pointing at a card it no longer holds. One pointer drags one thing at a time,
  * so one slot per page is enough.
  *
  * @type {{ item: Element, list: Element, index: number } | null}
  */
+import { inlineKey } from '../utils/inline-direction.js';
+
 let activeDrag = null;
 
 /**
@@ -32,7 +34,7 @@ let activePick = null;
  * a diagnosis, and the diagnosis starts in the developer's own code because the
  * component is visibly offering the thing.
  *
- * TWO WAYS IN, and the second is the reason this is not thirty lines. A pure
+ * Two ways in, and the second is the reason this is not thirty lines. A pure
  * drag interaction cannot be operated without a pointer, so shipping only that
  * would turn every `sortable` into a barrier — the component would go from
  * doing nothing to excluding people, which is not an improvement. The keyboard
@@ -151,7 +153,7 @@ export default function wirekitSortable(config = {}) {
 
         /**
          * The list and index a lifted card started from, which survives a move into another
-         * list: Escape returns the card THERE, and the drop reports a move from THERE. Without
+         * list: Escape returns the card there, and the drop reports a move from there. Without
          * it the list a card was handed to would know only where the card is, and would put
          * it back at a position in the wrong column.
          *
@@ -174,12 +176,12 @@ export default function wirekitSortable(config = {}) {
         // The pointer drag is not here: it lives in the module-level `activeDrag`, because a
         // drag can end in a list that never started it.
 
-        // The DIRECT CHILDREN of the list, unless the call site says otherwise.
+        // The direct children of the list, unless the call site says otherwise.
         //
         // A marker on each item would be the tidier API and it would make the
         // feature opt-in twice: the developer already said `sortable`, and the
         // things inside a column are the cards. `:scope > *` is used for
-        // SELECTION only — it cannot be handed to `closest()`, which is why the
+        // selection only — it cannot be handed to `closest()`, which is why the
         // event path walks up to the root instead of matching a selector.
         _itemSelector: config.itemSelector || ':scope > *',
 
@@ -268,7 +270,7 @@ export default function wirekitSortable(config = {}) {
             return this._itemsOf(this.$root);
         },
 
-        /** The sortable children of ANY list on the board — this one, or one a card came from. */
+        /** The sortable children of any list on the board — this one, or one a card came from. */
         _itemsOf(list) {
             return Array.from(list.querySelectorAll(this._itemSelector))
                 .filter((el) => ! el.hasAttribute('data-wk-sortable-announcer'));
@@ -293,7 +295,7 @@ export default function wirekitSortable(config = {}) {
         },
 
         /**
-         * What the APPLICATION calls a list: its column's `column-id`, or its position among the
+         * What the application calls a list: its column's `column-id`, or its position among the
          * board's lists when it has none — the same honesty rule as a card without an id.
          */
         _column(list = this.$root) {
@@ -303,7 +305,7 @@ export default function wirekitSortable(config = {}) {
         },
 
         /**
-         * What a READER calls a list: its accessible name. The column body carries its column's
+         * What a reader calls a list: its accessible name. The column body carries its column's
          * label as `aria-label`; an unnamed one falls back to the column id, which beats
          * announcing a move to nowhere.
          */
@@ -314,12 +316,12 @@ export default function wirekitSortable(config = {}) {
         /**
          * The node the announcements are written into.
          *
-         * A live region has to EXIST before the text arrives — one that appears
+         * A live region has to exist before the text arrives — one that appears
          * together with its first sentence is a new node, and nothing is spoken
          * at all. So it is created at init, empty, and only ever written to.
          *
          * The call site may supply its own by marking it, which is how a host
-         * that wants the region somewhere specific keeps ONE of them; otherwise
+         * that wants the region somewhere specific keeps one of them; otherwise
          * this factory owns it, because a list mounted with `x-data` alone has
          * no markup of its own to carry it.
          *
@@ -355,7 +357,7 @@ export default function wirekitSortable(config = {}) {
          * as an index.
          */
         _say(template, position, total, column = '') {
-            // The column name goes in LAST: it is the one value that comes from the page, and a
+            // The column name goes in last: it is the one value that comes from the page, and a
             // label that happened to contain ":total" would otherwise be rewritten by the step
             // meant for the number.
             this.announcement = template
@@ -481,7 +483,7 @@ export default function wirekitSortable(config = {}) {
 
         /**
          * Say what happened across two lists, once: which card, from where, to where, and the
-         * new order of BOTH, so an application can persist the whole move in one statement.
+         * new order of both, so an application can persist the whole move in one statement.
          *
          * Dispatched from the list the card ended in, and it bubbles, so a listener anywhere
          * above the board hears it: `wire:wirekit:sortable:moved="moveCard($event.detail)"`.
@@ -595,7 +597,7 @@ export default function wirekitSortable(config = {}) {
         },
 
         /**
-         * Take a card another list handed over: as a LIFTED card that keeps moving
+         * Take a card another list handed over: as a lifted card that keeps moving
          * (`mode: 'lift'`), or as one Escape sent back to the list it started in
          * (`mode: 'cancel'`).
          */
@@ -723,7 +725,7 @@ export default function wirekitSortable(config = {}) {
                 return;
             }
 
-            // Over the list's own empty space, which is the only way into an EMPTY column at
+            // Over the list's own empty space, which is the only way into an empty column at
             // all. Only for a card from another list: a card of this list already sits in it,
             // and the gap below the last card is not a position.
             if (! over) {
@@ -756,7 +758,7 @@ export default function wirekitSortable(config = {}) {
 
             item.removeAttribute('data-sortable-dragging');
 
-            // Reached through the list the card ENDED in, which is the one that reports: a card
+            // Reached through the list the card ended in, which is the one that reports: a card
             // from another list is a move, a card of this one a reorder, and no change at all
             // says nothing.
             if (to === -1) {
@@ -909,7 +911,8 @@ export default function wirekitSortable(config = {}) {
                 return;
             }
 
-            const key = event.key;
+            // A row runs from the right on a right-to-left page, so the side keys swap there.
+            const key = inlineKey(event, event.target);
 
             // A card picked up with a click answers the keys that end a move: Escape puts it
             // down where it was, Space and Enter where it is.
@@ -960,10 +963,10 @@ export default function wirekitSortable(config = {}) {
 
                 // The same re-insertion as the arrow branch below, so the same
                 // reason: a browser can drop focus when a focused node is
-                // re-inserted. Escape is the ONLY way out of a keyboard reorder,
+                // re-inserted. Escape is the only way out of a keyboard reorder,
                 // which makes the loss here the more punishing of the two — a
                 // reader who backs out of a move lands on `<body>` and has to tab
-                // the whole list again to reach the card they decided NOT to
+                // the whole list again to reach the card they decided not to
                 // move, so abandoning costs more than finishing. WCAG 2.4.3.
                 // A no-op wherever the browser kept focus on the node.
                 item.focus();
@@ -1029,7 +1032,7 @@ export default function wirekitSortable(config = {}) {
             this._release(item);
             this._say(this._messages.dropped, to + 1, items.length);
 
-            // A card that started in another column is a MOVE, reported once with both columns'
+            // A card that started in another column is a move, reported once with both columns'
             // order; one that stayed in this column is the reorder it always was.
             if (origin.list !== this.$root) {
                 this._announceMove(item, origin, to);

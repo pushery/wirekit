@@ -1,0 +1,2 @@
+/*! WireKit per page v2.73.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+function n(t){if(!t||typeof window>"u"||typeof window.getComputedStyle!="function")return!1;try{return window.getComputedStyle(t).direction==="rtl"}catch{return!1}}function i(t,e){return t?.key==="ArrowRight"?n(e)?-1:1:t?.key==="ArrowLeft"?n(e)?1:-1:0}function f(t,e){let r=i(t,e);return r===0?t?.key:r>0?"ArrowRight":"ArrowLeft"}function u(t){t.magic("wkInlineStep",e=>r=>i(r,e))}export{n as a,i as b,f as c,u as d};

@@ -1,5 +1,5 @@
 {{-- optimistic-ui: n/a — client-only
-     A tool call is something the SERVER did. The one interaction here is opening the result
+     A tool call is something the server did. The one interaction here is opening the result
      disclosure, which never leaves the browser, so there is no round trip to acknowledge and
      the optimistic contract has nothing to arbitrate. --}}
 @props([
@@ -17,7 +17,7 @@
     // printed as given, so an application that already has the provider's raw JSON does not
     // pay a decode/encode round trip to display it.
     'arguments' => null,
-    // Seconds the call took, for the settled label. The APPLICATION owns this number — it
+    // Seconds the call took, for the settled label. The application owns this number — it
     // knows when the call started, and a stopwatch in the browser would disagree with it the
     // moment the page re-renders from the server. Null keeps the plain status word.
     'seconds' => null,
@@ -48,7 +48,7 @@
     $open = $open === null ? $isFailed : BooleanProp::from($open, false, 'tool-call', 'open');
 
     /*
-     * The label carries the state in WORDS, not only in color. WCAG 1.4.1: a reader who cannot
+     * The label carries the state in words, not only in color. WCAG 1.4.1: a reader who cannot
      * tell the intents apart still has to be able to tell a finished call from a failed one.
      * The duration replaces the word once the call has settled and the application supplies it.
      */
@@ -99,7 +99,7 @@
 
     $toolName = is_string($name) || $name instanceof \Stringable ? \Pushery\WireKit\Support\SlotContent::textOf($name) : '';
 
-    // What the status region says once the call has settled: the tool AND its state, because a
+    // What the status region says once the call has settled: the tool and its state, because a
     // reader who hears "Done" on its own cannot tell which of five calls it was. A block without a
     // name says the state alone rather than a sentence that starts with a colon. Nothing while the
     // call is pending or running: the block is marked busy (`aria-busy`), which announces nothing,
@@ -151,7 +151,7 @@
             <x-wirekit::shimmer :active="$isRunning">{{ $statusLabel }}</x-wirekit::shimmer>
         </x-wirekit::badge>
 
-        {{-- Rendered in EVERY state and empty until the call has settled, so the sentence arrives
+        {{-- Rendered in every state and empty until the call has settled, so the sentence arrives
              inside a region that already exists. A live region that appears at the same moment as
              its text is inert to assistive technology, and a region that only exists once the
              call is done would be exactly that. It sits in this row, before the blocks that come
@@ -167,7 +167,7 @@
         </div>
     @endif
 
-    @if($slot->hasActualContent())
+    @wirekitLast($slot->hasActualContent())
         {{-- `hasActualContent()`, never `filled(trim($slot))`: Livewire's Blade precompiler wraps
              every `@if` and `@foreach` in morph markers, so a caller who fills this slot
              conditionally hands over two HTML comments when the condition is false — and a
@@ -175,7 +175,7 @@
              nothing. Laravel's own helper strips comments before it compares.
 
              The result is reference material behind a disclosure, except when it is a failure.
-             `wire:key` carries the status: Livewire MORPHS this element when the turn
+             `wire:key` carries the status: Livewire morphs this element when the turn
              re-renders, and a morph preserves Alpine's open state — so a call that settles
              while the reader has it open would stay open, and one that fails would stay
              closed. A key that changes replaces the element instead. --}}
@@ -184,5 +184,5 @@
                 {{ $slot }}
             </x-wirekit::collapsible>
         </div>
-    @endif
+    @endwirekitLast
 </div>

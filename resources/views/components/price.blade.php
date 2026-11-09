@@ -6,12 +6,23 @@
     'currency' => config('wirekit.currency', 'USD'),
     'locale' => null,
     'base' => null,
+    // A visible name for the `base` amount, written in front of it: "UVP" or "RRP" for a
+    // recommended retail price. With a name the amount is a reference price and is not struck
+    // through: a strike-through reads as a reduction of the seller's own price, which a
+    // recommended price is not. A screen reader hears the name in place of the hidden
+    // "Previous price".
+    'baseLabel' => null,
     'unitPrice' => null,
     'unitMeasure' => null,
     'delta' => null,
     'deltaFormat' => 'percent',
     'size' => config('wirekit.components.price.size', 'md'),
     'minorUnits' => false,
+    // Divides `amount`, `base` and `unitPrice` by the minor unit ISO 4217 gives the currency, as a
+    // payment provider hands an amount over: 1500 is ¥1,500, 2999 is $29.99, 1500 is BHD 1.500. The
+    // price then shows as many decimals as the standard gives the currency. Not beside `minorUnits`,
+    // which divides by 100 for every currency.
+    'currencyMinorUnits' => false,
     // The amount is the lowest of several, the price of the cheapest variant of a product: a word
     // before it, "from" in the application's language, says so on screen and to a screen reader.
     'from' => false,
@@ -41,12 +52,17 @@
     // bound `null` or empty string always has: only `percent` reads as a percentage.
     $deltaFormat = \Pushery\WireKit\WireKit::validateProp('price', 'deltaFormat', \Pushery\WireKit\Support\NumericProp::text($deltaFormat ?: 'absolute'), ['absolute', 'percent']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $minorUnits = BooleanProp::from($minorUnits, false, 'price', 'minorUnits');
+    $currencyMinorUnits = BooleanProp::from($currencyMinorUnits, false, 'price', 'currencyMinorUnits');
     $from = BooleanProp::from($from, false, 'price', 'from');
     $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'price');
+    // A name only when it holds text: a blank one falls back to the hidden "Previous price". Markup
+    // such as an `<abbr>` is shown as markup and read as its text where the line is measured.
+    $baseLabelText = \Pushery\WireKit\Support\SlotContent::textOf($baseLabel);
+    $hasBaseLabel = $baseLabelText !== '';
 
     // An empty locale is none, and the application's counts: ICU's root locale writes "€ 1234.50".
     $locale = is_string($locale) && trim($locale) !== '' ? trim($locale) : app()->getLocale();
@@ -65,6 +81,26 @@
         $currency = StrictnessGate::reject('price', 'currency', get_debug_type($currency), 'a currency code of three letters such as "EUR"', $currencyDefault);
     } elseif (preg_match('/^[A-Za-z]{3}$/', $currency) !== 1) {
         $currency = StrictnessGate::reject('price', 'currency', $currency, 'a currency code of three letters such as "EUR"', $currency);
+    }
+
+    // The digits of the currency's minor unit as ISO 4217 gives them (Support\CurrencyMinorUnits),
+    // for an amount read in that unit. Beside `minorUnits` the two ways of reading an amount would
+    // divide twice: that is reported, and the standard's way counts. A currency the standard gives
+    // no minor unit, a precious metal or `XXX`, and a code it does not list have nothing to divide
+    // by: that is reported too, and the price is left out further down.
+    $isoDigits = null;
+
+    if ($currencyMinorUnits) {
+        if ($minorUnits) {
+            StrictnessGate::reject('price', 'minorUnits', 'beside currencyMinorUnits', 'one of minor-units and currency-minor-units, not both', '');
+            $minorUnits = false;
+        }
+
+        $isoDigits = \Pushery\WireKit\Support\CurrencyMinorUnits::digits((string) $currency);
+
+        if ($isoDigits === null) {
+            StrictnessGate::reject('price', 'currencyMinorUnits', (string) $currency, 'a currency whose minor unit ISO 4217 names, such as "EUR" or "JPY"', '');
+        }
     }
 
     // An amount written in another language than the page's carries it in `lang` (WCAG 3.1.2), as a
@@ -107,10 +143,16 @@
     $delta = $figure($delta, 'delta');
     $delta = $delta === false ? null : $delta;
 
-    // Convert minor units (cents) to major units
-    $displayAmount = $minorUnits && $amount !== null ? $amount / 100 : $amount;
-    $displayBase = ($base !== null && $minorUnits) ? $base / 100 : $base;
-    $displayUnitPrice = ($unitPrice !== null && $minorUnits) ? $unitPrice / 100 : $unitPrice;
+    // A currency without a minor unit to divide by leaves the whole price out: a wrong price is
+    // worse than none.
+    $amount = $currencyMinorUnits && $isoDigits === null ? null : $amount;
+
+    // An amount in a minor unit becomes one in the currency's major unit: divided by 100 with
+    // `minorUnits`, by ten to the currency's own digits with `currencyMinorUnits`.
+    $divisor = $isoDigits !== null ? 10 ** $isoDigits : ($minorUnits ? 100 : null);
+    $displayAmount = $divisor !== null && $amount !== null ? $amount / $divisor : $amount;
+    $displayBase = ($base !== null && $divisor !== null) ? $base / $divisor : $base;
+    $displayUnitPrice = ($unitPrice !== null && $divisor !== null) ? $unitPrice / $divisor : $unitPrice;
 
     // Locale-aware currency display, through the helper that also knows what to write without
     // the intl extension: WireKit does not require it, and a formatter built here directly
@@ -133,7 +175,7 @@
         $maxPrecision = null;
     }
 
-    $money = static fn ($value): string => LocalizedNumber::currency((float) $value, (string) $currency, $locale, maxPrecision: $maxPrecision);
+    $money = static fn ($value): string => LocalizedNumber::currency((float) $value, (string) $currency, $locale, maxPrecision: $maxPrecision, digits: $isoDigits);
     $formattedAmount = $money($displayAmount);
     $formattedBase = $displayBase !== null ? $money($displayBase) : null;
 
@@ -161,7 +203,7 @@
             : LocalizedNumber::format((float) $delta, maxPrecision: 2, locale: $locale));
     }
 
-    // The meaning is carried by CONTENT, not by an `aria-label` on the wrapper below. The
+    // The meaning is carried by content, not by an `aria-label` on the wrapper below. The
     // wrapper is a roleless <span>, and ARIA prohibits `aria-label` on `generic`, so such a
     // name is not required to reach assistive tech at all; a unit price hidden behind it
     // would be a legally required figure (Price Indication Directive 98/6/EC, PAngV) that
@@ -200,8 +242,11 @@
         $fitParts = [];
 
         if ($formattedBase !== null) {
-            $fitParts[] = '<del class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;">'
-                .'<span class="sr-only">'.e(__('wirekit::Previous price')).'</span><bdi'.$amountLang.'>'.e($formattedBase).'</bdi></del>';
+            // A named amount is a reference price and is not struck; see the markup below.
+            $fitParts[] = $hasBaseLabel
+                ? '<span class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]">'.e($baseLabel).' <bdi'.$amountLang.'>'.e($formattedBase).'</bdi></span>'
+                : '<del class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;">'
+                    .'<span class="sr-only">'.e(__('wirekit::Previous price')).'</span><bdi'.$amountLang.'>'.e($formattedBase).'</bdi></del>';
         }
 
         if ($from) {
@@ -213,7 +258,7 @@
         // What a reader sees, which the copies measure: the screen reader's "Previous price" is not
         // part of the line.
         $fitPlain = implode(' ', array_filter(
-            [$formattedBase, $from ? __('wirekit::from') : null, $formattedAmount],
+            [$hasBaseLabel && $formattedBase !== null ? $baseLabelText : null, $formattedBase, $from ? __('wirekit::from') : null, $formattedAmount],
             static fn (?string $part): bool => $part !== null && $part !== '',
         ));
 
@@ -256,22 +301,33 @@
          and to pin the decoration color to text-muted (border-token is too
          faint at 91% lightness to read as a strike). --}}
     @if($formattedBase !== null)
-        {{-- The compare-at matches the main price SIZE (same $sizeClasses); the
+        {{-- The compare-at matches the main price size (same $sizeClasses); the
              de-emphasis comes from the muted color + the strike, not a smaller
              font. A one-step-smaller old price would read as odd next to the
              current one — equal size keeps the pair balanced while the strike
              still says which is the old number. --}}
-        <del
-            class="text-[color:var(--color-wk-text-muted)] {{ $sizeClasses }}"
-            style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;"
-        >
-            {{-- The strike is the only thing that says "old price", and it says it to the
-                 eye alone: <del> exposes `role="deletion"`, which screen readers do not
-                 announce by default. This prefix is what makes the pair readable as a
-                 pair rather than as two unrelated amounts. --}}
-            <span class="sr-only">{{ __('wirekit::Previous price') }}</span>
-            <bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedBase }}</bdi>
-        </del>
+        {{-- A named amount, "UVP" for a recommended price, is a reference price: muted and not
+             struck through, outside <del>. A strike-through is the form of a reduction of the
+             seller's own price, and a comparison with a recommended price must not read as one
+             (Commission notice 2021/C 526/02, section 3). The name is what a screen reader hears
+             before the amount, so nothing is announced twice. The name and the amount are one
+             group, so a narrow column never breaks them apart. Each branch opens and closes its
+             own elements, so Livewire's block markers stay around whole elements. --}}
+        @if($hasBaseLabel)
+            <span class="inline-flex items-baseline gap-x-1.5 text-[color:var(--color-wk-text-muted)] {{ $sizeClasses }}"><span>{{ $baseLabel }}</span> <bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedBase }}</bdi></span>
+        @else
+            <del
+                class="text-[color:var(--color-wk-text-muted)] {{ $sizeClasses }}"
+                style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;"
+            >
+                {{-- The strike is the only thing that says "old price", and it says it to the
+                     eye alone: <del> exposes `role="deletion"`, which screen readers do not
+                     announce by default. This prefix is what makes the pair readable as a
+                     pair rather than as two unrelated amounts. --}}
+                <span class="sr-only">{{ __('wirekit::Previous price') }}</span>
+                <bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedBase }}</bdi>
+            </del>
+        @endif
     @endif
 
     {{-- Primary price, behind the word "from" when it is the lowest of several. The word and the
@@ -292,8 +348,8 @@
     {{-- Delta badge --}}
     @if($formattedDelta !== null)
         {{-- <bdi> like the two amounts above, and for a sharper reason: the delta carries a
-             LEADING SIGN. A `+` or `-` next to a number takes its direction from the
-             surrounding paragraph, so in a right-to-left line the sign jumps to the other
+             leading sign. A `+` or `-` next to a number takes its direction from the
+             surrounding paragraph, so in a line that reads from the right the sign jumps to the other
              end and "+12%" reads as "12%+" — or worse, as a minus in the reader's eye. --}}
         <span class="{{ $deltaClasses }} text-[length:var(--text-wk-xs)]">
             <bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedDelta }}</bdi>
@@ -312,10 +368,10 @@
          behind the wrapper's aria-label: that label sits on a roleless <span>,
          where ARIA prohibits it, so the figure the Price Indication Directive
          requires would hang on a name nothing guarantees is spoken. --}}
-    @if($formattedUnitPrice !== null)
+    @wirekitLast($formattedUnitPrice !== null)
         <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
             (<bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedUnitPrice }}</bdi> / {{ $unitMeasure }})
         </span>
-    @endif
+    @endwirekitLast
 </span>
 @endif

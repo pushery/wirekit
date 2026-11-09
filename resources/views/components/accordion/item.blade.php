@@ -23,7 +23,7 @@
 @aware([
     'variant' => config('wirekit.components.accordion.variant', 'bordered'),
     'size' => config('wirekit.components.accordion.size', 'md'),
-    // The heading level the trigger is wrapped in. It comes from the CONTAINER
+    // The heading level the trigger is wrapped in. It comes from the container
     // because an outline is a property of the page, not of one row: every item in
     // one accordion sits at the same depth, so letting rows disagree would only
     // let a developer build a broken outline one item at a time.
@@ -55,7 +55,7 @@
     $titleLang = \Pushery\WireKit\Support\LanguageTag::of($titleLang);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -76,7 +76,7 @@
     // Each item needs a stable id so Alpine can track open/closed state in the
     // parent's `opened` array, and so aria-controls / aria-labelledby can pair.
     // It is the same on every render, and a random id would not be. Both halves of
-    // BOTH pairings descend from this one value — the button carries id + aria-controls,
+    // both pairings descend from this one value — the button carries id + aria-controls,
     // the panel carries id + aria-labelledby — so a re-mint breaks the accordion's entire
     // relationship in one step, while every attribute stays well-formed. An item inside a
     // keyed loop or behind an @if is re-rendered on its own, which is the ordinary case.
@@ -85,7 +85,7 @@
     $panelId = $itemId . '-panel';
 
     // Density. 'lg' bumps trigger/panel padding one step and the trigger text
-    // size; 'md' is the original padding (back-compat). NOTE: full literal class
+    // size; 'md' is the original padding (back-compat). Note: full literal class
     // strings (not interpolated) so Tailwind's text scanner compiles them — a
     // built class like "px-[var(--padding-wk-x-lg)]" must appear verbatim in the
     // file (the dynamic-class-composition pitfall from the drift-audit system).
@@ -109,12 +109,12 @@
         'bg-[var(--color-wk-bg-elevated)]',
     ]) : '';
 
-    // Trigger button — full-width, left-aligned, clickable row that toggles
+    // Trigger button — full-width, aligned to the start, clickable row that toggles
     // the item and swaps the chevron direction based on open state.
     $buttonClasses = WireKit::resolveClasses('accordion.item', 'button', implode(' ', [
         'flex items-center justify-between w-full gap-[var(--padding-wk-x-md)]',
         $buttonPad,
-        'text-left',
+        'text-start',
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'hover:bg-[var(--color-wk-bg-active)]',
@@ -194,8 +194,8 @@
         </button>
     </h{{ $levelValue }}>
 
-    @if($findable)
-    {{-- FINDABLE PANEL. Closed, it is `hidden="until-found"` where the engine supports it, so the
+    @wirekitLast($findable)
+    {{-- Findable panel. Closed, it is `hidden="until-found"` where the engine supports it, so the
          browser's find in page can match its text and open it; `x-on:beforematch` opens the item's
          own state before the browser takes the attribute off, so the next render keeps it open.
          Where the engine does not support it, `x-wk-findable` hides it exactly as `x-show` did.
@@ -208,7 +208,7 @@
         role="region"
         aria-labelledby="{{ $buttonId }}"
         {{-- Both spellings are written out rather than assembled, and the duplication is the
-             point. A directive NAME built in PHP is invisible to every scanner that looks for
+             point. A directive name built in PHP is invisible to every scanner that looks for
              this one by name — the CSP audit among them — so the modifier would be unreachable
              to exactly the checks that exist to find it. Two literal lines cost nothing. --}}
         @if($animate)
@@ -234,7 +234,7 @@
         aria-labelledby="{{ $buttonId }}"
         x-show="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
         {{-- The other half of the same prop. `x-wk-findable.collapse` exists because `x-collapse`
-             only works with `x-show` — and this branch IS `x-show`, so here the plugin is the
+             only works with `x-show` — and this branch is `x-show`, so here the plugin is the
              right tool and the same prop reaches both paths rather than one of them. --}}
         @if($animate) x-collapse @endif
         {{-- A closed panel stays hidden until the script starts; an open one paints with the page. --}}
@@ -243,5 +243,5 @@
     >
         {{ $slot }}
     </div>
-    @endif
+    @endwirekitLast
 </div>

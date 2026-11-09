@@ -53,7 +53,7 @@ export default function wirekitPricingTable(config = {}) {
             // the value returns to one it already held. With `x-data` unchanged the
             // scope survives, and the observer below is the one path a server-side
             // change travels.
-            // The observer attribute is CONDITIONAL here — it is only rendered
+            // The observer attribute is conditional here — it is only rendered
             // when the server actually drives the interval. So the fallback is
             // the `default` prop rather than nothing: without it a table the
             // server does not drive would start on no interval at all.

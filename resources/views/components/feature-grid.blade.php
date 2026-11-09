@@ -71,10 +71,20 @@
     // `:nth-child` rules walk the index up to a cap of 8 to keep long
     // grids from producing runaway delays.
     // Tri-state (null | true | int step): `!== false` alone let the unbound-attribute
-    // string 'false' (truthy) turn stagger ON — BooleanProp::isFalse recognizes the
+    // string 'false' (truthy) turn stagger on — BooleanProp::isFalse recognizes the
     // stringly-false spellings without collapsing an int step. See countdown `animate`.
+    // A float that is no number says nothing, as `null` does.
+    if (is_float($stagger) && is_nan($stagger)) {
+        $stagger = null;
+    }
+
     $hasStagger = $stagger !== null && ! BooleanProp::isFalse($stagger);
-    $staggerStep = is_int($stagger) ? $stagger : 75;
+    // A step written as text is that number, as a bound one is. `true`, a bare `stagger` and a
+    // switch word such as `on` take 75ms, and so does any other text, which is reported.
+    $staggerWord = is_string($stagger) && ! is_numeric(trim($stagger)) && BooleanProp::orNull($stagger) === true;
+    $staggerStep = ! $hasStagger || is_bool($stagger) || $staggerWord
+        ? 75
+        : (\Pushery\WireKit\Support\NumericProp::intOrNull($stagger, 'feature-grid', 'stagger') ?? 75);
 
     $classes = WireKit::resolveClasses('feature-grid', 'base', implode(' ', [
         'grid',
@@ -88,7 +98,7 @@
     // emitted — duplicate `style=` attributes would silently let the
     // browser drop our auto-default and undermine the developer's
     // intentional override (or vice versa). Developer style comes
-    // SECOND so later-declaration-wins lets `style="--wk-stagger-step:
+    // second so later-declaration-wins lets `style="--wk-stagger-step:
     // 200ms"` override our default in the canonical cascade order.
     $stylePieces = [];
     if ($hasStagger) {

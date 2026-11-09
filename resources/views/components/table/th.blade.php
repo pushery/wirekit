@@ -1,4 +1,4 @@
-{{-- optimistic-ui: n/a — query. The wire:click this component emits is a SORT: a
+{{-- optimistic-ui: n/a — query. The wire:click this component emits is a sort: a
      query round trip, not a mutation. We cannot show its result before the server
      answers, because nobody knows the result — only the intent could be
      acknowledged, and that is a different state machine and deliberately out of
@@ -15,7 +15,9 @@
     // via $attributes). Ignored in
     // Alpine-sort mode (the `column` prop already renders its own button model).
     'sortAction' => null,
-    'align' => 'left', // left | center | right
+    // start | center | end, which follow the direction of the page, or left | right, which name a
+    // physical side whatever the direction.
+    'align' => 'start',
     'scope' => null,
     // HTML <th scope> attribute — 'col' (default) for a column header, 'row' for a
     // per-row header cell (WCAG 1.3.1: a row-header cell identifies its data row).
@@ -24,7 +26,7 @@
     'headerScope' => 'col',
     // sm | md | lg | xl | 2xl — hide this column below that breakpoint; its cells take the same value.
     'hideBelow' => null,
-    // Hide the column below a width of the TABLE, not of the window.
+    // Hide the column below a width of the table, not of the window.
     //
     // `hideBelow` asks the viewport, and beside a sidebar that is the wrong question: in an
     // app shell the table can have less room at a 1024px viewport than at 768px, because the
@@ -32,11 +34,11 @@
     // exactly where the table has least room.
     //
     // The scale is the container scale and it is not the viewport one. Tailwind's container
-    // sizes are their own ladder: `3xl` here is 48rem of TABLE width, where `hide-below="md"`
-    // is 48rem of WINDOW. Same numbers, different subject — so the two props are deliberately
+    // sizes are their own ladder: `3xl` here is 48rem of table width, where `hide-below="md"`
+    // is 48rem of window. Same numbers, different subject — so the two props are deliberately
     // not interchangeable and a call site should pick one.
     //
-    // The container is NAMED (`@container/wk-table` on the table's frame) rather than
+    // The container is named (`@container/wk-table` on the table's frame) rather than
     // anonymous: an unnamed container would also become the measuring context for every
     // `@`-variant a caller nests inside the table, and silently retarget it.
     'hideBelowContainer' => null,
@@ -48,19 +50,19 @@
     // Let a long header break instead of holding its column as wide as the longest word.
     //
     // A column header is `whitespace-nowrap` by default, and that is right for the usual
-    // one-word head. It is wrong for a column whose NAME is long and whose CONTENT is not:
+    // one-word head. It is wrong for a column whose name is long and whose content is not:
     // a permissions table with heads like "Nutzungsbedingungen" over icons that need 16px
     // holds each column at the width of its word, and the table runs past its frame rather
     // than the heads taking two lines.
     //
-    // `wrap` breaks ANYWHERE, which is what a long compound over a narrow icon column needs.
+    // `wrap` breaks anywhere, which is what a long compound over a narrow icon column needs.
     // `wrap="words"` breaks only between words and evens the lines up: over a column of numbers
     // there is nothing to hold the column wider than a digit, and a head that may break anywhere
     // fell to that width ("Line / s", "to 2 / %"). Between words, the longest word is the floor.
     'wrap' => false,
     // Turn the label on its side, reading from bottom to top on one line.
     //
-    // For a column whose NAME is long and whose values are a mark or a glyph, next to a column
+    // For a column whose name is long and whose values are a mark or a glyph, next to a column
     // that takes the rest of the width, such as a user list with one column per legal text.
     // `wrap` cannot help there, since
     // the wide column claims everything the heads give up and they fall to one letter per line.
@@ -126,20 +128,22 @@
     // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
     $attributes = $attributes->except(['stackBelow', 'stack-below', 'stackBelowContainer', 'stack-below-container']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false, 'table.th', 'sortable');
     $sideways = BooleanProp::from($sideways, false, 'table.th', 'sideways');
 
     // Alignment maps to text-* utilities. An unknown value is reported through the strictness gate
-    // and, where the gate does not throw, aligns left.
-    $align = filled($align) ? WireKit::validateProp('table.th', 'align', (string) $align, ['left', 'center', 'right']) : 'left';
+    // and, where the gate does not throw, aligns to the start of the line.
+    $align = filled($align) ? WireKit::validateProp('table.th', 'align', (string) $align, ['start', 'center', 'end', 'left', 'right']) : 'start';
 
     $alignClass = match ($align) {
         'center' => 'text-center',
+        'end' => 'text-end',
+        'left' => 'text-left',
         'right' => 'text-right',
-        default => 'text-left',
+        default => 'text-start',
     };
 
     // The size and weight of a column head, or of a body cell with `variant="cell"`: the same two
@@ -152,11 +156,11 @@
 
     // The same alignment as a flex justification, for the sort-action button: it is
     // `w-full` so its hit area covers the cell, and a full-width flex container
-    // ignores the cell's text-align — the label would snap left in a right-aligned
-    // numeric column without this.
+    // ignores the cell's text-align — the label would snap to the start of a numeric
+    // column aligned to the end without this.
     $justifyClass = match ($align) {
         'center' => 'justify-center',
-        'right' => 'justify-end',
+        'end', 'right' => 'justify-end',
         default => 'justify-start',
     };
 
@@ -164,12 +168,12 @@
     // it, upright, so its arrow still points the way the order runs. Across the column the pair
     // follows `align`, as a label does in any head.
     $sortLayout = $sideways
-        ? 'flex-col justify-end gap-1 '.match ($align) {
+        ? 'flex-col justify-end gap-[var(--gap-wk-xs)] '.match ($align) {
             'center' => 'items-center',
-            'right' => 'items-end',
+            'end', 'right' => 'items-end',
             default => 'items-start',
         }
-        : 'items-center gap-1 '.$justifyClass;
+        : 'items-center gap-[var(--gap-wk-xs)] '.$justifyClass;
 
     // The label itself. Only the text turns; the indicator beside it in the markup below is
     // outside this span, which is what keeps it upright.
@@ -199,15 +203,15 @@
     $helpBesideBox = 'inline-flex align-middle ps-[var(--gap-wk-xs)]';
     $helpItems = match ($align) {
         'center' => 'items-center',
-        'right' => 'items-end',
+        'end', 'right' => 'items-end',
         default => 'items-start',
     };
 
-    // Read BEFORE the class builder so a row header can drop the column-header look.
+    // Read before the class builder so a row header can drop the column-header look.
     $isRowHeader = $headerScope === 'row';
 
-    // A ROW header labels its own data row (WCAG 1.3.1) and reads as a heading
-    // for that row — NOT as a column header. The muted, nowrap column-header
+    // A row header labels its own data row (WCAG 1.3.1) and reads as a heading
+    // for that row — not as a column header. The muted, nowrap column-header
     // treatment made a row header render small, greyed-out and clipped; it now
     // uses the regular text color and is allowed to wrap.
     // `words` is its own mode; any other value is the boolean it always was.
@@ -383,28 +387,18 @@
         // button present the button is the target and carries its own cursor-pointer, and
         // it fills the cell, so repeating the pointer on the <th> would either duplicate it
         // or — where the button did not reach the cell edges — advertise a pointer over a
-        // dead zone. A sortable header with NO button (Livewire-sort without `sortAction`,
+        // dead zone. A sortable header with no button (Livewire-sort without `sortAction`,
         // where the developer supplies the control) keeps the pointer on the cell.
         $padOnButton ? 'select-none hover:text-[color:var(--color-wk-text)]' : '',
     ]), $scope);
 
-    // A font size or weight in the caller's `class` replaces the head's own. Beside it the
-    // stylesheet's order would decide which one wins, not the attribute. A size or weight under a
-    // variant is left alone, because it applies in a state or at a width of its own.
-    $callerClass = \Illuminate\Support\Arr::toCssClasses($attributes->get('class', ''));
-    foreach ([\Pushery\WireKit\Support\UtilityClasses::FONT_SIZE, \Pushery\WireKit\Support\UtilityClasses::FONT_WEIGHT] as $property) {
-        if (\Pushery\WireKit\Support\UtilityClasses::has($callerClass, $property)) {
-            $classes = \Pushery\WireKit\Support\UtilityClasses::without($classes, $property);
-        }
-    }
-
     // ARIA: sortable columns expose their current sort state.
     //
     // `$sortable` alone is not a sortable column. Both operable shapes need something to
-    // sort BY — Alpine mode needs `column`, Livewire mode needs `sortAction` — and with
+    // sort by — Alpine mode needs `column`, Livewire mode needs `sortAction` — and with
     // neither the header would render `aria-sort="none"`, a cursor-pointer and a hover state
     // while emitting no button at all. That is the precise combination WCAG 2.1.1 is about:
-    // the cell ANNOUNCES a sort order and a keyboard or switch user can hear it and never
+    // the cell announces a sort order and a keyboard or switch user can hear it and never
     // change it, while the pointer affordance says they should be able to.
     //
     // `$padOnButton` already computes exactly this condition for a layout reason; it is
@@ -419,6 +413,8 @@
 <th data-wk-prose-skip
     scope="{{ $headerScope }}"
     data-wk-table-th
+    {{-- The table reads this marker to know that something inside measures its frame. --}}
+    @if($hideBelowContainer !== null) data-wk-table-measures @endif
     {{-- Stacked, each cell of the column is named by this header, by its words as the page
          shows them, without the state a sort button adds for a screen reader alone. --}}
     @if(filled($stackBelow))
@@ -435,7 +431,7 @@
     @if($sortable && $column)
         {{-- Alpine sort mode: bind aria-sort to parent wirekitTableSort state. The click
              lives on the <button> below, not here — a cursor-pointer cell with an @click
-             is mouse-only, and this cell ANNOUNCES its sort state, so a keyboard or switch
+             is mouse-only, and this cell announces its sort state, so a keyboard or switch
              user could hear the order and never be able to change it (WCAG 2.1.1). --}}
         :aria-sort="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc' ? 'ascending' : getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc' ? 'descending' : 'none'"
     @elseif($ariaSort)
@@ -443,12 +439,12 @@
     @endif
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    @if($sortable && $column)
+    @wirekitLast($sortable && $column)
         {{-- Alpine sort mode. The click sits on a real <button>, the same shape the
              Livewire-sort branch below uses, so the sort is operable by keyboard and by
              switch — a native button activates on Enter and Space with no key handler of
              our own, which is why this is a button rather than a tabindex + @keydown on
-             the cell. It carries the cell's relocated padding so its box IS the cell (the
+             the cell. It carries the cell's relocated padding so its box is the cell (the
              24px AA target on both axes, no inert cell area); `w-full` plus a justify
              matching the column alignment keeps the label exactly where the text-align
              put it; and the focus ring is inset because the table's scroll wrapper
@@ -481,7 +477,7 @@
         @endphp
         @if($sortAction)
             {{-- The button carries the cell's padding (the `$padOnButton` branch
-                 above drops it from the <th>), so its box IS the cell: the target
+                 above drops it from the <th>), so its box is the cell: the target
                  reaches the 24px AA minimum on both axes and no part of the cell is
                  inert. `w-full` + a justify matching the column's alignment keeps
                  the label exactly where the text-align put it.
@@ -500,12 +496,12 @@
                 {!! $sortIndicator !!}
             </button>@if($helpBeside)<span class="{{ $helpBesideBox }}">@include('wirekit::components.partials.field-help', $helpPartial)</span>@elseif($helpPartial !== null)<span class="flex {{ $justifyClass }} px-[var(--padding-wk-x-md)] pb-[var(--padding-wk-y-md)]">@include('wirekit::components.partials.field-help', $helpPartial)</span>@endif
         @else
-            <span class="{{ $sideways ? 'inline-flex flex-col items-center gap-1' : 'inline-flex items-center gap-1' }}">
+            <span class="{{ $sideways ? 'inline-flex flex-col items-center gap-[var(--gap-wk-xs)]' : 'inline-flex items-center gap-[var(--gap-wk-xs)]' }}">
                 {{ $label }}
                 {!! $sortIndicator !!}
-                @if($helpPartial !== null)
+                @wirekitLast($helpPartial !== null)
                     @include('wirekit::components.partials.field-help', $helpPartial)
-                @endif
+                @endwirekitLast
             </span>
         @endif
     @elseif($helpPartial !== null)
@@ -517,5 +513,5 @@
         </span>
     @else
         {{ $label }}
-    @endif
+    @endwirekitLast
 </th>

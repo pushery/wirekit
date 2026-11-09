@@ -10,16 +10,16 @@
  * The `done` / `_fired` split is the subtle part. They look redundant and are
  * not:
  *
- *   `_fired` de-dupes the EVENT — it announces the deadline once.
- *   `done` is a MODEL VALUE that x-modelable binds, and it must be re-derivable.
+ *   `_fired` de-dupes the event — it announces the deadline once.
+ *   `done` is a model value that x-modelable binds, and it must be re-derivable.
  *
- * Conflating them would be a defect. x-modelable entangles on a microtask AFTER
+ * Conflating them would be a defect. x-modelable entangles on a microtask after
  * init() runs, and its first pass copies the caller's outer value inward — so
  * for a deadline that has already passed at init, the `done = true` set during
  * init is immediately overwritten with the caller's `false`. Latching `done`
  * behind `_fired` would make the overwrite permanent: the binding would stay
  * false for the life of the page, until a reload. Deriving `done` from
- * `expired` on every pass is what survives the copy, and watching the VALUE
+ * `expired` on every pass is what survives the copy, and watching the value
  * rather than guessing at microtask order is what makes it independent of when
  * Alpine happens to run the entangle pass.
  *
@@ -162,7 +162,7 @@ export default function wirekitCountdown(config = {}) {
             watchCurrent(this, 'now', () => sync());
 
             // And the deadline gets its own timer, which is what lets the display tick be
-            // coarse without making the EVENT coarse. `sync()` hangs on the interval, so a
+            // coarse without making the event coarse. `sync()` hangs on the interval, so a
             // 30-second display tick would delay `wirekit-countdown-expired` by up to thirty
             // seconds — a component that reads "0 days" while nothing has fired yet.
             //
@@ -251,10 +251,10 @@ export default function wirekitCountdown(config = {}) {
         },
 
         /**
-         * How often the DISPLAY has to be refreshed, from the smallest unit it shows.
+         * How often the display has to be refreshed, from the smallest unit it shows.
          *
          * An unconditional 1 Hz tick would set a reactive property every second for a
-         * deadline shown in DAYS, re-evaluating every expression derived from it for a value
+         * deadline shown in days, re-evaluating every expression derived from it for a value
          * that changes once a day. The interval follows `showSeconds` and the unit list
          * instead.
          *
@@ -320,13 +320,13 @@ export default function wirekitCountdown(config = {}) {
         },
 
         /**
-         * The complete remaining-time ladder, for a HEADLESS display.
+         * The complete remaining-time ladder, for a headless display.
          *
          * A developer whose app renders its own copy around the number (a
          * localized "Resend in N seconds" with its own pluralization) reads this
          * instead of rebuilding the clock, the resync and the expiry core.
          * Unlike `computed` — which is filtered to the active units and drops
-         * leading zeros — this is ALWAYS complete, so `remaining.seconds` and
+         * leading zeros — this is always complete, so `remaining.seconds` and
          * `remaining.totalSeconds` are stable regardless of the `units` prop.
          */
         get remaining() {
@@ -348,7 +348,7 @@ export default function wirekitCountdown(config = {}) {
         },
 
         /**
-         * The remaining time across the ACTIVE units.
+         * The remaining time across the active units.
          *
          * The first active unit carries all overflow above it, so units='hours'
          * shows total hours rather than hours-within-a-day; the rest cascade. A
@@ -426,7 +426,7 @@ export default function wirekitCountdown(config = {}) {
         /**
          * Coarse text for assistive technology.
          *
-         * NOT a per-second live region — `role="timer"` is `aria-live="off"` —
+         * Not a per-second live region — `role="timer"` is `aria-live="off"` —
          * so this is read on navigation rather than announced every tick.
          */
         get srText() {

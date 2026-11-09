@@ -25,7 +25,7 @@ final class TailwindVersionCheck extends VerifyCheck
      * Tailwind CSS v4+ is a hard requirement — WireKit's CSS uses the v4 engine
      * (the `@theme` / `@source` at-rules, `color-mix()`, `@property`). This
      * backstops the wirekit:install pre-flight gate — a v3 project that somehow
-     * reached the doctor gets the SAME clear "upgrade to v4" message here,
+     * reached the doctor gets the same clear "upgrade to v4" message here,
      * instead of the misleading "Missing @source" the source-directive check
      * would emit (v3 has no `@source` concept). Detection is conservative
      * (positive evidence only).

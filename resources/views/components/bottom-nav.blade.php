@@ -32,7 +32,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $mobileOnly = BooleanProp::from($mobileOnly, true, 'bottom-nav', 'mobileOnly');
@@ -42,7 +42,7 @@
     $isInteractive = filter_var($interactive, FILTER_VALIDATE_BOOLEAN);
 
     $classes = 'wk-bottom-nav '.WireKit::resolveClasses('bottom-nav', 'base', implode(' ', [
-        // The layer TOKEN rather than its number, so a theme that moves the layer moves this too.
+        // The layer token rather than its number, so a theme that moves the layer moves this too.
         'fixed inset-x-0 bottom-0 z-[var(--z-wk-sticky)]',
         'flex items-stretch justify-around',
         'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',

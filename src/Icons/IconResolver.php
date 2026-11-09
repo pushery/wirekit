@@ -77,7 +77,7 @@ final class IconResolver
     }
 
     /**
-     * One real identifier per configured preset, for a check that wants to RESOLVE rather than
+     * One real identifier per configured preset, for a check that wants to resolve rather than
      * ask whether a package is installed.
      *
      * The two questions have different answers, and the difference is not academic: an
@@ -169,7 +169,7 @@ final class IconResolver
         }
 
         // 3. Fall through to the underlying blade-icons identifier when the
-        // alias matches the ICON name (no prefix) in the active preset family.
+        // alias matches the icon name (no prefix) in the active preset family.
         // A developer who writes `<x-wirekit::icon name="briefcase" />`
         // expecting the blade-heroicons icon gets it: `briefcase` is no alias,
         // but the underlying SVG ships in the package. We log an INFO line so
@@ -216,7 +216,7 @@ final class IconResolver
         // fail fast (a typo should break the build loudly). But in an HTTP
         // request — where a package rendering <x-wirekit::icon name="…"> with an
         // unaliased name, blade-icons absent, would otherwise throw and 500 the
-        // WHOLE page (icons render transitively through buttons, dropdowns,
+        // whole page (icons render transitively through buttons, dropdowns,
         // modals) — we log the error and return an empty identifier. The <x-wirekit::icon>
         // view then renders its inert placeholder instead of taking the page down.
         if (! StrictnessGate::shouldThrowOnInvalid()) {
@@ -309,7 +309,7 @@ final class IconResolver
     }
 
     /**
-     * Extract the family-prefix (everything up to the LAST `-`) from
+     * Extract the family-prefix (everything up to the last `-`) from
      * a full blade-icon identifier like `heroicon-m-x-mark` →
      * `heroicon-m`. The blade-icons package uses `{set}-{name}` for
      * Lucide / Phosphor / Tabler and `{set}-{style}-{name}` for
@@ -414,14 +414,14 @@ final class IconResolver
      * `resolve()` answers "what do I render for this name", and it always
      * answers something: an unknown name falls through to the icon set's own naming, so
      * it is a good renderer and a useless oracle. There was no way to ask the question
-     * a tool actually has — "is this a name WireKit KNOWS, or did it just happen to
+     * a tool actually has — "is this a name WireKit knows, or did it just happen to
      * work?" — except by reading an info-level log line, which is not an API.
      *
      * Deliberately without the fallthrough. That is the whole point: a name only in here
      * if somebody declared it. Add the fallthrough and every valid glyph name becomes an
      * "alias", which is the same as answering yes to everything.
      *
-     * Merged LEFT to right so later presets overwrite earlier ones, which is the same
+     * Merged left to right so later presets overwrite earlier ones, which is the same
      * precedence `lookup()` gets by walking right to left and taking the first hit.
      * Developer aliases go on last, because they win there too.
      *

@@ -23,7 +23,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('context-menu.item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -37,7 +37,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $danger = BooleanProp::from($danger, false, 'context-menu.item', 'danger');
@@ -91,6 +91,14 @@
         ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
+
+    // The new-tab hint after the label is an echo rather than a block, so Livewire writes no
+    // morph markers around it: it comes or goes after the label and moves nothing before it. The
+    // icon stands before the label and keeps its block. The hint's class goes through
+    // CompactClasses, as a class attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'"> '.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
@@ -102,18 +110,15 @@
     @if($computedRel) rel="{{ $computedRel }}" @endif
     x-on:click="close()"
     {{ $attributes->except(['rel', 'type', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses, $disabledClasses])) }}
->
-    @if($icon)
-        <span class="shrink-0 w-5 h-5" aria-hidden="true">
-            {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
-        </span>
-    @endif
-
-    {{ $slot }}
-    {{-- The other half of the `target="_blank"` rule, and the half that was missing here.
-         `rel="noopener noreferrer"` protects the OPENER; this tells the reader what is about
-         to happen. A link that silently opens a new tab leaves a screen-reader user in a
-         document they did not ask for, with Back doing nothing — and nothing in the page
-         explains why. `link` has carried this hint all along; these did not. --}}
-    @if($opensNewTab)<span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>@endif
-</{{ $tag }}>
+>{{--
+    The parts of the item touch: no text of this template stands between them, so a `<button>`,
+    which keeps a run of white space as a flex item, sets no gap beside an empty item before or
+    after the label. Every echo is followed by the next directive or tag on its line. The space
+    before the new-tab hint stands inside the hint, which takes no place in the row.
+--}}@if($icon)
+<span class="shrink-0 w-5 h-5" aria-hidden="true">{{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}</span>@endif
+{{ $slot }}{{-- The other half of the `target="_blank"` rule, and the half that was missing here.
+     `rel="noopener noreferrer"` protects the opener; this tells the reader what is about
+     to happen. A link that silently opens a new tab leaves a screen-reader user in a
+     document they did not ask for, with Back doing nothing — and nothing in the page
+     explains why. `link` has carried this hint all along; these did not. --}}{{ $newTabHint }}</{{ $tag }}>

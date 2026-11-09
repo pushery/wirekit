@@ -59,17 +59,31 @@
      element would end the paragraph where it stands.
 
      Under the question, the list of what is unsaved and where: utils/unsaved.js fills it from the
-     item template each time the dialog opens, with five fields at most, each named by its label
-     and placed by the tabs, cards and marked parts around it, and the line below names how many
-     more there are. An entry closes the dialog, opens the tab, the cards and the `details`
-     around its field, and gives the field the focus. --}}
+     two templates each time the dialog opens, with five fields at most. The fields of one place,
+     the tabs, cards and marked parts around them, stand in one box headed "Section: <place>",
+     whose list that heading names; each field is a button reading "Unsaved content: <label>",
+     and one without a place stands outside every box. The line below names how many more there
+     are. An entry closes the dialog, opens the tab, the cards and the `details` around its field,
+     and gives the field the focus.
+
+     Before it opens, the scope dispatches `wirekit:unsaved-question`, in which the page may set
+     the question, a sentence under it, the label of Leave and whether ⌘↵ / Ctrl+Enter presses
+     Leave, for that opening only. The sentence is shown, and describes the dialog, only when it
+     is set. --}}
 <template data-wk-unsaved-question>
     <x-wirekit::alert-dialog :describedby="false" :close-on-confirm="false" :scope="$scope">
         <x-wirekit::alert-dialog.title><span data-wk-unsaved-question-text>{{ $question }}</span></x-wirekit::alert-dialog.title>
-        <ul data-wk-prose-skip data-wk-unsaved-question-list role="list" hidden style="list-style: none; margin: var(--space-wk-sm, 0.5rem) 0 0; padding: 0;" class="list-none flex flex-col items-start gap-[var(--gap-wk-xs)]"></ul>
+        <p data-wk-prose-skip data-wk-unsaved-question-description hidden class="mt-[var(--space-wk-xs)] font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]"></p>
+        <ul data-wk-prose-skip data-wk-unsaved-question-list role="list" hidden style="list-style: none; margin: var(--space-wk-sm, 0.5rem) 0 0; padding: 0;" class="list-none flex flex-col items-stretch gap-[var(--gap-wk-sm)]"></ul>
+        <template data-wk-unsaved-question-group>
+            <li data-wk-prose-skip data-wk-unsaved-question-box class="rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]">
+                <p data-wk-prose-skip data-wk-unsaved-question-heading class="font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]"><span class="text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Section:') }}</span> <span data-wk-unsaved-question-place></span></p>
+                <ul data-wk-prose-skip data-wk-unsaved-question-entries role="list" style="list-style: none; margin: 0; padding: 0;" class="list-none flex flex-col items-start"></ul>
+            </li>
+        </template>
         <template data-wk-unsaved-question-item>
             <li data-wk-prose-skip>
-                <button type="button" data-wk-unsaved-question-field class="wk-touch-row inline-flex min-h-[var(--size-wk-target-min)] flex-wrap items-baseline gap-x-[var(--gap-wk-xs)] cursor-pointer rounded-[var(--radius-wk-sm)] text-start font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] underline-offset-2 hover:underline focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"><span data-wk-unsaved-question-name></span><span data-wk-unsaved-question-comma class="sr-only">, </span><span data-wk-unsaved-question-place class="text-[color:var(--color-wk-text-muted)]"></span></button>
+                <button type="button" data-wk-unsaved-question-field class="wk-touch-row inline-flex min-h-[var(--size-wk-target-min)] flex-wrap items-baseline gap-x-[var(--gap-wk-xs)] cursor-pointer rounded-[var(--radius-wk-sm)] text-start font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] underline-offset-2 hover:underline focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"><span class="text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Unsaved content:') }}</span> <span data-wk-unsaved-question-name></span></button>
             </li>
         </template>
         <p data-wk-prose-skip data-wk-unsaved-question-more hidden data-wk-unsaved-question-forms="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $moreForms) }}" data-wk-unsaved-question-locale="{{ $locale }}" data-wk-unsaved-question-separators="{{ \Pushery\WireKit\Support\AlpinePayload::json(\Pushery\WireKit\Support\LocalizedNumber::separators()) }}" class="mt-[var(--space-wk-xs)] font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]"></p>
@@ -77,7 +91,7 @@
             <x-wirekit::alert-dialog.cancel>
                 <x-wirekit::button intent="neutral" surface="ghost" size="sm">{{ __('wirekit::Stay') }}</x-wirekit::button>
             </x-wirekit::alert-dialog.cancel>
-            <x-wirekit::button intent="danger" size="sm" x-on:click="$dispatch('wirekit:unsaved-leave')">{{ __('wirekit::Leave') }}</x-wirekit::button>
+            <x-wirekit::button intent="danger" size="sm" data-wk-unsaved-question-leave x-on:click="$dispatch('wirekit:unsaved-leave')"><span data-wk-unsaved-question-leave-text>{{ __('wirekit::Leave') }}</span></x-wirekit::button>
         </x-wirekit::alert-dialog.actions>
     </x-wirekit::alert-dialog>
 </template>

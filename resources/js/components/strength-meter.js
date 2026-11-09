@@ -35,7 +35,7 @@ export default function wirekitStrengthMeter(config = {}) {
         levels: Array.isArray(config.levels) ? config.levels.map(String) : [],
         _template: typeof config.template === 'string' ? config.template : ':value',
         _stopServerSync: null,
-        // What the status region holds. Empty until the step CHANGES: bound straight to the
+        // What the status region holds. Empty until the step changes: bound straight to the
         // announcement, hydration would write the starting step into the region, and a region
         // whose text changes is spoken, so every page would announce its meters on load.
         spoken: '',
@@ -104,7 +104,7 @@ export default function wirekitStrengthMeter(config = {}) {
 
         /**
          * `aria-valuetext`, or false so Alpine removes the attribute: an empty string would be
-         * SET, and a meter announcing an empty value text reads as one somebody thought about.
+         * set, and a meter announcing an empty value text reads as one somebody thought about.
          */
         get valueText() {
             return this.level || false;

@@ -9,12 +9,12 @@ use Illuminate\Support\Str;
 /**
  * Reads a Blade component prop that is meant as a boolean.
  *
- * Blade compiles an UNBOUND attribute to a PHP string. `schema="false"` therefore
+ * Blade compiles an unbound attribute to a PHP string. `schema="false"` therefore
  * arrives as the string `'false'`, which is truthy, so a component that tests the
  * prop directly does the opposite of what the call site reads as:
  *
- *     <x-wirekit::faq schema="false">   → schema is 'false' → truthy → schema ON
- *     <x-wirekit::faq :schema="false">  → schema is false   → falsy  → schema OFF
+ *     <x-wirekit::faq schema="false">   → schema is 'false' → truthy → schema on
+ *     <x-wirekit::faq :schema="false">  → schema is false   → falsy  → schema off
  *
  * The failure is silent and asymmetric: the page renders normally either way, and
  * the direction that breaks is the one a developer chooses deliberately (turning a
@@ -46,6 +46,9 @@ final class BooleanProp
      * reported through the strictness gate as well, and still reads as on: without the report,
      * the typing error `wrap="flase"` would switch on, silently, what its caller wrote as off.
      * The prop's own name is a spelling of on, `disabled="disabled"` as HTML writes it.
+     *
+     * A float that is no number, a ratio over nothing, takes the default: PHP's truthiness reads
+     * `NAN` as on, and PHP 8.5 warns on that cast.
      */
     public static function from(mixed $value, bool $default = false, ?string $component = null, ?string $prop = null): bool
     {
@@ -66,7 +69,7 @@ final class BooleanProp
 
             // An empty attribute (`schema=""`) reads as "present but blank". Blade
             // itself treats a bare attribute as `true`, so blank is the one string
-            // that should NOT inherit that meaning — it is an explicit nothing.
+            // that should not inherit that meaning — it is an explicit nothing.
             if (trim($value) === '') {
                 return false;
             }
@@ -74,6 +77,12 @@ final class BooleanProp
             if ($component !== null && $prop !== null && ! self::namesItself(trim($value), $prop)) {
                 StrictnessGate::reject($component, $prop, trim($value), 'on or off: true, false, 1, 0, on, off, yes, no or the name of the prop', 'true');
             }
+        }
+
+        // A float that is no number says neither on nor off. `(bool) NAN` is true, and PHP 8.5 warns
+        // on that cast, so it takes the default.
+        if (is_float($value) && is_nan($value)) {
+            return $default;
         }
 
         return (bool) $value;
@@ -90,7 +99,7 @@ final class BooleanProp
     /**
      * Interpret a value as a boolean, or as unset when it says neither.
      *
-     * For a SWITCH whose third state, "not set", hands the decision to a default:
+     * For a switch whose third state, "not set", hands the decision to a default:
      * `validation.strict` and `validation.throw_on_invalid` in the configuration. The
      * spellings {@see from()} reads are read here too, and a word that says neither,
      * `nein` for instance, is unset rather than on, so the default decides.
@@ -109,22 +118,23 @@ final class BooleanProp
         }
 
         if (is_int($value) || is_float($value)) {
-            return (bool) $value;
+            // A float that is no number says neither, as from() reads it.
+            return is_float($value) && is_nan($value) ? null : (bool) $value;
         }
 
         return null;
     }
 
     /**
-     * Is this prop value an EXPLICIT false — WITHOUT collapsing a third state?
+     * Is this prop value an explicit false — without collapsing a third state?
      *
      * For TRI-STATE props (countdown `animate`, `stats`/`feature-grid` `stagger`,
      * form `success`, editor `toolbar`) whose value is `null | true | <something>`.
-     * Such a prop must NOT go through {@see from()} — that would collapse its third
+     * Such a prop must not go through {@see from()} — that would collapse its third
      * state (a message string, a step count, 'text') to a bool. But the guards that
      * test `$value !== false` still let the UNBOUND-attribute string `'false'` (which
      * is truthy) slip past, so `success="false"` paints the success state and
-     * `toolbar="false"` keeps the toolbar. This recognizes ONLY the genuine false
+     * `toolbar="false"` keeps the toolbar. This recognizes only the genuine false
      * spellings — bool `false` and the case-insensitive strings `'false'` / `'0'` /
      * `'off'` / `'no'` — and returns false for everything else (null, a non-false
      * bool, an int, and any string it cannot classify like `'text'` / `'basic'` /
@@ -146,7 +156,7 @@ final class BooleanProp
     }
 
     /**
-     * HTML attributes whose mere PRESENCE means "on", whatever their value.
+     * HTML attributes whose mere presence means "on", whatever their value.
      *
      * Per the HTML spec `disabled="false"` disables the control — the value is
      * ignored entirely. A developer writing it means the opposite, and gets no

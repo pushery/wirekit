@@ -7,7 +7,7 @@
     // The country the field starts on, as an ISO 3166-1 alpha-2 code. Case does not matter.
     'country' => config('wirekit.components.phone.country', 'DE'),
     // Which countries the picker offers, as alpha-2 codes. Null offers every country the
-    // dialing-code table carries. This narrows the PICKER and not what can be typed — a
+    // dialing-code table carries. This narrows the picker and not what can be typed — a
     // reader pasting an international number is followed, not corrected.
     'countries' => null,
     // Codes pulled to the top of the list, in the order given. For a form that expects a
@@ -19,7 +19,7 @@
     // Explained in a tooltip from a question mark beside the label, and read as the
     // field's description (partials/field-help).
     'help' => null,
-    // Takes the MESSAGE, not a boolean — the house shape. Laravel's validation bag is read
+    // Takes the message, not a boolean — the house shape. Laravel's validation bag is read
     // as well, under the field's name.
     'error' => null,
     'announceError' => null,
@@ -47,7 +47,7 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the control —
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the control —
     // the opposite of what the call site says, with no error either way.
     $hideLabel = BooleanProp::from($hideLabel, false, 'phone', 'hideLabel');
     $required = BooleanProp::from($required, false, 'phone', 'required');
@@ -174,10 +174,10 @@
         $regions[$code] = $entry;
     }
 
-    // The rows the picker draws. The flag is a MEDIUM rather than a character: an emoji flag
+    // The rows the picker draws. The flag is a medium rather than a character: an emoji flag
     // renders as two letters on Windows, which is the one platform where a country picker most
     // needs to be unambiguous. `OptionMedia` resolves `flag` against the artwork this package
-    // ships, and the row's LABEL still carries the name and the dialing code, so the flag is
+    // ships, and the row's label still carries the name and the dialing code, so the flag is
     // decorative and a reader who cannot see it loses nothing.
     $countryOptions = [];
 
@@ -212,7 +212,7 @@
         'regions' => $regions,
     ]);
 
-    // The field SHAPE, spelled out because `wk-field` is a marker rather than a style: it carries
+    // The field shape, spelled out because `wk-field` is a marker rather than a style: it carries
     // an iOS zoom guard and a date-separator color and nothing that draws a box. `input` builds
     // its box from this same set of utilities in its own class list.
     //
@@ -225,7 +225,7 @@
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
-        // --color-wk-border is DECORATIVE: 1.29:1 against a light input fill, below the WCAG
+        // --color-wk-border is decorative: 1.29:1 against a light input fill, below the WCAG
         // 1.4.11 floor for a control boundary. A field drawn with it has a border a reader can
         // barely see. Control boundaries take the -strong variants.
         'border-[var(--color-wk-border-strong)]',
@@ -249,7 +249,7 @@
         },
     ]);
 
-    $groupClasses = WireKit::resolveClasses('phone', 'group', 'flex min-w-0 items-stretch gap-2', $scope);
+    $groupClasses = WireKit::resolveClasses('phone', 'group', 'flex min-w-0 items-stretch gap-[var(--gap-wk-sm)]', $scope);
     // Layout only, unlike the number box: the combobox below draws its own field box from the
     // same tokens every other Form control uses. Handing it $fieldShape as well would paint a
     // second border around the first.
@@ -300,10 +300,10 @@
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
-    {{-- TWO controls, ONE value, and that is why this is a group rather than a field with an
+    {{-- Two controls, one value, and that is why this is a group rather than a field with an
          addon. The country control and the number box are separate tab stops; the group carries
          the field's name so a screen reader announces it once and then each part. It is
-         deliberately NOT a combobox relationship: the number box is free text, and a listbox
+         deliberately not a combobox relationship: the number box is free text, and a listbox
          link would promise a keyboard model it does not have. --}}
     {{-- The group carries the hint or the error too, as the range slider's does: the country
          control is part of the value and has no description of its own, so a reader who tabs
@@ -317,7 +317,7 @@
 
              The binding is `x-model`, answered by the combobox's `x-modelable="selected"`.
 
-             The accessible name of each row carries the country AND its dialing code. A bare
+             The accessible name of each row carries the country and its dialing code. A bare
              `+49` beside the box is invisible to a reader who cannot see it, and the number then
              reads as a fragment with no country attached. --}}
         <x-wirekit::combobox
@@ -329,7 +329,7 @@
             :disabled="$disabled || $readonly"
             panel-width="auto"
             {{-- No clear button. A phone number cannot be assembled without a country -- the
-                 dialing code IS the prefix -- so clearing it would leave the reader looking at a
+                 dialing code is the prefix -- so clearing it would leave the reader looking at a
                  number while the form submits an empty string. --}}
             :clearable="false"
             {{-- The country is part of this control, not the control a surrounding field
@@ -371,7 +371,7 @@
              a different string — writing one into the other is the defect this whole component is
              built around.
 
-             A caller's `wire:model` belongs HERE and is stripped from the number box above. It
+             A caller's `wire:model` belongs here and is stripped from the number box above. It
              compiles to `x-model`, and on the box it would bind what the reader typed — the local
              string — while the box already carries an `x-model` of its own. Two bindings fighting
              over one element, and the property would receive `0151 2345 6789` where the whole
@@ -393,9 +393,13 @@
         <noscript hidden><input type="hidden" @if($name !== '') name="{{ $name }}[country]" @endif value="{{ $startCountry }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif /></noscript>
     </div>
 
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

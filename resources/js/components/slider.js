@@ -407,7 +407,7 @@ export default function wirekitSlider(config = {}) {
          * where the server said no while everything derived from the mirror
          * says otherwise.
          *
-         * Named in the layer's `after`, which runs after EVERY write including
+         * Named in the layer's `after`, which runs after every write including
          * the undo, so the two can never be one apart.
          */
         syncToInput() {
@@ -516,9 +516,9 @@ export default function wirekitSlider(config = {}) {
         },
 
         /**
-         * Where the bubble sits, and how far it shifts back — both as OBJECTS.
+         * Where the bubble sits, and how far it shifts back — both as objects.
          *
-         * Alpine's `bind:style` given a STRING replaces the element's whole
+         * Alpine's `bind:style` given a string replaces the element's whole
          * `style` attribute on every reactive update, taking the static styles
          * with it. Neither element carries static inline styles today, so the
          * string form these replaced was not yet broken — but it is one static
@@ -533,7 +533,7 @@ export default function wirekitSlider(config = {}) {
         },
 
         /**
-         * The bubble moves back by its own position so it stays WITHIN the track at
+         * The bubble moves back by its own position so it stays within the track at
          * the extremes: at the lowest value it starts where the thumb starts, at the
          * highest it ends where the thumb ends, and it centers in the middle. It
          * moves in the direction the track runs, `--wk-slider-run` on the overlay:

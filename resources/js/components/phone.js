@@ -8,12 +8,12 @@ import { watchCurrent } from '../utils/watch-current.js';
  *
  * Two focusable things, one value. The country control and the number box are separate tab
  * stops inside one group, and everything awkward about this component comes from that: what is
- * SHOWN is a familiar local number, what is BOUND is E.164, and they are different strings.
+ * shown is a familiar local number, what is bound is E.164, and they are different strings.
  *
  * The assembly rule lives in PHP, in Support\DialingCodes::toE164(). This mirrors it so the
  * field can answer while somebody is still typing, and a browser check holds the two against
  * each other. Two copies of one rule drift; a test that runs both is the only defense, and
- * saying so here is the reminder that this file is a MIRROR rather than the original.
+ * saying so here is the reminder that this file is a mirror rather than the original.
  *
  * What it deliberately does not do:
  *
@@ -102,7 +102,7 @@ export default function wirekitPhone(config = {}) {
                 this.national = split.national;
             });
 
-            // Armed LAST, and the `else` above exists for it. The two assignments in that branch
+            // Armed last, and the `else` above exists for it. The two assignments in that branch
             // are the round-trip split rather than a reader's choice: a watcher armed before them
             // fires on page load, emitting an input event and moving focus on a page nobody has
             // touched. A `return` in that branch would skip this line on exactly the values that
@@ -140,7 +140,7 @@ export default function wirekitPhone(config = {}) {
 
             const match = this._regionForE164(incoming);
 
-            // A value whose country code is not among the offered regions is shown AS IS rather
+            // A value whose country code is not among the offered regions is shown as is rather
             // than silently reassigned to the default country. The reader then sees the number
             // they stored; a quiet reassignment would change what the form submits without anyone
             // touching the field.
@@ -178,7 +178,7 @@ export default function wirekitPhone(config = {}) {
 
             // $nextTick, because `e164` reaches that input through `x-bind:value` and a watcher
             // runs inside the same reactive flush. Dispatching now would have Livewire read the
-            // value from BEFORE the change -- the field would be one country behind, forever, and
+            // value from before the change -- the field would be one country behind, forever, and
             // only for the picker: typing a prefix into the box goes through `onInput`, which is
             // called from the template after the binding has settled.
             // A country the server set, together with its number, is already what the server
@@ -193,7 +193,7 @@ export default function wirekitPhone(config = {}) {
             // wrong here: after picking a country the next act is always to keep typing the
             // number. This one hop is the component's only deviation from that pattern.
             //
-            // Guarded on where focus actually IS, not on the fact that the value moved. A country
+            // Guarded on where focus actually is, not on the fact that the value moved. A country
             // the server changed -- a Livewire round trip, a reset -- must not yank the reader out
             // of whatever they are doing elsewhere on the page.
             if (number && this.$root && this.$root.contains(document.activeElement) && document.activeElement !== number) {
@@ -306,8 +306,8 @@ export default function wirekitPhone(config = {}) {
                 }
             }
 
-            // The emit happens HERE rather than as a second statement in the template.
-            // Alpine's CSP grammar parses ONE expression, so `onInput(); emit($refs.bound)`
+            // The emit happens here rather than as a second statement in the template.
+            // Alpine's CSP grammar parses one expression, so `onInput(); emit($refs.bound)`
             // never runs on the CSP bundle: the first keystroke logs `Alpine Expression
             // Error`, and the value never reaches `wire:model`.
             this.emit(boundEl);
@@ -317,7 +317,7 @@ export default function wirekitPhone(config = {}) {
          * Tell the hidden input it changed, so a `wire:model` on it hears about it.
          *
          * This is not housekeeping. The bound value lives on a hidden input written by an
-         * Alpine binding, and an attribute binding dispatches NOTHING — Livewire listens for an
+         * Alpine binding, and an attribute binding dispatches nothing — Livewire listens for an
          * `input` event and never receives one. Without this call the field looks right, submits
          * right through a plain form POST, and binds nothing at all through `wire:model`: the
          * property stays at whatever it was, and no error is raised on either side.
@@ -348,7 +348,7 @@ export default function wirekitPhone(config = {}) {
          * Split an E.164 string into the region it belongs to and the rest.
          *
          * Dialing codes are one to three digits and several regions share one — `US`, `CA` and
-         * the Caribbean are all 1 — so this matches the LONGEST code first and, among regions
+         * the Caribbean are all 1 — so this matches the longest code first and, among regions
          * sharing it, keeps the one already selected when that is one of them. Picking
          * arbitrarily would make the field jump to Canada while a reader in the United States
          * types their own number.

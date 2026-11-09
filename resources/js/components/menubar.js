@@ -3,21 +3,21 @@
  *
  * Desktop-style horizontal menu bar with dropdown menus.
  *
- * TWO LEVELS, and which one a key belongs to is decided by whether a menu is open. On
+ * Two levels, and which one a key belongs to is decided by whether a menu is open. On
  * the closed bar the arrows move focus between triggers without opening anything, Enter,
- * Space and ArrowDown open the trigger the reader is STANDING ON (ArrowUp opens it onto
+ * Space and ArrowDown open the trigger the reader is standing on (ArrowUp opens it onto
  * its last item), and the bar is a single tab stop — one trigger carries tabindex 0 and
  * the rest carry -1. Inside an open menu the arrows walk the items, and Escape closes and
  * hands focus back to the trigger it came from rather than dropping it on <body>.
  *
  * Tab is the third exit and belongs to the same group: it closes the menu and leaves the
- * BAR — not the next trigger, because the bar is one stop. It has to be handled rather
+ * bar — not the next trigger, because the bar is one stop. It has to be handled rather
  * than left to the browser for the reason the panel is teleported at all: while a menu is
  * open, focus sits on a `tabindex="-1"` item at the end of <body>, so the browser's own
  * answer is off the end of the document one way and before the overlay root the other,
  * with the menu still painted over the page either way.
  *
- * Where the reader is standing comes from the EVENT, not from `activeMenu`. Deriving it
+ * Where the reader is standing comes from the event, not from `activeMenu`. Deriving it
  * from the open menu alone gives the same answer for every trigger while the bar is
  * closed, and the arithmetic would then run off that: ArrowDown on the third menu would
  * open the first, and ArrowLeft the last.
@@ -33,6 +33,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  */
+import { inlineStep } from '../utils/inline-direction.js';
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { focusIsWithin, position } from '../utils/floating.js';
@@ -41,7 +42,7 @@ import { isRendered } from '../utils/rendered.js';
 import { belongsThroughTeleports, outOfReachBeside } from '../utils/teleport.js';
 
 /**
- * What the browser would consider a tab stop OUTSIDE this bar.
+ * What the browser would consider a tab stop outside this bar.
  *
  * Same selector hover-card and navigation-menu use for their teleported panels —
  * same question, so the same answer rather than a third list that drifts from
@@ -70,7 +71,7 @@ export default function wirekitMenubar() {
         _navCleanup: null,
         // Removes the outside-release listeners (utils/outside-release.js).
         _stopOutsideRelease: null,
-        // Floating UI autoUpdate teardown handle for the ONE open menu panel. Set in
+        // Floating UI autoUpdate teardown handle for the one open menu panel. Set in
         // _positionActiveMenu (stopping the previous menu's first), cleared whenever
         // activeMenu returns to null. Prevents leaked scroll/resize listeners when
         // switching or closing menus (every teardown path must call stop()).
@@ -89,10 +90,10 @@ export default function wirekitMenubar() {
             // Outside-click close. The dropdown panels are teleported to
             // <body> (to escape transformed ancestors), so they are no longer
             // DOM descendants of `this.$el` — a Blade `x-on:click.outside` on
-            // the menubar root would treat a click INSIDE an open panel as
+            // the menubar root would treat a click inside an open panel as
             // "outside" and close the menu before the item's own click handler
             // ran. The document-level listener closes only when the press
-            // began and ended outside BOTH the menubar bar AND the active
+            // began and ended outside both the menubar bar and the active
             // teleported panel (looked up via the teleport-safe $refs), and
             // only on the release (utils/outside-release.js).
             this._stopOutsideRelease = closeOnOutsideRelease(document, {
@@ -159,10 +160,10 @@ export default function wirekitMenubar() {
         /**
          * Close all menus.
          *
-         * Focus is deliberately NOT moved here. This runs from an outside pointerdown and
+         * Focus is deliberately not moved here. This runs from an outside pointerdown and
          * from another menubar announcing itself, and in both the reader has just put the
          * focus somewhere on purpose — pulling it back to a trigger would take it out of
-         * the control they clicked. The keyboard paths that DO owe focus back go through
+         * the control they clicked. The keyboard paths that do owe focus back go through
          * `closeAndFocusTrigger()` instead.
          */
         closeAll() {
@@ -180,7 +181,7 @@ export default function wirekitMenubar() {
          * `<body>` — the next Tab restarts at the top of the document, which WCAG 2.4.3
          * calls a focus-order failure and a reader experiences as losing their place.
          *
-         * Read the owning trigger BEFORE closing: `activeMenu` is what names it, and
+         * Read the owning trigger before closing: `activeMenu` is what names it, and
          * `closeAll()` clears that.
          */
         closeAndFocusTrigger() {
@@ -198,7 +199,7 @@ export default function wirekitMenubar() {
          * The tab stop the reader would reach by leaving the whole bar.
          *
          * The bar is one tab stop, so "the next element in the tab sequence"
-         * is the next one OUTSIDE it — not the next trigger. That is the
+         * is the next one outside it — not the next trigger. That is the
          * difference from navigation-menu, whose top-level items are each their
          * own stop and whose panel Tab therefore steps along the bar.
          *
@@ -246,7 +247,7 @@ export default function wirekitMenubar() {
             if (this.activeMenu !== name) return;
 
             // Trigger stays in the bar (not teleported). Query from $root (the
-            // menubar element), NOT $el — when this runs off a trigger's
+            // menubar element), not $el — when this runs off a trigger's
             // x-on:click, Alpine binds $el to the clicked menuitem button
             // (no trigger descendants), so $el.querySelector would miss and
             // positioning would silently never run. The panel is teleported to the
@@ -303,12 +304,12 @@ export default function wirekitMenubar() {
         },
 
         /**
-         * The trigger the reader is standing ON, resolved from the event itself.
+         * The trigger the reader is standing on, resolved from the event itself.
          *
          * Every arrow branch reads its position from here. From `activeMenu` alone the
          * position would be -1 for every trigger equally while the bar is closed: ArrowDown
          * on the third menu would open the first, and ArrowLeft the last. The reader's focus
-         * IS the position when nothing is open, and only the event knows where that is.
+         * is the position when nothing is open, and only the event knows where that is.
          *
          * Scoped to `$root` because the handler is also bound on the teleported panel,
          * which no longer sits inside this component's markup — an unscoped `closest()`
@@ -398,12 +399,12 @@ export default function wirekitMenubar() {
         },
 
         /**
-         * Get menu items at the TOP level of the active panel.
+         * Get menu items at the top level of the active panel.
          *
          * Items nested inside a submenu's child panel (`[data-wk-submenu-panel]`)
          * are excluded so top-level roving focus stays flat — the submenu owns
-         * its own level via wirekitSubmenu. The submenu PARENT item is itself a
-         * `[role="menuitem"]` NOT inside a submenu panel, so it stays included.
+         * its own level via wirekitSubmenu. The submenu parent item is itself a
+         * `[role="menuitem"]` not inside a submenu panel, so it stays included.
          */
         _getActiveItems() {
             if (!this.activeMenu) return [];
@@ -422,13 +423,13 @@ export default function wirekitMenubar() {
          *
          * Two levels share this handler, and which one a key belongs to is decided by
          * whether a menu is open — not by which element the event came from. Bound on the
-         * bar AND on the teleported panel (the panel is no longer a DOM descendant, so
+         * bar and on the teleported panel (the panel is no longer a DOM descendant, so
          * nothing bubbles from it to the bar), so both levels arrive here.
          *
          * Position within the bar comes from `_currentTriggerIndex`, which reads the
          * reader's focus when nothing is open. Deriving it from `activeMenu` alone would
          * give -1 for every trigger equally with the bar closed, so ArrowDown on the third
-         * menu would open the FIRST and ArrowLeft the LAST.
+         * menu would open the first and ArrowLeft the last.
          */
         handleKeydown(event) {
             const triggers = this._getTriggers();
@@ -441,14 +442,15 @@ export default function wirekitMenubar() {
             switch (event.key) {
                 case 'ArrowRight':
                 case 'ArrowLeft': {
-                    // Nowhere to move FROM — a keydown that reached this component
+                    // Nowhere to move from — a keydown that reached this component
                     // without the reader standing on a trigger or having a menu open.
                     // Break without claiming the key rather than guessing a position.
                     if (currentIdx < 0) break;
 
                     event.preventDefault();
 
-                    const step = event.key === 'ArrowRight' ? 1 : -1;
+                    // The menus stand in a row that runs from the right on a right-to-left page.
+                    const step = inlineStep(event, event.target ?? this.$el);
                     const target = triggers[(currentIdx + step + triggers.length) % triggers.length];
                     const name = target?.dataset.wkMenubarTrigger;
 
@@ -457,7 +459,7 @@ export default function wirekitMenubar() {
                     this.markRovingTrigger(name);
 
                     // With a menu open the movement carries the open state along; with
-                    // the bar closed it moves focus ONLY: arrowing across a closed bar must
+                    // the bar closed it moves focus only: arrowing across a closed bar must
                     // not open every menu it passes, which is the pattern's own distinction
                     // between browsing the bar and being inside a menu.
                     if (this.activeMenu) {
@@ -490,7 +492,7 @@ export default function wirekitMenubar() {
                 case 'ArrowUp': {
                     event.preventDefault();
 
-                    // On a trigger this OPENS onto the last item rather than moving —
+                    // On a trigger this opens onto the last item rather than moving —
                     // the one asymmetry in the pattern, and the reason a reader can reach
                     // the bottom of a long menu in one press.
                     if (onTrigger) {
@@ -510,7 +512,7 @@ export default function wirekitMenubar() {
 
                 case 'Enter':
                 case ' ': {
-                    // ONLY on a trigger. The same handler sits on the panel, where these
+                    // Only on a trigger. The same handler sits on the panel, where these
                     // two keys belong to the focused item — a native <button> or <a> the
                     // browser already activates, and swallowing the key there would leave
                     // an item that answers nothing.
@@ -531,7 +533,7 @@ export default function wirekitMenubar() {
                     break;
 
                 case 'Tab': {
-                    // With the bar CLOSED the browser is already right: the roving
+                    // With the bar closed the browser is already right: the roving
                     // tabindex makes the whole bar one stop, and Tab passes it. Claiming
                     // the key there would only reimplement what works.
                     if (! this.activeMenu) break;

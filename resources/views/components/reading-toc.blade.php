@@ -8,7 +8,7 @@
     'offset' => '0',
     'hideBelow' => 'sm',
     // `flush` — when true, the strip runs viewport-edge-to-viewport-edge:
-    // zero horizontal padding on the nav AND the inner list AND the
+    // zero horizontal padding on the nav and the inner list and the
     // first / last link. The strip's chrome (background + bottom border)
     // and the visible "Features" / "Pricing" / "…" text both run flush
     // to the viewport boundary. Use when the TOC sits below an
@@ -35,7 +35,7 @@
     // `null` or empty string is `sm` without a word.
     $hideBelow = \Pushery\WireKit\WireKit::validateProp('reading-toc', 'hideBelow', \Pushery\WireKit\Support\NumericProp::text($hideBelow ?: 'sm'), ['sm', 'md', 'lg', 'xl', 'none']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $flush = BooleanProp::from($flush, false, 'reading-toc', 'flush');
@@ -154,7 +154,7 @@
     data-position="{{ $position }}"
     {{-- The landmark's name is the one string this component writes on the
          developer's behalf, so it asks the catalog rather than freezing English
-         into the markup. `merge()` keeps it a DEFAULT: a caller passing
+         into the markup. `merge()` keeps it a default: a caller passing
          `aria-label="…"` wins. The key ships in every locale
          file. reading-minimap names its own landmark differently, because two
          navigation landmarks with one name cannot be told apart. --}}

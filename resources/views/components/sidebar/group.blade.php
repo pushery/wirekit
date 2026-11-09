@@ -24,20 +24,35 @@
     // `:force-open="$entry->isActive()"`. A reader who folds it keeps it folded for this visit.
     // False leaves the stored state in charge, as without the prop.
     'forceOpen' => false,
+    // Whether the group's heading and the names of its entries are cut with an ellipsis instead of
+    // wrapping. Left out, the sidebar's value holds (the argument is at the sidebar's prop).
+    'truncate' => null,
     'scope' => null,
 ])
+
+{{-- Read from the sidebar, a group or a section around this one: whether a name that does not
+     fit is cut with an ellipsis (the argument is at the sidebar's `truncate`). --}}
+@aware(['truncate' => false])
 
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.group', $attributes->getAttributes());
+    $truncate = \Pushery\WireKit\Support\BooleanProp::from(
+        \Pushery\WireKit\Support\AwareProp::read('truncate', ['sidebar'], false, ['sidebar.group', 'sidebar.collapsible']),
+        false,
+        'sidebar.group',
+        'truncate',
+    );
+    // `@aware` leaves its key in the bag, where it would render as a stray attribute.
+    $attributes = $attributes->except(['truncate']);
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — normalize
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — normalize
     // against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false, 'sidebar.group', 'collapsible');
     $open = BooleanProp::from($open, true, 'sidebar.group', 'open');
@@ -61,7 +76,7 @@
     // Collapsible trigger — the same heading look, but a full-width button with a
     // trailing chevron. Only rendered when `collapsible` is set.
     $triggerClasses = WireKit::resolveClasses('sidebar.group', 'trigger', implode(' ', [
-        'flex items-center justify-between w-full min-w-0 gap-[var(--padding-wk-x-sm)]',
+        'flex items-center justify-between w-full min-w-0 gap-[var(--space-wk-nav-icon-gap)]',
         'px-[var(--padding-wk-x-sm)] pt-[var(--padding-wk-y-sm)] pb-[2px]',
         'text-[length:var(--text-wk-xs)]',
         'font-[number:var(--font-wk-heading-weight)]',
@@ -77,15 +92,15 @@
         'cursor-pointer',
     ]), $scope);
 
-    // Read THROUGH the bag rather than written before it. A hardcoded attribute followed
-    // by the bag's own emits the attribute twice and the FIRST one wins, so a developer's
+    // Read through the bag rather than written before it. A hardcoded attribute followed
+    // by the bag's own emits the attribute twice and the first one wins, so a developer's
     // own name would be present in the markup and still never reach the reader.
     // sidebar.toggle reads it the same way.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
         : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: (\Pushery\WireKit\Support\SlotContent::textOf($label) !== '' ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null));
 
-    // The role is coupled to the NAME: a role that names a boundary and then cannot say
+    // The role is coupled to the name: a role that names a boundary and then cannot say
     // what the boundary is for is noise in the accessibility tree of every page that uses
     // one, and it is repeated once per group. bento-grid, accordion and
     // `sidebar.collapsible` couple it the same way, so the same markup announces the same
@@ -101,7 +116,7 @@
     // The disclosed region's id, so the trigger's `aria-controls` can name it. Seeded:
     // a per-render id would make Livewire's morph replace the live region with a clone,
     // which replays the collapse transition.
-    // Suffixed because the bag emits a caller-supplied `id` on the ROOT, and two
+    // Suffixed because the bag emits a caller-supplied `id` on the root, and two
     // elements sharing one id is a defect of its own.
     // Only the collapsible branch has a region to name, so a static group computes
     // nothing — the id would be a value nothing reads.
@@ -142,7 +157,7 @@
         {{ $attributes->except(['role', 'aria-label'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$groupClasses])) }}
     >
         {{-- The trigger and the section's own control sit side by side. The wrapper is
-             only emitted when there IS an action, so in a group without one the button
+             only emitted when there is an action, so in a group without one the button
              stays a direct child. --}}
         @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))<div class="flex items-center gap-[var(--padding-wk-x-xs)]">@endif
         <button
@@ -160,8 +175,8 @@
                  no visible focus indicator (WCAG 2.4.7). --}}
             data-wk-rail-gone class="wk-touch-row {{ $triggerClasses }}"
         >
-            {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
-            <span class="break-words">{{ $label }}</span>
+            {{-- Wraps unless `truncate` asks otherwise — see the sidebar's prop for the rule. --}}
+            <span class="{{ $truncate ? 'min-w-0 truncate' : 'break-words' }}"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"@endif>{{ $label }}</span>
             {{-- Chevron rotates when open; hidden in the collapsed icon rail (no room). --}}
             <svg
                 {{-- Turned in the markup when the server renders the section open, so the arrow of an open
@@ -169,8 +184,8 @@
                      object form of the binding removes a class it did not add, so a section that closes
                      loses the rotation the markup gave it. --}}
                 data-wk-disclosure-arrow
-                data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90' : '' }}"
-                :class="{ 'rotate-90': isOpen }"
+                data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 rtl:-scale-x-100 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90 rtl:-rotate-90' : '' }}"
+                :class="{ 'rotate-90 rtl:-rotate-90': isOpen }"
                 fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -190,18 +205,18 @@
         </div>
         {{-- Directly after the panel, so the script's previous sibling is this panel. Only with
              `persist`, and not with `force-open`, which opens the section whatever was stored. --}}
-        @if(is_string($persist) && $persist !== '' && ! $forceOpen)
+        @wirekitLast(is_string($persist) && $persist !== '' && ! $forceOpen)
             @include('wirekit::components.partials.disclosure-persist-seed', ['seedKey' => $persist, 'seedOn' => $open])
-        @endif
+        @endwirekitLast
     </div>
 @else
     <div @if($groupRole) role="{{ $groupRole }}" @endif @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif {{ $attributes->except(['role', 'aria-label'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$groupClasses])) }}>
-        {{-- The `action` slot is the small control that belongs TO the section — the
-             "add a team" plus beside a Teams heading. It is a SIBLING of the label, and
-             in the collapsible branch a sibling of the disclosure BUTTON, because an
+        {{-- The `action` slot is the small control that belongs to the section — the
+             "add a team" plus beside a Teams heading. It is a sibling of the label, and
+             in the collapsible branch a sibling of the disclosure button, because an
              interactive control nested inside another one is invalid and unreachable by
              keyboard in practice.
-             The row wrapper is emitted ONLY when there is an action, so a group without
+             The row wrapper is emitted only when there is an action, so a group without
              one keeps its plain DOM — including the label's `sr-only` in the
              collapsed rail, which is deliberate: the heading stays the group's accessible
              name there rather than being removed. The action is `hidden` instead, because
@@ -211,14 +226,14 @@
         @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
             <div class="flex items-center justify-between gap-[var(--padding-wk-x-xs)]">
                 @if($label)
-                    <div class="{{ $labelClasses }} min-w-0 break-words wk-rail-hide">{{ $label }}</div>
+                    <div class="{{ $labelClasses }} min-w-0 {{ $truncate ? 'truncate' : 'break-words' }} wk-rail-hide"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"@endif>{{ $label }}</div>
                 @endif
                 <div data-wk-rail-gone class="shrink-0">{{ $action }}</div>
             </div>
         @elseif($label)
             {{-- Visible label; also the accessible name via aria-label above.
                  We render it visually because sighted users benefit from the grouping too. --}}
-            <div class="{{ $labelClasses }} wk-rail-hide">{{ $label }}</div>
+            <div class="{{ $labelClasses }}{{ $truncate ? ' truncate' : '' }} wk-rail-hide"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"@endif>{{ $label }}</div>
         @endif
         {{ $slot }}
     </div>

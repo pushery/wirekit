@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Pushery\WireKit\Console\Verify\VerifyCheck;
+use Pushery\WireKit\Support\CompactClasses;
+use Pushery\WireKit\Support\KitIcons;
 use Pushery\WireKit\Support\LayoutShells;
 use Pushery\WireKit\WireKit;
 
@@ -45,8 +47,20 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
 
         $shells = LayoutShells::forApplication();
         $stylesCovered = ! $this->context->stylesFoundAnywhere || $this->hasWirekitCssImportInAppCss();
+
+        // The scripts directive writes the symbols of the icon sprite, so while the sprite is on
+        // every shell needs it, in an application that loads no other script of the kit as well:
+        // without it the glyphs of a checkbox or a select point at nothing.
+        $sprite = KitIcons::sprite();
+        $scriptsNeeded = $this->context->scriptsFoundAnywhere || $sprite;
         $missing = [];
         $inspected = 0;
+
+        // With compact classes on, the kit's short classes sit in `@layer utilities` beside the
+        // application's own utilities, and within one layer the later stylesheet wins a tie: a
+        // head that loads the application's stylesheet first hands those ties to the kit.
+        $compact = CompactClasses::enabled();
+        $late = [];
 
         foreach (array_filter([$shells->appLayout(), $shells->authLayout()]) as $layout) {
             $found = $shells->shellsOf($layout);
@@ -57,13 +71,18 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
                 if (! $stylesCovered && ! $shells->carries($file, 'wirekitStyles')) {
                     $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitStyles in its <head>';
                 }
+
+                if ($compact && $shells->loadsApplicationStylesheetFirst($file)) {
+                    $late[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file);
+                }
             }
 
             foreach ($found['body'] as $file) {
                 $inspected++;
 
-                if ($this->context->scriptsFoundAnywhere && ! $shells->carries($file, 'wirekitScripts')) {
-                    $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitScripts before its </body>';
+                if ($scriptsNeeded && ! $shells->carries($file, 'wirekitScripts')) {
+                    $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitScripts before its </body>'
+                        .($sprite ? ', which writes the glyphs of the icon sprite' : '');
                 }
             }
         }
@@ -73,6 +92,8 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
         if ($inspected === 0) {
             return;
         }
+
+        $this->reportStylesheetOrder($compact, array_values(array_unique($late)));
 
         if ($missing === []) {
             $this->reportPass('Every page shell your layouts render loads WireKit');
@@ -87,5 +108,32 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
         }
 
         $this->line('  Fix: php artisan wirekit:install — it follows each layout to these files. Loading WireKit through a @stack or a section instead is fine; this check cannot see those.');
+    }
+
+    /**
+     * The order of the two stylesheets, said only while compact classes are on: with them off,
+     * nothing of the kit's shares a layer with the application's utilities.
+     *
+     * @param  list<string>  $late  the page shells whose head loads the application's stylesheet first
+     */
+    private function reportStylesheetOrder(bool $compact, array $late): void
+    {
+        if (! $compact) {
+            return;
+        }
+
+        if ($late === []) {
+            $this->reportPass('Compact classes are on, and every page shell loads @wirekitStyles before your stylesheet');
+
+            return;
+        }
+
+        $this->reportWarn('Compact classes are on, and a page shell loads your stylesheet before @wirekitStyles: a class of the kit\'s wins a tie with a utility of yours');
+
+        foreach ($late as $file) {
+            $this->line('  '.$file);
+        }
+
+        $this->line('  Fix: move @wirekitStyles above @vite(...) in the <head>');
     }
 }

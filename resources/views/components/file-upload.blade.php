@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — passthrough
      Livewire owns the upload itself, including its own progress and error reporting. An optimistic layer here would duplicate a protocol that already reports what it is doing — and a file cannot be shown as stored before it is stored. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
     // complain either, because `required` is in its HTML passthrough list — so it looked like
@@ -20,14 +20,14 @@
     // updates once per file, and an `updated` hook runs once per file.
     'uploadSeparately' => config('wirekit.components.file-upload.upload-separately', false),
     'accept' => config('wirekit.components.file-upload.accept', null),
-    // `capture` is its OWN attribute, not a token inside `accept`:
+    // `capture` is its own attribute, not a token inside `accept`:
     // `accept="image/*;capture=camera"` is a legacy Android spelling that no current browser
     // reads and which sets a MIME filter no file matches. It cannot come from the caller's
     // side either: this input takes named attributes and `wire:model*` only, never the whole
     // bag, so a `capture` passed as a plain attribute would never reach the element.
     'capture' => config('wirekit.components.file-upload.capture', null),
     'size' => config('wirekit.components.file-upload.size', 'md'),
-    // Shape, not chrome. `default` is the full drop AREA — a block-level dashed
+    // Shape, not chrome. `default` is the full drop area — a block-level dashed
     // rectangle that fills its container, which is right for a field in a form.
     // `compact` is the same control at button height, shrink-to-fit, for a dense
     // row beside badges and `size="sm"` buttons where a full-width area would
@@ -68,7 +68,7 @@
     // empty string is `md` without a word.
     $size = \Pushery\WireKit\WireKit::validateProp('file-upload', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'file-upload', 'disabled');
@@ -80,7 +80,7 @@
     $required = BooleanProp::from($required, false, 'file-upload', 'required');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -94,7 +94,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -111,7 +111,7 @@
     $uploadSeparately = BooleanProp::from($uploadSeparately, false, 'file-upload', 'uploadSeparately') && $multiple && $boundModel !== null;
 
     // The id has to be the same on every render. Livewire's morph recognizes an element by it,
-    // so an id drawn fresh per render made each round trip REPLACE the input — and Livewire
+    // so an id drawn fresh per render made each round trip replace the input — and Livewire
     // fires its upload events on the element it bound to, which by then had left the page, so
     // no form ever heard `livewire-upload-finish`. Seeded from the bound property when there is
     // no name (`wk-upload-photos`), counted per render order when there is neither. A second
@@ -127,7 +127,7 @@
     // Laravel errors bag check, guarded on the name exactly as field.blade.php
     // does. `MessageBag::has(null)` falls through to `any()`, so an unguarded
     // read makes a file-upload with no `name` report itself invalid the moment
-    // ANY unrelated field on the page fails validation — a red border and an
+    // any unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
@@ -140,7 +140,7 @@
     $showsError = $hasError && $errorMessage;
 
     // The described-by list is computed here rather than inline on the input, because an
-    // IDREFS attribute is only valid when it names at least one element: with neither a
+    // idrefs attribute is only valid when it names at least one element: with neither a
     // hint nor an error the inline form emitted `aria-describedby=""`, which is an invalid
     // attribute value (axe `aria-valid-attr-value`) rather than an absent description.
     // Same shape as date-picker, which carries the reference implementation.
@@ -178,7 +178,7 @@
         default => WireKit::validateProp('file-upload', 'variant', $variant, ['default', 'compact']),
     };
 
-    // The label sentence is the accessible name in BOTH variants. In `compact` it
+    // The label sentence is the accessible name in both variants. In `compact` it
     // is painted only when the caller chose it: the shipped default reads
     // "Drop files here or click to browse", which describes an area, and a
     // compact control is not one. Hiding it visually keeps the name — `sr-only`
@@ -219,7 +219,7 @@
     // w-full ensures the dropzone matches the container width so file list items
     // below never extend beyond the dropzone boundaries.
     //
-    // The focus ring sits on the LABEL, driven by `has-[:focus-visible]`, because
+    // The focus ring sits on the label, driven by `has-[:focus-visible]`, because
     // the only focusable element here is the native input and that input is
     // `sr-only` — a 1x1 clipped box. A ring on the input paints inside that clip
     // and is invisible, so a keyboard user tabbing into the form saw no change
@@ -231,7 +231,7 @@
     // `focus-within` would also fire on the mouse click that the pointer user
     // can already see the result of.
     //
-    // The two shapes share everything that makes this a DROP target — the dashed
+    // The two shapes share everything that makes this a drop target — the dashed
     // border, the pointer, the drag transition, the focus ring — and differ only
     // in flow: `default` is a block-level column that fills its container,
     // `compact` is an inline row at button height that shrinks to its content.
@@ -246,6 +246,9 @@
             // 2px dashed edge reads as a heavier control than the buttons beside it.
             'border-[length:var(--border-wk-width)] border-dashed',
             $compactSizing,
+            // With help, the question mark stands in the end corner of this row, and a label that
+            // runs to the end would run under it: the end keeps room for the button and its offset.
+            $helpId ? 'pe-[calc(var(--size-wk-target-min)+var(--padding-wk-x-xs)*2)]' : '',
         ])
         : implode(' ', [
             'w-full',
@@ -302,7 +305,7 @@
     // cannot see it.
     //
     // Internal and translated rather than a prop, which is the shape the tags input
-    // already uses for the same gesture: the accessible NAME of the remove button is a
+    // already uses for the same gesture: the accessible name of the remove button is a
     // caller's business, the component's own narration is not, and a new public prop
     // would be API surface for a sentence nobody has asked to reword. Reusing that
     // control's catalog key keeps the two from drifting apart in wording, and adds
@@ -345,7 +348,7 @@
          clicking the label still worked. --}}
     x-data="wirekitFileUpload({ locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\IcuLocale::tag()) }}, removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\SlotContent::textOf($removeLabel)) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, sizeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from([__('wirekit::B'), __('wirekit::KB'), __('wirekit::MB'), __('wirekit::GB'), __('wirekit::TB')]) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }}, uploadSeparately: {{ $uploadSeparately ? 'true' : 'false' }}, failedLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $failedLabel) }}, failedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $failedMessage) }} })"
     {{-- `wire:model` is peeled off here and re-attached to the file input below.
-         Livewire decides what a model binding MEANS by reading the element's
+         Livewire decides what a model binding means by reading the element's
          type: on a `<input type="file">` it takes the upload path, and on
          anything else it binds a plain value. On this `<div>` the type is
          undefined, so the binding silently became a value binding reading a
@@ -364,11 +367,11 @@
     x-wk-focus-unit
     @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
 >
-    {{-- The removal's own live region. Unconditional and starting EMPTY, for the reason
+    {{-- The removal's own live region. Unconditional and starting empty, for the reason
          the pattern states everywhere it appears: a live region that arrives together
          with its text is a new node, and a new node announces nothing. The only other
          `aria-live` in this file belongs to the error paragraph, which renders only when
-         there IS an error — so before this, a removal was silent by construction. --}}
+         there is an error — so before this, a removal was silent by construction. --}}
     <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="fileAnnouncement"></div>
 
     {{-- With help, the drop zone takes a question mark in its top end corner. It sits beside
@@ -398,7 +401,7 @@
              out only when a field's label names the input already. --}}
         {{-- A compact label that the row cuts is whole in its title, as plain text. --}}
         @if($labelIsVisible || $fieldLabelId === null)
-            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}" @if($labelIsVisible && $variantValue === 'compact') title="{{ \Pushery\WireKit\Support\SlotContent::plain(is_scalar($labelText) ? (string) $labelText : $labelText) }}" @endif>{{ $labelText }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}" @if($labelIsVisible && $variantValue === 'compact') title="{{ \Pushery\WireKit\Support\SlotContent::plain(is_scalar($labelText) ? (string) $labelText : $labelText) }}" @endif>{{ $labelText }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
         @endif
 
         {{-- Hidden native input — click on label triggers it, drag-drop replaces files. --}}
@@ -464,7 +467,7 @@
                 {{-- Remove button — chip-style X aligned with <x-wirekit::tags-input>:
                      always visible, subtle rounded background on hover, danger text on hover. --}}
                 {{-- The visible chip stays small (p-0.5 + a 14px X), but a centered
-                     44x44 ::before expands the CLICKABLE target to the WCAG 2.5.5 AAA
+                     44x44 ::before expands the clickable target to the WCAG 2.5.5 AAA
                      size — `relative` anchors it, `before:content-['']` renders it,
                      and it takes its size from --size-wk-touch-target rather than a
                      literal, so a project that moves the floor moves this with it.
@@ -497,8 +500,8 @@
         <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @if($showsError)
+    @wirekitLast($showsError)
         {{-- Error message — aria-describedby'd above, and visually distinguished. --}}
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @endif
+    @endwirekitLast
 </div>

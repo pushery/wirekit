@@ -14,7 +14,7 @@ use Pushery\WireKit\Support\SuggestSimilar;
  * toolbar preset. (The legacy `window.tiptapEditor` name still works as a
  * deprecated alias — the emitted snippet uses the canonical name.)
  *
- * The editor ships ZERO Tiptap code — Tiptap is the developer's peer
+ * The editor ships zero Tiptap code — Tiptap is the developer's peer
  * dependency, exposed through this factory. Writing the factory by hand is
  * the one fiddly setup step (forwarding every `config.*` callback, the
  * security-correct Link config, the right extension set per preset), so this
@@ -72,7 +72,7 @@ class EditorPresetCommand extends Command
                 $this->line('  '.$hint);
             }
 
-            // Invalid input is FAILURE (exit 1), never INVALID (exit 2), as for every
+            // Invalid input is failure (exit 1), never invalid (exit 2), as for every
             // wirekit:* command.
             return self::FAILURE;
         }
@@ -110,7 +110,7 @@ class EditorPresetCommand extends Command
             "import { Placeholder } from '@tiptap/extensions';",
         ];
 
-        // Link is configured INSIDE StarterKit: protocols restricted (blocks javascript:
+        // Link is configured inside StarterKit: protocols restricted (blocks javascript:
         // URLs) and no open-on-click, the security-correct shape the editor docs require.
         // A Link registered beside it would be a second one, and StarterKit's own opens
         // links on click. `basic` has no underline button, so it leaves Underline out.

@@ -26,7 +26,7 @@
 
     $size = WireKit::validateProp('step-marker', 'size', $size, ['sm', 'md', 'lg']);
 
-    // A FILLED chip, always — that is what distinguishes a step marker from a
+    // A filled chip, always — that is what distinguishes a step marker from a
     // badge. The number is the whole content, so it has to read at a glance
     // against a surface, not sit in a tint.
     //
@@ -49,7 +49,7 @@
     };
 
     // Square-with-soft-corners, not a pill: `01` in a pill reads as a badge, and
-    // a badge is a label about something else. A step marker IS the step.
+    // a badge is a label about something else. A step marker is the step.
     $sizeClasses = match ($size) {
         'sm' => 'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)]',
         'lg' => 'h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-lg)]',
@@ -67,10 +67,9 @@
     ]), $scope);
 @endphp
 
-{{-- No `role`, deliberately.
-     The marker repeats what the step's own heading already says — its number
-     and its order. Given a role it becomes a second announcement of the same
-     fact, and a screen-reader user hears "01" before every heading with no way
-     to know it adds nothing. Presentational by omission is the correct shape
-     here; a decorative element that stays quiet is not an accessibility gap. --}}
+{{-- No `role`: the marker is text, and a screen reader reads its number where
+     it stands, before the heading that follows, which is the step's place in
+     the sequence. A caller whose heading states the number already passes
+     `aria-hidden="true"`, which lands on this element with the other
+     attributes. --}}
 <span {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</span>

@@ -43,7 +43,7 @@
     //
     // A sidebar's own entries stand muted at rest and go full on hover
     // (`sidebar/item.blade.php`). The account trigger sits directly under them, so a
-    // name baked to the full color leaves exactly ONE row in the column permanently
+    // name baked to the full color leaves exactly one row in the column permanently
     // brighter than every other, and the only way around it would be the slot instead of
     // the `name` prop, with the collapse handling rewritten by hand.
     //
@@ -74,7 +74,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.enter.prevent', 'x-on:keydown.space.prevent']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $interactive = BooleanProp::from($interactive, false, 'profile', 'interactive');
@@ -102,10 +102,10 @@
         '2xl' => 'gap-[var(--gap-wk-2xl)]',
     };
 
-    // Muted goes full on HOVER, which is the half that makes it match rather than
+    // Muted goes full on hover, which is the half that makes it match rather than
     // merely dim: an entry above it does exactly that. The pair sits on the span
     // because the span is what overrides an inherited color, and it is keyed to a
-    // NAMED group so a `group-hover:` a caller writes in the slot cannot capture it.
+    // named group so a `group-hover:` a caller writes in the slot cannot capture it.
     $toneClasses = match (WireKit::validateProp('profile', 'tone', (string) $tone, ['default', 'muted'])) {
         'default' => 'text-[color:var(--color-wk-text)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)] group-hover/wk-profile:text-[color:var(--color-wk-text)]',
@@ -130,7 +130,7 @@
         'nav-item' => 'rounded-[var(--radius-wk-nav-item)]',
     };
 
-    // ── An avatar-only control IS the avatar ──────────────────────────────
+    // ── An avatar-only control is the avatar ──────────────────────────────
     //
     // On an avatar-only trigger `radius="nav-item"` would draw a square ring around a
     // round avatar, doing exactly what it was asked.
@@ -141,7 +141,7 @@
     // and this is not only about the focus ring: the hover surface is the same
     // rounded-rect around the same circle.
     // `hasActualContent()` rather than `trim((string) $slot)`: Livewire wraps a rendered slot
-    // in morph markers, so the string form of an EMPTY slot is not empty — an account trigger
+    // in morph markers, so the string form of an empty slot is not empty — an account trigger
     // inside a Livewire component would have kept its rounded-rect ring, and only there.
     $avatarOnly = $control && ! filled($name) && ! $slot->hasActualContent();
 
@@ -176,7 +176,7 @@
     ]), $scope);
 
     // accept either a string URL
-    // OR an array shape `['src' => ..., 'initials' => ...]` (matching
+    // or an array shape `['src' => ..., 'initials' => ...]` (matching
     // `message.author` and the avatar-component convention). An array
     // echoed straight into `<img src="{{ $avatar }}">` would crash with
     // `htmlspecialchars(): Argument #1 must be of type string, array
@@ -200,7 +200,7 @@
     {{-- Never a submit button. A profile inside a form is a menu trigger, and the
          default type would post the form instead of opening the menu. --}}
     @if($tag === 'button') type="{{ $wkButtonType }}" @endif
-    {{-- The synthesized keyboard model is for the DIV branch only. On a real button it
+    {{-- The synthesized keyboard model is for the div branch only. On a real button it
          would be a second Enter/Space activation on top of the browser's own, firing the
          developer's click handler twice. --}}
     @if($interactive && $tag !== 'button')
@@ -217,12 +217,12 @@
              sidebar footer — and neither `sidebar` nor `shell-bar` opens a scope around
              their footer slot. The dropdown-trigger usage worked only because the dropdown
              happens to own one, and a Livewire-morphed row worked only because Alpine's
-             mutation observer initializes markup inserted AFTER boot. The first server
+             mutation observer initializes markup inserted after boot. The first server
              render outside both is the shape the docs recommend.
 
              Empty on purpose: an empty scope inherits from any ancestor scope, so nesting
              this inside a dropdown changes nothing. Gated on the caller not having supplied
-             one, because HTML keeps the FIRST of two identical attributes — emitting ours
+             one, because HTML keeps the first of two identical attributes — emitting ours
              unconditionally would silently discard theirs, which is the class
              `StrictnessGate::discardedScopeDirectives` warns about at runtime. --}}
         @if(! $attributes->has('x-data')) x-data @endif
@@ -256,14 +256,14 @@
              `group-data-[settling]` as well as `group-data-[collapsed]`, because the
              collapse animates: hiding only at the end of it lets the name reflow once
              on the way there. --}}
-        {{-- `min-w-0 flex-1 truncate` for the EXPANDED state, which the comment above
+        {{-- `min-w-0 flex-1 truncate` for the expanded state, which the comment above
              diagnosed and then only fixed for the collapsed one: the same long name that
              wraps at 43px also wraps in a narrow-but-open column, and the row grows the
              same way. `min-w-0` is not decoration — a flex child defaults to `min-width:
              auto`, so `truncate` has nothing to shrink against and silently does nothing.
              That pairing is the trap; the class on its own reads as done. A name the line cuts
              is whole in its `title`, so a reader with a pointer can still read it. --}}
-        <span title="{{ \Pushery\WireKit\Support\SlotContent::textOf($name) }}" class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
+        <span title="{{ \Pushery\WireKit\Support\SlotContent::textOf($name) }}" class="min-w-0 flex-1 truncate text-start text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
     @endif
     {{ $slot }}
 </{{ $tag }}>

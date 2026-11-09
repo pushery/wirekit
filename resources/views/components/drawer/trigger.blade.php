@@ -21,7 +21,7 @@
     // The trigger stands on its own Alpine root: a caller's `x-ref` is filed above it.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -64,7 +64,7 @@
     $dialogId = filled($for) ? 'wk-drawer-dialog-'.$for : '';
 @endphp
 
-{{-- Drawer trigger — opens the NAMED drawer from wherever it sits.
+{{-- Drawer trigger — opens the named drawer from wherever it sits.
 
      `openNamedOverlay($event)` keeps a link from navigating when the drawer opens and keeps the
      click from reaching handlers on the trigger's ancestors, such as a `<label>` it sits in. A link

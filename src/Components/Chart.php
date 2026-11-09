@@ -9,6 +9,7 @@ use Illuminate\View\Component;
 use Illuminate\View\View;
 use Pushery\WireKit\Charts\ChartDataTable;
 use Pushery\WireKit\Charts\ChartDates;
+use Pushery\WireKit\Charts\ChartJsAdapter;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Charts\ChartPointLinks;
 use Pushery\WireKit\Charts\ChartTooltipExtras;
@@ -18,6 +19,7 @@ use Pushery\WireKit\Support\BooleanProp;
 use Pushery\WireKit\Support\IcuLocale;
 use Pushery\WireKit\Support\ListProp;
 use Pushery\WireKit\Support\LocalizedNumber;
+use Pushery\WireKit\Support\NumericProp;
 use Pushery\WireKit\Support\PropText;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\WireKit;
@@ -57,7 +59,7 @@ final class Chart extends Component
      * The chart root carries `wire:ignore`, which keeps the drawn chart safe from the morph
      * and also keeps every Livewire update out of it: a filter changed the table under a
      * chart and left the chart on the data it loaded with. This is rendered on an element
-     * the morph DOES update, and the factory follows it (resources/js/utils/chart-server-data.js).
+     * the morph does update, and the factory follows it (resources/js/utils/chart-server-data.js).
      *
      * @var array<string, mixed>
      */
@@ -91,7 +93,7 @@ final class Chart extends Component
     public array $adapterScripts = [];
 
     /**
-     * True when no chart adapter is configured AND the constructor took
+     * True when no chart adapter is configured and the constructor took
      * the debug-mode soft-fallback path (rendered a placeholder div
      * instead of throwing). Used by render() to switch to the
      * placeholder view. Always false in production (the constructor
@@ -162,14 +164,17 @@ final class Chart extends Component
      *                                   via the library's imperative API (Chart.js: data.datasets[i].data.push;
      *                                   ApexCharts: chart.appendSeries / chart.appendData). When null
      *                                   (default), the chart renders normally with no streaming behavior.
-     * @param  string  $wireStreamMode  'strict' (default — caps the dataset at wireStreamCap points
-     *                                  FIFO) or 'stream' (unbounded growth — developer responsibility).
-     * @param  int  $wireStreamCap  Max data-point count per dataset under 'strict' mode. Default 100.
+     * @param  string  $wireStreamMode  'strict' (default — bounds each dataset by wireStreamCap: Chart.js
+     *                                  drops the oldest point per tick, ApexCharts cuts a series of a
+     *                                  chart with xaxis.range back to the cap once it reaches half
+     *                                  again the cap) or 'stream'
+     *                                  (unbounded growth — developer responsibility).
+     * @param  int  $wireStreamCap  The most data points a dataset keeps under 'strict' mode. Default 100.
      * @param  array<int, array<string, mixed>>  $annotations  Annotation specs passed through to the
      *                                                         chart options. ApexCharts: maps to options.annotations.
      *                                                         Chart.js: requires chartjs-plugin-annotation; graceful
      *                                                         degradation when the plugin is absent (console.warn).
-     * @param  bool  $replayable  Opt INTO the docs site's replay-button surface. When true, the chart
+     * @param  bool  $replayable  Opt into the docs site's replay-button surface. When true, the chart
      *                            root emits `data-replayable="true"` so a `↻ Replay` button appears
      *                            on previews that detect the attribute. Auto-detects when `wireStream`
      *                            is bound (every streaming chart is replay-worthy — clicking replay
@@ -180,7 +185,7 @@ final class Chart extends Component
      *                            changes the rendered HTML to include the data attribute.
      * @param  string|null  $library  Per-instance chart-library override. Accepts the same values as
      *                                `config('wirekit.charts.library')` — the built-in keys `chartjs`
-     *                                / `apexcharts`, OR a fully qualified class name implementing
+     *                                / `apexcharts`, or a fully qualified class name implementing
      *                                `ChartAdapter`. When `null` (default), the chart uses whatever
      *                                the global `wirekit.charts.library` config resolves to.
      *                                When set, this chart instance binds
@@ -189,7 +194,7 @@ final class Chart extends Component
      *                                specific chart type requires a specific library (e.g. `boxplot`
      *                                / `candlestick` / `heatmap` / `treemap` are ApexCharts-only and
      *                                throw `TypeNotSupportedException` against the Chart.js adapter)
-     *                                in an app whose default is the OTHER library. Removes the need
+     *                                in an app whose default is the other library. Removes the need
      *                                for path-based library-config switching in renderers (docs
      *                                sites, sample apps, developer integrations).
      * @param  array<array-key, mixed>|Arrayable<array-key, mixed>  $tooltipExtras  Further values the
@@ -338,6 +343,13 @@ final class Chart extends Component
         // Normalize data via adapter.
         $normalized = $adapter->normalizeData($type, $labels, $datasets);
 
+        // On a stacked value axis a Chart.js area fills to the series below it, so each series
+        // draws as a band; the stacking is read from the merged options, which the adapter's
+        // normalization never sees.
+        if ($adapter instanceof ChartJsAdapter) {
+            $normalized = $adapter->stackAreaFills($normalized, $datasets, $mergedOptions);
+        }
+
         // The tooltip's further values travel with the data as well, written in the application's
         // locale, so a Livewire update that brings new points brings their values.
         $extras = ChartTooltipExtras::from($tooltipExtras);
@@ -359,7 +371,7 @@ final class Chart extends Component
                 $pointLinkGrid,
                 $labels,
                 $datasets,
-                is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null,
+                self::decimalsFrom($valueDecimals),
                 $valuePrefix,
                 $valueSuffix,
                 $rangePairs,
@@ -380,18 +392,19 @@ final class Chart extends Component
             $this->tableModel = ChartDataTable::from(
                 $labels,
                 $datasets,
-                is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null,
+                self::decimalsFrom($valueDecimals),
                 $valuePrefix,
                 $valueSuffix,
                 $rangePairs,
                 $dateZone,
+                $type,
             );
         }
 
         // Annotations passthrough — the adapters consume the options.annotations
         // (ApexCharts native) / options.plugins.annotation (Chart.js plugin)
         // shapes via different keys, but the developer feeds a single array of
-        // specs. We attach to BOTH locations so whichever adapter is active
+        // specs. We attach to both locations so whichever adapter is active
         // picks it up; the inactive shape is harmless.
         if (! empty($annotations)) {
             $mergedOptions['annotations'] = $annotations;
@@ -402,7 +415,7 @@ final class Chart extends Component
         }
 
         // Tooltip numeric formatting — thread valueDecimals / valuePrefix /
-        // valueSuffix into the tooltip config, but ONLY when the merged options
+        // valueSuffix into the tooltip config, but only when the merged options
         // still carry the ApexCharts `WIREKIT_DEFAULT_TOOLTIP` sentinel. That
         // sentinel is emitted exclusively by ApexChartsAdapter::defaultOptions(),
         // so keying off it scopes the feature to the apex adapter automatically
@@ -432,13 +445,8 @@ final class Chart extends Component
                 'size' => __('wirekit::Size'),
             ];
 
-            // Normalize valueDecimals to an int in [0, 100] or null. is_numeric
-            // accepts "2" / 2 / "0"; anything else (null, "", "x") → null = unset.
-            // The 0–100 clamp is mandatory: the JS side feeds this to
-            // Number.prototype.toFixed(), which throws a RangeError for any
-            // argument outside 0–100 — an unclamped `valueDecimals="200"` would
-            // crash the tooltip renderer at hover time.
-            $decimals = is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null;
+            // valueDecimals as an int in [0, 100], or null for the raw value (decimalsFrom()).
+            $decimals = self::decimalsFrom($valueDecimals);
 
             // Only attach the wk* keys when at least one is meaningful, so the
             // emitted config carries none of them when the developer passes none
@@ -483,6 +491,20 @@ final class Chart extends Component
             $adapter->scripts(),
             static fn (string $src): bool => trim($src) !== '',
         ));
+    }
+
+    /**
+     * The decimals of the values the chart writes: an integer in [0, 100], or null for the raw
+     * value. A text holds the number it writes (`"2"`), and a text that holds none, or a number no
+     * integer holds (`1e400`), holds none: `(int)` on such a float warns in PHP 8.5, and the page
+     * ends there. The clamp is mandatory: the tooltip hands the value to
+     * `Number.prototype.toFixed()`, which throws a RangeError outside 0 to 100.
+     */
+    private static function decimalsFrom(int|string|null $value): ?int
+    {
+        $decimals = NumericProp::intOrNull($value);
+
+        return $decimals === null ? null : min(100, max(0, $decimals));
     }
 
     /**
@@ -563,7 +585,7 @@ final class Chart extends Component
     {
         if ($this->chartsDisabled) {
             // Resolved via the `wirekit::internal.chart-disabled` view name —
-            // a purely internal render target, NOT exposed as a Blade
+            // a purely internal render target, not exposed as a Blade
             // component (`<x-wirekit::chart-disabled>` does not exist).
             /** @var view-string $disabled */
             $disabled = 'wirekit::internal.chart-disabled';
@@ -572,7 +594,7 @@ final class Chart extends Component
         }
 
         // Annotated rather than left bare: larastan verifies view names against the views it
-        // can DISCOVER, and a package's own namespaced views are not discoverable the same way
+        // can discover, and a package's own namespaced views are not discoverable the same way
         // in every environment — this passed locally and failed in CI, which is the environment
         // that matters. The names are constants and correct; the annotation says so once
         // instead of the check guessing differently per machine.

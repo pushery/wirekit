@@ -13,13 +13,13 @@
      on screen and says it was not saved, rather than springing back. --}}
 @props([
     // The Livewire method to call when the value should be shown before the
-    // server has agreed to it. A refusal KEEPS what is there — see the note
+    // server has agreed to it. A refusal keeps what is there — see the note
     // above for why that holds for the steppers too.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -58,7 +58,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -72,7 +72,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -85,7 +85,7 @@
     // first paint; once Alpine runs, the bindings read the field itself (`locked`).
     $fieldLocked = $attributes->has('disabled') || $attributes->has('readonly');
 
-    // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
+    // Same trap one level in: an unbound `hideLabel="false"` reaches here as the
     // truthy string 'false' and would hide the label the call site asked to show.
     $hideLabel = BooleanProp::from($hideLabel, false, 'number-input', 'hideLabel');
 
@@ -148,7 +148,7 @@
     // Without a `name`, the bag files this field's error under the property its `wire:model`
     // binds (FieldError::nameOf).
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
-    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // Strip the caller's `id` and `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
@@ -162,7 +162,7 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Error detection: explicit prop OR Laravel validation bag
+    // Error detection: explicit prop or Laravel validation bag
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
     $hasError = $errorMessage !== null;
 
@@ -193,14 +193,6 @@
         // Hide native spinner arrows
         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
     ]), $scope);
-
-    // A width utility in the caller's `class` replaces the field's own `w-16`. Beside it, the
-    // stylesheet's order decided rather than the attribute: `w-full` from an inline edit won only
-    // because it sorts after `w-16`, and a `w-12` would have lost. A width under a variant
-    // is left alone, because it applies at a width of its own.
-    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
-        $inputClasses = \Pushery\WireKit\Support\UtilityClasses::without($inputClasses, '/^w-/');
-    }
 
     // Border color switches between normal and error state. Only the top/bottom
     // border is colored on the input itself because the stepper buttons sit
@@ -251,10 +243,10 @@
     ]);
 
     /*
-     * The stepper's weld, in LOGICAL corners.
+     * The stepper's weld, in logical corners.
      *
      * Flexbox lays this row out in reading order, so under `dir="rtl"` the decrease button
-     * moves to the visual right. Written physically, its `rounded-l-` kept rounding the LEFT
+     * moves to the visual right. Written physically, its `rounded-l-` kept rounding the left
      * corners — which inverts the weld exactly: two square ends on the outside, two rounded
      * notches meeting at the seam in the middle.
      *
@@ -263,7 +255,7 @@
      * free". Two components of one package were answering it two ways, and one of them was
      * making that promise.
      *
-     * The names are START and END rather than left and right on purpose: a variable called
+     * The names are start and end rather than left and right on purpose: a variable called
      * `$radiusLeft` teaches the physical reading back to whoever edits this next.
      */
     $radiusStart = match ($size) {
@@ -349,7 +341,7 @@
     // this layer nests inside — number-input is the case the factory's own
     // comment names, where declaring `value` here would shadow the parent's.
     //
-    // `failure: 'keep'` for BOTH halves. See the note at the top: a split exit
+    // `failure: 'keep'` for both halves. See the note at the top: a split exit
     // makes safety depend on whether the reader happened to be typing.
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'value',
@@ -390,7 +382,7 @@
     x-data="wirekitNumberInput({ min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
 >
 @if($optimisticConfig)
-    {{-- The layer nests INSIDE the component that owns the value: a nested Alpine
+    {{-- The layer nests inside the component that owns the value: a nested Alpine
          component reads and writes its parent's properties through `this`, never
          the reverse, so `bind: 'value'` only resolves this way round.
 
@@ -399,8 +391,8 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
-             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+        {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
@@ -418,7 +410,7 @@
         <span id="{{ $id }}-adjusted" class="sr-only" role="status" x-text="adjustment"></span>
         {{-- Prefix — inline before the stepper group --}}
         @if($prefix)
-            <span class="shrink-0 pr-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
+            <span class="shrink-0 pe-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
         @endif
 
         {{-- Decrease button — disabled at min boundary.
@@ -429,7 +421,7 @@
              ArrowUp / ArrowDown on the field step to the same grid points these
              buttons do. Leaving them focusable cost a form of N quantity fields
              2N extra stops that duplicate a key the field already handles, and
-             a stepper click while focus sits ON the button announces nothing:
+             a stepper click while focus sits on the button announces nothing:
              the value changes inside the spinbutton the reader has just left. --}}
         <button
             type="button"
@@ -494,9 +486,9 @@
         </button>
 
         {{-- Suffix — inline after the stepper group --}}
-        @if($suffix)
-            <span class="shrink-0 pl-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $suffix }}</span>
-        @endif
+        @wirekitLast($suffix)
+            <span class="shrink-0 ps-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $suffix }}</span>
+        @endwirekitLast
     </div>
     {{-- The same sentence for the eye, there only while it says something. Hidden from
          assistive technology, which hears it from the region in the row. --}}

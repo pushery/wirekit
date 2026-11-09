@@ -61,7 +61,7 @@ class VerifyInstallationCommand extends Command
     protected $description = 'Verify WireKit integration (assets, directives, Tailwind @source, optional deps)';
 
     /**
-     * The ApexCharts majors WireKit's adapter is TESTED against — not the ones it is
+     * The ApexCharts majors WireKit's adapter is tested against — not the ones it is
      * guessed to work with.
      *
      * WireKit ships adapter glue, never the chart library, so the developer picks the
@@ -85,7 +85,7 @@ class VerifyInstallationCommand extends Command
     public const APEXCHARTS_TESTED_MAJORS = [5, 6, 7, 8];
 
     /**
-     * Register the `wirekit:doctor` alias on the SAME Symfony command
+     * Register the `wirekit:doctor` alias on the same Symfony command
      * instance, so `php artisan list` shows one canonical entry,
      * `wirekit:verify` with `Aliases: wirekit:doctor` underneath, matching
      * the de-facto Laravel ecosystem norm for diagnostic commands.
@@ -114,7 +114,7 @@ class VerifyInstallationCommand extends Command
     /**
      * The severities `--fail-on` accepts, in ascending strictness.
      *
-     * Same reason as TIERS. `wirekit:doctor:a11y` carries the identical set for the identical
+     * Same reason as tiers. `wirekit:doctor:a11y` carries the identical set for the identical
      * flag; the two are separate constants because neither command depends on the other, and
      * a shared one would couple them for the sake of three strings.
      *
@@ -194,7 +194,7 @@ class VerifyInstallationCommand extends Command
                 $this->line('  '.$hint);
             }
 
-            // FAILURE, never INVALID: every wirekit:* command exits 1 on every error path,
+            // Failure, never invalid: every wirekit:* command exits 1 on every error path,
             // including a usage error.
             return self::FAILURE;
         }
@@ -285,7 +285,7 @@ class VerifyInstallationCommand extends Command
     {
         $lockPath ??= base_path('composer.lock');
 
-        // `file_exists` is true for a DIRECTORY and for a file the process cannot read. On a
+        // `file_exists` is true for a directory and for a file the process cannot read. On a
         // directory `file_get_contents` returns an empty string with a notice, on an unreadable
         // file it returns false, and false under strict_types is a TypeError inside
         // `wirekit:verify`, a fatal for the person running the doctor to find out what is wrong.
@@ -302,7 +302,7 @@ class VerifyInstallationCommand extends Command
         foreach (array_merge($lock['packages'] ?? [], $lock['packages-dev'] ?? []) as $package) {
             if (($package['name'] ?? null) === 'livewire/livewire') {
                 $version = (string) ($package['version'] ?? '');
-                // Match the FIRST run of digits anywhere in the version string.
+                // Match the first run of digits anywhere in the version string.
                 // Handles "v4.1.0", "4.1.0", "4.x-dev", "4.1.0-RC1".
                 if (preg_match('/(\d+)/', $version, $m)) {
                     return (int) $m[1];

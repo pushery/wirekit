@@ -48,7 +48,7 @@ class MakeCommand extends Command
      * @var list<string>
      */
     /*
-     * PUBLIC because `McpCatalog` reads it. The alternative was a second list somewhere
+     * It is public because `McpCatalog` reads it. The alternative was a second list somewhere
      * else, and a second list of the recipes is a second thing to keep in step —
      * the failure the whole MCP catalog is arranged against. One source, two readers.
      */
@@ -84,12 +84,12 @@ class MakeCommand extends Command
             $this->line('  Available recipes: '.implode(', ', array_map(fn ($r) => "recipe:{$r}", self::RECIPES)));
 
             /*
-             * The same suggestion the RECIPE branch has printed all along, eight lines below.
+             * The same suggestion the recipe branch has printed all along, eight lines below.
              * One arm of one command offered it and the other did not, which is the shape that
              * reads as deliberate — a developer who mistypes a page name gets a bare list and
              * assumes the feature is not there, having seen it work for recipes.
              *
-             * Both name sets are searched: a mistyped `recipe:dashborad` lands in the TEMPLATE
+             * Both name sets are searched: a mistyped `recipe:dashborad` lands in the template
              * branch, because the prefix check above only matches a well-formed `recipe:`.
              */
             $candidates = array_merge(
@@ -138,7 +138,7 @@ class MakeCommand extends Command
     }
 
     /**
-     * The generated class renders the view this command actually WROTE.
+     * The generated class renders the view this command actually wrote.
      *
      * The view name is passed in as the same value that named the file, never derived
      * at runtime: a derivation such as `Str::kebab($className)` would agree with the
@@ -301,7 +301,7 @@ class MakeCommand extends Command
      * Derived from the stub rather than listed per recipe, which is the whole point. A
      * hand-kept list is a second thing to update when a stub changes, and it would be right on
      * the day it was written and silently wrong afterwards — the failure this command's own
-     * RECIPES constant is arranged against one level up. Reading the file that was just written
+     * recipes constant is arranged against one level up. Reading the file that was just written
      * also means a stub added later is covered before anyone remembers this exists.
      *
      * Livewire diagnoses the missing member well when it throws, so this is not repairing a
@@ -343,10 +343,10 @@ class MakeCommand extends Command
     public static function membersBoundBy(string $viewBody): array
     {
         // `wire:model` and its modifier chain (`.live`, `.debounce.300ms`, `.blur`) always
-        // names a PROPERTY.
+        // names a property.
         preg_match_all('/wire:model[\w.]*="([^"(]+)"/', $viewBody, $properties);
 
-        // The action directives name a METHOD, `wire:poll` and `wire:init` included: Livewire
+        // The action directives name a method, `wire:poll` and `wire:init` included: Livewire
         // calls their value as one, and only a directive without a value falls back to
         // `$refresh`. A modifier may carry a hyphen (`.keep-alive`, `.page-down`).
         preg_match_all('/wire:(?:click|submit|change|keydown|keyup|blur|focus|poll|init)(?:\.[\w-]+)*="([^"]+)"/', $viewBody, $methods);

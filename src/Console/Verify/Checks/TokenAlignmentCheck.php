@@ -34,7 +34,9 @@ final class TokenAlignmentCheck extends VerifyCheck
      *   --color-accent ↔ --color-wk-accent
      *   --color-accent-foreground ↔ --color-wk-accent-fg
      *   --radius      ↔ --radius-wk
-     *   --shadow      ↔ --shadow-wk
+     *
+     * No shadow pair: WireKit reads `--shadow-wk-sm`, `-md` and `-lg` and no `--shadow-wk`, so
+     * comparing a `--shadow` against it measured a token no component reads.
      *
      * Skips any pair where either side is a `var(...)` reference (the developer
      * is intentionally aliasing) or unset. Emits `✓` when families match, `⚠` when
@@ -53,7 +55,7 @@ final class TokenAlignmentCheck extends VerifyCheck
             return;
         }
 
-        // Strip CSS comments first — the per-pair scanner greps the FIRST
+        // Strip CSS comments first — the per-pair scanner greps the first
         // `--token: value` it finds, so an example pasted in a comment
         // above the real declaration would otherwise mask it.
         $content = AppCss::withoutComments((string) file_get_contents($appCss));
@@ -65,7 +67,6 @@ final class TokenAlignmentCheck extends VerifyCheck
             ['Accent color', '--color-accent', '--color-wk-accent', 'set --color-accent in @theme to match WireKit accent'],
             ['Accent foreground', '--color-accent-foreground', '--color-wk-accent-fg', 'set --color-accent-foreground in @theme'],
             ['Border radius', '--radius', '--radius-wk', 'set --radius in @theme to match --radius-wk'],
-            ['Shadow', '--shadow', '--shadow-wk', 'set --shadow in @theme to match --shadow-wk'],
         ];
 
         foreach ($checks as [$label, $tw, $wk, $hint]) {
@@ -81,7 +82,7 @@ final class TokenAlignmentCheck extends VerifyCheck
         $twValue = $this->extractTokenValue($cssContent, $twToken);
         $wkValue = $this->extractTokenValue($cssContent, $wkToken);
 
-        // Skip if either token is unset — and say WHICH one. The condition has
+        // Skip if either token is unset — and say which one. The condition has
         // always tested both sides, but the message named the Tailwind side
         // unconditionally, so a missing WireKit-side token sent the reader to
         // the one file where nothing was wrong. Printing the token name also

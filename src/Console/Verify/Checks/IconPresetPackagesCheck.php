@@ -22,14 +22,14 @@ final class IconPresetPackagesCheck extends VerifyCheck
     }
 
     /**
-     * Does every CONFIGURED icon preset have its composer package installed?
+     * Does every configured icon preset have its composer package installed?
      *
      * The published config carries a commented line offering the stacked shape:
      *
      *     // 'presets' => ['heroicons', 'heroicons-marketing'],
      *
      * Uncommenting it on a phosphor, lucide or tabler installation trades a missing
-     * alias for a RESOLVING alias onto a glyph that is not installed. By default a
+     * alias for a resolving alias onto a glyph that is not installed. By default a
      * request then renders the icon placeholder and logs the package to install,
      * and a console or test run throws. Either way the finding surfaces in whichever
      * view happened to use the word, and says nothing about the config line that
@@ -44,7 +44,7 @@ final class IconPresetPackagesCheck extends VerifyCheck
     private function checkIconPresetPackages(): void
     {
         if (! class_exists(Factory::class)) {
-            // Nothing measured is NOT the same as everything fine, and must not print like it.
+            // Nothing measured is not the same as everything fine, and must not print like it.
             $this->reportInfo('Icon presets not checked (Blade Icons is unavailable)');
 
             return;

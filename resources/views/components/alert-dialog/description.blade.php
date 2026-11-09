@@ -18,7 +18,7 @@
     $classes = WireKit::resolveClasses('alert-dialog.description', 'base', implode(' ', [
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'mt-2',
+        'mt-[var(--space-wk-sm)]',
     ]), $scope);
 @endphp
 

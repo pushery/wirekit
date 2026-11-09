@@ -22,7 +22,7 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
     }
 
     /**
-     * Final post-build sanity: if a Vite manifest exists, the BUILT app CSS
+     * Final post-build sanity: if a Vite manifest exists, the built app CSS
      * should reference at least one WireKit token. Catches the silent-failure
      * mode where a developer adds the @source line to app.css but forgets to
      * run `npm run build` — the source-side check would still pass while the
@@ -86,7 +86,7 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
             }
             $css = (string) file_get_contents($cssPath);
 
-            // A wk token inside a RULE, never merely somewhere in the bundle.
+            // A wk token inside a rule, never merely somewhere in the bundle.
             //
             // This read `str_contains($css, '--color-wk-')`, and the most ordinary
             // customization there is defeats it: `wirekit:theme` writes a `:root { … }`
@@ -189,13 +189,13 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
     }
 
     /**
-     * Does this bundle carry a WireKit token inside a rule that is NOT a theme override?
+     * Does this bundle carry a WireKit token inside a rule that is not a theme override?
      *
      * The blocks are read innermost-first: `[^{}]*` cannot cross a brace, so a nested
      * at-rule contributes its inner selector rather than the `@media` wrapper, which is
      * the level the question is asked at.
      *
-     * A selector counts as theme scope only when EVERY comma-separated part of it does.
+     * A selector counts as theme scope only when every comma-separated part of it does.
      * `:root, .dark` is an override; `.dark .wk-field` is a rule. The list is short on
      * purpose — a name not on it is a rule, so the check errs toward asking for a
      * rebuild rather than toward a PASS nobody earned.

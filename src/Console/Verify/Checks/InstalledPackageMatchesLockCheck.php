@@ -25,7 +25,7 @@ final class InstalledPackageMatchesLockCheck extends VerifyCheck
      * Is the WireKit in `vendor/` the one this app's lockfile names?
      *
      * A developer checking whether an upstream capability has landed reads the source in
-     * `vendor/`, and that tree can be OLDER than the lockfile beside it while agreeing with
+     * `vendor/`, and that tree can be older than the lockfile beside it while agreeing with
      * it about the version. It happens when something updates the lock — a sync action, a
      * merged dependency pull request, a colleague's commit — and `composer install` has not
      * run locally since. Reading the vendor source then says a prop does not exist when it
@@ -34,10 +34,10 @@ final class InstalledPackageMatchesLockCheck extends VerifyCheck
      * It compares `source.reference`, never `dist.reference`, and that is the difference
      * between a useful check and a permanent false alarm. A path repository — which is how
      * this package's own sample app installs it — has no `source` key at all and a
-     * `dist.reference` that is a CONTENT HASH, not a commit. Comparing that against the
+     * `dist.reference` that is a content hash, not a commit. Comparing that against the
      * installed reference reports a mismatch on every healthy run.
      *
-     * So a path install is reported as NOT MEASURED rather than as clean. An answer nobody
+     * So a path install is reported as not measured rather than as clean. An answer nobody
      * could give and an all-clear must not print the same way.
      */
     private function checkInstalledPackageMatchesLock(): void

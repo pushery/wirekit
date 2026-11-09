@@ -127,7 +127,7 @@ final class Moment
      * PHP does not know, which is reported the way any invalid prop of `$component` is. A zone
      * object, PHP's own `DateTimeZone` or a `CarbonTimeZone`, names its zone.
      *
-     * For a zone a date is READ in: Carbon refuses an unknown one with an exception, before
+     * For a zone a date is read in: Carbon refuses an unknown one with an exception, before
      * `in()` could report it.
      */
     public static function zoneOr(DateTimeZone|string|null $timezone, string $fallback, string $component): string
@@ -175,6 +175,18 @@ final class Moment
         }
 
         return $moment->setTimezone($zone);
+    }
+
+    /**
+     * `$moment` as the reader's language writes a time of day in a sentence or a label: in the
+     * locale's ISO format `$format` (`LT`, `LLL` …), followed by the word that language puts after
+     * the hour, which Carbon's formats leave out, "Uhr" in German. The word comes from the kit's
+     * catalog, `wirekit:::time`, so a language without one writes the time alone, and an
+     * application can word it in a catalog of its own. For a format that carries a time of day.
+     */
+    public static function clock(CarbonImmutable $moment, string $format): string
+    {
+        return (string) __('wirekit:::time', ['time' => $moment->isoFormat($format)]);
     }
 
     /**

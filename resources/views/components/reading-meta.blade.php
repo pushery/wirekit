@@ -23,7 +23,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-meta', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showRemaining = BooleanProp::from($showRemaining, false, 'reading-meta', 'showRemaining');
@@ -44,7 +44,7 @@
     // `<span class="wk-reading-meta-paragraph">N min</span>` annotation
     // immediately before each <p> in the target with at least
     // `paragraphMinWords` words. Annotations show estimated remaining-time
-    // FROM that paragraph onward (re-computed on scroll). Default off; opt-in.
+    // from that paragraph onward (re-computed on scroll). Default off; opt-in.
     // aria-hidden — total/remaining display is the canonical SR reading-time.
 
     $wpmInt = max(50, \Pushery\WireKit\Support\NumericProp::int($wpm, 0, 'reading-meta', 'wpm'));
@@ -58,7 +58,7 @@
     $resolvedTarget = $target ?? 'main, article';
 
     $rootClass = 'wk-reading-meta '.WireKit::resolveClasses('reading-meta', 'base', implode(' ', [
-        'inline-flex items-center gap-1',
+        'inline-flex items-center gap-[var(--gap-wk-xs)]',
     ]), $scope);
 
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
@@ -82,7 +82,7 @@
     })"
     @unless($attributes->has('role')) role="status" @endunless
     @unless($attributes->has('aria-live')) aria-live="polite" @endunless
-    {{-- Without this, a polite region announces only what CHANGED — and what changes here is
+    {{-- Without this, a polite region announces only what changed — and what changes here is
          the number. A reader scrolling heard "12", then "11", then "9": three bare integers
          with no unit and no idea what they count. `aria-atomic` makes the region announce
          itself whole, which is "9 min remaining". --}}
@@ -92,10 +92,10 @@
     <span class="wk-reading-meta__total">
         ~<span x-text="totalMinutes"></span> {{ $totalLabel }}
     </span>
-    @if ($showRemainingBool)
+    @wirekitLast ($showRemainingBool)
         <span class="wk-reading-meta__separator" aria-hidden="true">·</span>
         <span class="wk-reading-meta__remaining">
             ~<span x-text="remainingMinutes"></span> {{ $remainingLabel }}
         </span>
-    @endif
+    @endwirekitLast
 </div>

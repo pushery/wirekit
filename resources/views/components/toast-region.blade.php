@@ -1,18 +1,18 @@
 {{-- optimistic-ui: n/a — client-only
      Transient display. It announces things that already happened. --}}
 @props([
-    'position' => config('wirekit.components.toast-region.position', 'top-right'),
+    'position' => config('wirekit.components.toast-region.position', 'top-end'),
     'duration' => config('wirekit.components.toast-region.duration', 5000),
     'max' => config('wirekit.components.toast-region.max', 5),
     'name' => null, // scoped name — when set, listens on 'wirekit-toast-{name}' instead of global
-    // Accessible name for the stack, and the switch that makes it a LANDMARK.
+    // Accessible name for the stack, and the switch that makes it a landmark.
     //
     // `role="region"` plus a name is a landmark, and this component is designed to be
     // mounted several times on one page — one per corner, or one per section through
     // `eventScope`. With a built-in name every one of them would be the same rotor entry
     // called "Notifications", which is what axe reports as `landmark-unique`: the name
     // meant to tell them apart would make them identical. So the role waits
-    // for a name the CALLER chose, never one the component can invent. Nothing is lost
+    // for a name the caller chose, never one the component can invent. Nothing is lost
     // without it — the two live regions below are the announcement path, and they do
     // not depend on the landmark. Name it after the surface ("Form notifications").
     'label' => null,
@@ -34,15 +34,17 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('toast-region', $attributes->getAttributes());
 
-    // An unknown `position` is reported (Support\StrictnessGate) and renders as `top-right`; a
-    // bound `null` or empty string is `top-right` without a word.
-    $position = \Pushery\WireKit\WireKit::validateProp('toast-region', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'top-right'), ['top-right', 'top-left', 'top-center', 'bottom-left', 'bottom-center', 'bottom-right']);
+    // An unknown `position` is reported (Support\StrictnessGate) and renders as `top-end`; a
+    // bound `null` or empty string is `top-end` without a word. `start` and `end` name the corner
+    // by the direction of the page, `left` and `right` by the screen; from left to right
+    // `top-end` is `top-right`.
+    $position = \Pushery\WireKit\WireKit::validateProp('toast-region', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'top-end'), ['top-end', 'top-start', 'top-center', 'bottom-start', 'bottom-center', 'bottom-end', 'top-right', 'top-left', 'bottom-left', 'bottom-right']);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@focusin']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $filled = BooleanProp::from($filled, false, 'toast-region', 'filled');
@@ -61,13 +63,16 @@
         'bottom-left' => 'bottom-0 left-0 items-start',
         'bottom-center' => 'bottom-0 left-1/2 -translate-x-1/2 items-center',
         'bottom-right' => 'bottom-0 right-0 items-end',
-        default => 'top-[var(--wk-strip-inset,0px)] right-0 items-end',
+        'top-start' => 'top-[var(--wk-strip-inset,0px)] start-0 items-start',
+        'bottom-start' => 'bottom-0 start-0 items-start',
+        'bottom-end' => 'bottom-0 end-0 items-end',
+        default => 'top-[var(--wk-strip-inset,0px)] end-0 items-end',
     };
 
     // Edge offset — keeps the toast stack clear of a fixed app header / nav
-    // (or a bottom bar) AND of the device safe-area (notch / home indicator).
+    // (or a bottom bar) and of the device safe-area (notch / home indicator).
     // The region is pinned flush to its edge (top-0 / bottom-0); we add the
-    // offset as padding on the ACTIVE edge so the toasts sit inside it without
+    // offset as padding on the active edge so the toasts sit inside it without
     // disturbing the other three sides' base `p-4`. Developers set the nav
     // height once via `--space-wk-toast-offset` (default 0px) on their app
     // shell / :root; `env(safe-area-inset-*)` is folded in automatically so a
@@ -81,7 +86,7 @@
 
     // The inline gap takes the scrollbar term too, and here the need hides one level deeper.
     //
-    // The region is pinned flush to its edge and the 1rem gap comes from the base padding INSIDE
+    // The region is pinned flush to its edge and the 1rem gap comes from the base padding inside
     // the box. The document's own scrollbar is outside the viewport box a `position: fixed` box
     // is laid out against, but two gutters are not: the one the scroll lock takes away while an
     // overlay is open, and a scrollbar drawn by an inner scroll container. `--wk-scrollbar-inset`
@@ -89,27 +94,23 @@
     // end up against it — nothing in the markup would look wrong, because the padding is there and
     // is being honored.
     //
-    // Only the arms anchored to the trailing edge take it. A region on the opposite edge has no
-    // gutter under it, and the centered arms are off by half the gutter, which is a different
-    // magnitude and a different fix.
-    //
-    // These arms name a physical side rather than a logical one, deliberately: RTL support is
-    // deferred across the whole catalog, and a term added inside an existing physical
-    // utility introduces no new one, where converting the direction here would settle that
-    // question in three files as a side effect.
+    // Every corner pads the end of its line by the gutter, since `--wk-scrollbar-inset` is a
+    // gutter at the end of the line. A region at that edge keeps its toasts clear of it. A region
+    // at the other edge grows by it on its side away from the screen's edge, where no toast
+    // stands, and its toasts keep their place. So a corner named by the screen is right in either
+    // reading direction without a word about it. The centered arms are off by half the gutter,
+    // which is a different magnitude and a different fix. The position is validated above, so an
+    // unknown one is already `top-end`.
     //
     // And the directional utilities are described here rather than spelled, for the same
     // reason the stacking comment below gives: Tailwind scans this file as text, comments
     // included, so naming one would emit it into the compiled stylesheet.
-    // Named by EXCLUSION rather than by matching the resolved class, and for two reasons at
-    // once: the fallback arm has to be included (an unknown position renders on the trailing
-    // edge, so a typo lands there), and matching the class would mean spelling a directional
-    // utility in this file — which Tailwind would compile straight out of the comparison.
-    $isTrailingEdge = ! in_array($position, ['top-left', 'bottom-left', 'top-center', 'bottom-center'], true);
-
-    if ($isTrailingEdge) {
-        $offsetStyle .= ' padding-right: calc(1rem + var(--wk-scrollbar-inset, 0px));';
-    }
+    // Each arm writes the whole declaration: a property name alone in a string reads as a class
+    // to the scan that holds the compiled stylesheet to the views.
+    $offsetStyle .= match ($position) {
+        'top-center', 'bottom-center' => '',
+        default => ' padding-inline-end: calc(1rem + var(--wk-scrollbar-inset, 0px));',
+    };
 
     // Container: fixed portal, stacks toasts vertically with gap
     $containerClasses = WireKit::resolveClasses('toast-region', 'base', implode(' ', [
@@ -121,8 +122,8 @@
         // No arbitrary-value class is quoted in this comment: Tailwind scans this file as
         // text, so writing one here would emit it into the compiled stylesheet.
         'fixed z-[var(--z-wk-toast)]',
-        'flex flex-col gap-3',
-        'p-4',
+        'flex flex-col gap-[var(--gap-wk-md)]',
+        'p-[var(--space-wk-md)]',
         'pointer-events-none',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
@@ -131,7 +132,7 @@
     $toastClasses = WireKit::resolveClasses('toast-region', 'toast', implode(' ', [
         'pointer-events-auto',
         'w-80 max-w-[calc(100vw-2rem)]',
-        'flex items-start gap-3',
+        'flex items-start gap-[var(--gap-wk-md)]',
         'p-[var(--padding-wk-y-md)]',
         'rounded-[var(--radius-wk-md)]',
         'border-[length:var(--border-wk-width)]',
@@ -225,7 +226,7 @@
 @endphp
 
 {{-- Toast region: fixed container that stacks toast notifications.
-     Mount ONCE per layout, typically in the app shell.
+     Mount once per layout, typically in the app shell.
      Toasts are dispatched via: $dispatch('wirekit-toast', { title, message, variant })
      With name prop: $dispatch('wirekit-toast-{name}', { ... }) for scoped regions. --}}
 <div
@@ -247,7 +248,7 @@
          three outcomes. (The helper and this component's `$filled` prop share a spelling
          and nothing else — PHP keeps function and variable names apart.) --}}
     @if((string) $regionName !== '') @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="region" @endunless {{ $regionName }} @endif
-    {{-- Where the reader came FROM. Dismissing the last toast empties the stack,
+    {{-- Where the reader came from. Dismissing the last toast empties the stack,
          and without this focus would drop to <body> — the page's top, not the
          place the reader left. `focusin` bubbles, so one listener on the region
          covers every card in it. --}}
@@ -255,7 +256,7 @@
 >
     {{-- The announcement, separated from the toast that caused it.
 
-         A live region must exist BEFORE the text it announces — an element created
+         A live region must exist before the text it announces — an element created
          together with its message is a new node, not a region that changed, and
          assistive technology says nothing. The per-toast binding this replaces had
          never announced a single toast.
@@ -275,7 +276,7 @@
             x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0 translate-y-2"
-            {{-- NO live role and no aria-live on the toast itself.
+            {{-- No live role and no aria-live on the toast itself.
 
                  Not just aria-live: `role="alert"` carries an implicit
                  `aria-live="assertive"`, so leaving the role here would put the
@@ -294,7 +295,7 @@
                  its own and would otherwise have nothing to be selected by. --}}
             data-wk-toast
             {{-- The id as well as the flag: dismissing a toast removes the button
-                 that was pressed, and `remove()` has to be able to tell WHICH card
+                 that was pressed, and `remove()` has to be able to tell which card
                  the focus it is about to strand was sitting in. The valueless
                  attribute above stays what everything selects on. --}}
             :data-wk-toast-id="toast.id"
@@ -324,7 +325,7 @@
             >
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     {{-- SVG namespace gotcha: <template> elements inside <svg>
-                         are NOT treated as HTML template elements (no .content
+                         are not treated as HTML template elements (no .content
                          property). Alpine's x-if then fails with
                          "Cannot read properties of undefined (reading 'cloneNode')"
                          as soon as its condition holds, which here is the first
@@ -370,7 +371,7 @@
                 type="button"
                 @click="remove(toast.id)"
                 aria-label="{{ __('wirekit::Dismiss notification') }}"
-                class="wk-touch-target shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-[var(--opacity-wk-hover)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-touch-target shrink-0 p-[var(--space-wk-xs)] -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-[var(--opacity-wk-hover)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

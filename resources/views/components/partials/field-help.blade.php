@@ -35,7 +35,7 @@
     $helpName = trim((string) preg_replace('/\s+/u', ' ', (string) ($helpName ?? '')));
 @endphp
 @if($helpButton ?? true)
-    <x-wirekit::tooltip as="span" :text="$helpText" :focusable-trigger="false" class="shrink-0" data-wk-field-help>
+    <x-wirekit::tooltip as="span" :text="$helpText" :text-from="filled($helpId ?? null) ? $helpId : null" :focusable-trigger="false" class="shrink-0" data-wk-field-help>
         <span
             role="button"
             tabindex="0"
@@ -59,9 +59,7 @@
                  the middle of the circle: its height spans 6 to 18 around the center of 12, and its
                  stem and dot stand on the vertical axis. The mark shows what is behind it, so mark and
                  circle contrast as circle and page do, light and dark. --}}
-            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 0 1-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 0 1-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 0 1-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584ZM12 18a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"/>
-            </svg>
+            {{ \Pushery\WireKit\Support\KitIcons::svg('help', 'w-4 h-4') }}
         </span>
     </x-wirekit::tooltip>
 @endif

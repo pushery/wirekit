@@ -21,7 +21,7 @@ use Pushery\WireKit\ComponentRegistry;
 final class ComponentAllowlist
 {
     /**
-     * Return true when a component is registered AND has a sandbox schema.
+     * Return true when a component is registered and has a sandbox schema.
      */
     public static function allows(string $componentName): bool
     {

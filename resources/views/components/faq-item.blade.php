@@ -5,7 +5,7 @@
      component sits between the two — so without bridging them here, a flush FAQ
      would render bordered rows inside a flush container.
 
-     The fallbacks are faq's OWN defaults, not the accordion's: @aware only ever
+     The fallbacks are faq's own defaults, not the accordion's: @aware only ever
      sees what was passed to the parent as an explicit attribute, never the
      parent's @props default (verified — it is a real Laravel limitation, not an
      oversight). So a plain <x-wirekit::faq> with no attributes would otherwise
@@ -16,7 +16,7 @@
     'size' => config('wirekit.components.faq.size', 'lg'),
     // The heading level of the questions, set on the surrounding faq; accordion.item checks it.
     'level' => 3,
-    // Set on the surrounding faq: strip markup from the SCHEMA answer text.
+    // Set on the surrounding faq: strip markup from the schema answer text.
     'plainText' => false,
     // Set on the surrounding faq: several answers may stand open, which the default start needs.
     'multiple' => false,
@@ -30,7 +30,7 @@
     $level = \Pushery\WireKit\Support\AwareProp::read('level', ['faq'], 3);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -39,14 +39,14 @@
 
 
 @props([
-    // The question. Rendered as the accordion trigger AND recorded for the
+    // The question. Rendered as the accordion trigger and recorded for the
     // FAQPage schema — one string, both jobs, so they cannot disagree.
     'question' => '',
     // The language of `question` where it differs from the page's, written on the question alone.
     // The structured data keeps the text as it is.
     'questionLang' => null,
     // Escape hatch for the rare case where the schema answer must differ from the
-    // visible one in CONTENT, not just markup. Prefer `plain-text` on the faq: a
+    // visible one in content, not just markup. Prefer `plain-text` on the faq: a
     // hand-written duplicate is copy that can drift away from what the reader
     // sees, which is exactly what deriving the schema from the render prevents.
     'schemaAnswer' => null,
@@ -86,7 +86,7 @@
     // strings (anything with a random id, a counter, or a date in it).
     $answerHtml = trim($slot->toHtml());
 
-    // What the schema records. Still DERIVED from what is rendered — `plainText`
+    // What the schema records. Still derived from what is rendered — `plainText`
     // only removes markup, it never re-authors the answer, so the schema and the
     // page cannot drift apart. The schema is read outside the page, where the markup
     // of nested components (data-* attributes, Alpine directives, utility classes)

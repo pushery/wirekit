@@ -39,7 +39,7 @@ export default function wirekitPopover(config = {}) {
         // Cross-close channel — see utils/overlay-coordination.js. Two open
         // sibling popovers overlap, which a reader sees and no test does.
         _coordination: null,
-        // Floating UI autoUpdate teardown handle — set in show(), called in EVERY
+        // Floating UI autoUpdate teardown handle — set in show(), called in every
         // close path (close / _closeFromTrap / _forceClose) so the scroll+resize
         // listeners never outlive the panel (every teardown path must call stop()).
         _stopAutoUpdate: null,
@@ -211,7 +211,7 @@ export default function wirekitPopover(config = {}) {
          * `escapeDeactivates`). A press outside pauses the trap instead, and its release closes
          * through close() (see init()).
          *
-         * Deliberately does NOT call deactivate() again — this runs from inside it.
+         * Deliberately does not call deactivate() again — this runs from inside it.
          */
         _closeFromTrap() {
             if (!this.isOpen) return;

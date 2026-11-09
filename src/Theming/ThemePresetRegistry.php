@@ -7,20 +7,20 @@ namespace Pushery\WireKit\Theming;
 use InvalidArgumentException;
 
 /**
- * Single source of truth for the preset LIST + its light-touch modifier
- * blocks — NOT the full pasteable palette.
+ * Single source of truth for the preset list + its light-touch modifier
+ * blocks — not the full pasteable palette.
  *
  * Every CLI surface that touches presets (ThemeCommand, InstallCommand,
  * ExportApiMapCommand, future MCP server queries) reads the preset list from
- * THIS class. Drift between the lists those commands print becomes
+ * this class. Drift between the lists those commands print becomes
  * unrepresentable — there is exactly one definition.
  *
- * IMPORTANT scope note: the `vars` / `dark_vars` blocks here are a deliberately
+ * Important scope note: the `vars` / `dark_vars` blocks here are a deliberately
  * light-touch modifier set (they override only the tokens a preset actually
- * retints). The COMPLETE, copy-pasteable palette a developer applies for each
+ * retints). The complete, copy-pasteable palette a developer applies for each
  * preset — including e.g. the full `--color-wk-border-strong` / `-strong-hover`
  * control-border pairs — lives on that preset's theming documentation page, not
- * here. A token being absent from a `vars` block below does NOT mean the preset
+ * here. A token being absent from a `vars` block below does not mean the preset
  * omits it; check the documentation page before concluding a preset is missing
  * a token.
  *
@@ -46,7 +46,7 @@ final class ThemePresetRegistry
      *
      * The `default` preset represents "stay on the bundled values" — its
      * `vars` is the empty string, signaling that applying it should
-     * REMOVE any existing preset block from the developer's app.css and
+     * remove any existing preset block from the developer's app.css and
      * return to the bundled token values.
      *
      * @return array<string, array{label: string, vars: string, dark_vars: ?string}>
@@ -469,7 +469,7 @@ CSS,
      *
      * After registration, the preset shows up in `keys()`, `all()`,
      * `wirekit:theme fintech` succeeds, and `wirekit:install --preset=fintech`
-     * works. Re-registering an existing slug REPLACES the entry — useful
+     * works. Re-registering an existing slug replaces the entry — useful
      * for testing.
      *
      * @param  array{label: string, vars: string, dark_vars?: ?string}  $preset

@@ -11,7 +11,7 @@ const OWN_SCOPE = Symbol('wirekit.ownScopeComponent');
 /**
  * Methods that act on their own component, whichever scope calls them.
  *
- * Alpine runs a method with `this` set to the MERGED scope of the element whose expression called
+ * Alpine runs a method with `this` set to the merged scope of the element whose expression called
  * it, innermost scope first. For a component whose markup can hold other scopes, that is the wrong
  * object. Take `close()` on a modal, called from a button inside an accordion in the modal's body:
  * `this.isOpen` resolves against the accordion first, and the accordion has an `isOpen(id)` method
@@ -29,12 +29,12 @@ const OWN_SCOPE = Symbol('wirekit.ownScopeComponent');
  *   the optimistic layer's `run()` would write the new value onto the control that handed it up
  *   instead of onto the layer, which never flips.
  * - A write lands on the component. Alpine stores a property that no scope declares on the
- *   OUTERMOST scope of the stack, so a handle assigned in `init()` would otherwise end up on
+ *   outermost scope of the stack, so a handle assigned in `init()` would otherwise end up on
  *   whatever wraps the page, shared by every component under it. Changing another component's
  *   state is that component's job: call its method or dispatch an event.
  *
  * - A magic resolves against the component's root too: `this.$el` is the root and `this.$refs` holds
- *   the refs registered in the component's own scope. An `x-ref` registers into the CLOSEST
+ *   the refs registered in the component's own scope. An `x-ref` registers into the closest
  *   `x-data`, so a ref inside a sub-component that declares a scope of its own is not among them,
  *   whichever element called the method. Such an element is found through the DOM, with the ref
  *   as the first try: `this.$refs.trigger ?? this.$root.querySelector('[data-wk-dropdown-trigger]')`.
@@ -131,7 +131,7 @@ function reconciledOwner(scope, init) {
  * its root, whose methods run against those scopes.
  *
  * `scope` is what Alpine hands `init()`, the merged scope of the component's root. Read through it,
- * the per-instance key comes back as the component's own REACTIVE proxy, so every read and write
+ * the per-instance key comes back as the component's own reactive proxy, so every read and write
  * below is tracked like any other. Outside Alpine it is the plain object.
  *
  * The proxy's target is an empty object rather than the component, because the component carries

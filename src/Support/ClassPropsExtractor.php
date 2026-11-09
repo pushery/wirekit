@@ -14,7 +14,7 @@ use ReflectionUnionType;
  * The companion class to `PropsParser` (which reads `@props([…])` blocks
  * from anonymous Blade files). For class-based components — those
  * registered via Laravel's `loadViewComponentsAs(...)` — `@props` is not
- * applicable; the prop surface IS the constructor signature. This class
+ * applicable; the prop surface is the constructor signature. This class
  * walks that signature via Reflection and produces the same shape as
  * `PropsParser` returns for anonymous components, so downstream
  * callers (ExportJsonCommand, InstallCommand schema writer,

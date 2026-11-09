@@ -1,5 +1,5 @@
 /**
- * The VISIBLE text of an element, with `aria-hidden` descendants left out.
+ * The visible text of an element, with `aria-hidden` descendants left out.
  *
  * `textContent` walks straight through `aria-hidden="true"`, which is the one attribute
  * whose entire meaning is "this is not part of the accessible content". Anything building a
@@ -20,13 +20,13 @@
  * `aria-hidden` does its job), so nothing counts wrong and the panel simply reads badly —
  * visible only to a person looking at the rendered panel.
  *
- * WHY A CLONE. Removing the nodes in place would mutate the page — the marker would
+ * Why A clone. Removing the nodes in place would mutate the page — the marker would
  * disappear from the heading itself. Cloning costs one shallow tree copy per heading, and
  * headings are counted in tens.
  *
  * What this deliberately does not do, because the omission looks like a gap and is not.
  * `aria-label` and `aria-labelledby` on the element itself override its content in the
- * accessible-name computation, and this function ignores them. Every caller renders VISIBLE
+ * accessible-name computation, and this function ignores them. Every caller renders visible
  * navigation — the table of contents, the spine, the minimap. Resolving an author's
  * `aria-label` first would make the entry read "Pricing for teams" beside a heading that
  * says "Pricing", so a sighted reader would get a panel that disagrees with the page it

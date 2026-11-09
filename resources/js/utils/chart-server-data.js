@@ -11,7 +11,7 @@
  *
  * An attribute and an observer rather than a Livewire hook, for the reason the indeterminate
  * directive gives: the attribute is written by the server on every render and by nobody else, so
- * a change to it IS the server's change, whatever wrote it, and the chart needs no Livewire to
+ * a change to it is the server's change, whatever wrote it, and the chart needs no Livewire to
  * be correct.
  *
  * Returns the function that stops following, or null when there is nothing to follow.
@@ -20,7 +20,7 @@ export const WK_CHART_DATA_ATTRIBUTE = 'data-wk-chart-data';
 
 /**
  * @param {Element|null|undefined} root  the chart's root element
- * @param {(payload: object) => void} onData  called with each NEW payload, never the first
+ * @param {(payload: object) => void} onData  called with each new payload, never the first
  * @returns {(() => void)|null}
  */
 export function followChartServerData(root, onData) {

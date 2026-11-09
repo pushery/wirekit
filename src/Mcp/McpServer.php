@@ -20,7 +20,7 @@ namespace Pushery\WireKit\Mcp;
  * everything it serves ships in the Packagist tarball, so a developer-hosted
  * local server is always version-matched to their installed WireKit.
  *
- * It also exposes four RESOURCES — `wirekit://catalog`, `wirekit://themes`,
+ * It also exposes four resources — `wirekit://catalog`, `wirekit://themes`,
  * `wirekit://recipes` and `wirekit://changelog`. A resource is the same shipped
  * data addressed by URI instead of by call: an assistant attaches the catalog to a
  * conversation once instead of asking for it on every turn, and a client that lists
@@ -31,7 +31,7 @@ namespace Pushery\WireKit\Mcp;
  *
  * Nothing is read from `docs/` at runtime, which is not a detail: `docs/` is
  * export-ignored, so it is absent in a real install. The worked examples are
- * extracted from it at BUILD time into a file that ships, and a test fails when
+ * extracted from it at build time into a file that ships, and a test fails when
  * the two drift apart.
  *
  * This list names the tools actually registered, one entry for each.

@@ -56,7 +56,7 @@ final class LucidePreset implements IconPreset
             // `system` is the third theme state beside `sun` and `moon`, so a theme
             // control can name all three of its positions. No icon family spells the
             // concept the same way (computer-desktop / monitor / device-desktop), so the
-            // WORD is ours and the glyph is each set's own — which is what these aliases
+            // word is ours and the glyph is each set's own — which is what these aliases
             // are for. Every target below exists in its set.
             //
             // `article` is deliberately absent: two of the sets would need a substitute
@@ -126,7 +126,7 @@ final class LucidePreset implements IconPreset
             'bolt' => 'lucide-zap', // lucide calls the bolt glyph `zap`
             'refresh' => 'lucide-refresh-cw', // lucide's rotate glyph
             // Undo — the counter-clockwise arrow every set ships under a different name.
-            // Named for the CONCEPT, not for one family's spelling: Phosphor's word for it,
+            // Named for the concept, not for one family's spelling: Phosphor's word for it,
             // `arrow-counter-clockwise`, would make the vocabulary read differently
             // depending on which set a project loads. Lucide `undo`, tabler
             // `arrow-back-up`, phosphor `arrow-counter-clockwise` and heroicons
@@ -142,7 +142,7 @@ final class LucidePreset implements IconPreset
             'microphone' => 'lucide-mic',
             // ── Admin navigation ────────────────────────────────────────────
             // Five concepts every administrative interface has. Without a word for each,
-            // a navigation reaches for the icon package's OWN glyph names — `users`,
+            // a navigation reaches for the icon package's own glyph names — `users`,
             // `stack`, `scales`, `clock-counter-clockwise`.
             //
             // Those raw names work, and that is the problem: they resolve because
@@ -250,14 +250,14 @@ final class LucidePreset implements IconPreset
             // ship, and blade-icons throws rather than degrading.
             //
             // Each target is a glyph its set ships under exactly that name. What is
-            // taken here is the CONCEPT; the target is each family's own picture of it,
+            // taken here is the concept; the target is each family's own picture of it,
             // which is why the right-hand sides differ.
             //
-            // Deliberately NOT taken:
+            // Deliberately not taken:
             //   a11y — no genuine cognate in all three.
             //   merge, pin — Heroicons has no genuine cognate. Nothing in it draws two
             //     paths becoming one, and its only pin is `map-pin`, a place marker.
-            //   cursor-arrow-rays — the SPELLING stays out; the concept is `click`
+            //   cursor-arrow-rays — the spelling stays out; the concept is `click`
             //     below. A family's name for its own drawing is not a word the
             //     vocabulary can share; the concept behind it is.
             //   ai, sparkle, cube-transparent — a spelling variant of a word that is
@@ -276,7 +276,7 @@ final class LucidePreset implements IconPreset
             'arrow-up' => 'lucide-arrow-up',
             'arrow-up-right' => 'lucide-arrow-up-right',
             'chart-pie' => 'lucide-chart-pie',
-            // The CONCEPT name for what the marketing extension spells
+            // The concept name for what the marketing extension spells
             // `cursor-arrow-rays`, heroicons' name for its own picture rather than a word
             // anybody would reach for; that spelling stays in the extension. All four
             // sets draw a pointer with an action mark.
@@ -294,6 +294,7 @@ final class LucidePreset implements IconPreset
             'heart-outline' => 'lucide-heart',
             'link' => 'lucide-link',
             'attach' => 'lucide-paperclip',
+            'share' => 'lucide-share-2', // the three nodes the other presets draw; lucide-share is a box and an arrow
             'live' => 'lucide-radio',
             /*
              * `video` and `emoji` name what a video-call button and an emoji picker show.
@@ -302,7 +303,7 @@ final class LucidePreset implements IconPreset
              * icon: a sighted reader trusts the picture and a screen-reader user is told the
              * other thing.
              *
-             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate:
+             * Taken only because all four interchangeable presets ship a genuine cognate:
              * heroicons `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
              * `video-camera` / `smiley`, tabler `video` / `mood-smile`.
              */

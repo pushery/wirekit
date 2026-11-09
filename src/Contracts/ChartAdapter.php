@@ -20,7 +20,7 @@ interface ChartAdapter
 {
     /**
      * Stable library identifier, used in error messages and as the value of the chart's
-     * `data-wk-chart` marker, which a host's lazy-loader keys on. MUST be stable across
+     * `data-wk-chart` marker, which a host's lazy-loader keys on. Must be stable across
      * patch releases — developer config and those loaders depend on it.
      *
      * Examples: 'chartjs' / 'apexcharts' / developer-defined slug.

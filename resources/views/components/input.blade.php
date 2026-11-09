@@ -2,7 +2,7 @@
      Pass `optimistic="method"` and the value is sent when you leave the field,
      shown as saving while it goes.
 
-     **It uses the `keep` failure exit**: a refusal does NOT put the old value
+     **It uses the `keep` failure exit**: a refusal does not put the old value
      back. For a typed value the previous one belongs to the server and the new
      one is your work, so an undo would delete what you just wrote because a
      save failed. The value stays, the state becomes `rejected`, and the
@@ -17,7 +17,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'label' => null,
@@ -56,11 +56,16 @@
     'type' => 'text',
     // Monospace the field value — for SKUs, measurements, codes, hashes. Swaps the
     // input font to --font-wk-mono; off by default. The <x-slot:leading>
-    // / <x-slot:trailing> named slots put an icon or addon INSIDE the field frame (a
+    // / <x-slot:trailing> named slots put an icon or addon inside the field frame (a
     // search glyph, a unit) — distinct from the text-only `prefix`/`suffix` props.
     'mono' => false,
     'prefix' => null,
     'suffix' => null,
+    // Group the digits of an amount while it is typed, by the page's language: `1.500.000,5` in
+    // German, `1,500,000.5` in English. The field's value stays the plain number, digits with a `.`
+    // before the decimals, for `wire:model`, `x-model` and a plain form alike, and a number the
+    // application writes comes back grouped. The field is a text field with a decimal keyboard.
+    'groupDigits' => false,
     // Optional trailing affordances (opt-in; off by default). `clearable` shows an
     // X button that empties the field,
     // refocuses it, and dispatches input/change so wire:model / x-model sync.
@@ -107,12 +112,13 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false, 'input', 'hideLabel');
     $reserveMessage = BooleanProp::from($reserveMessage, false, 'input', 'reserveMessage');
     $clearable = BooleanProp::from($clearable, false, 'input', 'clearable');
+    $groupDigits = BooleanProp::from($groupDigits, false, 'input', 'groupDigits');
     // A clear or copy button says which field it acts on, the way a multi-select pill says
     // which choice it removes: a form with several such fields would otherwise offer several
     // buttons called "Clear input". The field's name is its label, the caller's `aria-label`,
@@ -131,13 +137,14 @@
     $mono = BooleanProp::from($mono, false, 'input', 'mono');
 
     // The field-value font: mono for codes/measurements, otherwise the sans stack.
-    // Used by BOTH the bare input and the wrapped input so the two render alike.
+    // Used by both the bare input and the wrapped input so the two render alike.
     $fontFamilyClass = $mono
         ? 'font-[family-name:var(--font-wk-mono)]'
         : 'font-[family-name:var(--font-wk-sans)]';
     $copyable = BooleanProp::from($copyable, false, 'input', 'copyable');
-    // `counter`: a string that is a sentence is the format; one that only says yes or no is that.
-    $counterFormat = is_string($counter) && ! in_array(strtolower(trim($counter)), ['', '0', '1', 'false', 'true'], true) ? $counter : null;
+    // `counter`: a string that is a sentence is the format; one that only says yes or no, in any
+    // spelling BooleanProp reads (`off` and `no` as well), is that.
+    $counterFormat = is_string($counter) && trim($counter) !== '' && BooleanProp::orNull($counter) === null ? $counter : null;
     $counter = $counterFormat !== null || BooleanProp::from($counter, false, 'input', 'counter');
     $required = BooleanProp::from($required, false, 'input', 'required');
     $disabled = BooleanProp::from($disabled, false, 'input', 'disabled');
@@ -164,7 +171,7 @@
     $insertName = $labelText !== '' ? __('wirekit::Insert into :field', ['field' => $labelText]) : __('wirekit::Insert');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -185,7 +192,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -198,10 +205,20 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('input', $attributes->getAttributes());
 
+    // A field that groups its digits shows them with marks, which a number field cannot hold, so
+    // it is a text field. It writes the page's language, and the marks of the application's own
+    // number formatter where there is one, for the script that groups (utils/grouped-digits.js).
+    if ($groupDigits) {
+        $type = 'text';
+    }
+    $groupedLocale = $groupDigits ? (\Pushery\WireKit\Support\LanguageTag::of(app()->getLocale()) ?? '') : '';
+    $groupedMarks = $groupDigits ? \Pushery\WireKit\Support\LocalizedNumber::separators() : null;
+
     // A number or range field gives its value as text, and Livewire takes the server's echo of
     // an `int` or `float` property for a change and writes it over a newer value: a binding to
-    // one gets `.number` and sends a number (Support\NumericModel).
-    if (in_array(strtolower((string) $type), ['number', 'range'], true)) {
+    // one gets `.number` and sends a number (Support\NumericModel). A field that groups its
+    // digits gives its plain number as text the same way.
+    if ($groupDigits || in_array(strtolower((string) $type), ['number', 'range'], true)) {
         $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
     }
 
@@ -236,7 +253,7 @@
     // Without a `name`, the bag files this field's error under the property its `wire:model`
     // binds (FieldError::nameOf).
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
-    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // Strip the caller's `id` and `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
@@ -244,11 +261,11 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Error detection: explicit prop OR Laravel validation bag
+    // Error detection: explicit prop or Laravel validation bag
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
     $hasError = $errorMessage !== null;
 
-    // Success / valid state — only when there is NO error (error wins). A string
+    // Success / valid state — only when there is no error (error wins). A string
     // value renders a green confirmation message below the field; `true` shows the
     // green border alone. Not an `aria-invalid` state (the field is valid).
     // Tri-state (null | true | string message): `!== false` alone let the unbound
@@ -297,7 +314,7 @@
     // The [&:user-invalid]:* utilities below give every input automatic visual
     // feedback for native HTML5 constraint violations (type, pattern, min, max,
     // required, minlength, maxlength, step). :user-invalid — unlike :invalid —
-    // only activates AFTER the user has interacted with the field (touched it
+    // only activates after the user has interacted with the field (touched it
     // and blurred, or tried to submit the form), which avoids the UX footgun
     // of showing red borders on every empty required field at page load.
     // This runs independently of the $error prop: $error handles server-side
@@ -328,13 +345,6 @@
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
-
-    // A width utility in the caller's `class` replaces the field's own `w-full`, as on a number input.
-    // Beside it the stylesheet's order would decide which width wins, not the attribute. A width
-    // under a variant is left alone, because it applies at a width of its own.
-    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
-        $inputClasses = \Pushery\WireKit\Support\UtilityClasses::without($inputClasses, '/^w-/');
-    }
 
     // Border and focus-ring color switch between error, success, and normal state — all via
     // tokens. Each state names its own ring color and the base list names none: two ring colors
@@ -411,7 +421,7 @@
         : 'min-w-[24px] min-h-[24px]';
     // Each button keeps --padding-wk-x-md to its right, the inset of the leading and trailing
     // slots, so a field with an icon in front and a button behind is as deep on both sides.
-    // The leading/trailing icon slots live INSIDE the field frame, so — like
+    // The leading/trailing icon slots live inside the field frame, so — like
     // prefix/suffix and the affordance buttons — they route the field through the
     // flex wrapper.
     $hasLeading = isset($leading) && $leading->hasActualContent();
@@ -426,9 +436,9 @@
     // what the change event hands over anyway, and `keep` never writes on
     // failure — so the resync the ref would enable has nothing to do.
     //
-    // `value` IS handed over, and it is not the same decision. The two were
+    // `value` is handed over, and it is not the same decision. The two were
     // once treated as one, and the layer was dead in every render: this layer is
-    // the OUTERMOST x-data here, so an undeclared `value` is not in scope for
+    // the outermost x-data here, so an undeclared `value` is not in scope for
     // the default binding either, `init()` sets `_bindMissing`, and `run()`
     // returns before it ever reaches Livewire. Nothing flipped, nothing was
     // announced, nothing was sent — and the component looked supported. What it
@@ -509,20 +519,26 @@
             $prefixWrapperSizeClass,
         ])>
             @if($hasLeading)
-                {{-- Leading addon (an icon / unit glyph) INSIDE the frame. The slot
+                {{-- Leading addon (an icon / unit glyph) inside the frame. The slot
                      owns its own a11y — a decorative <x-wirekit::icon> is aria-hidden
                      already; the field's label is its accessible name. --}}
-                <span class="shrink-0 inline-flex items-center pl-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $leading }}</span>
+                <span class="shrink-0 inline-flex items-center ps-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $leading }}</span>
             @endif
 
             @if($prefix)
-                <span class="shrink-0 select-none pl-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
+                <span class="shrink-0 select-none ps-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
             @endif
 
             <input
                 id="{{ $id }}"
                 @if($name !== '') name="{{ $name }}" @endif
                 type="{{ $type }}"
+                @if($groupDigits)
+                    x-wk-grouped-digits
+                    data-wk-grouped-locale="{{ $groupedLocale }}"
+                    @if($groupedMarks !== null) data-wk-grouped-marks="{{ \Pushery\WireKit\Support\AlpinePayload::json($groupedMarks) }}" @endif
+                    @unless($attributes->has('inputmode')) inputmode="decimal" @endunless
+                @endif
                 {{-- The kit draws its own clear button, so on a field of type search the browser's
                      is hidden through this marker (dist/wirekit.css) and the field shows one. --}}
                 @if($clearable) data-wk-clearable @endif
@@ -555,22 +571,22 @@
                     'focus:outline-hidden focus:ring-0',
                     'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
                     $prefixInputPadClass,
-                    'pl-1' => (bool) $prefix || $hasLeading,
-                    'pr-1' => (bool) $suffix || $hasAffordances || $hasTrailing,
+                    'ps-1' => (bool) $prefix || $hasLeading,
+                    'pe-1' => (bool) $suffix || $hasAffordances || $hasTrailing,
                 ])) }}
             />
 
             @if($suffix)
-                <span class="shrink-0 select-none pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
+                <span class="shrink-0 select-none pe-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
             @endif
 
             @if($hasTrailing)
-                {{-- Trailing addon (an icon / unit glyph) INSIDE the frame, before any
+                {{-- Trailing addon (an icon / unit glyph) inside the frame, before any
                      clearable/copyable affordance buttons. The slot owns its a11y. --}}
-                <span class="shrink-0 inline-flex items-center pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $trailing }}</span>
+                <span class="shrink-0 inline-flex items-center pe-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $trailing }}</span>
             @endif
 
-            @if($hasAffordances)
+            @wirekitLast($hasAffordances)
                 {{-- The island that drives clear() / copy(). Its methods live in
                      resources/js/components/input.js, because an inline object literal
                      cannot declare methods under Alpine's CSP build. It holds the
@@ -590,7 +606,7 @@
                         @if($disabled) disabled @endif
                         aria-label="{{ $copyText }}"
                         :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($copyText) }}"
-                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} me-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     >
                         <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
@@ -616,7 +632,7 @@
                              nothing, and `copyable readonly` is the documented token field. --}}
                         @if($disabled || $readonly) disabled @endif
                         aria-label="{{ $clearText }}"
-                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} me-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     >
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
@@ -629,7 +645,7 @@
                 {{-- The only feedback a screen-reader user gets after copying — nothing changes visually. --}}
                 <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : ''"></span>
                 </span>
-            @endif
+            @endwirekitLast
         </div>
     @else
         {{-- No prefix/suffix: render plain input with full styling --}}
@@ -637,6 +653,12 @@
             id="{{ $id }}"
             @if($name !== '') name="{{ $name }}" @endif
             type="{{ $type }}"
+            @if($groupDigits)
+                x-wk-grouped-digits
+                data-wk-grouped-locale="{{ $groupedLocale }}"
+                @if($groupedMarks !== null) data-wk-grouped-marks="{{ \Pushery\WireKit\Support\AlpinePayload::json($groupedMarks) }}" @endif
+                @unless($attributes->has('inputmode')) inputmode="decimal" @endunless
+            @endif
             @if($required) required @elseif($fieldRequired) aria-required="true" @endif
             @if($disabled) disabled @endif
             @if($readonly) readonly @endif
@@ -763,10 +785,7 @@
         />
     @endif
 
-    @if($optimisticConfig)
-        {{-- Rendered unconditionally and starting empty: a live region that
-             arrives together with its text is a new node, and nothing is
-             announced at all. --}}
-        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
-    @endif
+    {{-- The live region of an optimistic field (partials/optimistic-announcer). It stands last, so
+         it is included rather than written in a block, and Livewire writes no morph markers around it. --}}
+    @includeWhen($optimisticConfig, 'wirekit::components.partials.optimistic-announcer')
 </div>

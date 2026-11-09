@@ -72,7 +72,7 @@
 
 <span
     x-data="wirekitHoverCard({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ $offset }}, delayShow: {{ $delayShow }}, delayHide: {{ $delayHide }} })"
-    {{-- Escape listens on the WINDOW, and it has to.
+    {{-- Escape listens on the window, and it has to.
          The panel below carries its own `@keydown.escape`, which fires only while
          focus is inside the panel — after `tabFromTrigger()` moves it there, not
          while a reader points at or focuses the trigger, which is how a hover card
@@ -81,7 +81,7 @@
          That is not a nicety. WCAG 1.4.13 requires content shown on hover or
          focus to be dismissible without moving the pointer or the focus, and
          Escape is the mechanism it names.
-         In the CAPTURE phase, and the press that closes the card is marked: a modal
+         In the capture phase, and the press that closes the card is marked: a modal
          or a drawer around the reader reads the key on the document and on the
          window too, and leaves a marked press alone. `escapeAnywhere()` returns at
          once while the card is closed, so a page full of these does not do work on
@@ -92,10 +92,10 @@
     {{-- Trigger element.
 
          ARIA attributes (aria-haspopup, aria-expanded) are delegated to the
-         INNER interactive element (button/link) via x-init when one exists,
-         NOT placed on this wrapper <span> — a generic <span> rejects them
+         inner interactive element (button/link) via x-init when one exists,
+         not placed on this wrapper <span> — a generic <span> rejects them
          under axe-core's aria-allowed-attr rule. Unlike popover, a hover-card
-         trigger is LEGITIMATELY non-interactive (an avatar or @username that
+         trigger is legitimately non-interactive (an avatar or @username that
          reveals a card on hover/focus), so the no-descendant case is silent —
          it is not a developer error. --}}
     <span
@@ -104,7 +104,7 @@
         @mouseleave="mouseleave()"
         @focusin="focusin()"
         @focusout="focusout()"
-        {{-- Tab steps INTO the open card. The panel is teleported to the end of
+        {{-- Tab steps into the open card. The panel is teleported to the end of
              <body>, and sequential focus order follows the DOM rather than the
              screen — so without this the reader tabs to the next control on the
              page while the card sits in front of them, and its buttons are
@@ -119,7 +119,7 @@
 
     {{--
         Hover-card panel — positioned via Floating UI. Teleported to
-        <body> via `x-teleport="#wk-overlay-root"` so the panel renders OUTSIDE the
+        <body> via `x-teleport="#wk-overlay-root"` so the panel renders outside the
         wrapper `<span>` hierarchy. Without the teleport, an inline
         usage like
 
@@ -130,7 +130,7 @@
         encounters the panel `<div>` because `<p>` only allows phrasing
         content — no flow content like `<div>`. The fragmentation breaks
         Alpine's `$refs.panel` lookup (the panel is no longer a
-        descendant of the x-data root) AND the `@mouseenter` / show
+        descendant of the x-data root) and the `@mouseenter` / show
         bindings never see the panel either, so the hover card silently
         never opens. Surfaced on /components/hover-card#inline-in-running-text.
 

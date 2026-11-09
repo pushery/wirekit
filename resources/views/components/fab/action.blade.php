@@ -3,7 +3,7 @@
 @props([
     // What this action does. The button is an icon, so this is its whole name.
     'label' => '',
-    // Drop the label from the SCREEN while keeping it as the accessible name —
+    // Drop the label from the screen while keeping it as the accessible name —
     // the plain icon-only speed dial. Same meaning the prop carries on checkbox,
     // so the name is reused rather than reinvented.
     'hideLabel' => false,
@@ -18,7 +18,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('fab.action', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -28,7 +28,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy, so
     // `hideLabel="false"` would mean the opposite of what the call site reads as.
     $hideLabel = BooleanProp::from($hideLabel, false, 'fab.action', 'hideLabel');
 
@@ -58,7 +58,7 @@
     // fab.button has carried this since it shipped; this component takes the same
     // href prop and echoes the same bag, so the caller's target passed straight
     // through to a bare anchor. Rendered explicitly with the bag echoed via
-    // except('rel'), because $attributes->merge() treats rel as a DEFAULT and a
+    // except('rel'), because $attributes->merge() treats rel as a default and a
     // caller-supplied rel would replace the computed value.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
@@ -69,7 +69,7 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
     // The other half of the same rule: rel protects the opener, this warns the
-    // person who cannot see the new tab appear. WHERE it goes depends on how the
+    // person who cannot see the new tab appear. Where it goes depends on how the
     // action is named, and this one has both shapes. With a label it carries
     // aria-label, and name computation stops at the label — a span inside would
     // sit in the DOM and outside the announcement, so the hint rides the label.
@@ -88,7 +88,7 @@
 @endphp
 
 {{-- No role. The parent is a `role="group"` now rather than a `role="menu"`, and a
-     `menuitem` outside a menu is an orphaned role — it REPLACES the link or button role the
+     `menuitem` outside a menu is an orphaned role — it replaces the link or button role the
      element already had, which is the one a reader needs to know how to operate it. The
      parent's role and this one do have to agree, and they agree by claiming no menu keyboard
      model that neither implements, not by adding `menuitem` back.
@@ -98,10 +98,10 @@
      floor lives in one place; a developer's own buttons sit next to these. --}}
 <{{ $tag }} data-wk-prose-skip
     @if($href !== null) href="{{ $href }}" @else type="{{ $wkButtonType }}" @endif
-    {{-- Only emit the name when there IS one. `aria-label=""` is worse than no
+    {{-- Only emit the name when there is one. `aria-label=""` is worse than no
          aria-label at all: it suppresses the fallback to the element's own text
          content, so an action rendering a text slot would lose the name it
-         already had. With no label AND no text (the icon-only case) nothing can
+         already had. With no label and no text (the icon-only case) nothing can
          invent one — the strict-mode validation below says so out loud instead of
          shipping a nameless menu item. --}}
     @if($label !== '' && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ $accessibleLabel }}" @endif
@@ -121,7 +121,7 @@
          has always been fine here. A sighted person using a mouse had nothing:
          three circles, and the only way to learn what they do was to click one.
 
-         It lives INSIDE the action rather than wrapping it, and that is the
+         It lives inside the action rather than wrapping it, and that is the
          constraint the whole shape follows from. The action is the focusable element, and a
          label that wraps it would put a non-focusable box between the group and the
          control, which is why the obvious answer — putting a tooltip component
@@ -139,7 +139,7 @@
          Rendered only when there is a name to show — an action using the slot
          for its own markup already reads as whatever that markup says — and only
          when the caller has not asked for the icon-only treatment. `hideLabel`
-         takes the label off the SCREEN; it never touches the accessible name,
+         takes the label off the screen; it never touches the accessible name,
          which stays required. --}}
     @if($label !== '' && ! $hideLabel)
         <span

@@ -31,7 +31,7 @@ final class FontPreset
     /**
      * Returns the full font-family value including fallbacks.
      *
-     * The metric-matched face is named BEFORE the generic stack, and that order
+     * The metric-matched face is named before the generic stack, and that order
      * is the whole point: with `font-display: swap` the browser paints a system
      * font first and swaps the web font in when it arrives. Whichever family the
      * browser lands on in the meantime decides how far the text moves. Naming

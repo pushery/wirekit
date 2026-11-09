@@ -1,3 +1,4 @@
+import { inlineKey } from '../utils/inline-direction.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
@@ -19,7 +20,7 @@ import { watchModelEvents } from '../utils/model-events.js';
  * a prop that set only one of them would be worse than none, because the field
  * would accept a character it then discarded.
  *
- * Membership is tested by LOOKUP, never by a generated character class. An
+ * Membership is tested by lookup, never by a generated character class. An
  * alphabet may legitimately contain `-`, `]`, `^` or a backslash, and those are
  * exactly the characters a character class would need escaped.
  *
@@ -255,7 +256,7 @@ export default function wirekitOtpInput(config = {}) {
          * selected, and a key typed there would land beside it. `onInput` keeps only the key
          * in that case, and the selection makes the replacement visible before it happens.
          *
-         * Selecting on FOCUS rather than on click covers both ways in: a pointer, and the
+         * Selecting on focus rather than on click covers both ways in: a pointer, and the
          * programmatic `next.focus()` that carries typing across the row. So a corrected
          * code can be typed straight through from the left, which is what the control
          * looks like it should do.
@@ -351,7 +352,7 @@ export default function wirekitOtpInput(config = {}) {
             }
 
             if (event.key === 'Backspace') {
-                // Backspace on an EMPTY box steps back and clears the previous
+                // Backspace on an empty box steps back and clears the previous
                 // one — otherwise correcting a typo costs two presses per
                 // character.
                 if (! event.target.value && index > 0) {
@@ -381,7 +382,10 @@ export default function wirekitOtpInput(config = {}) {
                 return;
             }
 
-            if (event.key === 'ArrowLeft' && index > 0) {
+            // The digits follow the direction their row lays out in.
+            const key = inlineKey(event, event.target);
+
+            if (key === 'ArrowLeft' && index > 0) {
                 const prev = this.$refs['digit' + (index - 1)];
 
                 if (prev) {
@@ -391,7 +395,7 @@ export default function wirekitOtpInput(config = {}) {
                 return;
             }
 
-            if (event.key === 'ArrowRight' && index < this._length - 1) {
+            if (key === 'ArrowRight' && index < this._length - 1) {
                 const next = this.$refs['digit' + (index + 1)];
 
                 if (next) {
@@ -495,7 +499,7 @@ export default function wirekitOtpInput(config = {}) {
         },
 
         /**
-         * The code is COMPLETE — the commit boundary for a segmented entry.
+         * The code is complete — the commit boundary for a segmented entry.
          *
          * The commit boundary asks what event says the person is finished, and
          * for this field it is not a keystroke: `_sync()` runs on every

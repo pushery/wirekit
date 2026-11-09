@@ -21,7 +21,7 @@ namespace Pushery\WireKit\Support;
  * console line above points at `grep` rather than naming the commands.
  *
  * Performance note: levenshtein() over ~120 strings is ~120 microseconds
- * on a modern CPU. Negligible for CLI / one-shot use. Do NOT call inside
+ * on a modern CPU. Negligible for CLI / one-shot use. Do not call inside
  * hot render paths.
  */
 final class SuggestSimilar

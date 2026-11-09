@@ -3,7 +3,7 @@
      shown early. --}}
 @props([
     // Whether the shimmer sweep animates across the text glyphs. Bind it to a
-    // Livewire property — :active="$isStreaming" — to run the effect ONLY while
+    // Livewire property — :active="$isStreaming" — to run the effect only while
     // streaming / loading and settle to plain text when done. This is the
     // Livewire-native differentiator: the React-only equivalents toggle the
     // effect by conditionally rendering the class; here the server drives it.
@@ -12,7 +12,7 @@
     // sentence ("Generating response…"); use as="div"/"p" for block text.
     'as' => 'span',
     // Animation duration — any CSS <time>. Overrides the --shimmer-wk-duration
-    // token for THIS instance only (slower = calmer, faster = more urgent).
+    // token for this instance only (slower = calmer, faster = more urgent).
     'duration' => config('wirekit.components.shimmer.duration', null),
     'scope' => null,
 ])
@@ -26,10 +26,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('shimmer', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `active="false"` would otherwise mean the opposite of what the call site reads as. The prop's
     // default is spelled as a `config()` fallback rather than a literal, which is the only
-    // reason the coverage guard did not see it. It defaults ON, and both reads below are
+    // reason the coverage guard did not see it. It defaults on, and both reads below are
     // truth tests — the shimmer class and the duration custom property — so the animation
     // the call site asked to stop kept running.
     $active = BooleanProp::from($active, true, 'shimmer', 'active');
@@ -42,7 +42,7 @@
         : WireKit::validateProp('shimmer', 'as', $as, ['span', 'div', 'p', 'strong', 'em']);
 
     // .wk-text-shimmer paints an animated gradient over the letterforms via
-    // background-clip:text (the glyphs become the mask). It is applied ONLY when
+    // background-clip:text (the glyphs become the mask). It is applied only when
     // active — an inactive shimmer is plain inherited-color text with no
     // transparent fill, so a Livewire :active toggle switches cleanly between
     // the "streaming" and "settled" states with no layout shift.

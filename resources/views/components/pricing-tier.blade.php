@@ -8,7 +8,7 @@
     'price' => null,
     // Interval-keyed amounts for a table that offers a billing toggle, e.g.
     // :prices="['monthly' => 4900, 'annual' => 49000]". Every amount is rendered
-    // and FORMATTED SERVER-SIDE; the surrounding pricing-table's toggle only
+    // and formatted SERVER-SIDE; the surrounding pricing-table's toggle only
     // switches which one is visible, so the currency/locale/minor-unit logic is
     // never reimplemented in JavaScript. `price` still works on its own.
     'prices' => null,
@@ -20,7 +20,7 @@
     'periods' => null,
     // Copy under the plan name.
     'description' => null,
-    // The recommended plan. Highlighted with a badge AND a ring — never a tint
+    // The recommended plan. Highlighted with a badge and a ring — never a tint
     // alone (WCAG 1.4.1).
     'featured' => false,
     // Text for the featured badge.
@@ -48,7 +48,7 @@
     // `null` or empty string is `lg` without a word.
     $priceSize = \Pushery\WireKit\WireKit::validateProp('pricing-tier', 'priceSize', \Pushery\WireKit\Support\NumericProp::text($priceSize ?: 'lg'), ['lg', 'xs', 'sm', 'md', 'xl']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $featured = BooleanProp::from($featured, false, 'pricing-tier', 'featured');
@@ -63,7 +63,7 @@
 
     // The contact-us placeholder ("Let's talk") must not out-shout a real price.
     // It used a fixed --text-wk-2xl (1.5rem) while an actual amount rendered at
-    // priceSize (lg = 1rem), so the tier WITHOUT a number looked the loudest —
+    // priceSize (lg = 1rem), so the tier without a number looked the loudest —
     // backwards. Match the placeholder to priceSize instead.
     $priceLabelTextClass = match ($priceSize) {
         'xs' => 'text-[length:var(--text-wk-xs)]',
@@ -97,12 +97,12 @@
     <div class="flex items-center gap-[var(--gap-wk-sm)]">
         <span data-wk-pricing-name class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $name }}</span>
 
-        @if($isFeatured)
+        @wirekitLast($isFeatured)
             {{-- The badge is the accessible half of "featured": the ring alone
                  would be invisible to a screen reader and to anyone who cannot
                  tell the accent color apart. --}}
             <x-wirekit::badge intent="primary" size="sm" data-wk-pricing-featured>{{ $featuredLabel }}</x-wirekit::badge>
-        @endif
+        @endwirekitLast
     </div>
 
     @if($description)
@@ -111,7 +111,7 @@
     @endif
 
     <div data-wk-pricing-price class="mt-[var(--space-wk-md)] flex items-baseline gap-[var(--space-wk-xs)]">
-        @if($priceLabel !== null)
+        @wirekitLast($priceLabel !== null)
             {{-- A contact-us tier has no number, and inventing one would be a lie. --}}
             <span class="{{ $priceLabelTextClass }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $priceLabel }}</span>
         @elseif(is_array($prices) && $prices !== [])
@@ -131,13 +131,13 @@
                     class="flex items-baseline gap-[var(--space-wk-xs)]"
                     data-wk-pricing-interval="{{ $intervalKey }}"
                 >
-                    @if($intervalAmount !== null && $intervalAmount !== '')
+                    @wirekitLast($intervalAmount !== null && $intervalAmount !== '')
                         <x-wirekit::price :amount="$intervalAmount" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" :size="$priceSize" />
                         @php($intervalPeriod = is_array($periods) ? ($periods[$intervalKey] ?? $period) : $period)
                         @if($intervalPeriod)
                             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $intervalPeriod }}</span>
                         @endif
-                    @endif
+                    @endwirekitLast
                 </span>
             @endforeach
         @elseif($price !== null && $price !== '')
@@ -147,7 +147,7 @@
             @if($period)
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $period }}</span>
             @endif
-        @endif
+        @endwirekitLast
     </div>
 
     @if(\Pushery\WireKit\Support\SlotContent::given($features ?? null))
@@ -156,12 +156,12 @@
         </div>
     @endif
 
-    @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
         {{-- mt-auto pins every plan's CTA to the same baseline, however long the
              feature lists are — a row of buttons at different heights is the
              tell of a hand-built pricing grid. --}}
         <div data-wk-pricing-action class="mt-auto pt-[var(--space-wk-md)]">
             {{ $action }}
         </div>
-    @endif
+    @endwirekitLast
 </li>

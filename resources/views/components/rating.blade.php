@@ -1,14 +1,14 @@
 {{-- optimistic-ui: supported
-     This layer does NOT own the value it shows. The optimistic scope nests INSIDE
+     This layer does not own the value it shows. The optimistic scope nests inside
      this component and binds to `rating`; the direction is not interchangeable,
      because a nested Alpine component reads and writes its parent's properties
      and never the reverse.
 
      Its labels are not in the way: the per-star label names the button's
-     POSITION, so building it on the server is correct and does not block the
+     position, so building it on the server is correct and does not block the
      announcement the way a value-bearing label does. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade would fold
     // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk — and StrictnessGate would not
     // complain, because `required` is in its HTML passthrough list. The result would be a
@@ -22,18 +22,18 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'label' => null,
     // `error` is declared, as `label` is: undeclared, `:error` on a rating would land in the
     // attribute bag and render as a stray HTML attribute — a validation message the developer
-    // wrote, silently not shown, on a control that IS part of forms.
+    // wrote, silently not shown, on a control that is part of forms.
     'error' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out —
-    // an app that runs its OWN error summary would otherwise double-announce here.
+    // an app that runs its own error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
@@ -79,7 +79,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -88,7 +88,7 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $readonly = BooleanProp::from($readonly, false, 'rating', 'readonly');
@@ -139,7 +139,7 @@
     // `.number` and sends a number (Support\NumericModel).
     $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -165,7 +165,7 @@
      * fallback, exactly as in input.blade.php.
      */
     $error = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
-    // Strip the caller's `id` AND `name` from the bag: the deduped $id is rendered
+    // Strip the caller's `id` and `name` from the bag: the deduped $id is rendered
     // explicitly as id="{{ $id }}", so leaving it in the bag would emit a second,
     // conflicting id attribute. `name` belongs on the hidden input below, which renders
     // it explicitly — left in the bag it also lands on the wrapper, where `name` is not
@@ -207,7 +207,7 @@
     $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
 
     $wrapperClasses = WireKit::resolveClasses('rating', 'base', implode(' ', [
-        'inline-flex flex-col gap-1',
+        'inline-flex flex-col gap-[var(--gap-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
@@ -292,7 +292,7 @@
 @endphp
 
 @php
-    // The optimistic layer NESTS INSIDE this component rather than wrapping it,
+    // The optimistic layer nests inside this component rather than wrapping it,
     // and that direction is not interchangeable: a nested Alpine component's
     // method reads and writes its parent's properties through `this`, never the
     // other way around. So it has to be the child to reach `rating`, and the
@@ -305,7 +305,7 @@
         'bind' => 'rating',
         'after' => '_notify',
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
@@ -347,7 +347,7 @@
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
     data-wk-server-value="{{ $clamped }}"
-        {{-- The observed value is NOT interpolated into the seed, and that is
+        {{-- The observed value is not interpolated into the seed, and that is
              deliberate: a Livewire morph rewrites `x-data`, Alpine re-initializes
              on the change, and an effect queued against the pre-morph scope then
              writes the pre-morph value last. Keeping this attribute
@@ -378,27 +378,27 @@
                 <span data-wk-field-label class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
             @endif
         @else
-            {{-- NO `for`, deliberately. The only element carrying `$id` is the hidden
+            {{-- No `for`, deliberately. The only element carrying `$id` is the hidden
                  input below, and a hidden input is not a labelable element — a `for`
                  would resolve to nothing at all, and the visible text would be an orphan
-                 while the group named itself separately. The control here is the GROUP,
-                 so the group is named BY this label. --}}
+                 while the group named itself separately. The control here is the group,
+                 so the group is named by this label. --}}
             <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
         @endif
     @endif
 
     {{-- Hidden input for form submission / wire:model.
 
-         Only when the rating is a CONTROL. A readonly rating is a record of what
+         Only when the rating is a control. A readonly rating is a record of what
          someone gave — displaying it must not put a form field on the page, or
          a product grid would ship one stray field per card, with a name
          regenerated on every render that the developer could not even exclude
          from a submit. --}}
     @if($optimisticConfig)
-        {{-- The optimistic scope opens ABOVE the hidden input, not below it.
+        {{-- The optimistic scope opens above the hidden input, not below it.
              `_notify()` finds that input with `closest('[x-data]')` — and once
              this layer is on the page, the nearest x-data from inside it is
-             THIS element. An input left outside would simply not be found, so
+             this element. An input left outside would simply not be found, so
              the after-hook would run and do nothing: no error, no event, and a
              wire:model that never hears about the rollback. --}}
         <div x-data="wirekitOptimistic({{ $optimisticConfig }})">
@@ -408,7 +408,7 @@
         {{-- The static `value` is not redundant next to `:value`. Alpine only
              writes the bound value once it has booted, so between render and
              hydration — and permanently, if Alpine never evaluates at all — the
-             field would carry an EMPTY value while the stars show a score, and a
+             field would carry an empty value while the stars show a score, and a
              form submitted in that window would silently send nothing. The static
              attribute makes the field agree with what is on screen from the
              first paint; `:value` takes over the moment Alpine runs. --}}
@@ -423,21 +423,21 @@
 
     {{-- Two different things wear the same stars.
 
-         A READONLY rating is a picture of a score: role="img" with one name, and
+         A readonly rating is a picture of a score: role="img" with one name, and
          nothing inside it to operate. Not role="radiogroup" with every filled
          star aria-checked="true": a radiogroup is single-select by definition,
-         so a 4-star rating would announce FOUR simultaneously selected radios
+         so a 4-star rating would announce four simultaneously selected radios
          ("4 stars, selected, 3 stars, selected, …") and invite the reader to
          interact with something inert.
 
-         An INTERACTIVE rating really is a radiogroup: picking a score IS choosing
+         An interactive rating really is a radiogroup: picking a score is choosing
          one of five. --}}
     <div
         @if($readonly)
             role="img"
-            {{-- The SCORE, not the label. A visible label is already read as text
+            {{-- The score, not the label. A visible label is already read as text
                  right above these stars, so naming the image with it would say it
-                 twice AND lose the number — "Average rating, image" tells the
+                 twice and lose the number — "Average rating, image" tells the
                  reader nothing about what was rated. Read together it comes out
                  as "Average rating — 4.2 out of 5 stars". The maximum chooses
                  the form of the noun it precedes.
@@ -448,7 +448,7 @@
         @else
             role="radiogroup"
             @if($required || $fieldRequired) aria-required="true" @endif
-            {{-- On the group AND on each star, as `segmented-control` does: the group says
+            {{-- On the group and on each star, as `segmented-control` does: the group says
                  it is unavailable, and so does the star a reader lands on. --}}
             @if($disabled) aria-disabled="true" @endif
             {{-- `aria-labelledby` points at the visible label, so the name a reader hears is
@@ -464,7 +464,7 @@
             @else
                 aria-label="{{ \Pushery\WireKit\Support\BlankName::first(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), $label, __('wirekit::Rating')) }}"
             @endif
-            {{-- On the GROUP, not on each star: the message is about the rating, and
+            {{-- On the group, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}
             @if($error)
                 aria-invalid="true"
@@ -487,15 +487,15 @@
                 {{-- Silent: the container above already said "4.2 out of 5
                      stars". Naming each star would repeat the score five times. --}}
                 <span aria-hidden="true" class="cursor-default">
-                    @if($isPartial)
+                    @wirekitLast($isPartial)
                         {{-- Partial icon: two overlapping SVGs — empty behind, filled clipped in front.
 
-                             `block`, NOT `inline-block`: every full/empty star is a
+                             `block`, not `inline-block`: every full/empty star is a
                              bare <svg>, which Preflight renders display:block, so they
                              sit flush at the top of the flex item. An inline-block
                              wrapper instead baseline-aligns against the surrounding
                              line box, so whenever the strut's ascent (driven by the
-                             INHERITED line-height) exceeds the icon height, the partial
+                             inherited line-height) exceeds the icon height, the partial
                              star drops by the difference. Block-level makes its box
                              model identical to its siblings. --}}
                         <span class="relative block {{ $iconSize }}">
@@ -521,7 +521,7 @@
                         >
                             <path d="{{ $shape['path'] }}"/>
                         </svg>
-                    @endif
+                    @endwirekitLast
                 </span>
             @else
                 {{-- Interactive: clickable buttons with hover/keyboard support.
@@ -531,7 +531,7 @@
                     type="button"
                     role="radio"
                     data-wk-rating-star
-                    {{-- EQUALITY, not the fill threshold — and both attributes have
+                    {{-- Equality, not the fill threshold — and both attributes have
                          to agree on that.
 
                          The readonly branch above records why: a radiogroup is
@@ -543,7 +543,7 @@
                          Alpine booted, on the one path a pre-hydration scan
                          cannot see.
 
-                         The FILL is a different question and legitimately keeps
+                         The fill is a different question and legitimately keeps
                          `>=`: three lit stars are how a score of three looks.
                          That threshold lives in the SVG `:class` below, where it
                          says something about paint rather than about state. The
@@ -554,8 +554,8 @@
                     aria-checked="{{ \Pushery\WireKit\Support\NumericProp::int($value, 0, 'rating', 'value') === $i ? 'true' : 'false' }}"
                     :aria-checked="rating === {{ $i }} ? 'true' : 'false'"
                     {{-- Translated, like every other label on this component. And
-                         built on the SERVER on purpose: this names the button's
-                         POSITION, which never changes — unlike a label that
+                         built on the server on purpose: this names the button's
+                         position, which never changes — unlike a label that
                          embeds the current value, where server-side
                          pluralization is exactly what blocks an optimistic
                          update from being announced correctly. --}}
@@ -587,16 +587,19 @@
                         @mouseenter="hovered = {{ $i }}"
                         @mouseleave="hovered = 0"
                         {{-- Radiogroup keyboard model (APG): both axes move the
-                             selection, Home/End jump to the ends. ArrowUp aliases
-                             ArrowRight (more), ArrowDown aliases ArrowLeft (less). --}}
-                        @keydown.arrow-right.prevent="stepUp()"
+                             selection, Home/End jump to the ends. ArrowUp is more and
+                             ArrowDown less; a side key moves toward its side, so Right
+                             Arrow is more on a page that reads from the left and Left
+                             Arrow on one that reads from the right, where the stars run
+                             from the right. --}}
+                        @keydown.arrow-right.prevent="$wkInlineStep($event) === 1 ? stepUp() : stepDown()"
                         @keydown.arrow-up.prevent="stepUp()"
-                        @keydown.arrow-left.prevent="stepDown()"
+                        @keydown.arrow-left.prevent="$wkInlineStep($event) === 1 ? stepUp() : stepDown()"
                         @keydown.arrow-down.prevent="stepDown()"
                         @keydown.home.prevent="selectFirst()"
                         @keydown.end.prevent="selectLast()"
                     @endunless
-                    {{-- The roving tab stop, written TWICE on purpose — the same shape the
+                    {{-- The roving tab stop, written twice on purpose — the same shape the
                          hidden input above uses for its value, and for the same reason.
                          `:tabindex` is an Alpine binding, so until Alpine runs there is no
                          tabindex at all and every star is a tab stop: a reader tabbing into
@@ -646,9 +649,9 @@
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing. `aria-describedby` on the control
          points here — see the radiogroup below. --}}
-    @if($error)
+    @wirekitLast($error)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @endwirekitLast
 </div>

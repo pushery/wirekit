@@ -10,7 +10,7 @@
     'avatar' => null,
     // Model / engine chip (e.g. "atlas-2"). Assistant turns only.
     'model' => null,
-    // Optional state tint on the bubble — for a turn that IS a state: an error
+    // Optional state tint on the bubble — for a turn that is a state: an error
     // answer (danger), a caution (warning), a confirmation (success), a note
     // (info). neutral (default) keeps the plain role surface. Mirrors the
     // message component's intent tint (bg + border at low alpha; the body text
@@ -25,7 +25,7 @@
     // because a chip a screen reader announces as nothing is worse than no chip.
     'citations' => [],
     // Seconds the model spent reasoning, for the disclosure's summary once the stream
-    // has ended: "Thought for 12s". The APPLICATION owns that number — it knows when
+    // has ended: "Thought for 12s". The application owns that number — it knows when
     // the stream started, and a stopwatch in the browser would disagree with it the
     // moment the page re-renders from the server. Null keeps the plain label.
     'reasoningSeconds' => null,
@@ -46,7 +46,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('assistant-message', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $streaming = BooleanProp::from($streaming, false, 'assistant-message', 'streaming');
@@ -138,7 +138,7 @@
 
     // AlpinePayload is the encoder for a directive attribute. `$announceValue` is a
     // validated `sentence|all|off` enum, so no byte above ASCII can reach it today — but
-    // the encoder is chosen for the CONTEXT rather than for the payload that happens to be
+    // the encoder is chosen for the context rather than for the payload that happens to be
     // in it, and a plain json_encode leaves the next value added here escaping non-ASCII
     // as `\u00fc`, which some CSP tokenizers flatten to `u00fc` (`Support/AlpinePayload.php`
     // names the versions).
@@ -168,16 +168,16 @@
         {{-- Speaker line: name + model chip. --}}
         <span class="flex items-center gap-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)]">
             <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $speaker }}</span>
-            @if($model && $roleValue === 'assistant')
+            @wirekitLast($model && $roleValue === 'assistant')
                 <x-wirekit::badge size="sm" intent="neutral" data-wk-assistant-model>{{ $model }}</x-wirekit::badge>
-            @endif
+            @endwirekitLast
         </span>
 
         {{-- Reasoning disclosure — open while the model is still thinking, collapsed once the
              answer is there, because the answer is the point.
 
              The `wire:key` carries the streaming state on purpose. A disclosure's open state is
-             Alpine's, and Livewire MORPHS this element when the turn re-renders — which would
+             Alpine's, and Livewire morphs this element when the turn re-renders — which would
              preserve the open state and leave the reasoning hanging open under a finished answer.
              A key that changes makes the morph replace the element instead, so the disclosure
              comes back closed with the summary on it. --}}
@@ -194,10 +194,10 @@
 
         {{-- The body.
 
-             aria-live is explicitly OFF here. Putting a live region on streaming
+             aria-live is explicitly off here. Putting a live region on streaming
              text makes a screen reader re-read the whole growing answer on every
              token — the mistake most AI chat UIs ship. The body stays silent and
-             the announcer below mirrors COMPLETE sentences instead.
+             the announcer below mirrors complete sentences instead.
 
              aria-busy tells assistive technology the turn is still being written. --}}
         <div
@@ -210,7 +210,7 @@
             <x-wirekit::prose size="sm">{{ $slot }}</x-wirekit::prose>
         </div>
 
-        {{-- The announcer. ALWAYS present in the DOM — a live region that is
+        {{-- The announcer. Always present in the DOM — a live region that is
              created at the same moment its text appears is inert to assistive
              technology, so it must exist before the first flush. --}}
         <span
@@ -226,7 +226,7 @@
              from. Each chip opens a popover carrying the passage and, when there is somewhere to
              go, a link to it — a citation the reader cannot check is decoration.
 
-             The number follows the rendered LIST rather than the caller's index, so an entry
+             The number follows the rendered list rather than the caller's index, so an entry
              without a label (dropped upstream) never leaves a hole in the count a reader would
              read as a missing source. --}}
         @if($citationList !== [])
@@ -266,27 +266,27 @@
         @endif
 
         {{-- Footer chips (ambient — latency / tokens / cost) and action controls
-             (copy / regenerate / rate) share ONE row at the bottom of the message
+             (copy / regenerate / rate) share one row at the bottom of the message
              column: chips on the reading side, controls pushed to the far edge.
-             Actions belong HERE, right under the body they act on — as a top-right
+             Actions belong here, right under the body they act on — as a top-right
              sibling of the whole turn they floated detached above the message,
              next to the avatar, reading as chrome that belongs to nothing. --}}
-        @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null) || \Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($footer ?? null) || \Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             <div data-wk-assistant-meta class="flex flex-wrap items-center gap-[var(--space-wk-sm,0.5rem)]">
                 @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
                     <span data-wk-assistant-footer class="flex flex-wrap items-center gap-[var(--space-wk-xs,0.25rem)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
                         {{ $footer }}
                     </span>
                 @endif
-                @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+                @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
                     {{-- ms-auto (margin-inline-start) pushes controls to the far
                          edge only when chips share the row; RTL-correct by using
-                         the logical-inline margin, not margin-left. --}}
+                         the logical-inline margin, not the physical one. --}}
                     <span data-wk-assistant-actions class="flex items-center gap-[var(--space-wk-xs,0.25rem)] {{ \Pushery\WireKit\Support\SlotContent::given($footer ?? null) ? 'ms-auto' : '' }}">
                         {{ $actions }}
                     </span>
-                @endif
+                @endwirekitLast
             </div>
-        @endif
+        @endwirekitLast
     </div>
 </article>

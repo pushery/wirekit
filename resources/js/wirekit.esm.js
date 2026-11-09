@@ -34,6 +34,7 @@ import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
 import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
+import wirekitSidebarWidth from './components/sidebar-width.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
@@ -129,7 +130,7 @@ import wirekitStream from './components/stream.js';
 
 
 /**
- * Register a CHOSEN SUBSET of components, plus the shared runtime.
+ * Register a chosen subset of components, plus the shared runtime.
  *
  *   import { register, wirekitDropdown, wirekitModal } from '.../dist/wirekit.esm.js';
  *   Alpine.plugin((Alpine) => register(Alpine, { wirekitDropdown, wirekitModal }));
@@ -182,6 +183,7 @@ export default function (Alpine) {
     Alpine.data('wirekitAppRail', wirekitAppRail);
     Alpine.data('wirekitAppShell', wirekitAppShell);
     Alpine.data('wirekitSidebarRail', wirekitSidebarRail);
+    Alpine.data('wirekitSidebarWidth', wirekitSidebarWidth);
     Alpine.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     Alpine.data('wirekitNavbarScroll', wirekitNavbarScroll);
     Alpine.data('wirekitOverflowNav', wirekitOverflowNav);
@@ -306,6 +308,7 @@ export {
     wirekitAppRail,
     wirekitAppShell,
     wirekitSidebarRail,
+    wirekitSidebarWidth,
     wirekitSidebarCollapseToggle,
     wirekitNavbarScroll,
     wirekitOverflowNav,

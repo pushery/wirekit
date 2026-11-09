@@ -13,7 +13,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // The chevron a trigger shows so a reader can see it opens a menu. It goes INSIDE the control
+    // The chevron a trigger shows so a reader can see it opens a menu. It goes inside the control
     // the trigger wraps, after its label, because that control is where the trigger writes
     // `aria-expanded`: the turn keys off that attribute on the nearest ancestor that carries it, so
     // the drawing follows the state assistive technology hears rather than a second copy of it.

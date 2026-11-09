@@ -32,7 +32,7 @@
     // No placement at all, `null` or empty, is the default, as the script reads it.
     $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('tour.step', 'placement', (string) ($placement ?: 'bottom'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'bottom');
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -66,11 +66,11 @@
     //
     // A panel that named itself and then let the attribute bag land on the same
     // element would make `aria-label="…"` from the call site lose in both branches,
-    // SILENTLY, by two different mechanisms:
+    // silently, by two different mechanisms:
     //
     //   * with a title slot, the element would carry `aria-labelledby` as well, and
     //     ARIA resolves the reference in preference to the label;
-    //   * without one, the element would carry `aria-label` TWICE, and the HTML
+    //   * without one, the element would carry `aria-label` twice, and the HTML
     //     parser keeps the first, the generated "Tour step N".
     //
     // The second is the quieter of the two: it is not an ARIA precedence rule a
@@ -132,7 +132,7 @@
     data-wk-target="{{ $target }}"
     data-wk-placement="{{ $placement }}"
     role="dialog"
-    {{-- The tour lays a full-viewport scrim over the page, so the step IS modal
+    {{-- The tour lays a full-viewport scrim over the page, so the step is modal
          in the sense ARIA means: everything behind it is unavailable while it is
          open. The name follows the dialog rule — point at the visible heading
          when there is one, and fall back to a generated name only when the step
@@ -177,7 +177,7 @@
                 x-on:click="next()"
                 class="wk-touch-row p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Next')) }}"
-            {{-- A literal opening label, because x-text is the button's ONLY content: until
+            {{-- A literal opening label, because x-text is the button's only content: until
                  Alpine evaluates it the element is empty, so the control has no accessible
                  name at all — and a server-side accessibility check sees nothing else, ever.
                  x-text overwrites this text node on its first evaluation.

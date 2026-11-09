@@ -64,25 +64,19 @@
         <x-wirekit::section padding="2xl" style="background: linear-gradient(135deg, var(--color-wk-bg-inverse) 0%, color-mix(in srgb, var(--color-wk-bg-inverse) 90%, var(--color-wk-text-inverse)) 100%); color: var(--color-wk-text-inverse);">
             <x-wirekit::container max="lg">
                 <x-wirekit::stats cols="3" stagger>
-                    <x-wirekit::stat animateIn="slide-up" animate label="Average deploy time" value="781" description="ms" trend="down" change="-12">
+                    <x-wirekit::stat animateIn="slide-up" animate label="Average deploy time" value="781" description="ms" trend="up" change="-12">
                         <x-slot:sparkline>
-                            <svg viewBox="0 0 80 24" width="80" height="24" aria-hidden="true" style="display: block">
-                                <polyline points="0,4 10,8 20,6 30,12 40,10 50,14 60,16 70,18 80,20" fill="none" stroke="var(--color-wk-danger)" stroke-width="1.5" />
-                            </svg>
+                            <x-wirekit::sparkline :data="[20, 16, 18, 12, 14, 10, 8, 6, 4]" trend="up" aria-hidden="true" />
                         </x-slot:sparkline>
                     </x-wirekit::stat>
                     <x-wirekit::stat animateIn="slide-up" animate label="Uptime" value="99.99" description="%" trend="up" change="+0.03">
                         <x-slot:sparkline>
-                            <svg viewBox="0 0 80 24" width="80" height="24" aria-hidden="true" style="display: block">
-                                <polyline points="0,6 10,5 20,7 30,4 40,3 50,5 60,3 70,2 80,2" fill="none" stroke="var(--color-wk-success)" stroke-width="1.5" />
-                            </svg>
+                            <x-wirekit::sparkline :data="[18, 19, 17, 20, 21, 19, 21, 22, 22]" aria-hidden="true" />
                         </x-slot:sparkline>
                     </x-wirekit::stat>
                     <x-wirekit::stat animateIn="slide-up" animate label="Deploys per day" value="12400" change="+8" trend="up">
                         <x-slot:sparkline>
-                            <svg viewBox="0 0 80 24" width="80" height="24" aria-hidden="true" style="display: block">
-                                <polyline points="0,20 10,18 20,16 30,12 40,10 50,8 60,6 70,4 80,2" fill="none" stroke="var(--color-wk-accent)" stroke-width="1.5" />
-                            </svg>
+                            <x-wirekit::sparkline :data="[4, 6, 8, 12, 14, 16, 18, 20, 22]" aria-hidden="true" />
                         </x-slot:sparkline>
                     </x-wirekit::stat>
                 </x-wirekit::stats>

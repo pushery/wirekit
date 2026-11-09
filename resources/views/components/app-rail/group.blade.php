@@ -34,7 +34,7 @@
 
     // One id for the heading, so the group can be named by it rather than beside it.
     //
-    // `DomId::unique` and NOT `Str::random` — the shell records what that costs: a random id
+    // `DomId::unique` and not `Str::random` — the shell records what that costs: a random id
     // is minted afresh on every render, so inside a Livewire morph or a `wire:poll` region
     // the `aria-labelledby` and the `id` stop naming each other while both stay perfectly
     // well-formed. `dropdown` and `progress` each shipped that defect. The counted fallback

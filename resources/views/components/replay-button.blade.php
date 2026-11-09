@@ -18,7 +18,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('replay-button', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -52,7 +52,7 @@
     Pairs with the `data-replayable="true"` contract emitted by every
     WireKit component whose preview can be re-run or reset: animation-
     capable components (reveal, stat[animate], card/hero/cta/feature/
-    footer[animateIn], chart) AND state-mutating components whose demo is
+    footer[animateIn], chart) and state-mutating components whose demo is
     "used up" by interaction (badge[dismissible], alert[dismissible]).
     The docs site's preview wrapper sets data-replay-target on the iframe
     / preview root and uses this button to give developers a "↻" affordance
@@ -84,9 +84,9 @@
 >
     {{-- Default circular-arrow icon when no slot content is given. `@isset($slot)`
          is always true (an empty slot is still a ComponentSlot), so the default
-         must be gated on the slot being EMPTY, not unset — otherwise the icon
+         must be gated on the slot being empty, not unset — otherwise the icon
          never renders for `<x-wirekit::replay-button />`. --}}
-    @if(! $slot->hasActualContent())
+    @wirekitLast(! $slot->hasActualContent())
         <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
@@ -98,5 +98,5 @@
         </svg>
     @else
         {{ $slot }}
-    @endif
+    @endwirekitLast
 </button>

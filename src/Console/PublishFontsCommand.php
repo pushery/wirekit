@@ -16,7 +16,7 @@ use Pushery\WireKit\Support\FileWrite;
  *
  * The all-or-nothing `wirekit-fonts` tag copies the whole tree — 5.8 MB, against
  * roughly 430 KB for a typical two-family setup. The per-preset tags fix the size
- * but not the problem, because using them means hardcoding a preset NAME:
+ * but not the problem, because using them means hardcoding a preset name:
  *
  *     php artisan vendor:publish --tag=wirekit-font-ibm-plex-sans
  *
@@ -26,7 +26,7 @@ use Pushery\WireKit\Support\FileWrite;
  * system fonts — the exact failure the route fallback was built to end, only
  * reintroduced by the publish mechanism itself.
  *
- * This command reads the CONFIG instead of a name, so a clone changes one line
+ * This command reads the config instead of a name, so a clone changes one line
  * and the setup script keeps working:
  *
  *     php artisan wirekit:publish-fonts            # what fonts.* names
@@ -60,10 +60,10 @@ class PublishFontsCommand extends Command
 
         if ($targets === []) {
             /*
-             * TWO different states reach this branch, and it must not absorb both.
+             * Two different states reach this branch, and it must not absorb both.
              *
              * Nothing configured is a legitimate setup — an application may be serving its own
-             * faces — and the comment below rightly justifies exit 0 for it. A key that NAMES a
+             * faces — and the comment below rightly justifies exit 0 for it. A key that names a
              * family which is not bundled is the opposite: it is the misconfiguration this
              * command exists to prevent, and "nothing published" is the failure, not the
              * answer. This file's own docblock describes that outcome — the files are missing
@@ -109,7 +109,7 @@ class PublishFontsCommand extends Command
 
             $alreadyPublished = is_dir($target);
 
-            // Skip ONLY when the published copy already mirrors the bundled bytes.
+            // Skip only when the published copy already mirrors the bundled bytes.
             // A skip on the directory's existence alone would do nothing after a
             // `composer update` leaves the vendor tree with new font bytes and
             // public/ with the previous release's: the app would keep serving

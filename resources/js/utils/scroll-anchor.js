@@ -3,7 +3,7 @@
  *
  * A fixed panel is positioned once, against its trigger, and several components close theirs on
  * any scroll outside the panel because a scroll strands it away from that trigger. That is only
- * true of a scroll that MOVES the trigger. Browsers deliver a scroll's event a frame late, so a
+ * true of a scroll that moves the trigger. Browsers deliver a scroll's event a frame late, so a
  * scroll that finished before the panel opened can still be announced after it: an action that
  * scrolls its own trigger into view and then opens — a right-click below the fold, a keyboard or
  * assistive-technology path — would have its panel shut by its own scroll, whose event can arrive

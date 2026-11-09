@@ -46,19 +46,19 @@
      hand-rolling absolute positioning with negative corner offsets on every
      bell and avatar — the exact raw-div pattern WireKit is here to replace.
 
-     NOTE: do not write literal Tailwind class names in this comment. Tailwind's
+     Note: do not write literal Tailwind class names in this comment. Tailwind's
      @source scans this file as plain text — comments included — and would
-     COMPILE any class named here into the bundle as a selector nothing emits.
+     compile any class named here into the bundle as a selector nothing emits.
      The drift auditor catches exactly that. --}}
 <span data-wk-indicator data-position="{{ $positionValue }}" {{ $attrs }}>
     {{ $slot }}
 
     @php($badgeText = isset($badge) ? \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) : null)
-    @if($badgeText !== null)
-        {{-- The badge sits OUTSIDE the target's flow, so it never resizes it.
+    @wirekitLast($badgeText !== null)
+        {{-- The badge sits outside the target's flow, so it never resizes it.
              Whatever is placed here carries its own meaning: a count must name
              itself ("3 unread"), and a purely decorative dot must be
              aria-hidden with the meaning stated elsewhere. --}}
         <span data-wk-indicator-badge>{{ $badgeText }}</span>
-    @endif
+    @endwirekitLast
 </span>

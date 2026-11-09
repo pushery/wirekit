@@ -21,7 +21,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('bento-grid', $attributes->getAttributes());
 
-    // Match on the RESULT, not the raw prop: where the strictness gate does not throw,
+    // Match on the result, not the raw prop: where the strictness gate does not throw,
     // validateProp returns the fallback, so an invalid value can never reach the
     // class map. 'md' leads the list because validateProp falls back to the first
     // allowed value — a bad gap should land on the normal gap, not on none.
@@ -56,8 +56,8 @@
 
     $classes = WireKit::resolveClasses('bento-grid', 'base', implode(' ', [
         'grid',
-        // The grid is a NAMED query container ('bento'), so its cells reflow on the
-        // grid's OWN inline width, not the viewport. A bento inside a narrow column
+        // The grid is a named query container ('bento'), so its cells reflow on the
+        // grid's own inline width, not the viewport. A bento inside a narrow column
         // — or a resizable region a reader drags — collapses to a single stack when
         // IT is small, independent of the window size. Container queries are in the
         // Tailwind browser baseline (Chrome 111 / Safari 16.4 / Firefox 128).
@@ -65,7 +65,7 @@
         // Fixed three-column track. On a narrow container every cell spans all three
         // (see bento-cell), which reads as a single stacked column; from @2xl the
         // cells claim their real spans and the asymmetric bento appears. The count
-        // stays fixed here because an element cannot container-query ITSELF — only
+        // stays fixed here because an element cannot container-query itself — only
         // the descendant cells can, so the collapse lives on them.
         'grid-cols-3',
         // Rows size to content rather than to a fixed track, so a tall cell can
@@ -75,7 +75,7 @@
     ]), $scope);
 @endphp
 
-{{-- The asymmetry IS the component: cells claim different amounts of space, so
+{{-- The asymmetry is the component: cells claim different amounts of space, so
      the eye gets a hierarchy instead of a uniform matrix. feature-grid already
      covers the uniform case and stays the right answer when every feature
      carries the same weight.

@@ -1,0 +1,2 @@
+/*! WireKit per page v2.73.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+import{a as t}from"./chunk-YY3BIZ4O.js";var r=Symbol("wirekit.openAliasOwner");function u(e){return Object.defineProperty(e,r,{configurable:!0,enumerable:!1,writable:!1,value:e}),Object.defineProperty(e,"open",{configurable:!0,enumerable:!0,get(){return this[r].isOpen},set(i){this[r].isOpen=i}}),t(e)}export{u as a};

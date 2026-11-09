@@ -7,7 +7,7 @@
  *  The cloned source HTML may contain user-generated content the
  *  developer hasn't sanitized (CMS posts, comment threads, markdown-
  *  rendered articles). Cloning into a srcdoc iframe carries that HTML
- *  into the iframe context. `aria-hidden="true"` does NOT mitigate that —
+ *  into the iframe context. `aria-hidden="true"` does not mitigate that —
  *  it only hides the iframe from assistive tech.
  *
  *  This module is the second line, not the only one. The caller sets
@@ -30,7 +30,7 @@
  *   8. Form-action / formaction redirects     — credential-harvest pivot
  *
  *  Strategy: a regex-pass-stripping pipeline that runs against the raw
- *  HTML STRING, BEFORE it ever becomes a DOM node. The browser's HTML
+ *  HTML string, before it ever becomes a DOM node. The browser's HTML
  *  parser will not execute anything we hand it as a srcdoc string until
  *  the iframe parses it — so stripping at the string level is safe
  *  (we never construct an active DOM containing the dangerous bits).
@@ -43,13 +43,13 @@
  *  via explicit <link rel="stylesheet"> injection of the parent's
  *  same-origin stylesheets (see reading-minimap.js _positionHoverPreview()).
  *
- *  Why this is NOT a general-purpose sanitizer:
+ *  Why this is not a general-purpose sanitizer:
  *  It's tuned for the specific use case of "scaled-down decorative
  *  page-preview". The resulting HTML is rendered inside an iframe with
  *  `aria-hidden="true"` + `tabindex="-1"` + `pointer-events: none` on
  *  the iframe body — interaction lives in the wrapping minimap
- *  element, not in the iframe content. This means we can be MORE
- *  aggressive than a general sanitizer would be — we strip ALL
+ *  element, not in the iframe content. This means we can be more
+ *  aggressive than a general sanitizer would be — we strip all
  *  form-related elements, because the minimap never accepts input.
  *  (That sentence stood here while nothing stripped any of them; the
  *  pattern that makes it true is FORM_TAG_RE below.)
@@ -67,17 +67,17 @@ const ORPHAN_SCRIPT_RE = /<script\b[^>]*>/gi;
 
 // Event-handler attributes. Allows for namespaced HTML (e.g. `xml:onclick`)
 // — we match `on[a-z]+` per HTML5 spec for event handler content attributes.
-// What keeps it off legitimate text is the SHAPE, not a lookahead — this comment
+// What keeps it off legitimate text is the shape, not a lookahead — this comment
 // described a `(?:\s|\/?>)` that the pattern below does not contain and never did.
-// A match needs leading whitespace AND an `=`, so `<one>` and `<online>` cannot
+// A match needs leading whitespace and an `=`, so `<one>` and `<online>` cannot
 // satisfy it: there is no attribute there to assign to.
 const ON_HANDLER_RE = /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
 
 // `javascript:` URIs in any URL-valued attribute.
 //
 // The scheme is spelled letter by letter with whitespace and C0 control characters allowed
-// BETWEEN the letters, because that is what browsers accept: `java&#10;script:` decodes to
-// a newline inside the scheme and still runs. A pattern allowing whitespace only BEFORE the
+// between the letters, because that is what browsers accept: `java&#10;script:` decodes to
+// a newline inside the scheme and still runs. A pattern allowing whitespace only before the
 // word would miss `java\nscript:`.
 const SCHEME_GAP = '[\\s\\u0000-\\u0020]*';
 const JS_SCHEME = 'j'.concat(SCHEME_GAP, 'a', SCHEME_GAP, 'v', SCHEME_GAP, 'a', SCHEME_GAP, 's', SCHEME_GAP, 'c', SCHEME_GAP, 'r', SCHEME_GAP, 'i', SCHEME_GAP, 'p', SCHEME_GAP, 't', SCHEME_GAP, ':');
@@ -98,7 +98,7 @@ const NESTED_EMBED_SELF_CLOSING_RE = /<(iframe|object|embed|applet|frame|framese
 // Inline <style> tags. Stripped — developer CSS arrives via <link> injection.
 const STYLE_TAG_RE = /<style[\s\S]*?<\/style>/gi;
 
-// `style="…"` inline attributes ARE preserved — they carry layout that the
+// `style="…"` inline attributes are preserved — they carry layout that the
 // minimap needs to visually represent the source (CSS variable references,
 // inline color overrides, position cues). The risk of CSS @import inside an
 // inline `style` attribute is zero (the syntax doesn't apply).
@@ -111,7 +111,7 @@ const NESTED_SRCDOC_RE = /\s+srcdoc\s*=\s*(?:"[^"]*"|'[^']*')/gi;
 // Form / formaction attributes that could redirect credentials elsewhere.
 const FORMACTION_RE = /\s+formaction\s*=\s*(?:"[^"]*"|'[^']*')/gi;
 
-// Form ELEMENTS. The threat model above has always claimed "we strip ALL form-related
+// Form elements. The threat model above has always claimed "we strip all form-related
 // elements because the minimap never accepts input" — and nothing did. A <form> with an
 // off-origin action, its inputs and its submit button all survived into the preview, which
 // is exactly the credential-harvest pivot listed as attack class 8.
@@ -143,7 +143,7 @@ function stripOnce(html) {
     out = out.replace(JS_URI_RE, '');
     // data: URIs in src attributes.
     out = out.replace(DATA_URI_SRC_RE, '');
-    // Event-handler attributes, and the ORDER is the point: this runs after the URI strips
+    // Event-handler attributes, and the order is the point: this runs after the URI strips
     // so `ON_HANDLER_RE` cannot match inside a `href="javascript:…"` value that is about to
     // be removed anyway. What bounds `ON_HANDLER_RE` is the required `=` after the attribute
     // name, as its own declaration says.
@@ -173,7 +173,7 @@ function stripOnce(html) {
  * So the pipeline runs until the string stops changing. Convergence is the norm — the
  * second pass is a no-op for anything a page actually contains — and the bound exists for
  * input designed to nest faster than it is peeled. When the bound is reached the result is
- * DISCARDED rather than returned: at that point the string is still producing new markup
+ * discarded rather than returned: at that point the string is still producing new markup
  * every pass, and a preview thumbnail is not worth shipping something this function cannot
  * vouch for. The caller renders a stripe-mode minimap instead, which is its documented
  * fallback for any content it cannot clone.
@@ -196,7 +196,7 @@ export function sanitizeMinimapHtml(html) {
 }
 
 /**
- * Density check over an HTML STRING — the number of opening tags in it.
+ * Density check over an HTML string — the number of opening tags in it.
  *
  * Not what the minimap uses: the minimap walks a canvas and decides by counting the live DOM
  * with `source.querySelectorAll('*').length`, so tuning the threshold means tuning that count,

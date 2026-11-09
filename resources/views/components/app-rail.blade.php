@@ -8,7 +8,7 @@
     //   below   — a caption under the icon. Wider, and it removes the hover
     //             dependency, which matters on touch where hover does not exist.
     //   inline  — the label beside the icon, in a wide rail. This is the shape a
-    //             single-column application wants when the rail IS the navigation.
+    //             single-column application wants when the rail is the navigation.
     'labels' => 'tooltip',
     // Adds a toggle that widens the rail to `inline` labels and back, persisting the
     // choice. Orthogonal to `labels`: the toggle switches between the width `labels`
@@ -19,15 +19,15 @@
     // driver below is allowed to answer it instead — which is the whole point of that
     // driver, so an explicit value here wins and turns the seeding off.
     'expanded' => null,
-    // The state on a FIRST visit, before the store has anything to say. It is the third case
+    // The state on a first visit, before the store has anything to say. It is the third case
     // the persistence has always been missing: an explicit `expanded` wins and turns the seeding
-    // OFF, a stored value decides when there is one, and with neither the component fell back to
+    // off, a stored value decides when there is one, and with neither the component fell back to
     // a hard `false`. An application whose rail should start open and follow the reader
     // afterwards could not say so — the nearest thing was rebuilding the kit's own cookie read
     // in a layout, superglobal fallback and all.
     //
     // Both drivers answer this the same way, which is the half that makes it one idea rather
-    // than two. The cookie driver seeds the first RENDER from here; the local driver renders
+    // than two. The cookie driver seeds the first render from here; the local driver renders
     // from here and then hands this same value to the store read as its fallback, so an empty
     // localStorage keeps it instead of collapsing to `false`.
     //
@@ -35,7 +35,7 @@
     'defaultExpanded' => null,
     // Storage key. Null keeps the choice for the session only.
     'persist' => null,
-    // WHERE the choice is remembered: 'local' (default) or 'cookie'.
+    // Where the choice is remembered: 'local' (default) or 'cookie'.
     //
     // No server can read localStorage, so a rail that remembers being expanded would render
     // collapsed and widen itself after the first paint, moving the content column.
@@ -56,18 +56,18 @@
     // own CSS to reskin one tone, or the `:root` defaults to reskin them all.
     'tone' => 'default',
     // Shape. `flush` is the edge-to-edge chrome column with a single inline-end
-    // edge. `panel` is the floating rounded strip that sits ON the page with a gap
+    // edge. `panel` is the floating rounded strip that sits on the page with a gap
     // around it — the shape that pairs with the app-shell's own `panel` prop.
-    // (The component tag is deliberately NOT written here. Blade is a text preprocessor
+    // (The component tag is deliberately not written here. Blade is a text preprocessor
     // and does not know it is inside a PHP comment: an `x-wirekit::` tag in one gets
-    // COMPILED, and the compiled component construct lands in the middle of this array.
+    // compiled, and the compiled component construct lands in the middle of this array.
     // The failure reads "unexpected token" at a line that has nothing to do with it.)
     'variant' => 'flush',
     // How the current module is marked. `pill` fills the item's own box. `edge` draws
     // a bar on the inline-end edge of the rail, pointing at the column it selects —
     // which reads better when the rail is very narrow and a filled box would dominate.
     'indicator' => 'pill',
-    // Accessible name for the navigation landmark. A console shell has TWO <nav>
+    // Accessible name for the navigation landmark. A console shell has two <nav>
     // landmarks side by side, and a screen-reader user moving between landmarks
     // cannot tell them apart unless each says what it is. Passing aria-label or
     // aria-labelledby directly wins over this default and suppresses it, so the
@@ -90,14 +90,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `expandable="false"` would otherwise turn the toggle ON. Normalize against each
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
+    // `expandable="false"` would otherwise turn the toggle on. Normalize against each
     // prop's own default so a cast never engages a mode that was meant off.
     $expandable = BooleanProp::from($expandable, false, 'app-rail', 'expandable');
     $trackCurrent = BooleanProp::from($trackCurrent, false, 'app-rail', 'trackCurrent');
     $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
-    // Whether the CALLER set `expanded`, taken before anything below answers it. The factory and
+    // Whether the caller set `expanded`, taken before anything below answers it. The factory and
     // the seed script both need it: an explicit value wins over the store, and reading the
     // store anyway would open or close a pinned rail a frame after the server render.
     $expandedPinned = $expanded !== null;
@@ -110,11 +110,19 @@
         $expanded = \Pushery\WireKit\Support\PersistedCookie::flag($persist);
     }
 
-    // The seeding above only fires when the store HAS something. Where it does not, this is the
+    // The seeding above only fires when the store has something. Where it does not, this is the
     // answer — and it is the prop's whole reason: `false` was not a decision, it was the absence
     // of one.
     $defaultExpanded = BooleanProp::from($defaultExpanded, false, 'app-rail', 'defaultExpanded');
     $expanded = BooleanProp::from($expanded, $defaultExpanded, 'app-rail', 'expanded');
+
+    // What the first paint shows, and every part of it follows from this one value: the width,
+    // `data-expanded`, the labeling mode and the names. At or above the shell's breakpoint the
+    // factory opens a rail that can expand exactly when this says so, so the markup and the
+    // running component agree from the first frame. Below it the rail stands in a closed drawer,
+    // where the first paint is not seen. A part that waited for Alpine would paint a rail
+    // remembered open at its open width with its contents laid out narrow.
+    $presentsExpanded = $expandable && $expanded;
 
     $labels = WireKit::validateProp('app-rail', 'labels', $labels, ['tooltip', 'below', 'inline']);
     $tone = WireKit::validateProp('app-rail', 'tone', $tone, ['default', 'muted', 'inverse', 'accent']);
@@ -127,14 +135,14 @@
     // expand transition is mid-flight.
     //
     // The width is the token and nothing else, including beside an inset content panel. Its
-    // horizontal rules have to REACH the panel instead of stopping short of the seam, but a
+    // horizontal rules have to reach the panel instead of stopping short of the seam, but a
     // column widened by the shell's gap would put every glyph in the stack off the column's
-    // own center. So the RULES overflow the column, and the column keeps the one width every
+    // own center. So the rules overflow the column, and the column keeps the one width every
     // other rail has. See dist/wirekit.css.
     $restingWidth = match ($labels) {
         // `--size-wk-rail-labeled` without its literal: the fallback said 4.75rem against a
         // declared 5.5rem, so the labeled rail would have come out three quarters of a rem
-        // narrow. `--wk-rail-gutter` keeps ITS fallback — that one is component-local and 0px
+        // narrow. `--wk-rail-gutter` keeps its fallback — that one is component-local and 0px
         // is the deliberate "not set" value, which is a different kind of fallback entirely.
         'below' => 'w-[calc(var(--size-wk-rail-labeled)_+_var(--wk-rail-gutter,0px))]',
         'inline' => 'w-[calc(var(--size-wk-rail-expanded,15rem)_+_var(--wk-rail-gutter,0px))]',
@@ -149,7 +157,7 @@
         ? []
         : ['aria-label' => $label !== null ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null];
 
-    // `h-full` is not cosmetic. The inline-end edge is drawn on THIS element, so a nav
+    // `h-full` is not cosmetic. The inline-end edge is drawn on this element, so a nav
     // sized to its content ends the separator wherever the last module happens to
     // fall — the sidebar learned this in the browser, where 200px of line in a 340px
     // column read as a rendering fault rather than as a short list.
@@ -161,9 +169,9 @@
             // The gap that makes it float. A calc height rather than `h-full`, so the panel
             // keeps the same gap top and bottom instead of running off the shell.
             //
-            // The utility is deliberately NOT quoted in this sentence. Tailwind scans this
+            // The utility is deliberately not quoted in this sentence. Tailwind scans this
             // file as text and does not know it is inside a comment, so a bracketed token
-            // written in prose is COMPILED into a real rule — which then shows up as a
+            // written in prose is compiled into a real rule — which then shows up as a
             // compiled selector no source emits, i.e. as drift caused by the note
             // explaining the code. The drift suite's own docblock records this happening
             // once already.
@@ -198,7 +206,7 @@
         'rounded-[var(--radius-wk-md)]',
         'text-[color:var(--color-wk-rail-muted)]',
         'hover:bg-[var(--color-wk-rail-hover-bg)]',
-        // The foreground ON the fill, not the one on the column. On a tone whose hover
+        // The foreground on the fill, not the one on the column. On a tone whose hover
         // inverts, these are different colors, and reading the column's would paint the
         // glyph in the same color as the surface behind it.
         'hover:text-[color:var(--color-wk-rail-hover-fg)]',
@@ -216,16 +224,18 @@
 <nav
     data-wk-rail
     @if($trackCurrent) x-wk-current @endif
-    data-labels="{{ $labels }}"
-    {{-- The names of a rail that cannot expand, present before Alpine runs, and only in the
-         modes that show names at all. The binding below agrees with this on arrival and adds the
-         names where the rail has a drawer to itself; on an expandable rail the words also wait
-         for the column to stop moving. --}}
-    @if(! $expandable && $labels !== 'tooltip') data-wk-names @endif
+    {{-- The state the rail paints in, present before Alpine runs and equal to what the binding
+         below sets on arrival: an open rail is an `inline` rail with its names, and a closed one
+         rests in its own mode, with names in the modes that show them. The binding then owns
+         the attributes, and on an expandable rail the words wait for the column to stop moving
+         after every toggle. --}}
+    data-labels="{{ $presentsExpanded ? 'inline' : $labels }}"
+    @if($presentsExpanded) data-expanded @endif
+    @if($presentsExpanded || $labels !== 'tooltip') data-wk-names @endif
     data-variant="{{ $variant }}"
     data-indicator="{{ $indicator }}"
     @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
-    {{-- EVERY rail runs the component, expandable or not, because one of its widths is decided
+    {{-- Every rail runs the component, expandable or not, because one of its widths is decided
          in the page for all of them. Below the shell's breakpoint a rail that has a drawer to
          itself shows its names there, and only the page knows what else went into the drawer.
          An expandable rail adds the toggle, the stored preference and the announcements; a rail
@@ -240,19 +250,19 @@
          `false` directly. --}}
     x-data="wirekitAppRail({ expandable: {{ $expandable ? 'true' : 'false' }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::string($persistDriver) }}, expanded: {{ $expanded ? 'true' : 'false' }}, pinned: {{ $expandedPinned ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
     :data-expanded="expanded ? '' : null"
-    {{-- ONE attribute drives every per-mode style below, and that is deliberate.
+    {{-- One attribute drives every per-mode style below, and that is deliberate.
          Items react through `group-data-[labels=…]/wk-rail:` variants; if the live
-         expanded state were a SECOND attribute those variants also had to answer
+         expanded state were a second attribute those variants also had to answer
          to, an expanded `labels="below"` rail would carry two utilities of equal
          specificity for the same property — flex-direction, label visibility, main-
          axis alignment — and the winner would be decided by Tailwind's emission
          order rather than by state. Rewriting the mode instead means the expanded
-         rail simply IS an inline-label rail, and there is nothing to arbitrate.
+         rail simply is an inline-label rail, and there is nothing to arbitrate.
          The static attribute below stays for the paint before Alpine initializes. --}}
     :data-wk-ready="ready ? '' : null"
-    {{-- TWO markers, because the mode and the words need two different moments.
+    {{-- Two markers, because the mode and the words need two different moments.
 
-         `data-labels` rewrites the mode AT ONCE, and it has to: it also decides where an
+         `data-labels` rewrites the mode AT once, and it has to: it also decides where an
          item's icon sits. Held back to the end of the transition, the icon would stay
          centered while the column grew and then snap to the start edge, a worse artifact
          than the one this is meant to remove.
@@ -270,10 +280,10 @@
          already, and an object naming one class twice keeps only its last entry, which removed
          the width the moment the rail presented expanded. --}}
     @if($restingWidth !== $expandedWidth)
-        {{-- OBJECT syntax, not a ternary. A ternary hands Alpine one class to add, and Alpine
+        {{-- Object syntax, not a ternary. A ternary hands Alpine one class to add, and Alpine
              only ever removes what it added itself — so the static initial width emitted below
              survived every toggle, leaving two width utilities on the element and a rail that
-             never actually changed size. The object form names BOTH classes, so the one whose
+             never actually changed size. The object form names both classes, so the one whose
              condition is false is removed regardless of who put it there. Alpine removes a class
              by its name, so both carry the names the static width is written with
              (Support\CompactClasses). --}}
@@ -303,7 +313,7 @@
         //
         // A persisted rail can still move once, and that is not fixable from the server: the
         // stored choice lives in the browser of the reader and only Alpine can read it.
-        ($expandable && $expanded ? $expandedWidth : $restingWidth) => true,
+        ($presentsExpanded ? $expandedWidth : $restingWidth) => true,
         // Gated on `data-wk-ready`, which Alpine sets one frame after init. Ungated, a cold
         // load animates the ARRIVAL of the stylesheet rather than any state change: the column
         // lays out unstyled, the CSS lands, and the browser tweens between the two.
@@ -347,15 +357,15 @@
              The toggle is at the bottom. Directly under the brand mark it would take the most
              valuable row in the whole column, where the eye lands first, and expanded it would
              take the row where the workspace name belongs. A control that changes the column's
-             WIDTH is chrome, and chrome goes where chrome goes.
+             width is chrome, and chrome goes where chrome goes.
 
              It shares this block with the footer rather than getting its own, so the rail
-             keeps ONE separator line at the bottom instead of two. The block is emitted when
+             keeps one separator line at the bottom instead of two. The block is emitted when
              either exists, so an expandable rail with no footer still has somewhere to put
              it, and a rail with neither has no empty band. --}}
         <div class="wk-shell-foot shrink-0 relative border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border)] py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))] flex flex-col gap-[var(--space-wk-nav-gap)]">
             @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
-                {{-- The trailing inset only exists while the rail is wide AND the toggle has
+                {{-- The trailing inset only exists while the rail is wide and the toggle has
                      moved onto this row — it is the room the toggle occupies, so the two
                      belong to the same condition.
 
@@ -398,7 +408,7 @@
                          by assistive technology. Bound rather than passed, because it
                          changes with the state; the binding resolves against the rail's own
                          Alpine scope, which this markup already reads for `:aria-expanded`. --}}
-                    <x-wirekit::tooltip placement="right" :focusable-trigger="false">
+                    <x-wirekit::tooltip placement="end" :focusable-trigger="false">
                         <x-slot:content>
                             <span x-text="expanded
                                 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse rail')) }}
@@ -415,7 +425,7 @@
                              owns both attributes from init onward. --}}
                         {{-- Same stable hook as the sidebar's collapse control, and the same
                              reason: `aria-label` is translated and `aria-expanded` is shared with
-                             every disclosure on the page, so nothing here named THIS button. --}}
+                             every disclosure on the page, so nothing here named this button. --}}
                         data-wk-sidebar-collapse
                         aria-expanded="{{ $expanded ? 'true' : 'false' }}"
                         aria-label="{{ $expanded ? __('wirekit::Collapse rail') : __('wirekit::Expand rail') }}"
@@ -423,9 +433,13 @@
                         :aria-label="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse rail')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand rail')) }}"
                         class="wk-touch-target {{ $toggleClasses }}"
                     >
-                        <svg class="h-4 w-4 transition-transform duration-[var(--transition-wk-duration)]" :class="expanded ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />
-                        </svg>
+                        {{-- The sidebar's glyph, so the controls that fold the two columns of a
+                             shell read as one button. The rail stands at the start of the line. --}}
+                        @include('wirekit::components.partials.sidebar-collapse-glyph', [
+                            'side' => 'start',
+                            'glyphCollapsedExpr' => '! expanded',
+                            'glyphCollapsedNow' => ! $presentsExpanded,
+                        ])
                     </button>
                     </x-wirekit::tooltip>
                 </div>
@@ -448,5 +462,8 @@
         // The rail only expands above the shell's own breakpoint, and the factory gates on
         // exactly this. Ungated, a phone would widen for one frame and narrow again.
         'seedMinWidth' => '64rem',
+        // The markers of each state, as the column above writes them for the server's answer.
+        'seedAttrsOn' => ['data-expanded' => '', 'data-labels' => 'inline', 'data-wk-names' => ''],
+        'seedAttrsOff' => ['data-expanded' => null, 'data-labels' => $labels, 'data-wk-names' => $labels !== 'tooltip' ? '' : null],
     ])
 @endif

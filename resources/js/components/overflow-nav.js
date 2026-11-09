@@ -20,7 +20,7 @@
  * - `x-show` hides at once but shows on the next animation frame, so an entry shown through state
  *   and measured right after would still read as hidden. The inline styles `fit()` sets are what the
  *   measurement reads.
- * - Only a change of WIDTH asks for a new measurement, of the row or of an entry, together with
+ * - Only a change of width asks for a new measurement, of the row or of an entry, together with
  *   entries being added or removed. The height changes whenever an entry moves into the menu, and
  *   answering it would loop. The entries are watched as well as the row because an entry's width
  *   changes with its label while the row keeps its own: a web font that lands after the first

@@ -1,10 +1,10 @@
 /**
  * WireKit Scope Switcher — the searchable list inside the popover.
  *
- * What this is, and what it deliberately is not. A scope switcher is NAVIGATION, not a form
+ * What this is, and what it deliberately is not. A scope switcher is navigation, not a form
  * field: its "value" is the page you are on, and choosing an item goes there. Nothing is
  * submitted, and there is no hidden input. That is why it is neither a combobox (a form
- * field whose trigger IS its text input) nor a dropdown (the WAI-ARIA menu pattern, where an
+ * field whose trigger is its text input) nor a dropdown (the WAI-ARIA menu pattern, where an
  * `<input>` inside `role="menu"` violates the owned-elements rule and there is only
  * type-ahead, never search).
  *
@@ -35,7 +35,7 @@ export default function wirekitScopeSwitcher(config = {}) {
         /** Current query, bound to the search input. */
         query: '',
 
-        /** `key` of the item the keyboard is on, or null. NOT the current scope. */
+        /** `key` of the item the keyboard is on, or null. Not the current scope. */
         activeKey: null,
 
         /** How many items match right now — read by the live region. */
@@ -57,7 +57,7 @@ export default function wirekitScopeSwitcher(config = {}) {
          * (`wk-scroll-shadow-top` / `-bottom`), so the affordance is identical rather than
          * merely similar.
          *
-         * It is implemented HERE rather than by nesting `x-data="wirekitStickyPanelShadows"`
+         * It is implemented here rather than by nesting `x-data="wirekitStickyPanelShadows"`
          * around the list, and that is not a preference: Alpine scopes `$refs` to the
          * nearest `x-data` root, so wrapping the list in a second component would take
          * `$refs.list` away from this one — and every keyboard and search path reads it.
@@ -90,7 +90,7 @@ export default function wirekitScopeSwitcher(config = {}) {
         /**
          * Watch the list's two 1px sentinels and mirror their visibility into the shadows.
          *
-         * A sentinel that is IN VIEW means that edge has been reached, so the shadow on that
+         * A sentinel that is in view means that edge has been reached, so the shadow on that
          * side goes away. Guarded on the API existing, because a bundle can run in a context
          * that has no IntersectionObserver and a missing affordance is better than a throw
          * inside `init()` — an x-data that throws while building leaves the element with an
@@ -167,7 +167,7 @@ export default function wirekitScopeSwitcher(config = {}) {
         },
 
         /**
-         * Does `token` appear in `haystack` as a SUBSEQUENCE — its letters in order, gaps
+         * Does `token` appear in `haystack` as a subsequence — its letters in order, gaps
          * allowed? This is what forgives a dropped letter: `wrker` still walks through
          * `worker-01.example.com`. A swapped pair does not, its letters are out of order, and
          * `_within()` is there for that. Linear in the haystack and allocation-free, so it is
@@ -193,7 +193,7 @@ export default function wirekitScopeSwitcher(config = {}) {
          * Edit distance, capped: it stops as soon as the row's best possible score exceeds
          * `max`, so a long word against a short token costs almost nothing.
          *
-         * Subsequence alone forgives DELETIONS. This is here for the other two ways a reader
+         * Subsequence alone forgives deletions. This is here for the other two ways a reader
          * mistypes — a substituted letter and a transposition — which a subsequence walk
          * cannot see at all.
          */
@@ -278,12 +278,12 @@ export default function wirekitScopeSwitcher(config = {}) {
         },
 
         /**
-         * Hide what does not match. EVERY token must appear, so `farm 19` narrows rather
+         * Hide what does not match. Every token must appear, so `farm 19` narrows rather
          * than widening — a reader adding a word expects fewer results, not more.
          *
          * Matching is fault-tolerant on purpose. A strict substring test answers "is this
          * exactly in there", and a reader typing a hostname from memory is not exact: two
-         * swapped letters — `wroker` for `worker` — returned NOTHING over a list that had it,
+         * swapped letters — `wroker` for `worker` — returned nothing over a list that had it,
          * which reads as a broken search rather than as a strict one.
          */
         filter() {
@@ -389,7 +389,7 @@ export default function wirekitScopeSwitcher(config = {}) {
             list.scrollTop += ((at.top + at.bottom) / 2 - (box.top + box.bottom) / 2) / scale;
         },
 
-        /** Step through the VISIBLE rows. No wrap — the ends are a useful boundary here. */
+        /** Step through the visible rows. No wrap — the ends are a useful boundary here. */
         moveActive(delta) {
             const visible = this._items.filter((i) => ! i.el.hidden);
 
@@ -429,7 +429,7 @@ export default function wirekitScopeSwitcher(config = {}) {
 
             if (item.current) {
                 // `close()` comes from the popover's scope, which this one inherits. There
-                // is no close EVENT for a popover — the overlay vocabulary pairs show/close
+                // is no close event for a popover — the overlay vocabulary pairs show/close
                 // for modal, drawer, alert-dialog and toast only — so dispatching one would
                 // be shouting a word nothing listens for.
                 this.close?.();

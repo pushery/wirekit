@@ -33,12 +33,12 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `dismissible="false"` would otherwise mean the opposite of what the call site reads
     // as, on the one switch a confirmation dialog exists to set. All four reads below are
     // truth tests (the x-data seed, the Escape listener and the two backdrop handlers),
     // and modal.header's close-X hangs off the seeded Alpine value, so the string would
-    // turn every one of them back ON: Escape would close the dialog, the overlay would
+    // turn every one of them back on: Escape would close the dialog, the overlay would
     // close it, and the close-X the prop suppresses would render.
     //
     // Normalized against the prop's own default so a cast never turns dismissal off on
@@ -135,7 +135,7 @@
     // Container classes — positions the dialog on screen.
     //
     // `items-start` here and `my-auto` on the panel, not `items-center`. A flex item taller
-    // than its scroll container is pushed past the START of the scrollable area by
+    // than its scroll container is pushed past the start of the scrollable area by
     // `items-center`: `scrollTop: 0` already sits below the panel's top edge and there is no
     // negative scroll, so the header and the first lines of a long dialog would be
     // unreachable. Auto margins center the panel while it fits and resolve to zero once it
@@ -159,7 +159,7 @@
     // edge — the drawer caps itself the same way. `flex-col` lets the header and footer keep
     // their height while modal.body, which may shrink, scrolls between them.
     //
-    // The panel scrolls too, as the fallback for a dialog built WITHOUT modal.body: clipped,
+    // The panel scrolls too, as the fallback for a dialog built without modal.body: clipped,
     // its overflow would simply be gone. With a body the body absorbs the overflow and the
     // panel never needs its own scrollbar. It carries `role="dialog"`, so the scroll region
     // already has an owner for its keyboard model.
@@ -301,7 +301,7 @@
     </template>
 
     {{-- The dialog the question about discarded changes is asked in, when the modal asks one. --}}
-    @if($discardQuestionText !== null)
+    @wirekitLast($discardQuestionText !== null)
         @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope])
-    @endif
+    @endwirekitLast
 </div>

@@ -6,7 +6,7 @@
     'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`
     'icon' => true,
     'bordered' => true,
-    // Opt-in one-sided accent stripe (default OFF). The plain callout is the
+    // Opt-in one-sided accent stripe (default off). The plain callout is the
     // alert-style 4-sided tinted border; a one-sided colored stripe reads as
     // generic dashboard chrome, so it is not the default. Pass `stripe` to
     // add the accent bar deliberately.
@@ -29,7 +29,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $icon = BooleanProp::from($icon, true, 'callout', 'icon');
@@ -52,7 +52,7 @@
     // `intent` is the canonical name for this axis; `variant` is the
     // back-compat alias. When both are given the canonical one decides.
     $effectiveIntent = $intent ?? $variant;
-    // The error names the prop the CALLER wrote, not the canonical one.
+    // The error names the prop the caller wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
     // Validate against the canonical intent set. 'primary' uses the accent and 'info'
@@ -63,8 +63,9 @@
         default => WireKit::validateProp('callout', $intentPropName, $effectiveIntent, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
     };
 
-    // Callout is visually denser than Alert (15% vs 10% background tint), designed
-    // for inline documentation notices. It is persistent (no dismiss), supports
+    // Callout draws the same box as Alert: the same padding, radius and tints, so a page that shows
+    // both shows one kind of notice. The two differ in what they say to a screen reader: a callout
+    // stands with the page and is never announced. It is persistent (no dismiss), supports
     // title+body+action slots. With bordered=false the tinted background carries the
     // surface; pass `stripe` to add an opt-in one-sided accent bar.
     $baseClasses = WireKit::resolveClasses('callout', 'base', implode(' ', [
@@ -72,52 +73,52 @@
         // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
         // alone, so a table or a flex row in the content keeps the layout it had.
         '[overflow-wrap:break-word]',
-        'relative flex items-start gap-3',
-        'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-x-lg)]',
-        'rounded-[var(--radius-wk-lg)]',
+        'relative flex items-start gap-[var(--gap-wk-md)]',
+        'px-[var(--padding-wk-x-md)]',
+        'py-[var(--padding-wk-x-md)]',
+        'rounded-[var(--radius-wk-md)]',
         $bordered ? 'border-[length:var(--border-wk-width)]' : 'border-0',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
-    // Variant colors with stronger background tint than Alert (15% vs 10%)
-    // for visual density distinction
+    // The tints of Alert, intent by intent: the fill mixes 10% of the intent into the elevated
+    // surface, the border 35% into the border color.
     $variantColors = match ($variantValue) {
         'success' => [
-            'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
-            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_15%,var(--color-wk-bg-elevated))]',
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_35%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-success-text)]',
             'stripe' => 'bg-[var(--color-wk-success)]',
         ],
         'warning' => [
-            'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
-            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_15%,var(--color-wk-bg-elevated))]',
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_35%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-warning-text)]',
             'stripe' => 'bg-[var(--color-wk-warning)]',
         ],
         'danger' => [
-            'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
-            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_15%,var(--color-wk-bg-elevated))]',
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_35%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-danger-text)]',
             'stripe' => 'bg-[var(--color-wk-danger)]',
         ],
         'neutral' => [
             'border' => 'border-[var(--color-wk-border)]',
-            'bg' => 'bg-[var(--color-wk-bg-subtle)]',
+            'bg' => 'bg-[var(--color-wk-bg-muted)]',
             'icon' => 'text-[color:var(--color-wk-text-muted)]',
             'stripe' => 'bg-[var(--color-wk-text-muted)]',
         ],
         'info' => [
-            'border' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
-            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_15%,var(--color-wk-bg-elevated))]',
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_35%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-info-text)]',
             'stripe' => 'bg-[var(--color-wk-info-tone)]',
         ],
         default => [ // primary
-            'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
-            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_15%,var(--color-wk-bg-elevated))]',
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-accent-text)]',
             'stripe' => 'bg-[var(--color-wk-accent)]',
         ],
@@ -134,19 +135,19 @@
 @endphp
 
 {{-- Callout: persistent inline notice for documentation-style content.
-     Visually denser than Alert; opt-in one-sided accent stripe via `stripe`.
+     The same box as Alert; opt-in one-sided accent stripe via `stripe`.
 
-     A PLAIN <div>, and the two roles it deliberately does NOT take:
+     A plain <div>, and the two roles it deliberately does not take:
 
-     Not an <aside>: an <aside> IS a landmark — role="complementary" — and a page already has
+     Not an <aside>: an <aside> is a landmark — role="complementary" — and a page already has
      one, the shell's own sidebar. A callout as an aside would put two same-role landmarks on
      the page with no distinguishing name, which axe fails, and the violation it reports points
-     at the SIDEBAR, so the first place anyone looks is the wrong one. `complementary` is reserved
+     at the sidebar, so the first place anyone looks is the wrong one. `complementary` is reserved
      for a self-contained section significant to the page; a note in the flow of the text is
      neither.
 
-     It is also NOT role="status" or role="alert". Both are live regions. This component is persistent content that is already present when the
-     page loads, so a live region announces nothing at load — and then announces the ENTIRE
+     It is also not role="status" or role="alert". Both are live regions. This component is persistent content that is already present when the
+     page loads, so a live region announces nothing at load — and then announces the entire
      callout every time Livewire re-renders the element, though nothing about it changed.
      That trades a landmark warning for spurious speech, which is the worse defect.
      Something that genuinely arrives and demands attention is what <x-wirekit::alert> is.
@@ -156,10 +157,10 @@
      a screen reader would have to interrupt for. --}}
 <div {{ $attributes->merge(['data-intent' => $variantValue])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden'])) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($stripe)
-        {{-- Opt-in accent stripe: a one-sided colored bar, OFF by default. The
+        {{-- Opt-in accent stripe: a one-sided colored bar, off by default. The
              plain callout is the alert-style 4-sided tinted border; the bar is
              added only when `stripe` is set deliberately. --}}
-        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-wk-lg)] {{ $variantColors['stripe'] }}" aria-hidden="true"></div>
+        <div class="absolute start-0 top-0 bottom-0 w-1 rounded-s-[var(--radius-wk-md)] {{ $variantColors['stripe'] }}" aria-hidden="true"></div>
     @endif
 
     {{-- Variant icon —: iconSlot named slot wins over the
@@ -180,14 +181,14 @@
              around an `@if` inside it are not a heading; a prop is a string. --}}
         @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
             {{-- The marker stands first whatever the tag renders: prose styles a heading, and on a div it costs nothing. --}}
-            <{{ $titleTag }} data-wk-prose-skip class="font-[number:var(--font-wk-heading-weight)] mb-1 text-[color:var(--color-wk-text)]">{{ $title }}</{{ $titleTag }}>
+            <{{ $titleTag }} data-wk-prose-skip class="font-[number:var(--font-wk-heading-weight)] mb-[var(--space-wk-xs)] text-[color:var(--color-wk-text)]">{{ $title }}</{{ $titleTag }}>
         @endif
         <div class="text-[color:var(--color-wk-text-muted)]">{{ $slot }}</div>
-        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             {{-- flex-wrap so a callout with two buttons (or a long single
                  button label) wraps to a second row on a phone instead of
                  overflowing the callout body. --}}
-            <div class="mt-3 flex flex-wrap items-center gap-2">{{ $actions }}</div>
-        @endif
+            <div class="mt-3 flex flex-wrap items-center gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
+        @endwirekitLast
     </div>
 </div>

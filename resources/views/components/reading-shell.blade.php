@@ -38,7 +38,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-shell', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $previewMode = BooleanProp::from($previewMode, false, 'reading-shell', 'previewMode');
@@ -55,7 +55,7 @@
     // from the output, so no orphaned Alpine init is left to break silently.
     //
     // Density preset (comfortable | compact | minimal) is the starting-point
-    // shape. Per-primitive toggles WIN over density — passing
+    // shape. Per-primitive toggles win over density — passing
     // `density="minimal" :spine="true"` shows the spine even though the
     // density-derived default would hide it.
 
@@ -71,7 +71,7 @@
     };
 
     // Density preset → per-primitive defaults. Each preset's `defaults` tuple
-    // controls which primitives render by DEFAULT — explicit toggles
+    // controls which primitives render by default — explicit toggles
     // override (handled below). The `progressHeight` + `spineExpand` keys
     // configure the rendered primitives' behavior.
     // toc defaults to false in every density — reading-toc is a marketing-
@@ -155,7 +155,7 @@
         <x-wirekit::reading-meta :scope="$scope" />
     @endif
 
-    @if ($renderRail)
+    @wirekitLast ($renderRail)
         <x-wirekit::grid cols="1" template="md:[minmax(0,1fr)_14.375rem]" gap="lg">
             {{-- `min-w-0`, so a wide code block in the article scrolls inside it rather than
                  widening the column and pushing the rail off the page. --}}
@@ -166,5 +166,5 @@
         </x-wirekit::grid>
     @else
         {{ $slot }}
-    @endif
+    @endwirekitLast
 </div>

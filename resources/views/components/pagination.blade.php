@@ -5,7 +5,7 @@
     'variant' => config('wirekit.components.pagination.variant', 'full'), // full | simple | mini
     'justify' => config('wirekit.components.pagination.justify', 'between'), // between | center | end | start
     // The two direction labels. `Previous`/`Next` are correct for a page-ordered list and
-    // MISLEADING on a reverse-chronological one, where "next" moves BACKWARD in time — a
+    // misleading on a reverse-chronological one, where "next" moves backward in time — a
     // reader on a changelog or an activity feed is told the opposite of what the button
     // does. Translating the two strings globally would change every paginator in the
     // application, so each paginator takes its own.
@@ -136,7 +136,7 @@
     // documentation said it worked.
     //
     // The failure surfaced as a ViewException out of a collection, a long way from the line
-    // where the decision was actually made — which is why this is decided HERE, once, by the
+    // where the decision was actually made — which is why this is decided here, once, by the
     // capability the richer variants need rather than by the paginator's class.
     //
     // Degrading rather than throwing: both paginators exist for lists that cannot or need not
@@ -176,7 +176,7 @@
     // `flex-wrap` lets the summary + button-row wrap onto multiple lines
     // on narrow viewports instead of overflowing the page horizontally.
     $navClasses = WireKit::resolveClasses('pagination', 'base', implode(' ', [
-        'flex flex-wrap items-center w-full gap-2',
+        'flex flex-wrap items-center w-full gap-[var(--gap-wk-sm)]',
         $justifyClass,
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-sm)]',
@@ -206,10 +206,10 @@
     // Disabled state for prev/next at list boundaries.
     //
     // No opacity, and that is the point of this list. The muted pair, cursor-not-allowed and the
-    // missing hover already say the control is inert. Opacity applies to the ELEMENT, so it
+    // missing hover already say the control is inert. Opacity applies to the element, so it
     // composites the text and its own background against the page together and shrinks the
     // distance between them: in the light theme a 4.5:1 pair read at about 1.6:1. Elsewhere in
-    // the library opacity IS the only dimming signal and stays; here it only said the state a
+    // the library opacity is the only dimming signal and stays; here it only said the state a
     // fourth time, and it was the one saying it that made the label unreadable.
     $buttonDisabled = implode(' ', [
         'inline-flex items-center justify-center',
@@ -244,7 +244,7 @@
     ]);
 
     // Absolute-ize paginator URLs. Under Livewire's WithPagination the current-path
-    // resolver returns a RELATIVE path, so previousPageUrl()/nextPageUrl()/link urls
+    // resolver returns a relative path, so previousPageUrl()/nextPageUrl()/link urls
     // come out relative and 404 on a nested route. url()->to() host-qualifies them and
     // is idempotent on already-absolute URLs.
     $abs = static fn (?string $u): ?string => $u === null ? null : url()->to($u);
@@ -258,7 +258,7 @@
     $previousText = $previousLabel ?: __('wirekit::Previous');
     $nextText = $nextLabel ?: __('wirekit::Next');
 
-    // The Livewire half. Every control calls the paging action for THIS paginator's page name, so
+    // The Livewire half. Every control calls the paging action for this paginator's page name, so
     // two paginated lists in one component turn their own pages. Previous and next go to a page
     // computed here rather than calling previousPage() and nextPage(): a double click then lands on
     // the page the control named, not one page further.
@@ -372,9 +372,9 @@
     }
 @endphp
 
-{{-- ONE translatable sentence, not four fragments. The earlier
+{{-- One translatable sentence, not four fragments. The earlier
      form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
-     (deliberately written WITHOUT the translation-helper syntax here, so a
+     (deliberately written without the translation-helper syntax here, so a
      naive grep of this file for translation keys does not pick up four
      phantom keys that never render)
      around the numbers, which handed a translator four context-free words
@@ -397,7 +397,7 @@
         // view does not know.
         $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e(\Pushery\WireKit\Support\LocalizedNumber::integer($value)).'</span>';
 
-        // The markup is substituted AFTER translation, never passed through
+        // The markup is substituted after translation, never passed through
         // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
         // as case variants, applying ucfirst / strtoupper to the value — and
         // an uppercased value here would wreck the markup, since Tailwind
@@ -442,7 +442,7 @@
 
 <nav @unless($attributes->has('role')) role="navigation" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $navLabel }}" @endunless {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$navClasses])) }}>
 
-    @if($singlePage)
+    @wirekitLast($singlePage)
         {{-- Everything fits one page, and a choice of page size is on offer: the summary and the
              choice, without page links that would all lead to this page. --}}
         @if($summary !== null)
@@ -454,7 +454,7 @@
         @include('wirekit::components.partials.pagination-per-page')
     @elseif($variant === 'simple' || $variant === 'mini')
         {{-- Simple: prev + next only (optionally with a "page X of Y" label) --}}
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-[var(--gap-wk-sm)]">
             {{-- A boundary edge is a link that cannot be followed, and this package has
                  already decided how one of those is announced: `button` withholds the href
                  and adds `role="link"` + `aria-disabled="true"` so the control is heard as
@@ -466,7 +466,7 @@
                  there is no previous page — the dimmed control they would see is simply not
                  there. Two of the four carried an `aria-label` as well, which was dead twice
                  over: the element is not in the tree, and a bare <span> is role `generic`,
-                 which PROHIBITS a name. The scanner cannot report the second problem either,
+                 which prohibits a name. The scanner cannot report the second problem either,
                  because it skips what is hidden from assistive technology.
 
                  The glyphs are ornament beside a word that already says everything, so they
@@ -478,11 +478,11 @@
                  The ellipsis separator below keeps its `aria-hidden` on purpose. It carries
                  no state — the numbers on either side already say a range was elided — so it
                  is the one span here that really is decoration. --}}
-            @if($paginator->onFirstPage())
+            @wirekitLast($paginator->onFirstPage())
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" @if($landedHandler) x-init="{{ $landedHandler }}" @endif><span aria-hidden="true">&laquo;</span> {{ $previousText }}</span>
             @else
                 <a data-wk-prose-skip href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" @if($previousAction) wire:click.prevent="{{ $previousAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif><span aria-hidden="true">&laquo;</span> {{ $previousText }}</a>
-            @endif
+            @endwirekitLast
         </div>
 
         @if($variant === 'simple')
@@ -495,12 +495,12 @@
             </span>
         @endif
 
-        <div class="flex items-center gap-2">
-            @if($paginator->hasMorePages())
+        <div class="flex items-center gap-[var(--gap-wk-sm)]">
+            @wirekitLast($paginator->hasMorePages())
                 <a data-wk-prose-skip href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" @if($nextAction) wire:click.prevent="{{ $nextAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>{{ $nextText }} <span aria-hidden="true">&raquo;</span></a>
             @else
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" @if($landedHandler) x-init="{{ $landedHandler }}" @endif>{{ $nextText }} <span aria-hidden="true">&raquo;</span></span>
-            @endif
+            @endwirekitLast
         </div>
 
         @if($offersPerPage)
@@ -522,7 +522,7 @@
             </div>
         @endif
 
-        <div class="flex flex-wrap items-center gap-1">
+        <div class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
             {{-- Glyph-only, so the name has to come from the label — see the note on the
                  simple variant above for why the label needs a role that admits one. --}}
             @if($paginator->onFirstPage())
@@ -533,36 +533,31 @@
 
             {{-- Numbered links: linkCollection() returns {url, label, active} per entry.
                  We skip the framework-generated prev/next (we render our own above)
-                 POSITIONALLY, with `->slice(1, -1)` on the line below — not by matching
+                 positionally, with `->slice(1, -1)` on the line below — not by matching
                  their labels. Worth being exact about: this file now renders &laquo; and
                  &raquo; itself, so a reader who believed the label-matching story would
                  expect our own glyphs to be filtered out, and they are not.
 
-                 The `label` field is unescaped via {!! !!} below — safe because
-                 Laravel's paginator constructs `label` as a numeric page-index
-                 string OR a pre-encoded HTML entity (`&laquo;` / `&raquo;` /
-                 `…`). The value never originates from user input or query
-                 parameters — it's generated entirely from `$paginator->currentPage()`
-                 and the framework's internal range calculation. If a downstream
-                 developer ever extends the paginator to produce user-influenced
-                 labels, the unescaped render becomes an XSS vector and this
-                 emission must be wrapped in `e($link['label'])` or equivalent. --}}
-            @foreach($paginator->linkCollection()->slice(1, -1) as $link)
-                @if($link['url'] === null)
-                    {{-- null url = separator (ellipsis) --}}
-                    <span class="{{ $buttonDisabled }}" aria-hidden="true" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-gap'.$loop->index }}" @endif>{!! $link['label'] !!}</span>
-                @elseif($link['active'])
-                    <span class="wk-pagination-current {{ $buttonActive }}" aria-current="page" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" tabindex="-1" @endif @if($landedHandler) x-init="{{ $landedHandler }}" @endif>{!! $link['label'] !!}</span>
-                @else
-                    <a data-wk-prose-skip href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('wirekit::Go to page :page', ['page' => $link['label']]) }}" @if($pageAction) wire:click.prevent="{{ $pageAction((int) $link['label']) }}" wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>{!! $link['label'] !!}</a>
-                @endif
-            @endforeach
+                 Each entry is one element, a gap, the current page or a link, written by
+                 Support\PaginationLinks as one string: a loop of blocks here carried two of
+                 Livewire's morph markers per entry. --}}
+            {{ \Pushery\WireKit\Support\PaginationLinks::numbered(
+                $paginator->linkCollection()->slice(1, -1),
+                $abs,
+                $buttonBase,
+                $buttonDisabled,
+                'wk-pagination-current '.$buttonActive,
+                $pageAction,
+                $pageName,
+                $landedHandler,
+                $scrollHandler,
+            ) }}
 
-            @if($paginator->hasMorePages())
+            @wirekitLast($paginator->hasMorePages())
                 <a data-wk-prose-skip href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}" @if($nextAction) wire:click.prevent="{{ $nextAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>&raquo;</a>
             @else
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $nextText }}" @if($landedHandler) x-init="{{ $landedHandler }}" @endif>&raquo;</span>
-            @endif
+            @endwirekitLast
         </div>
-    @endif
+    @endwirekitLast
 </nav>

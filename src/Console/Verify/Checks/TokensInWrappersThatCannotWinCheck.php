@@ -36,8 +36,8 @@ final class TokensInWrappersThatCannotWinCheck extends VerifyCheck
      *    unlayered CSS beats layered CSS whatever the specificity.
      *
      * The layer half is deliberately narrow, and a real adopting application is why. The cascade only
-     * compares declarations that apply to the SAME element, so a custom property set on a
-     * DESCENDANT shadows the inherited one whether it sits in a layer or not — an adopting
+     * compares declarations that apply to the same element, so a custom property set on a
+     * descendant shadows the inherited one whether it sits in a layer or not — an adopting
      * application scopes `--size-wk-fab` to one component that way, correctly. Only a rule that
      * targets the root competes with WireKit's own declaration, so only those are read here.
      *
@@ -93,7 +93,7 @@ final class TokensInWrappersThatCannotWinCheck extends VerifyCheck
     /**
      * The bodies of every at-rule block whose head starts with `$atRule`, concatenated.
      *
-     * {@see extractCssBlock()} descends INTO an at-rule rather than matching it, which is what
+     * {@see extractCssBlock()} descends into an at-rule rather than matching it, which is what
      * makes it able to find a `:root` nested in a `@media`. This is the other half of the same
      * walk: it takes the at-rule's own body, so a caller can ask what a `@theme` or a `@layer`
      * contains. Feeding the result back into `extractCssBlock()` is how the layer half reaches
