@@ -5,7 +5,7 @@ import { foldForSearch } from './search-fold.js';
  *
  * Reading the items on every keypress rather than holding an index is not a style
  * choice, and it is the whole reason a server-driven tablist can share this code with
- * the client-side one: Livewire REPLACES the markup on every round trip. An index
+ * the client-side one: Livewire replaces the markup on every round trip. An index
  * captured at init would survive the morph and point into a list that no longer exists,
  * and the failure is quiet — focus lands on the wrong item, or on nothing.
  *
@@ -65,9 +65,9 @@ export function moveRovingFocus(root, direction, selector = '[role=tab]:not([dis
  * then a few lines rather than a re-derivation.
  *
  * The one subtlety is the repeated character, and getting it wrong is what makes a
- * type-ahead feel broken. Pressing `a` repeatedly must CYCLE through every row starting
+ * type-ahead feel broken. Pressing `a` repeatedly must cycle through every row starting
  * with `a`, so a buffer of all-identical characters searches for that single character
- * beginning AFTER the current row. A genuine refinement — `co` growing to `com` — must
+ * beginning after the current row. A genuine refinement — `co` growing to `com` — must
  * start AT the current row instead, or the row the reader has already narrowed to would be
  * skipped and `comp` could never reach it.
  *

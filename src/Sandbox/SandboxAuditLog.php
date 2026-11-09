@@ -11,7 +11,7 @@ namespace Pushery\WireKit\Sandbox;
  * with shape:
  *   {timestamp}\t{outcome}\t{component}\t{network-digest}\t{violations-count}
  *
- * The address is written as a digest of its NETWORK, keyed with the application key: an IPv4
+ * The address is written as a digest of its network, keyed with the application key: an IPv4
  * address cut to its /24, an IPv6 address to its /48, then HMAC-SHA256 with 8 bytes kept. That
  * is enough to see a burst of requests from one place, and not enough to name a person. An
  * unkeyed digest of the whole address was a lookup table: IPv4 has 2^32 values, and hashing all
@@ -38,8 +38,8 @@ final class SandboxAuditLog
         $file = $logDir.'/'.date('Y-m-d').'.log';
         $opensTheDay = ! is_file($file);
         // Log-injection (CWE-117) defense: the log is tab-delimited, line-based,
-        // and `$component` arrives UNSANITIZED on the `rejected:component` path
-        // (it is logged BEFORE the allowlist regex validates it — see
+        // and `$component` arrives unsanitized on the `rejected:component` path
+        // (it is logged before the allowlist regex validates it — see
         // SandboxRenderer::render). A `$component` carrying a tab or newline
         // could otherwise forge a fake log record. Collapse every control
         // character (tabs, CR, LF, and the rest of the C0/C1 range) to a single
@@ -154,14 +154,14 @@ final class SandboxAuditLog
     }
 
     /**
-     * Say so when a security record could not be written — WITHOUT throwing.
+     * Say so when a security record could not be written — without throwing.
      *
      * The failure mode this closes is the quiet one: with an unwritable log directory every
      * rejected render would go unrecorded, and the only evidence would be an audit file that
      * stops growing. A reader checking it later would see a clean history rather than a blind
      * one, which is the wrong way round for a security record.
      *
-     * It does NOT throw, and that is the other half. This runs on the reject path of a
+     * It does not throw, and that is the other half. This runs on the reject path of a
      * sandboxed render, so an exception here would turn "the audit log is unwritable" into
      * "the endpoint is down" — an attacker who can fill a disk could take the surface with it.
      * The application log is the right channel: it is watched, and it does not gate the

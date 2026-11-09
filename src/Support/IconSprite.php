@@ -22,7 +22,7 @@ use Pushery\WireKit\Icons\IconSetPackages;
  *
  * The symbol carries the icon's own `viewBox` and presentation attributes, so an outline set
  * keeps `fill="none"` and its stroke, and `currentColor` resolves against the row's text color.
- * Both engines were checked to paint it that way. Symbol ids are derived from the icon NAME,
+ * Both engines were checked to paint it that way. Symbol ids are derived from the icon name,
  * not from its position, so a Livewire update that renders the same icons keeps the same ids.
  */
 final class IconSprite
@@ -35,7 +35,7 @@ final class IconSprite
     ];
 
     /**
-     * Replaces the icon NAME on each option that has one with a reference into the sprite, and
+     * Replaces the icon name on each option that has one with a reference into the sprite, and
      * returns the sprite. An icon that cannot be drawn takes its option's medium with it, the
      * same way `<x-wirekit::icon>` degrades to an empty placeholder rather than failing the page.
      *

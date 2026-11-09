@@ -26,7 +26,7 @@ use Composer\InstalledVersions;
  *
  *   2. The package's own `composer.json` `version` field if present
  *      — only set during local-development checkouts that pin a value.
- *      Best practice for Composer packages is to NOT carry this field
+ *      Best practice for Composer packages is to not carry this field
  *      (versions live in git tags) — so this branch rarely fires.
  *
  *   3. `'dev-develop'` — terminal fallback. Used when the package is
@@ -109,7 +109,7 @@ final class VersionResolver
     }
 
     /**
-     * The newest version the package has actually RELEASED, from CHANGELOG.md.
+     * The newest version the package has actually released, from CHANGELOG.md.
      *
      * A different question from `resolve()`, and the difference is the whole point.
      * `resolve()` answers "which build is installed here", and on a deployment that
@@ -120,13 +120,13 @@ final class VersionResolver
      *
      * This answers "what is the newest release this package claims", which is the
      * comparable fact. It exists because a documentation page served a changelog
-     * frozen four minors back and NOTHING anywhere disagreed with it out loud: the
+     * frozen four minors back and nothing anywhere disagreed with it out loud: the
      * page said 2.21.1, the package said 2.22.0, and no single artifact carried both
      * halves of a comparison. A version rather than a date or a count, deliberately
      * — a count is a fact about a moment and goes stale within the hour, a version
      * is a fact about a release.
      *
-     * The newest CLOSED section, never a staging bucket. Two shapes stage a section:
+     * The newest closed section, never a staging bucket. Two shapes stage a section:
      * `## [Unreleased]`, which carries no number to match, and `## [x.y.z] —
      * Unreleased`, whose number is decided while its content is still being written.
      * Publishing the second as "released" is the failure this method must not have:

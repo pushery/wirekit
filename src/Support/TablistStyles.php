@@ -11,7 +11,7 @@ use Pushery\WireKit\WireKit;
  *
  * There are two tab bars in this library and there is no version of that where two class
  * ladders are acceptable. `tabs` owns its selection in Alpine and shows a panel;
- * `tabs.list` + `tabs.tab` are the same bar with the selection on the SERVER and no
+ * `tabs.list` + `tabs.tab` are the same bar with the selection on the server and no
  * panels at all — different behavior, identical surface. A reader has to be unable to
  * tell them apart, and a second copy of six variant branches guarantees that they
  * eventually can.
@@ -19,7 +19,7 @@ use Pushery\WireKit\WireKit;
  * The failure would be quiet: nothing breaks, and the two bars simply drift a
  * border-radius apart over a few releases until someone sees them side by side.
  *
- * `resolveClasses` is deliberately NOT called here. It applies the developer's per-
+ * `resolveClasses` is deliberately not called here. It applies the developer's per-
  * component `scope` override, which is a question about a call site rather than about a
  * variant — the caller holds the scope and stays the one to apply it.
  */
@@ -78,14 +78,19 @@ final class TablistStyles
     /**
      * Read the `wrap` prop of `tabs` and `tabs.list`: off, at every width, or from a breakpoint.
      *
-     * A bare `wrap` arrives as `true` and an unbound `wrap="false"` as a string, so both
-     * spellings of the booleans are read as booleans; anything else names a breakpoint. A list or
-     * an object is neither: it is reported, and the bar keeps to one line.
+     * A bare `wrap` arrives as `true` and an unbound `wrap="false"` as a string, so a switch
+     * written as text reads as the switch, in every spelling BooleanProp reads (`off` and `no` as
+     * off); anything else names a breakpoint. A list or an object is neither: it is reported, and
+     * the bar keeps to one line.
      *
-     * @param  array<array-key, mixed>|object|bool|int|string|null  $wrap  whatever the tag carried
+     * A float that is no number says neither, and the bar keeps to one line, as without the prop:
+     * written as a text it would be the width "NAN", which PHP 8.5 warns on. Any other float reads
+     * as a whole number where it is one, and as its text otherwise.
+     *
+     * @param  array<array-key, mixed>|object|bool|int|float|string|null  $wrap  whatever the tag carried
      * @param  string  $component  the component whose prop it is, for the error message
      */
-    public static function wrapValue(array|object|bool|int|string|null $wrap, string $component): bool|string
+    public static function wrapValue(array|object|bool|int|float|string|null $wrap, string $component): bool|string
     {
         if (is_array($wrap) || is_object($wrap)) {
             StrictnessGate::reject($component, 'wrap', is_array($wrap) ? 'array' : class_basename($wrap), 'a switch or a width such as "md", not a list or an object', '');
@@ -93,12 +98,26 @@ final class TablistStyles
             return false;
         }
 
-        if ($wrap === null || $wrap === false || $wrap === 0 || $wrap === 'false' || $wrap === '0') {
+        if (is_float($wrap)) {
+            if (is_nan($wrap)) {
+                return false;
+            }
+
+            $wrap = floor($wrap) === $wrap && abs($wrap) < 2 ** 53 ? (int) $wrap : (string) $wrap;
+        }
+
+        if ($wrap === null || $wrap === false || $wrap === 0) {
             return false;
         }
 
-        if ($wrap === true || $wrap === 1 || $wrap === 'true' || $wrap === '1' || $wrap === '') {
+        if ($wrap === true || $wrap === 1 || (is_string($wrap) && trim($wrap) === '')) {
             return true;
+        }
+
+        $switch = is_string($wrap) ? BooleanProp::orNull($wrap) : null;
+
+        if ($switch !== null) {
+            return $switch;
         }
 
         return WireKit::validateProp($component, 'wrap', (string) $wrap, ['sm', 'md', 'lg', 'xl']);
@@ -107,7 +126,7 @@ final class TablistStyles
     /**
      * Classes every tab carries regardless of state.
      *
-     * The focus ring is drawn INSIDE the tab. A horizontal bar scrolls, so it clips on both
+     * The focus ring is drawn inside the tab. A horizontal bar scrolls, so it clips on both
      * axes, and its tabs fill its height and start at its edge: a ring drawn outside a tab would
      * lose its top and bottom on every tab, and its start side on the first, which would leave
      * the first tab of a bar a single vertical line to show the focus with. Room in the bar would part the
@@ -119,7 +138,7 @@ final class TablistStyles
      */
     public static function tab(string $variant, bool $vertical): string
     {
-        $base = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
+        $base = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)] aria-disabled:cursor-not-allowed cursor-pointer';
 
         $variantClasses = match (true) {
             // Vertical — left-align the content; the underline indicator moves to the
@@ -158,9 +177,15 @@ final class TablistStyles
         };
     }
 
-    /** Classes for every tab that is not selected. */
+    /**
+     * Classes for every tab that is not selected.
+     *
+     * A disabled tab carries `aria-disabled` rather than `disabled`, so it stays in the arrow keys,
+     * and `disabled:` never matches it: its dimming and its pointer read `aria-disabled`, and it
+     * does not brighten under the pointer.
+     */
     public static function tabInactive(): string
     {
-        return 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]';
+        return 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] aria-disabled:hover:text-[color:var(--color-wk-text-muted)]';
     }
 }

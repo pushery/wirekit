@@ -30,7 +30,7 @@ export default function wirekitDropdown(config = {}) {
         _coordination: null,
         // Floating UI autoUpdate teardown handle (set in show(), called in close()
         // + destroy()). Keeping the panel pinned to its trigger on scroll/resize
-        // attaches ancestor-scroll + resize listeners; they MUST be torn down on every
+        // attaches ancestor-scroll + resize listeners; they must be torn down on every
         // close path or they leak.
         _stopAutoUpdate: null,
         // Puts the panel's id back after a morph's patch takes it off (see _keepPanelId()).
@@ -46,8 +46,8 @@ export default function wirekitDropdown(config = {}) {
             // The panel's id is written here rather than bound in the template.
             //
             // An `x-bind:id="panelId"` on the panel reads the value out of this scope,
-            // which is correct across the TELEPORT (Alpine keeps the scope; `closest()`
-            // would not) and wrong across a Livewire MORPH: the morph re-evaluates the
+            // which is correct across the teleport (Alpine keeps the scope; `closest()`
+            // would not) and wrong across a Livewire morph: the morph re-evaluates the
             // binding in a scope that no longer has `panelId`, and it throws
             // `panelId is not defined`. A JavaScript error during a morph ends evaluation
             // at that point, so whatever the same pass would have done next does not
@@ -59,7 +59,7 @@ export default function wirekitDropdown(config = {}) {
             // belong to. A morph still patches the panel against its template, and the
             // template carries no id, so the update takes the id off; `_keepPanelId()`
             // puts it back.
-            // AFTER the tick, not during init(). Alpine walks a component's
+            // After the tick, not during init(). Alpine walks a component's
             // children only once the parent's init() has returned, and the panel
             // lives inside a child `<template x-teleport>` — so at init() time
             // `$refs.panel` is not registered yet, the guard in _applyPanelId()
@@ -229,9 +229,9 @@ export default function wirekitDropdown(config = {}) {
         /**
          * Close dropdown and return focus to trigger.
          *
-         * The leading `if (!this.open) return;` guard is REQUIRED, not optional.
+         * The leading `if (!this.open) return;` guard is required, not optional.
          * Every <x-wirekit::dropdown> wrapper carries an `x-on:click.outside="close()"`
-         * listener that fires for EVERY dropdown on EVERY click anywhere on the page.
+         * listener that fires for every dropdown on every click anywhere on the page.
          * Without the guard, three dropdowns + one click on an unrelated input means
          * three close() invocations, three trigger.focus() calls, and the last one
          * wins — silently stealing focus from whatever element the user actually
@@ -250,7 +250,7 @@ export default function wirekitDropdown(config = {}) {
             this._resetTypeAhead();
 
             // Was the user's focus inside the menu when it closed? The answer decides
-            // whether focus is OURS to move, and it has to be read BEFORE anything hides.
+            // whether focus is ours to move, and it has to be read before anything hides.
             //
             // Escape, Tab and activating an item all close with focus inside — there the
             // menu owes focus back to its trigger (WCAG 2.4.3), or a keyboard user
@@ -266,14 +266,14 @@ export default function wirekitDropdown(config = {}) {
             // does not jump to the trigger when the dropdown closes — the trigger
             // is already in view (the user just clicked it) and browser scroll
             // alignment would otherwise cause a visible jump on long pages.
-            // `$refs.trigger` FIRST, then the DOM marker — and the fallback is the one that
+            // `$refs.trigger` first, then the DOM marker — and the fallback is the one that
             // actually fires. The trigger element declares its own `x-data`, which makes it a
             // scope root, and an `x-ref` registers into the closest scope; so that ref
             // belongs to the trigger rather than to this component.
             //
-            // `$root`, NOT `$el`. `close()` is reached from handlers on more than one element:
+            // `$root`, not `$el`. `close()` is reached from handlers on more than one element:
             // `click.outside` sits on the wrapper, where the two are the same — but `Tab`
-            // arrives through `handleKeydown`, which is bound on the PANEL, and there Alpine
+            // arrives through `handleKeydown`, which is bound on the panel, and there Alpine
             // binds `$el` to the panel. The panel does not contain the trigger, so the lookup
             // would return null and Tab would silently stop returning focus. `$root` is the
             // x-data element whichever child dispatched the event.
@@ -357,14 +357,14 @@ export default function wirekitDropdown(config = {}) {
                     // nothing at all — no activation, no close, no movement — while the menu
                     // pattern and this component's own keyboard table both promise both keys.
                     //
-                    // Activating EXPLICITLY rather than by removing the preventDefault, because
+                    // Activating explicitly rather than by removing the preventDefault, because
                     // the rows are not all buttons: `dropdown.item` renders an <a> whenever it
                     // is given an href, and a space on a focused link does not activate it — it
                     // scrolls the page, behind an open menu. One synthetic click covers both
                     // tags, and it is the same event a mouse click sends, so the wrapper's
                     // delegated close() runs exactly as it does for Enter.
                     //
-                    // Nothing focused inside the menu means nothing to activate: break WITHOUT
+                    // Nothing focused inside the menu means nothing to activate: break without
                     // preventDefault so the key keeps whatever meaning it had. That is the case
                     // when focus is still on the trigger — this handler sits on the wrapper the
                     // trigger lives in, and swallowing Space there would stop the trigger's own
@@ -462,12 +462,12 @@ export default function wirekitDropdown(config = {}) {
         },
 
         /**
-         * Get all focusable menu items (not disabled) at THIS level.
+         * Get all focusable menu items (not disabled) at this level.
          *
          * Items nested inside a submenu's child panel (`[data-wk-submenu-panel]`)
          * are excluded so parent-level roving focus (ArrowUp/Down/Home/End) stays
          * flat — the submenu owns its own level via wirekitSubmenu. The submenu
-         * PARENT item is itself a `[role="menuitem"]` that is NOT inside a submenu
+         * parent item is itself a `[role="menuitem"]` that is not inside a submenu
          * panel, so it is correctly included at this level.
          *
          * @returns {HTMLElement[]}
@@ -476,11 +476,11 @@ export default function wirekitDropdown(config = {}) {
             const panel = this.$refs.panel;
             if (!panel) return [];
 
-            // All THREE menu roles, and the two extra ones are not decoration: an
+            // All three menu roles, and the two extra ones are not decoration: an
             // attribute-VALUE selector is an exact match, so `[role="menuitem"]` does not
             // match `menuitemradio` or `menuitemcheckbox` — the roles this component's own
             // `dropdown.radio-item` and `dropdown.checkbox-item` render. Without them a menu
-            // built from those rows would give an EMPTY list, so `_focusFirstItem()` would
+            // built from those rows would give an empty list, so `_focusFirstItem()` would
             // focus nothing and the arrow keys would have nothing to walk.
             return Array.from(
                 panel.querySelectorAll(

@@ -1,6 +1,6 @@
 {{-- optimistic-ui: supported
      The textbook case, and it needs the accessible name built in the browser:
-     a form chosen on the server names the count the SERVER saw, so an
+     a form chosen on the server names the count the server saw, so an
      optimistic flip would show six and announce five, and the rollback would
      restore a number the reader was never told about. So the plural forms and
      the locale travel in, and Intl.PluralRules chooses.
@@ -16,7 +16,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'emoji' => null,
@@ -35,12 +35,12 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reaction', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false, 'reaction', 'active');
@@ -49,7 +49,7 @@
     $users = \Pushery\WireKit\Support\ListProp::renumbered($users, 'reaction', 'users');
     $userList = is_array($users) ? $users : [];
 
-    // The server-side name stays the FIRST paint and the no-JS answer. It is
+    // The server-side name stays the first paint and the no-JS answer. It is
     // replaced by the client's the moment Alpine runs, and only when this
     // component is optimistic — a reaction that cannot change has no reason to
     // compute its own name.
@@ -81,7 +81,7 @@
     ]);
 
     $baseClasses = WireKit::resolveClasses('reaction', 'base', implode(' ', [
-        'inline-flex items-center gap-x-1',
+        'inline-flex items-center gap-x-[var(--gap-wk-xs)]',
         'h-7 px-2',
         'rounded-[var(--radius-wk-full)]',
         'border-[length:var(--border-wk-width)]',
@@ -113,10 +113,10 @@
             'hover:bg-[var(--color-wk-bg-elevated)]',
         ]);
 
-    // Page-unique, and NOT derived from the content. `md5($emoji . implode(…, $userList))`
+    // Page-unique, and not derived from the content. `md5($emoji . implode(…, $userList))`
     // gave two identical reactions on one page the same id — the same emoji with the same
     // people is the ordinary case, not an edge one — so the second button's
-    // `aria-describedby` resolved to the FIRST one's list, and axe reported a duplicate id.
+    // `aria-describedby` resolved to the first one's list, and axe reported a duplicate id.
     // Same helper, same reason, as ticker's `$tickerId`.
     $reactionUsersId = \Pushery\WireKit\Support\DomId::unique(null, 'reaction-users-');
 @endphp
@@ -126,7 +126,7 @@
          binds to that one boolean, so the count and the name follow a single
          rollback. The button sits inside the layer to reach its run(). --}}
 <span x-data="wirekitReaction({{ $reactionOptimistic }})" class="relative inline-flex">
-<span x-data="wirekitOptimistic({{ $reactionLayer }})" class="inline-flex items-center gap-x-1">
+<span x-data="wirekitOptimistic({{ $reactionLayer }})" class="inline-flex items-center gap-x-[var(--gap-wk-xs)]">
 @endif
 <button
     type="button"
@@ -142,7 +142,7 @@
     @endif
     {{-- `wk-state-button` is the marker the stylesheet's forced-colors rule frames a pressed
          reaction by: its tint and its border are what that mode repaints alike on every reaction.
-         aria-label via merge so a caller's aria-label OVERRIDES the default —
+         aria-label via merge so a caller's aria-label overrides the default —
          a hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins). --}}
     {{ $attributes->except(['type', 'aria-pressed'])->merge(['aria-label' => $ariaLabel])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-state-button', 'wk-touch-row', $baseClasses, $stateClasses])) }} data-wk-sr-host
@@ -156,11 +156,11 @@
     @elseif($count > 0)
         <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums">{{ \Pushery\WireKit\Support\LocalizedNumber::count($count) }}</span>
     @endif
-    @if(count($userList) > 0)
+    @wirekitLast(count($userList) > 0)
         <span id="{{ $reactionUsersId }}" class="sr-only">
             {{ implode(', ', $userList) }}
         </span>
-    @endif
+    @endwirekitLast
 </button>@if($reactionOptimistic)
     {{-- Pre-existing and empty: a live region that arrives with its text is a
          new node, and nothing is announced at all. --}}

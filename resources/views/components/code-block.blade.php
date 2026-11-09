@@ -5,7 +5,7 @@
     'language' => null,
     'filename' => null,
     'copy' => false,
-    // The name of the scroll region, and the switch that makes it a LANDMARK at all.
+    // The name of the scroll region, and the switch that makes it a landmark at all.
     //
     // `role="region"` plus a name is a landmark, and twenty landmarks called "PHP code" are
     // twenty indistinguishable entries in a screen reader's rotor — axe reports it as
@@ -13,7 +13,7 @@
     // language is identical on every row and so cannot tell them apart.
     //
     // A language-derived name filling this in would make the duplicate-landmark case the
-    // DEFAULT one and naming the escape. So it is the other way round: with no label the
+    // default one and naming the escape. So it is the other way round: with no label the
     // block is `tabindex="0"` and nothing else — still keyboard-reachable (WCAG 2.1.1),
     // deliberately not a destination.
     //
@@ -36,7 +36,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('code-block', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $copy = BooleanProp::from($copy, false, 'code-block', 'copy');
@@ -88,18 +88,18 @@
              srMessage is the SR-only announcement; copied drives the icon swap.
              Symmetric success/failure announcements: success path sets both; error path sets only srMessage. --}}
         <div
-            class="flex items-center justify-between gap-2 border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
+            class="flex items-center justify-between gap-[var(--gap-wk-sm)] border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
             {{-- The copy lives in resources/js/components/code-block.js: a promise
                  chain with two arrow-function callbacks, which Alpine's CSP build
-                 parses none of. Unlike clipboard-button this one WAITS for the
+                 parses none of. Unlike clipboard-button this one waits for the
                  promise, because the outcome is announced in a live region and
                  announcing a success that did not happen is worse than a moment's
                  delay. --}}
             @if($copy) x-data="wirekitCodeBlock({ copiedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Code copied to clipboard')) }}, failedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy failed')) }} })" @endif
         >
             @if($filename)
-                {{-- Filename header truncates from the START (leading ellipsis) on narrow
-                     viewports so the actual file NAME stays visible while the parent path
+                {{-- Filename header truncates from the start (leading ellipsis) on narrow
+                     viewports so the actual file name stays visible while the parent path
                      collapses — `app/Providers/AppServiceProvider.php` becomes
                      `…rs/AppServiceProvider.php` instead of `app/Providers/Ap…`. The CSS
                      trick is `direction: rtl` on the outer span (clips at the left) with
@@ -111,26 +111,28 @@
                      always announce the full name. --}}
                 <span
                     class="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[length:var(--text-wk-xs,0.75rem)] text-[color:var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]"
-                    style="direction: rtl; text-align: left; text-overflow: ellipsis;"
+                    style="direction: rtl; text-overflow: ellipsis;"
+                    data-wk-code-filename
                     title="{{ \Pushery\WireKit\Support\SlotContent::textOf($filename) }}"
                 ><span style="unicode-bidi: plaintext;">{{ $filename }}</span></span>
             @else
                 <span class="flex-1"></span>
             @endif
 
-            @if($copy)
+            @wirekitLast($copy)
                 <button
                     type="button"
                     x-on:click="copy()"
-                    class="wk-touch-target shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1 rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-touch-target shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-[var(--space-wk-xs)] rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     aria-label="{{ __('wirekit::Copy to clipboard') }}"
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
                 >
-                    <template x-if="!copied">
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-                        </svg>
-                    </template>
+                    {{-- The resting icon is in the markup from the first paint, so the button has its size before
+                         Alpine starts and the header does not jump when it does. The check stays in its template,
+                         which renders nothing until Alpine starts. --}}
+                    <svg x-show="!copied" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                    </svg>
                     <template x-if="copied">
                         <svg class="h-4 w-4 text-[color:var(--color-wk-success-text)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -140,12 +142,12 @@
                 {{-- Live region must be in DOM at first paint; x-text toggles content so SR announces on copy success / failure.
                      Polite (not assertive) so the announcement does not interrupt other speech. --}}
                 <span class="sr-only" role="status" aria-live="polite" x-text="srMessage"></span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
     {{-- The <code> is the scroller: the wrapper above is overflow-hidden, and a line
-         longer than the container scrolls HERE. Without this wiring that scroll happens
+         longer than the container scrolls here. Without this wiring that scroll happens
          by pointer only, so a keyboard-only or switch user cannot reach the hidden text
          at all (WCAG 2.1.1, Level A). The annotation is the generic-scroll-region shape
          this library prescribes for itself, the same one scroll-area uses.
@@ -171,8 +173,12 @@
          with no title produces exactly it. A blank name is no name.
 
          `wrap` breaks the lines, so nothing scrolls and the stop has nothing to reach: the
-         block then takes no tabindex. A name still makes it a landmark. --}}
-    <pre data-wk-prose-skip @class([$preClasses])><code data-wk-prose-skip
+         block then takes no tabindex. A name still makes it a landmark.
+
+         Code runs from the left whatever the page does: on a page that reads from the right an
+         inherited direction sets each line against the right edge, and the bidi algorithm carries
+         the punctuation that closes a line to its other end. The header above follows the page. --}}
+    <pre data-wk-prose-skip dir="ltr" @class([$preClasses])><code data-wk-prose-skip
         @class([$codeClasses])
         @unless($wrap) tabindex="0" @endunless
         @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif

@@ -6,7 +6,7 @@
     'size' => null,
     'accent' => false,
     'tracking' => 'normal',
-    'break' => null,        // where an unbroken name may wrap: normal | anywhere | all. null → the default rules, no class
+    'break' => null,        // where an unbroken name may wrap: normal | anywhere | all | address, which breaks an email address, a host or a URL at its seams first. null → the default rules, no class
     // Shrinks the heading from its size down to a floor so it takes the fewest lines the floor
     // needs: true for the `--text-wk-fit-floor` token, a length such as `0.75em` for a floor of its
     // own, null or false for none.
@@ -27,7 +27,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('heading', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $accent = BooleanProp::from($accent, false, 'heading', 'accent');
@@ -82,13 +82,15 @@
 
     // A heading often carries a name somebody typed — a template, a repository, a channel —
     // and such names tend to have no point a browser may break at, so they run out of the
-    // heading instead. The same three values and the same literal classes as `text`, so the two
+    // heading instead. The same values and the same literal classes as `text`, so the two
     // cannot drift apart: arbitrary properties rather than the named overflow-wrap utilities,
     // which only arrived in Tailwind 4.1. `anywhere` also counts toward the min-content width,
-    // which is what lets a heading wrap inside a flex row.
-    $breakClasses = match ($break === null ? null : WireKit::validateProp('heading', 'break', (string) $break, ['normal', 'anywhere', 'all'])) {
+    // which is what lets a heading wrap inside a flex row. `address` marks the seams of an
+    // address as break opportunities first (Support\AddressBreaks).
+    $breakMode = $break === null ? null : WireKit::validateProp('heading', 'break', (string) $break, ['normal', 'anywhere', 'all', 'address']);
+    $breakClasses = match ($breakMode) {
         'normal' => '[overflow-wrap:normal] [word-break:normal]',
-        'anywhere' => '[overflow-wrap:anywhere]',
+        'anywhere', 'address' => '[overflow-wrap:anywhere]',
         'all' => '[word-break:break-all]',
         null => '',
     };
@@ -108,8 +110,9 @@
     ]), $scope);
 
     // The fitted text stands inside the heading, so the heading's size is the largest it takes.
+    $content = $breakMode === 'address' ? \Pushery\WireKit\Support\AddressBreaks::mark($slot) : $slot;
     $fitted = $fitFloor === false ? null : \Pushery\WireKit\Support\FitText::box(
-        $slot,
+        $content,
         new \Illuminate\View\ComponentAttributeBag(array_filter(['style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null])),
     );
 
@@ -135,7 +138,7 @@
          A fitted heading takes the rest of the row, since the box it fits its text in takes the
          heading's width; any other stands as wide as its text, with the help after it. --}}
     <{{ $rowTag }} data-wk-prose-skip data-wk-heading-row class="{{ trim(($rowTag === 'span' ? 'inline-flex' : 'flex').' items-center gap-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
-        <{{ $tag }} data-wk-prose-skip {{ $attributes->except('class')->class([$classes, 'min-w-0', 'flex-1' => $fitted !== null]) }}>{{ $fitted ?? $slot }}</{{ $tag }}>
+        <{{ $tag }} data-wk-prose-skip {{ $attributes->except('class')->class([$classes, 'min-w-0', 'flex-1' => $fitted !== null]) }}>{{ $fitted ?? $content }}</{{ $tag }}>
         @include('wirekit::components.partials.field-help', [
             'helpText' => $help,
             'helpName' => \Pushery\WireKit\Support\SlotContent::plain($slot),
@@ -144,4 +147,4 @@
             'helpField' => (string) $attributes->get('id', ''),
         ])
     </{{ $rowTag }}>@else
-<{{ $tag }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $fitted ?? $slot }}</{{ $tag }}>@endif
+<{{ $tag }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $fitted ?? $content }}</{{ $tag }}>@endif

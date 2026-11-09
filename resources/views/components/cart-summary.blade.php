@@ -3,7 +3,7 @@
      this component whose result could be shown early; the optimistic surface of a cart is the
      quantity field, which belongs to `cart-item`. --}}
 @props([
-    // The amounts. ALL of them come from the application, and none is derived here — the same
+    // The amounts. All of them come from the application, and none is derived here — the same
     // rule `cart-item` follows for `lineTotal`, and for the same reason: totals are where tax
     // rules, tiered pricing, gift cards and currency rounding live, and a library that guessed
     // at them would be wrong in every second shop.
@@ -23,7 +23,7 @@
     // The locale every amount is written in, handed to each `price` with the currency. Unset, an
     // amount follows the application's locale, as a `price` of its own would.
     'locale' => null,
-    // Replaces the shipping AMOUNT with a phrase — "Calculated at checkout", "Free over €50".
+    // Replaces the shipping amount with a phrase — "Calculated at checkout", "Free over €50".
     // Wins over `shipping` when both are given, because a shop that says both means the words.
     'shippingNote' => null,
     // Accessible name for the panel. It is a `<section>` with a name rather than a bare box, so
@@ -41,7 +41,7 @@
     use Pushery\WireKit\Support\NumericProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade hands `minor-units="false"` through as the STRING "false", which is truthy —
+    // Blade hands `minor-units="false"` through as the string "false", which is truthy —
     // so `minor-units="false"` does not silently read amounts as cents.
     $minorUnits = BooleanProp::from($minorUnits, false, 'cart-summary', 'minorUnits');
 
@@ -85,7 +85,7 @@
     ]), $scope);
 
     // The grand total is the one row that is read before anything else on the panel, so it is
-    // emphasized on TWO channels rather than one: size and weight. Color alone would be the
+    // emphasized on two channels rather than one: size and weight. Color alone would be the
     // color-only signal this repository bans for prices.
     // `--text-wk-lg` rather than `-md`: the parts render at `md`, so `md` here would leave the
     // two channels at one, the same size with only the weight different, which is the
@@ -126,13 +126,13 @@
         @if($shippingNote !== null || $shipping !== null)
             <x-wirekit::data-list.item :label="__('wirekit::Shipping')">
                 <span data-wk-cart-summary-shipping>
-                    @if($shippingNote !== null)
+                    @wirekitLast($shippingNote !== null)
                         {{ $shippingNote }}
                     @elseif($freeShipping)
                         {{ __('wirekit::Free') }}
                     @else
                         <x-wirekit::price :amount="$shipping" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="sm" />
-                    @endif
+                    @endwirekitLast
                 </span>
             </x-wirekit::data-list.item>
         @endif
@@ -146,7 +146,7 @@
         @endif
 
         {{-- Rows the application adds — a gift card, a second tax rate, a deposit. They sit
-             BEFORE the rule, because the rule is what separates the parts from the whole. Each is a
+             before the rule, because the rule is what separates the parts from the whole. Each is a
              `data-list.item`, rendered before this list and so without it above, and it takes the
              summary layout from this component (Support\AwareProp), so it stands in the same columns
              as the rows above without an attribute of its own. --}}
@@ -171,9 +171,9 @@
         </x-wirekit::data-list>
     @endif
 
-    @if(isset($actions) && $actions->hasActualContent())
+    @wirekitLast(isset($actions) && $actions->hasActualContent())
         <div class="flex flex-col gap-[var(--gap-wk-sm)]">
             {{ $actions }}
         </div>
-    @endif
+    @endwirekitLast
 </section>

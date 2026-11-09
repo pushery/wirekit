@@ -24,7 +24,7 @@
     // Padding prevents node hover backgrounds from overlapping container borders.
     $classes = WireKit::resolveClasses('tree-view', 'base', implode(' ', [
         // `wk-tree-view` is a marker, not a styled class, and it is load-bearing:
-        // the library's reduced-motion clamp matches a `wk-` CLASS TOKEN and its
+        // the library's reduced-motion clamp matches a `wk-` class token and its
         // descendants — deliberately a token and not a substring, because
         // matching the attribute as a substring once clamped a whole
         // application's animations through `bg-[var(--color-wk-bg)]` on its
@@ -72,8 +72,8 @@
     @focusin="rove()"
     @keydown.arrow-down.prevent="focusNext()"
     @keydown.arrow-up.prevent="focusPrev()"
-    @keydown.arrow-right.prevent="expandOrChild()"
-    @keydown.arrow-left.prevent="collapseOrParent()"
+    @keydown.arrow-right.prevent="$wkInlineStep($event) === 1 ? expandOrChild() : collapseOrParent()"
+    @keydown.arrow-left.prevent="$wkInlineStep($event) === 1 ? expandOrChild() : collapseOrParent()"
     @keydown.home.prevent="focusFirst()"
     @keydown.end.prevent="focusLast()"
     @click="selectClicked($event)"

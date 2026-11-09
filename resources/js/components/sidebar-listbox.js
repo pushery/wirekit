@@ -1,12 +1,12 @@
 /**
  * WireKit Sidebar Listbox — the keyboard model for a sidebar in selection mode.
  *
- * A navigating sidebar and a SELECTING one are two different ARIA contracts, and the
+ * A navigating sidebar and a selecting one are two different ARIA contracts, and the
  * difference is not cosmetic. A navigation column is a list of links: each one is in the
  * tab order, Enter follows it, and the current page is marked `aria-current`. A selection
- * column is one control holding many choices: the CONTAINER is in the tab order once, the
+ * column is one control holding many choices: the container is in the tab order once, the
  * arrows move an `aria-activedescendant` marker without moving focus, and the chosen row
- * is marked `aria-selected`. Emitting both would announce a page you are on AND a value
+ * is marked `aria-selected`. Emitting both would announce a page you are on and a value
  * you have picked, which are not the same claim.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
@@ -33,7 +33,7 @@ export default function wirekitSidebarListbox(config = {}) {
         selectedValue: typeof config.value === 'string' ? config.value : null,
 
         /**
-         * Set by whichever route moves the marker WITH THE POINTER, and cleared by the one
+         * Set by whichever route moves the marker with the pointer, and cleared by the one
          * `markActive()` call that follows it.
          *
          * It sits here rather than at the call site because the thing being suppressed is a
@@ -99,7 +99,7 @@ export default function wirekitSidebarListbox(config = {}) {
         listboxOptions() {
             // `$root`, not `$el`. Today every caller of this reaches it from a handler on the
             // container itself, so the two are the same element — but `selectOption()` is
-            // called from a directive on an OPTION, and one refactor moving a call across
+            // called from a directive on an option, and one refactor moving a call across
             // that line would search inside a row and find nothing. The same shape made a
             // sibling component's gate inert while every markup assertion stayed green.
             const root = this.$root || this.$el;

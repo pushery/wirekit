@@ -47,7 +47,7 @@
     use Pushery\WireKit\WireKit;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -61,7 +61,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('swatch-group', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $multiple = BooleanProp::from($multiple, false, 'swatch-group', 'multiple');
@@ -222,12 +222,9 @@
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',
         'peer-focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
-        // The same ring for a swatch the arrow keys reached: WebKit does not count that focus as
-        // `:focus-visible`, and the scripts mark the page while it lasts (utils/arrow-focus.js).
-        'in-data-[wk-arrow-focus]:peer-focus:ring-[length:var(--ring-wk-width)]',
-        'in-data-[wk-arrow-focus]:peer-focus:ring-offset-[length:var(--ring-wk-offset)]',
-        'in-data-[wk-arrow-focus]:peer-focus:ring-[var(--color-wk-ring)]',
-        'in-data-[wk-arrow-focus]:peer-focus:ring-offset-[var(--color-wk-ring-offset)]',
+        // A swatch the arrow keys reached rings the same: WebKit does not count that focus as
+        // `:focus-visible`, the scripts mark the page while it lasts, and the stylesheet draws the
+        // ring on the swatch, which carries `data-wk-arrow-ring` (utils/arrow-focus.js).
         'peer-disabled:opacity-[var(--opacity-wk-disabled)]',
     ]);
 
@@ -281,8 +278,8 @@
                 {{-- A pill draws the name it is given and is hidden from assistive technology: the
                      option's name follows it, visually hidden, with the language and the word of an
                      unavailable value in it. --}}
-                <x-wirekit::swatch :color="$swatch['color']" :image="$swatch['image']" :unavailable="! $swatch['available']" :size="$size" :shape="$shape" :scope="$scope" :label="$shape === 'pill' ? $swatch['label'] : null" :aria-hidden="$shape === 'pill' ? 'true' : null" :lang="$shape === 'pill' ? $swatch['lang'] : null" class="{{ $swatchClasses }}" />
-                @if($labels === 'below' && $shape !== 'pill')
+                <x-wirekit::swatch :color="$swatch['color']" :image="$swatch['image']" :unavailable="! $swatch['available']" :size="$size" :shape="$shape" :scope="$scope" :label="$shape === 'pill' ? $swatch['label'] : null" :aria-hidden="$shape === 'pill' ? 'true' : null" :lang="$shape === 'pill' ? $swatch['lang'] : null" data-wk-arrow-ring class="{{ $swatchClasses }}" />
+                @wirekitLast($labels === 'below' && $shape !== 'pill')
                     @if($swatch['available'])
                         <span class="{{ $nameClasses }}"@if($swatch['lang'] !== null) lang="{{ $swatch['lang'] }}"@endif>{{ $swatch['label'] }}</span>
                     @else
@@ -293,16 +290,16 @@
                 @else
                     {{-- An unavailable option's name carries the language on its label inside. --}}
                     <span class="sr-only"@if($swatch['lang'] !== null && $swatch['available']) lang="{{ $swatch['lang'] }}"@endif>{{ $swatch['name'] }}</span>
-                @endif
+                @endwirekitLast
             </label>
         @endforeach
     </div>
 
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing. --}}
-    @if($error)
+    @wirekitLast($error)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @endwirekitLast
 </div>

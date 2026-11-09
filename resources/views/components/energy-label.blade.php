@@ -98,8 +98,8 @@
     @else
         <span class="inline-flex">@include('wirekit::components.partials.energy-label-image', $energyImage)<span class="sr-only">{{ $statement }}</span></span>
     @endif
-    @if(filled($sheet))
+    @wirekitLast(filled($sheet))
         <x-wirekit::link :href="$sheet" :target="$target" size="sm">{{ __('wirekit::Product information sheet') }}</x-wirekit::link>
-    @endif
+    @endwirekitLast
 </span>
 @endif

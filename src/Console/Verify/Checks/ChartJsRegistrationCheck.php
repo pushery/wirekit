@@ -22,8 +22,8 @@ final class ChartJsRegistrationCheck extends VerifyCheck
 
     /**
      * The "config says chartjs but the JS bundle never registered it"
-     * gap: developer flipped `charts.library` to `chartjs` AND ran
-     * `npm install chart.js` BUT didn't add the
+     * gap: developer flipped `charts.library` to `chartjs` and ran
+     * `npm install chart.js` but didn't add the
      * `Chart.register(...registerables)` line to `resources/js/app.js`.
      * The chart component renders + mounts; the Alpine adapter runs, and
      * no chart draws: with nothing assigning `window.Chart` each one shows a
@@ -31,13 +31,13 @@ final class ChartJsRegistrationCheck extends VerifyCheck
      * and with the global assigned but no controllers registered Chart.js
      * throws in the console.
      *
-     * Doctor catches this UPSTREAM by scanning `resources/js/app.js`
+     * Doctor catches this upstream by scanning `resources/js/app.js`
      * for the canonical registration pattern. WARN with the actionable
      * snippet when:
      *   - `config('wirekit.charts.library') === 'chartjs'` (developer
      *     enabled the chartjs adapter)
      *   - `resources/js/app.js` exists
-     *   - The file does NOT contain BOTH an `import ... chart.js` AND
+     *   - The file does not contain both an `import ... chart.js` and
      *     a `Chart.register(` call.
      *
      * Silently skip in every other scenario:
@@ -110,7 +110,7 @@ final class ChartJsRegistrationCheck extends VerifyCheck
      *
      * Deliberately a shallow filename check rather than a parse. The question is
      * only "is there another route by which Chart reaches the page", and a false
-     * NEGATIVE here just shows the warning — while a false positive costs
+     * negative here just shows the warning — while a false positive costs
      * a developer a hunt for a defect that does not exist.
      */
     private function providesChartUmdBuild(): bool

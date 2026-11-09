@@ -11,7 +11,7 @@
  * that cannot hold statements has to call something, and something has to be in
  * scope to be called.
  *
- * The target is found by walking UP from the button, not by querying the
+ * The target is found by walking up from the button, not by querying the
  * document: a page may hold several replayable demos, and a document-wide lookup
  * would reset whichever one happened to come first.
  *
@@ -25,7 +25,7 @@
  * dozens of previews that is the whole page again, per replay.
  *
  * `docs/components/replay-button.md` described that outcome accurately and then
- * asked the DEVELOPER to repair it from the `wirekit:replayed` listener. Making
+ * asked the developer to repair it from the `wirekit:replayed` listener. Making
  * every developer write the same restore is the workaround this library is not
  * allowed to ship: the factory owns the swap, so the factory owns the focus.
  * The event still fires afterwards, so a listener that wants focus somewhere
@@ -49,14 +49,14 @@ export default function wirekitReplayButton() {
 
             const source = root.dataset.replaySource;
 
-            // An ABSENT snapshot means nothing was captured; an EMPTY one is a
+            // An absent snapshot means nothing was captured; an empty one is a
             // legitimate snapshot of empty content. The distinction is why this
             // reads `undefined` rather than falsiness.
             if (source === undefined) {
                 return;
             }
 
-            // Both readings happen BEFORE the swap, because afterwards this node
+            // Both readings happen before the swap, because afterwards this node
             // is detached and neither question has an answer any more.
             //
             // `document.activeElement === button` is the whole gate on purpose: a
@@ -89,7 +89,7 @@ export default function wirekitReplayButton() {
         /**
          * Where this button sits among the replay buttons inside `root`.
          *
-         * The rebuilt button is a NEW node — the snapshot is a string, so identity
+         * The rebuilt button is a new node — the snapshot is a string, so identity
          * cannot survive the swap and the position is what carries over. A demo
          * with one button, which is every documented shape, gets 0 either way.
          *
@@ -118,7 +118,7 @@ export default function wirekitReplayButton() {
          * demo and button from one string precisely so this cannot happen, but the
          * factory cannot assume the reader followed it. Landing on the root with
          * `tabindex="-1"` keeps the reader at the demo instead of at `<body>`;
-         * `-1` is programmatically focusable and NOT tabbable, so it adds no tab
+         * `-1` is programmatically focusable and not tabbable, so it adds no tab
          * stop. Same shape as `overlay.js`'s `makeFocusable()`.
          *
          * @param {Element} root

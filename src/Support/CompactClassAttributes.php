@@ -45,6 +45,16 @@ final class CompactClassAttributes
      */
     private const SWITCH = '$__wkCompact';
 
+    /**
+     * Where a routed call's trailing arguments go, filled in once the whole tag is read: the
+     * element's field flag, and the classes it carries beside the list a call maps. The marker
+     * holds the words of the call's own list when that list is a literal, up to `ARGS_END`: the
+     * call reads those in its list already and is not handed them a second time.
+     */
+    private const ARGS = "\0wk-args:";
+
+    private const ARGS_END = "\0";
+
     /** The template with every class list of its HTML elements routed through CompactClasses. */
     public static function rewrite(string $template): string
     {
@@ -142,6 +152,9 @@ final class CompactClassAttributes
             ? '\\Pushery\\WireKit\\Support\\CompactClasses::isField((string) '.trim(substr($name[0], 2, -2)).')'
             : in_array(strtolower($name[0]), ['input', 'select', 'textarea'], true);
         $out = '<'.$name[0];
+        // The classes the element carries under their own names, from every part that writes or
+        // sets one, which each call over a part of its classes reads beside that part.
+        $context = [];
 
         while (true) {
             if (preg_match('/\G\s+/', $template, $space, 0, $i) === 1) {
@@ -154,11 +167,11 @@ final class CompactClassAttributes
             }
 
             if ($template[$i] === '>') {
-                return [$i + 1, $out.'>'];
+                return [$i + 1, self::finish($out, $field, $context).'>'];
             }
 
             if (substr($template, $i, 2) === '/>') {
-                return [$i + 2, $out.'/>'];
+                return [$i + 2, self::finish($out, $field, $context).'/>'];
             }
 
             if (substr($template, $i, 4) === '{{--') {
@@ -173,7 +186,12 @@ final class CompactClassAttributes
                 $raw = substr($template, $i, 3) === '{!!';
                 $end = $raw ? self::after($template, '!!}', $i + 3) : self::after($template, '}}', $i + 2);
                 $echo = substr($template, $i, $end - $i);
-                $out .= $component ? $echo : self::bagEcho($echo, $field);
+
+                if (! $component) {
+                    $context = [...$context, ...self::literalWords($echo)];
+                }
+
+                $out .= $component ? $echo : self::bagEcho($echo);
                 $i = $end;
 
                 continue;
@@ -196,8 +214,12 @@ final class CompactClassAttributes
                         return null;
                     }
 
+                    if (! $component && strtolower($directive[1]) === 'class') {
+                        $context = [...$context, ...self::literalWords(substr($template, $open + 1, $close - $open - 2))];
+                    }
+
                     $out .= ! $component && strtolower($directive[1]) === 'class'
-                        ? '@class('.self::routed('list', substr($template, $open + 1, $close - $open - 2), $field).')'
+                        ? '@class('.self::routed('list', substr($template, $open + 1, $close - $open - 2)).')'
                         : substr($template, $i, $close - $i);
                     $i = $close;
 
@@ -234,8 +256,12 @@ final class CompactClassAttributes
 
                 $value = substr($template, $j + 1, $close - $j - 2);
 
+                if (! $component) {
+                    $context = [...$context, ...self::classesWritten($attribute[0], $value)];
+                }
+
                 if (! $component && $quote === '"' && strtolower($attribute[0]) === 'class') {
-                    $value = self::classValue($value, $field);
+                    $value = self::classValue($value);
                 }
 
                 $out .= $attribute[0].$equals[0].$quote.$value.$quote;
@@ -254,7 +280,7 @@ final class CompactClassAttributes
     }
 
     /** A `class` attribute's value with its text and its echoes routed through CompactClasses. */
-    private static function classValue(string $value, bool|string $field): string
+    private static function classValue(string $value): string
     {
         // A directive inside the value is compiled into PHP around the text, which a call over the
         // text would cut apart.
@@ -272,11 +298,11 @@ final class CompactClassAttributes
 
         foreach ($parts as $part) {
             if (str_starts_with($part, '{{') || str_starts_with($part, '{!!')) {
-                $out .= self::echoValue($part, $field);
+                $out .= self::echoValue($part);
             } elseif (trim($part) === '') {
                 $out .= $part;
             } else {
-                $out .= '{!! '.self::routed('map', '\''.str_replace(['\\', "'"], ['\\\\', "\\'"], $part).'\'', $field).' !!}';
+                $out .= '{!! '.self::routed('map', '\''.str_replace(['\\', "'"], ['\\\\', "\\'"], $part).'\'').' !!}';
             }
         }
 
@@ -284,7 +310,7 @@ final class CompactClassAttributes
     }
 
     /** An echo inside a `class` attribute, its value routed through CompactClasses. */
-    private static function echoValue(string $echo, bool|string $field): string
+    private static function echoValue(string $echo): string
     {
         $raw = str_starts_with($echo, '{!!');
         $code = trim($raw ? substr($echo, 3, -3) : substr($echo, 2, -2));
@@ -295,12 +321,12 @@ final class CompactClassAttributes
         }
 
         return $raw
-            ? '{!! '.self::routed('value', $code, $field).' !!}'
-            : '{{ '.self::routed('value', $code, $field).' }}';
+            ? '{!! '.self::routed('value', $code).' !!}'
+            : '{{ '.self::routed('value', $code).' }}';
     }
 
     /** An echo in an element's attribute list, with the defaults of each `->class()` call routed. */
-    private static function bagEcho(string $echo, bool|string $field): string
+    private static function bagEcho(string $echo): string
     {
         $out = '';
         $length = strlen($echo);
@@ -331,7 +357,7 @@ final class CompactClassAttributes
                     return $echo;
                 }
 
-                $out .= '->class('.self::routed('list', substr($echo, $i + 8, $close - $i - 9), $field).')';
+                $out .= '->class('.self::routed('list', substr($echo, $i + 8, $close - $i - 9)).')';
                 $i = $close;
 
                 continue;
@@ -348,9 +374,110 @@ final class CompactClassAttributes
      * A routed call over an expression, taken only while the view's switch is on: with it off the
      * expression stands as written, evaluated once either way.
      */
-    private static function routed(string $method, string $expression, bool|string $field): string
+    private static function routed(string $method, string $expression): string
     {
-        return '('.self::SWITCH.' ? '.self::CALL.$method.'('.$expression.self::fieldArgument($field).') : ('.$expression.'))';
+        $marker = self::ARGS.implode(' ', self::literalListWords($expression)).self::ARGS_END;
+
+        return '('.self::SWITCH.' ? '.self::CALL.$method.'('.$expression.$marker.') : ('.$expression.'))';
+    }
+
+    /**
+     * The words of a call's list when the list is one single-quoted literal, the form the rewrite
+     * gives the text of a class attribute. An expression has none here: its words are known only
+     * once it runs, and the call reads them there.
+     *
+     * @return list<string>
+     */
+    private static function literalListWords(string $expression): array
+    {
+        if (preg_match('/\A\'((?:[^\'\\\\]|\\\\.)*)\'\z/s', $expression, $match) !== 1) {
+            return [];
+        }
+
+        $text = strtr($match[1], ['\\\\' => '\\', "\\'" => "'"]);
+
+        return preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    }
+
+    /**
+     * The tag's calls with their trailing arguments: the field flag alone while the element carries
+     * no kit utility under its own name beside a call's own list, and the flag and those classes
+     * when it does.
+     *
+     * @param  list<string>  $context
+     */
+    private static function finish(string $out, bool|string $field, array $context): string
+    {
+        $kept = array_values(array_unique(array_filter(
+            $context,
+            static fn (string $class): bool => CompactClasses::keepsItsName($class, $field !== false),
+        )));
+
+        $pattern = '/'.preg_quote(self::ARGS, '/').'([^\x00]*)'.preg_quote(self::ARGS_END, '/').'/';
+
+        return (string) preg_replace_callback($pattern, static function (array $marker) use ($kept, $field): string {
+            $beside = array_values(array_diff($kept, preg_split('/\s+/', $marker[1], -1, PREG_SPLIT_NO_EMPTY) ?: []));
+
+            if ($beside === []) {
+                return self::fieldArgument($field);
+            }
+
+            $flag = match (true) {
+                $field === true => 'true',
+                is_string($field) => $field,
+                default => 'false',
+            };
+
+            return ', '.$flag.', ['.implode(', ', array_map(static fn (string $class): string => '\''.str_replace(['\\', "'"], ['\\\\', "\\'"], $class).'\'', $beside)).']';
+        }, $out);
+    }
+
+    /**
+     * The classes an attribute writes or a script sets on the element: the words of a class
+     * attribute's text and the string literals of its echoes, the string literals of an Alpine
+     * class binding, and the words of an `x-transition` or a `wire:*.class` value.
+     *
+     * @return list<string>
+     */
+    private static function classesWritten(string $attribute, string $value): array
+    {
+        $name = strtolower($attribute);
+
+        if ($name === 'class') {
+            $text = (string) preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}/s', ' ', $value);
+
+            return [...(preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: []), ...self::literalWords($value)];
+        }
+
+        if ($name === ':class' || $name === 'x-bind:class') {
+            return self::literalWords($value);
+        }
+
+        if (preg_match('/^(?:x-transition[\w:.-]*|wire:[\w.-]*class[\w.-]*)$/', $name) === 1) {
+            return preg_split('/\s+/', $value, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        }
+
+        return [];
+    }
+
+    /**
+     * The words of every string literal in some code, single-quoted, double-quoted or a template
+     * string.
+     *
+     * @return list<string>
+     */
+    private static function literalWords(string $code): array
+    {
+        preg_match_all("/'((?:[^'\\\\]|\\\\.)*)'|\"((?:[^\"\\\\]|\\\\.)*)\"|`([^`]*)`/", $code, $literals, PREG_SET_ORDER);
+        $words = [];
+
+        foreach ($literals as $literal) {
+            // One of the three groups holds the literal; the others are empty or absent.
+            $text = implode('', array_slice($literal, 1));
+            array_push($words, ...(preg_split('/\s+/', stripslashes($text), -1, PREG_SPLIT_NO_EMPTY) ?: []));
+        }
+
+        return $words;
     }
 
     /**

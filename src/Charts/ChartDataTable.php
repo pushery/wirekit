@@ -17,6 +17,10 @@ namespace Pushery\WireKit\Charts;
  *
  * Labels stand as rows whatever the chart's orientation, so a horizontal bar chart reads as a
  * vertical one does.
+ *
+ * The values of one point of a candlestick or a boxplot are named in the cell, with the names the
+ * tooltip gives them in the application's language: four or five numbers in a row are otherwise
+ * numbers without a meaning for a reader who hears them.
  */
 final class ChartDataTable
 {
@@ -25,10 +29,12 @@ final class ChartDataTable
      * @param  list<mixed>  $datasets  The datasets without their addresses (`ChartPointLinks::extract()`).
      * @param  list<bool>  $rangePairs  Per dataset, whether a point written as a pair is a range (`ChartPointLinks::rangePairs()`).
      * @param  string|null  $dateZone  The zone the x axis writes its dates in, null where it holds none (`ChartPointLinks::dateZone()`).
+     * @param  string|null  $type  The chart's type: a candlestick or a boxplot names the values of each point.
      * @return array{columns: list<string>, rows: list<array{label: string, cells: list<string>}>}
      */
-    public static function from(array $labels, array $datasets, ?int $decimals = null, ?string $prefix = null, ?string $suffix = null, array $rangePairs = [], ?string $dateZone = null): array
+    public static function from(array $labels, array $datasets, ?int $decimals = null, ?string $prefix = null, ?string $suffix = null, array $rangePairs = [], ?string $dateZone = null, ?string $type = null): array
     {
+        $parts = self::partNames($type);
         $columns = [];
         $points = [];
         $places = [];
@@ -65,7 +71,23 @@ final class ChartDataTable
                     $x = $point['x'] ?? null;
                 }
 
-                $written = ChartPointLinks::value(is_array($point) ? ($point['y'] ?? null) : $point, $places[$d]);
+                $y = is_array($point) ? ($point['y'] ?? null) : $point;
+
+                // The values of one candlestick or boxplot point, each with its name and the
+                // chart's affixes: "Open price: $126.40; High: $130.50; …". A part is `mixed`
+                // because it is a value of the developer's chart data, whatever it holds there,
+                // which `ChartPointLinks::value()` writes as text.
+                if ($parts !== null && is_array($y) && array_is_list($y) && count($y) === count($parts)) {
+                    $cells[] = implode('; ', array_map(
+                        static fn (string $name, mixed $part): string => $name.': '.(($value = ChartPointLinks::value($part, $places[$d])) === '' ? $none : $prefix.$value.$suffix),
+                        $parts,
+                        $y,
+                    ));
+
+                    continue;
+                }
+
+                $written = ChartPointLinks::value($y, $places[$d]);
                 $cells[] = $written === '' ? $none : $prefix.$written.$suffix;
             }
 
@@ -77,5 +99,44 @@ final class ChartDataTable
         }
 
         return ['columns' => $columns, 'rows' => $rows];
+    }
+
+    /**
+     * The names of the values of one point, in the order the data holds them: open, high, low and
+     * close for a candlestick, minimum, quartiles and maximum for a boxplot. The names come from the
+     * catalog the tooltip reads; the quartile symbols Q1 and Q3 read the same in every shipped
+     * language. Null for every other type.
+     *
+     * @return list<string>|null
+     */
+    private static function partNames(?string $type): ?array
+    {
+        // Each name is a literal key, so the translation catalog sees every one it has to carry.
+        return match ($type) {
+            'candlestick' => [
+                self::text(__('wirekit::Open price'), 'Open price'),
+                self::text(__('wirekit::High'), 'High'),
+                self::text(__('wirekit::Low'), 'Low'),
+                self::text(__('wirekit::Close price'), 'Close price'),
+            ],
+            'boxplot' => [
+                self::text(__('wirekit::Min'), 'Min'),
+                'Q1',
+                self::text(__('wirekit::Median'), 'Median'),
+                'Q3',
+                self::text(__('wirekit::Max'), 'Max'),
+            ],
+            default => null,
+        };
+    }
+
+    /**
+     * A translation as text, or the English name where the catalog gave something else.
+     *
+     * @param  array<array-key, mixed>|string|null  $translation
+     */
+    private static function text(array|string|null $translation, string $fallback): string
+    {
+        return is_string($translation) ? $translation : $fallback;
     }
 }

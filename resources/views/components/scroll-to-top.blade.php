@@ -4,7 +4,10 @@
 @props([
     'threshold' => 1.5,
     'size' => config('wirekit.components.scroll-to-top.size', 'md'),
-    'position' => 'bottom-right',
+    // A corner: `bottom-end` (the default), `bottom-start`, `top-end` and `top-start` by the
+    // direction of the page, `bottom-right`, `bottom-left`, `top-right` and `top-left` by the
+    // screen. From left to right `bottom-end` is `bottom-right`.
+    'position' => 'bottom-end',
     // Over a floating action button in the same bottom corner: centered on it, one gap above it.
     // Ignored in a top corner, where there is no button below to stand on.
     'aboveFab' => false,
@@ -24,9 +27,9 @@
     // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
     // the default; a bound `null` or empty string is the default without a word.
     $size = \Pushery\WireKit\WireKit::validateProp('scroll-to-top', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
-    $position = \Pushery\WireKit\WireKit::validateProp('scroll-to-top', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'bottom-right'), ['bottom-right', 'bottom-left', 'top-right', 'top-left']);
+    $position = \Pushery\WireKit\WireKit::validateProp('scroll-to-top', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'bottom-end'), ['bottom-end', 'bottom-start', 'top-end', 'top-start', 'bottom-right', 'bottom-left', 'top-right', 'top-left']);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -35,7 +38,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@click']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $forceVisible = BooleanProp::from($forceVisible, false, 'scroll-to-top', 'forceVisible');
@@ -90,8 +93,8 @@
     // `env()` is 0 in headless Playwright, so no browser test can see this either way.
     // Written out in full, twice, and not assembled from a variable.
     //
-    // Tailwind scans this file as TEXT, so a class assembled by string concatenation is
-    // extracted WITH the PHP in it: the utility prefix, the opening bracket, a variable
+    // Tailwind scans this file as text, so a class assembled by string concatenation is
+    // extracted with the PHP in it: the utility prefix, the opening bracket, a variable
     // reference and the closing bracket all become one candidate, and Tailwind emits a
     // rule for that nonsense selector while the class the component actually renders gets
     // none. The drift audit's reverse pass caught exactly that and named the expression as
@@ -104,16 +107,25 @@
     // containing a literal space is never compiled, so the offset silently falls back to
     // `auto`.
     //
-    // The two BOTTOM corners carry `env(safe-area-inset-bottom, 0px)`; the top two do not
+    // The two bottom corners carry `env(safe-area-inset-bottom, 0px)`; the top two do not
     // need it. On a notched iPhone the home-indicator inset is 34px and this button sat
     // 16px up, so the lower half of its 44px coarse-pointer hit area lay inside the
     // gesture strip — where, in the library's own words, "the bottom row of a swipe-up
     // gesture eats the taps". `.wk-fab` already ships this expression.
+    //
+    // `--wk-scrollbar-inset` is a gutter at the end of the line. A corner named by the line takes
+    // it at its end in either reading direction. A corner named by the screen takes it on the
+    // side the end of the line is on: the right on a page that reads from the left, the left on
+    // one that reads from the right, which is what each physical side's `rtl:` twin says.
     $positionClasses = match ($position) {
-        'bottom-left' => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] left-[var(--padding-wk-x-lg)]',
-        'top-right' => 'top-[var(--padding-wk-x-lg)] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
-        'top-left' => 'top-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)]',
-        default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
+        'bottom-left' => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] left-[var(--padding-wk-x-lg)] rtl:left-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
+        'top-right' => 'top-[var(--padding-wk-x-lg)] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))] rtl:right-[var(--padding-wk-x-lg)]',
+        'top-left' => 'top-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)] rtl:left-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
+        'bottom-right' => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))] rtl:right-[var(--padding-wk-x-lg)]',
+        'bottom-start' => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] start-[var(--padding-wk-x-lg)]',
+        'top-end' => 'top-[var(--padding-wk-x-lg)] end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
+        'top-start' => 'top-[var(--padding-wk-x-lg)] start-[var(--padding-wk-x-lg)]',
+        default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
 
     // Over a floating action button in the same corner, every term read from the tokens the
@@ -121,27 +133,28 @@
     // `--wk-fab-lift`, its size, which steps down on a phone, and one gap. The inline edge is the
     // floating action button's own, on the same logical side it sits on (`end` and `start`), moved
     // in by half the difference of the two sizes, so this button stands centered on it in either
-    // reading direction. One class per side and size, written out for the Tailwind scan.
+    // reading direction. Each side carries the button's `rtl:` twin as well, with the device's inset
+    // of the other edge. One class per side and size, written out for the Tailwind scan.
     $stackedSize = null;
 
-    if ($aboveFab && in_array($position, ['bottom-right', 'bottom-left'], true)) {
+    if ($aboveFab && in_array($position, ['bottom-end', 'bottom-start', 'bottom-right', 'bottom-left'], true)) {
         $centeredOnFab = match ($size) {
             'sm' => [
-                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)]',
-                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)]',
+                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)] rtl:start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)]',
+                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)] rtl:end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)]',
             ],
             'lg' => [
-                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)]',
-                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)]',
+                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)] rtl:start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)]',
+                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)] rtl:end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)]',
             ],
             default => [
-                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)]',
-                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)]',
+                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)] rtl:start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)]',
+                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)] rtl:end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)]',
             ],
         };
 
         $positionClasses = 'bottom-[calc(var(--padding-wk-x-lg)_+_var(--wk-fab-lift,0px)_+_var(--size-wk-fab)_+_var(--gap-wk-sm)_+_env(safe-area-inset-bottom,0px))] '
-            .($position === 'bottom-left' ? $centeredOnFab[0] : $centeredOnFab[1]);
+            .(in_array($position, ['bottom-left', 'bottom-start'], true) ? $centeredOnFab[0] : $centeredOnFab[1]);
 
         // The size this button stands in over the floating action button, which `.wk-fab-clearance`
         // reads to keep the end of a long page out from under the pair.
@@ -202,7 +215,7 @@
          hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins).
          The default goes through the catalog: this button's only child is an
-         aria-hidden glyph, so this string IS its accessible name, and a merge
+         aria-hidden glyph, so this string is its accessible name, and a merge
          default a German app never overrides is announced in English. --}}
     {{ $attributes->except('type')->merge(['aria-label' => __('wirekit::Scroll to top')])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$buttonClasses, $sizeClasses, $positionClasses])) }}
 >

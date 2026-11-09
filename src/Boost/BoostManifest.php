@@ -13,7 +13,7 @@ use Pushery\WireKit\Theming\ThemePresetRegistry;
  *
  * A Boost "skill set" is a typed bundle of prompt fragments + component/prop
  * data that an AI-augmented editor loads when working in a project that depends
- * on WireKit. This manifest is auto-derived ENTIRELY from shipped surfaces — it
+ * on WireKit. This manifest is auto-derived entirely from shipped surfaces — it
  * reuses {@see McpCatalog} (the same PropsParser-backed component + token catalog
  * the MCP server serves) plus {@see ThemePresetRegistry} and the `wirekit:*`
  * commands Artisan has registered — so it can never drift from the installed

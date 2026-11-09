@@ -25,10 +25,10 @@
  *
  * Two announcement rules shape the code below, and both are deliberate:
  *
- *   1. The success path speaks ONCE, at the optimistic flip, hedged in the verb
+ *   1. The success path speaks once, at the optimistic flip, hedged in the verb
  *      ("Liked, saving"). Confirmation is silent — what was announced is what
  *      happened. Only a deviation speaks a second time, and that is what gives
- *      the rollback its meaning: a second announcement IS the signal.
+ *      the rollback its meaning: a second announcement is the signal.
  *   2. Where the component already renders an error live region carrying a
  *      message, this layer stays silent on failure. "Email is required" tells
  *      the user what to do; "could not save" does not, and the generic one must
@@ -51,7 +51,7 @@ import { devWarn } from '../utils/dev-warning.js';
  * Everything prefixed `_` is reserved too, checked by prefix rather than
  * enumerated here.
  *
- * `current` is NOT here, on purpose. A `current` getter aliasing the bound value
+ * `current` is not here, on purpose. A `current` getter aliasing the bound value
  * would silently shadow any component property of the same name, and two
  * components call their value `current` (slider, color-picker), which is the
  * obvious name for it. The shadowing would be invisible from both sides: reading
@@ -59,7 +59,7 @@ import { devWarn } from '../utils/dev-warning.js';
  * with no setter and do nothing at all. Without the alias `current` is an
  * ordinary bindable name.
  *
- * `value` is not here either, and for the opposite reason: it is the DEFAULT
+ * `value` is not here either, and for the opposite reason: it is the default
  * binding, declared only when the config hands one over.
  */
 const RESERVED_NAMES = [
@@ -68,7 +68,7 @@ const RESERVED_NAMES = [
 ];
 
 export default function wirekitOptimistic(config = {}) {
-    // A string names one property; an array names a TUPLE read and written as
+    // A string names one property; an array names a tuple read and written as
     // one value (a range is one value, not two). Anything else falls back
     // to the default rather than arming against a name that is not a name.
     const bind = Array.isArray(config.bind) && config.bind.length > 0
@@ -76,11 +76,11 @@ export default function wirekitOptimistic(config = {}) {
         : (typeof config.bind === 'string' && config.bind !== '' ? config.bind : 'value');
 
     return {
-        // `value` is declared ONLY when the config actually hands one over.
+        // `value` is declared only when the config actually hands one over.
         //
         // That is the test for ownership, and it is better than asking whether
         // `bind` is the default: a component whose own state is called `value` —
-        // number-input is one — binds to `value` and does NOT pass one, because
+        // number-input is one — binds to `value` and does not pass one, because
         // the property already exists on the component this layer nests inside.
         // Declaring it anyway would shadow the parent's, since a child's key
         // wins, and the component would find its state replaced by undefined
@@ -91,7 +91,7 @@ export default function wirekitOptimistic(config = {}) {
         announcement: '',
 
         action: config.action || null,
-        // WHERE the value lives. Default `value`, which the factory then owns
+        // Where the value lives. Default `value`, which the factory then owns
         // itself — that is the toggle case, whose value is a native checkbox.
         //
         // A component that already owns its state names its own property here
@@ -102,7 +102,7 @@ export default function wirekitOptimistic(config = {}) {
         // arrangement satisfies exactly one of the two requirements and looks
         // identical until the first rollback.
         bind,
-        // Optional method to call after EVERY write, including the rollback.
+        // Optional method to call after every write, including the rollback.
         // rating needs it: its _notify() keeps a hidden form field in step, and
         // without the call a plain HTML form would submit the value that was
         // rolled back.
@@ -184,7 +184,7 @@ export default function wirekitOptimistic(config = {}) {
             // layer sits at "optimistic" forever — a refusal that never arrives, for a
             // control that never asked.
             //
-            // This branch is reached only by a layer wrapper born INSIDE a panel, such as
+            // This branch is reached only by a layer wrapper born inside a panel, such as
             // `dropdown.checkbox-item`'s; a wrapper outside it finds the host through
             // `closest()` above.
             //
@@ -194,7 +194,7 @@ export default function wirekitOptimistic(config = {}) {
                 return null;
             }
 
-            // A LOOP, not a single hop: a popover inside a modal teleports twice, and one
+            // A loop, not a single hop: a popover inside a modal teleports twice, and one
             // hop would lose it. Bounded, because a node whose back-link points into itself
             // would otherwise spin forever.
             let node = el;
@@ -235,7 +235,7 @@ export default function wirekitOptimistic(config = {}) {
 
         init() {
             // Marks the subtree as carrying a provisional state, so the stylesheet can
-            // give the in-flight control a VISIBLE treatment.
+            // give the in-flight control a visible treatment.
             //
             // The pending state has to be visible and legible. `aria-busy` alone, with
             // nothing in the stylesheet painting it, is audible to a screen reader and
@@ -243,7 +243,7 @@ export default function wirekitOptimistic(config = {}) {
             // finished change, where the layer promises a change that can still be taken
             // back.
             //
-            // Stamped by the FACTORY rather than added to each template that uses the
+            // Stamped by the factory rather than added to each template that uses the
             // layer. The factory is the one place that knows a subtree is optimistic; a
             // per-template marker is one more place to forget, and a hand-mounted factory
             // would never get one at all.
@@ -270,8 +270,8 @@ export default function wirekitOptimistic(config = {}) {
             // failure, which is the worst moment to discover it.
             const names = Array.isArray(this.bind) ? this.bind : [this.bind];
 
-            // A bind that names one of this layer's OWN properties is not a
-            // binding but a collision, and it has to be caught BEFORE the
+            // A bind that names one of this layer's own properties is not a
+            // binding but a collision, and it has to be caught before the
             // in-scope check below — `'current' in this` is true precisely
             // because the collision exists.
             //
@@ -316,7 +316,7 @@ export default function wirekitOptimistic(config = {}) {
                 return;
             }
 
-            // Take the initial value from the CONTROL when there is one.
+            // Take the initial value from the control when there is one.
             //
             // The config carries what the server rendered, which is right for
             // `:checked` and wrong for `wire:model` — there the attribute never
@@ -326,7 +326,7 @@ export default function wirekitOptimistic(config = {}) {
             const control = this.$refs && this.$refs.control;
 
             // Only a checkbox or a radio reports its state in `checked`.
-            // `'checked' in element` is true for EVERY <input> — it is a
+            // `'checked' in element` is true for every <input> — it is a
             // property of HTMLInputElement, not of the checkbox type — so testing
             // for it would adopt `false` as the initial value of every text, time
             // and date field.
@@ -426,10 +426,10 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         /**
-         * The gesture has STARTED, though its commit comes later.
+         * The gesture has started, though its commit comes later.
          *
          * The commit belongs at the end of a gesture, and for a control whose
-         * value MOVES during that gesture — a slider thumb following a finger,
+         * value moves during that gesture — a slider thumb following a finger,
          * an arrow key that steps before it commits — the two are not the same
          * moment. By the time `apply()` runs, the property already holds the new
          * value, so the snapshot it takes is the new value, and the rollback
@@ -463,7 +463,7 @@ export default function wirekitOptimistic(config = {}) {
          *
          * Returns false when the flip was refused, so a template can tell the
          * two apart. `reject` exists for controls whose final state would
-         * otherwise depend on the ORDER responses come back in — a toggle
+         * otherwise depend on the order responses come back in — a toggle
          * flipped twice resolves by network timing, which is both wrong and
          * untestable.
          */
@@ -472,10 +472,10 @@ export default function wirekitOptimistic(config = {}) {
                 return false;
             }
 
-            // One baseline per BURST, not per action: a rollback has to return
+            // One baseline per burst, not per action: a rollback has to return
             // to the value before the first flip. Rolling back to a mid-flight
             // optimistic value would restore something the server never had.
-            // The snapshot is taken at the START of a burst, and it is a COPY.
+            // The snapshot is taken at the start of a burst, and it is a copy.
             //
             // A set-valued component (multi-select, tags-input) mutates its
             // array in place, and a snapshot that kept the reference would
@@ -484,7 +484,7 @@ export default function wirekitOptimistic(config = {}) {
             const first = this._inFlight === 0;
 
             if (first) {
-                // What was marked at the gesture's START wins over what can be
+                // What was marked at the gesture's start wins over what can be
                 // read now — for a control that moves during the gesture, "now"
                 // is already the new value. See mark().
                 this._baseline = this._marked ? this._markBaseline : this._snapshot();
@@ -500,7 +500,7 @@ export default function wirekitOptimistic(config = {}) {
             this._stampState();
             this._installMorphGuard();
 
-            // Announced once per BURST, not once per change. A debounced field
+            // Announced once per burst, not once per change. A debounced field
             // changes many times per interaction and one announcement each
             // would be a barrage; the contract says the flip speaks once. The
             // next burst speaks again — coalescing must not become silence.
@@ -512,9 +512,9 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         /**
-         * Read the value through the binding — the ONLY place that reads it.
+         * Read the value through the binding — the only place that reads it.
          *
-         * The bound value — one property, or a TUPLE of them read as one value.
+         * The bound value — one property, or a tuple of them read as one value.
          *
          * `bind` accepts an array because a range is one value, not
          * two: snapshot the pair, restore the pair, and let an unchanged half be
@@ -522,13 +522,13 @@ export default function wirekitOptimistic(config = {}) {
          * was meant to prevent.
          *
          * A tuple rather than a getter/setter pair on the component, and that
-         * choice is deliberate: an accessor would depend on HOW the scopes get
+         * choice is deliberate: an accessor would depend on how the scopes get
          * merged — `Object.assign` flattens a getter into a plain value and
          * drops the setter, so a rollback would write a property nothing reads.
          * Two plain property names cannot be flattened into something else.
          */
         _read() {
-            // A disarmed layer has no value, and saying so HERE is what makes
+            // A disarmed layer has no value, and saying so here is what makes
             // the disarming safe rather than merely correct: with a bind on
             // `current`, `this[this.bind]` re-enters the getter that called
             // this, and the recursion ends the page rather than the read. The
@@ -546,7 +546,7 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         /**
-         * The value as it is NOW, detached from what happens to it next.
+         * The value as it is now, detached from what happens to it next.
          *
          * Shallow is enough and deliberately so: the components that hold a
          * collection hold a flat one, and a deep clone would quietly turn a
@@ -592,7 +592,7 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         /**
-         * Run, unless there is nothing to run WITH.
+         * Run, unless there is nothing to run with.
          *
          * For the shape where the trigger may fire with no candidate — Enter on
          * a listbox with nothing highlighted, a keyboard activation before the
@@ -615,7 +615,7 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * Flip and fire, in one call.
          *
-         * This exists because a CSP directive holds exactly ONE expression:
+         * This exists because a CSP directive holds exactly one expression:
          * `@click="apply(true); $wire.save()"` is two statements and Alpine's
          * CSP parser refuses the whole attribute — which does not fail loudly,
          * it leaves the element with an empty scope so every directive on it
@@ -623,7 +623,7 @@ export default function wirekitOptimistic(config = {}) {
          * ordinary JavaScript.
          *
          * The order matters and is not interchangeable: the flip happens
-         * BEFORE the fire, because the interceptor runs synchronously inside
+         * before the fire, because the interceptor runs synchronously inside
          * $wire[action]() and reads the state this call just wrote.
          */
         run(next) {
@@ -637,7 +637,7 @@ export default function wirekitOptimistic(config = {}) {
                 return false;
             }
 
-            // Checked BEFORE the flip, not after. Without Livewire — or before
+            // Checked before the flip, not after. Without Livewire — or before
             // it has booted — $wire[action] is not callable, and applying first
             // would leave the value showing a change that nothing was ever asked
             // to make. Silent is the one thing it must not be: a control that
@@ -729,7 +729,7 @@ export default function wirekitOptimistic(config = {}) {
                 callback(...args);
             };
 
-            // Confirmation waits for the LAST fire of the burst. With `queue`,
+            // Confirmation waits for the last fire of the burst. With `queue`,
             // an earlier response arriving first does not make the value the
             // server has — a second flip is still out, and clearing aria-busy
             // there would tell the user it landed while it had not.
@@ -748,7 +748,7 @@ export default function wirekitOptimistic(config = {}) {
             // non-2xx is to render the server's error page into a full-screen
             // iframe — which is right for an app that has not handled the failure,
             // and wrong here by definition: a component that declares `optimistic`
-            // has said it OWNS this path. It rolls the value back and announces the
+            // has said it owns this path. It rolls the value back and announces the
             // refusal, and without this Livewire would cover that with a stack
             // trace the reader can do nothing with.
             //
@@ -826,7 +826,7 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         _settle(next) {
-            // `rejected` is the keep-on-refusal exit: the value STAYS. It is the
+            // `rejected` is the keep-on-refusal exit: the value stays. It is the
             // only failure state that does not write, because for a typed value
             // the previous one belongs to the server and the new one is the
             // user's work — restoring it would delete what they just wrote
@@ -854,8 +854,8 @@ export default function wirekitOptimistic(config = {}) {
             }
 
             if (next === 'rolled-back') {
-                // Arbitration lives HERE and not in _announce, because it is
-                // about the FAILURE case. At the optimistic flip there is no
+                // Arbitration lives here and not in _announce, because it is
+                // about the failure case. At the optimistic flip there is no
                 // error message yet, so there is nothing to pre-empt and the
                 // hedge should be heard; at a rollback the field's own message
                 // is the actionable one and this layer's is generic.
@@ -885,7 +885,7 @@ export default function wirekitOptimistic(config = {}) {
          * announced — those are the same sentence only while the element has a
          * surface.
          *
-         * Deliberately narrow: it fires ONLY when the host has no box, so a
+         * Deliberately narrow: it fires only when the host has no box, so a
          * control that is visible keeps saying it in place, where the message
          * belongs. Nothing is duplicated — the two paths are exclusive.
          */
@@ -941,7 +941,7 @@ export default function wirekitOptimistic(config = {}) {
          * A component's styling needs to tell 'put back' (`rolled-back`) from
          * 'still yours, not saved' (`rejected`), and `aria-busy` covers the
          * pending state alone. Without the state on the element a refusal on a
-         * `keep` component would look EXACTLY like a success: the value stays,
+         * `keep` component would look exactly like a success: the value stays,
          * the outline clears, and the announcement goes into an `sr-only`
          * region, so nobody who is looking is told it did not save.
          *
@@ -982,8 +982,8 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * Put a native control back in step with the value.
          *
-         * A checkbox flips ITSELF when clicked, before any handler runs, and an
-         * Alpine binding only writes when the bound value CHANGES. So when a
+         * A checkbox flips itself when clicked, before any handler runs, and an
+         * Alpine binding only writes when the bound value changes. So when a
          * flip is refused — `reject` mode with one already in flight — the value
          * never changed, the binding never fired, and the control sits there
          * showing a state nothing agreed to. Nothing is wrong in the data and
@@ -1000,7 +1000,7 @@ export default function wirekitOptimistic(config = {}) {
                 return;
             }
 
-            // The type, NOT `'checked' in el`: that property exists on EVERY
+            // The type, not `'checked' in el`: that property exists on every
             // <input>, so a date, text or color field would take the checkbox
             // branch, get a meaningless boolean written to `checked`, and never
             // get its value back. The layer would announce "Change undone" and
@@ -1039,7 +1039,7 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * Is a field's own error region carrying a message right now?
          *
-         * ACTIVE means carrying text, not merely present. An empty error region
+         * Active means carrying text, not merely present. An empty error region
          * is not a speaker, and a presence check would silence this layer while
          * nothing else is talking — which is the common case, since the form
          * controls render the region and announce_error defaults to on.
@@ -1058,7 +1058,7 @@ export default function wirekitOptimistic(config = {}) {
                 return false;
             }
 
-            // It also has to BE a live region. A component whose announce-error
+            // It also has to be a live region. A component whose announce-error
             // is switched off still renders the message — same element, same id,
             // no aria-live — and then nothing is speaking it. Yielding there
             // would silence the only layer left, which is the opposite of what
@@ -1069,7 +1069,7 @@ export default function wirekitOptimistic(config = {}) {
 
         /**
          * Livewire's morph would paint the server's stale render over the
-         * optimistic value. The skip must be LIFTED on the way out of
+         * optimistic value. The skip must be lifted on the way out of
          * `optimistic` — a permanent skip blocks the truth forever, including
          * the rollback that was supposed to undo the flip.
          */

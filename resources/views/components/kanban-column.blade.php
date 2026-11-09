@@ -33,7 +33,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('kanban-column', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false, 'kanban-column', 'sortable');
@@ -69,7 +69,7 @@
     };
 
     // Counted per request, not derived from the label. `md5($label)` gave two columns with
-    // the same name the SAME id, and `aria-labelledby` resolves to the first match — so a
+    // the same name the same id, and `aria-labelledby` resolves to the first match — so a
     // board with two "Blocked" columns named the second one after the first one's header.
     // A random id would have been unique and worse: it changes on every render, so a
     // Livewire morph replaces the node instead of patching it.
@@ -78,10 +78,10 @@
     // here would write this internal id over the value the application gave its column.
     $domId = \Pushery\WireKit\Support\DomId::unique(null, 'kanban-column-');
 
-    // The name of a list item has to come from something that EXISTS.
+    // The name of a list item has to come from something that exists.
     //
     // `aria-labelledby` was emitted unconditionally while the element carrying that id
-    // lives only in the DEFAULT header — so every column using the `header` slot pointed
+    // lives only in the default header — so every column using the `header` slot pointed
     // at nothing and was announced as an unnamed item. An empty name is the silent kind of
     // failure: the markup is well-formed, the attribute is present, and the reader simply
     // hears "list item".
@@ -154,17 +154,17 @@
                 >
                     {{ $label }}
                 </span>
-                @if($count !== null)
+                @wirekitLast($count !== null)
                     <x-wirekit::badge size="sm" :intent="$isOverLimit ? 'danger' : 'neutral'">
                         {{ \Pushery\WireKit\Support\LocalizedNumber::count($count) }}@if($showsLimit)/{{ \Pushery\WireKit\Support\LocalizedNumber::count($limit) }}@endif
                     </x-wirekit::badge>
-                @endif
+                @endwirekitLast
             </span>
-            @if($sortable)
+            @wirekitLast($sortable)
                 {{-- The negative block margin keeps the header as tall as a column's without the
                      button: it reaches into the header's own padding. --}}
                 <x-wirekit::button size="xs" intent="neutral" surface="ghost" class="-my-[var(--space-wk-xs,0.25rem)]" data-wk-sortable-reorder aria-pressed="false" x-data="{ on: false }" x-on:click="$dispatch('wirekit:sortable:reorder-toggle')" x-on:wirekit:sortable:reorder-state="on = $event.detail.on" x-bind:aria-pressed="on ? 'true' : 'false'" :aria-label="$reorderLabel">{{ __('wirekit::Reorder') }}</x-wirekit::button>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
@@ -173,10 +173,10 @@
          tabindex="0" lets keyboard users scroll the column when the cards inside have no other
          focusable element. That half is unconditional.
 
-         The LANDMARK half is not. A fallback name such as "Column items" would make a six-column
+         The landmark half is not. A fallback name such as "Column items" would make a six-column
          board six rotor entries with one name — axe reports that as `landmark-unique`, and the
          name meant to tell the columns apart would make them identical. A named column exposes its
-         body under its OWN label; an unnamed one stays reachable and simply is not a
+         body under its own label; an unnamed one stays reachable and simply is not a
          destination. --}}
     {{-- The body clips on both axes and its first card stands flush with its top, so a card's
          focus outline, which stands off the card by the ring offset, would lie wholly above what
@@ -198,12 +198,12 @@
             {{-- The factory's own docblock says "the component passes the catalog string",
                  and until now this call site passed nothing at all — so every sentence a
                  keyboard reorder writes into the live region came from the English
-                 fallbacks meant for a hand-mount. The live region is the ONLY feedback
+                 fallbacks meant for a hand-mount. The live region is the only feedback
                  that path produces, so a German board announced "Grabbed. Position 2 of
                  5." and a reader who does not read English got nothing usable out of the
                  whole interaction.
 
-                 They travel as TEMPLATES with `:position` / `:total` rather than as
+                 They travel as templates with `:position` / `:total` rather than as
                  finished sentences, because the numbers are only known in the browser and
                  ":position of :total" is not the word order every language uses. Same
                  shape as the carousel's slide announcement and stream's status messages.
@@ -240,20 +240,20 @@
         @endif
     >
         {{ $slot }}
-        @if($sortable)
+        @wirekitLast($sortable)
             {{-- The live region the keyboard path speaks into, rendered here rather than made by
                  the script: a Livewire update keeps what the server renders, and `wire:ignore`
                  keeps it from emptying the region while a screen reader still reads it. A region
                  the script made went with the update, and the next sentence landed in a new one,
                  which is not spoken. --}}
             <div data-wk-sortable-announcer class="sr-only" aria-live="polite" aria-atomic="true" wire:ignore></div>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- Footer slot --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
         <div class="px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] border-t border-[var(--color-wk-border-subtle)]">
             {{ $footer }}
         </div>
-    @endif
+    @endwirekitLast
 </section>

@@ -60,7 +60,7 @@ class ClassByAreaCommand extends Command
         $format = (string) $this->option('format');
         $filter = (array) $this->option('area');
 
-        // Validate --format BEFORE the expensive inventory scan — collectAreas()
+        // Validate --format before the expensive inventory scan — collectAreas()
         // instantiates ClassInventory and parses every Blade/PHP/JS file plus the
         // compiled CSS, so a typo'd value should fail fast, not after that cost.
         // The same way --area errors below and every other command validates
@@ -88,7 +88,7 @@ class ClassByAreaCommand extends Command
             return self::FAILURE;
         }
 
-        // --area gets the SAME treatment, and until now it did not: an unknown value fell
+        // --area gets the same treatment, and until now it did not: an unknown value fell
         // through to the intersection below and produced "No areas match the --area filter."
         // — a sentence that names neither the accepted values nor the closest one, from a
         // repeatable flag where a typo is the likeliest way to reach it. Every sibling in
@@ -137,8 +137,8 @@ class ClassByAreaCommand extends Command
         // It is the failure mode collectAreas() already warns about from a different cause:
         // an empty compiled column and a compiled column that was never read look identical.
         //
-        // So the operands stay whole and the SCOPE decides which rows can be computed at all.
-        // A row whose operands are not all in scope is SUPPRESSED and says why — a suppressed
+        // So the operands stay whole and the scope decides which rows can be computed at all.
+        // A row whose operands are not all in scope is suppressed and says why — a suppressed
         // row cannot be misread, an emptied one can.
         $scope = $filter === [] ? self::AREAS : $filter;
         $scoped = array_intersect_key($areas, array_flip($scope));
@@ -166,7 +166,7 @@ class ClassByAreaCommand extends Command
     {
         $inventory = new ClassInventory(
             projectRoot: $projectRoot,
-            // Empty skip lists so this report is COMPLETE — not the
+            // Empty skip lists so this report is complete — not the
             // pre-filtered audit view. The user is asking "what's in
             // each area?", they want every candidate.
             skipPathPrefixesForClassExtraction: [],
@@ -200,7 +200,7 @@ class ClassByAreaCommand extends Command
              * the ordinary state of a fresh checkout, which is when somebody wires the JSON
              * report up for the first time.
              *
-             * The absence is not dropped, it MOVES: `compiled_measured` travels in the
+             * The absence is not dropped, it moves: `compiled_measured` travels in the
              * document, which is the shape the diff rows already use one layer further out.
              */
             if ($format !== 'json') {
@@ -228,7 +228,7 @@ class ClassByAreaCommand extends Command
      * selectors of `.foo { … }` rules in the file (the wk-* BEM
      * classes used by reading-progress, scrollbar, etc.). Distinct
      * from the Tailwind-compiled output which dist/wirekit.css does
-     * NOT contain.
+     * not contain.
      *
      * @return list<string>
      */
@@ -379,7 +379,7 @@ class ClassByAreaCommand extends Command
     private function renderJson(array $areas, array $scope): int
     {
         $report = [
-            // Whether the compiled column was READ, not whether it was empty. The two are
+            // Whether the compiled column was read, not whether it was empty. The two are
             // indistinguishable downstream, and one of them means every class looks
             // un-emitted. Carries the same fact the human formats get as a warning line.
             'compiled_measured' => $this->compiledCssMeasured,
@@ -391,7 +391,7 @@ class ClassByAreaCommand extends Command
         ];
 
         foreach ($this->diffPairs($areas, $scope) as $row) {
-            // `computed` on BOTH shapes, and a suppressed row carries no `count` at all.
+            // `computed` on both shapes, and a suppressed row carries no `count` at all.
             // A downstream reader that keys on `count` must not be able to read a
             // suppressed row as a measured zero.
             $report['diffs'][$row['label']] = $row['outOfScope'] !== []
@@ -432,10 +432,10 @@ class ClassByAreaCommand extends Command
 
     /**
      * Five canonical inter-area diffs that surface real risk classes.
-     * Each diff returns the SET of classes in the first area minus the
+     * Each diff returns the set of classes in the first area minus the
      * second.
      *
-     * A row is computed only when EVERY layer it reads is in scope. Otherwise it comes
+     * A row is computed only when every layer it reads is in scope. Otherwise it comes
      * back with the missing operands named and no entries, and every renderer prints that
      * rather than a number: the operands are always whole here, so a zero would be a
      * measurement and must only ever be printed as one.

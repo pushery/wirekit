@@ -14,7 +14,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('menubar.item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -28,7 +28,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $danger = BooleanProp::from($danger, false, 'menubar.item', 'danger');
@@ -69,6 +69,13 @@
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -82,7 +89,7 @@
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
-    {{-- Activating an item closes the menu AND hands focus back to the trigger it came
+    {{-- Activating an item closes the menu and hands focus back to the trigger it came
          from. Plain closeAll() left the reader on <body> — the panel that held the focus
          was hidden out from under it — so the next Tab restarted at the top of the
          document instead of continuing from the menubar. --}}
@@ -98,7 +105,7 @@
         $shortcutKeys = \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut);
     @endphp
     @if($shortcutKeys !== [])
-        <span class="flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
+        <span class="flex items-center gap-[var(--gap-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
             @foreach($shortcutKeys as $key)
                 {{-- The component, not a copy of it — see command-palette/item for what the
                      hand-rolled chip was dropping. --}}
@@ -107,7 +114,4 @@
         </span>
     @endif
 
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    {{ $newTabHint }}</{{ $tag }}>

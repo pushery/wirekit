@@ -10,7 +10,7 @@ use Illuminate\View\ComponentSlot;
 /**
  * Reads the attribute bag of a Blade slot that may not be a slot object at all.
  *
- * One character after the closing tag decides the slot's TYPE, and nothing at the
+ * One character after the closing tag decides the slot's type, and nothing at the
  * call site suggests that it would:
  *
  *     <x-wirekit::shell-bar><x-slot:start>Brand</x-slot:start>body</x-wirekit::shell-bar>
@@ -21,11 +21,11 @@ use Illuminate\View\ComponentSlot;
  *
  * Blade's component compiler rewrites every `</x-slot…>` to ` @endslot`, with a space
  * before and nothing after. Glued to `body`, that becomes `@endslotbody`, which the
- * directive compiler reads as ONE unknown directive and leaves in the page as text, so
- * `endSlot()` never runs. `slot()` seeds the entry with an empty STRING and opens an
+ * directive compiler reads as one unknown directive and leaves in the page as text, so
+ * `endSlot()` never runs. `slot()` seeds the entry with an empty string and opens an
  * output buffer, and only `endSlot()` replaces that string with the `ComponentSlot`.
  * Without it the placeholder survives, the buffer stays open — the "did not close its
- * own output buffers" warning in a test — and the slot's content lands in the DEFAULT
+ * own output buffers" warning in a test — and the slot's content lands in the default
  * slot, next to the literal `@endslotbody`. A line break after the closing tag
  * separates the two just as a space does, which is why this reads like a
  * one-line-versus-block difference and is not one.
@@ -45,7 +45,7 @@ final class SlotAttributes
     /**
      * The slot's own attributes, or an empty bag when it carries none.
      *
-     * Deliberately returns the BAG rather than normalizing the slot itself. Turning
+     * Deliberately returns the bag rather than normalizing the slot itself. Turning
      * a string slot into a ComponentSlot would also change how `{{ $slot }}` renders:
      * a ComponentSlot is `Htmlable` and is emitted unescaped, a string is escaped. That
      * is a second, invisible behavior change riding along with a crash fix, so the

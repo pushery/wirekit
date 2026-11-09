@@ -17,9 +17,9 @@ namespace Pushery\WireKit\Sandbox;
  *   5. A value is rejected when the schema declares `allowed_values`
  *      and the value is not one of them — the enum case.
  *   6. A string is rejected when the schema declares `allowed_schemes`
- *      and its URL scheme is not one of them. MANDATORY on every prop
+ *      and its URL scheme is not one of them. Mandatory on every prop
  *      whose value reaches an `href` / `src` / `action` attribute: the
- *      check normalizes the way a BROWSER does before comparing, so
+ *      check normalizes the way a browser does before comparing, so
  *      `java\nscript:` and `java\0script:` cannot walk past it.
  *   7. String values HTML-escaped via `htmlspecialchars()` in the result's
  *      `clean` view, for a value that is echoed raw — the renderer's slot.
@@ -96,13 +96,13 @@ final class PropsValidator
             $expectedType = (string) ($spec['type'] ?? 'string');
 
             // Coerce HTML-form-derived strings into their declared scalar
-            // types BEFORE the strict type check. Sandbox `<select>`
+            // types before the strict type check. Sandbox `<select>`
             // / `<input type="number">` / `<input type="checkbox">` all send
             // string values over POST; without coercion, schemas with
             // `type: int` (e.g. heading.level) reject every form submission
             // with "expected int, got string". Coercion is conservative —
             // only fires when the declared type unambiguously implies the
-            // target shape AND the input matches that shape.
+            // target shape and the input matches that shape.
             $value = self::coerceScalar($value, $expectedType);
 
             if (! self::typeMatches($value, $expectedType)) {
@@ -147,7 +147,7 @@ final class PropsValidator
         return new ValidationResult($clean, $violations, $values);
     }
 
-    /** mixed: accepts any PHP value — the purpose of this method is to check that ANY value satisfies a named type spec. */
+    /** mixed: accepts any PHP value — the purpose of this method is to check that any value satisfies a named type spec. */
     private static function typeMatches(mixed $value, string $expected): bool
     {
         return match ($expected) {
@@ -164,7 +164,7 @@ final class PropsValidator
     /**
      * Conservative scalar coercion for HTML-form-derived input.
      *
-     * Coerces ONLY when the value is a string that unambiguously matches
+     * Coerces only when the value is a string that unambiguously matches
      * the declared target shape:
      *   - 'int':   /^-?\d+$/ → (int) cast
      *   - 'float': numeric (PHP's is_numeric) → (float) cast
@@ -269,12 +269,12 @@ final class PropsValidator
      *
      * A URL prop reaching a rendered attribute needs a whitelist, and there are only
      * two shapes of one: a strict `allowed_values` enum, or a validator that whitelists
-     * the scheme. An enum is the wrong half for a PREVIEW sandbox — a link demo whose
+     * the scheme. An enum is the wrong half for a preview sandbox — a link demo whose
      * href may only be three fixed strings previews nothing — so this is the other half.
      *
-     * It is written against what a BROWSER reads, not against what looks like a URL.
+     * It is written against what a browser reads, not against what looks like a URL.
      * Before a browser reads the scheme it strips leading whitespace and removes ASCII
-     * control characters ANYWHERE in it, which is why `java\nscript:` and `java\0script:`
+     * control characters anywhere in it, which is why `java\nscript:` and `java\0script:`
      * execute while a naive `str_starts_with($value, 'javascript:')` sees neither. The
      * value is normalized the same way here, and only then split on the first colon.
      *
@@ -285,7 +285,7 @@ final class PropsValidator
      */
     private static function schemeIsAllowed(string $value, array $allowed): bool
     {
-        // Strip ASCII control characters (including NUL, TAB, LF, CR) wherever they sit,
+        // Strip ASCII control characters (including NUL, Tab, LF, CR) wherever they sit,
         // then leading whitespace — the browser's own order.
         $normalized = ltrim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $value));
 

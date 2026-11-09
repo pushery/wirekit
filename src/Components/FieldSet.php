@@ -63,12 +63,12 @@ final class FieldSet extends Component
     }
 
     /**
-     * `announceError` is taken here for its SPELLING, not because the controls need it. A class
+     * `announceError` is taken here for its spelling, not because the controls need it. A class
      * component hands every attribute that is not a constructor parameter to its view under the
      * name it was written with, so `announce-error` reached `@props` in kebab case and never
      * became `$announceError`. A constructor parameter is matched in camel case.
      *
-     * `legend`, `help` and `scope` are taken for their VALUES. An attribute that is not a constructor
+     * `legend`, `help` and `scope` are taken for their values. An attribute that is not a constructor
      * parameter reaches the view through the attribute bag, and Blade escapes a bound string on
      * its way in there; `@props` reads it back escaped and the view's `{{ }}` escapes it again,
      * so a legend `A & B` would print as `A &amp;amp; B`. A named `legend` slot still arrives as

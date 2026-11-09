@@ -4,7 +4,7 @@
      anticipate. Same claim as `sidebar.blade.php`, which renders this button. --}}
 {{-- The collapse control, extracted so it can be rendered in two places.
 
-     With a footer zone it rides ON that band; without one it is the column's last row.
+     With a footer zone it rides on that band; without one it is the column's last row.
      Two call sites, one button — the alternative was eighty lines of markup duplicated,
      which is how two spellings of the same control drift apart.
 
@@ -31,7 +31,7 @@
         <button
             type="button"
             x-on:click="toggle()"
-            {{-- Emitted STATICALLY as well as bound, for the same reason `data-collapsed`
+            {{-- Emitted statically as well as bound, for the same reason `data-collapsed`
                  above is. Until Alpine boots, `:aria-label` has not run — so the only
                  content of this button is a decorative <svg>, and it reaches a screen
                  reader as a bare "button". A server-side accessibility check never gets
@@ -42,7 +42,7 @@
             {{-- A stable hook for the control that folds the column. Everything else on this
                  button is either translatable (`aria-label`) or shared with other widgets
                  (`aria-expanded` is on every collapsible group too), so a test or an
-                 application reaching for THIS control had to guess — "the last button in the
+                 application reaching for this control had to guess — "the last button in the
                  column" was the guess, and it holds on three previews out of twenty. --}}
             data-wk-sidebar-collapse
             aria-expanded="{{ $collapsed ? 'false' : 'true' }}"

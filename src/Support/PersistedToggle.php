@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Support;
 /**
  * Builds the Alpine `x-data` object for a persisted open/collapsed disclosure.
  *
- * ONE implementation of the localStorage-backed toggle, shared by the sidebar
+ * One implementation of the localStorage-backed toggle, shared by the sidebar
  * sub-components (`sidebar.group`, `sidebar.collapsible`) instead of copying the
  * `init()`/`toggle()` mechanic inline into each. Internal helper (not part of the
  * developer-facing `WireKit` facade surface) — called from Blade the same way
@@ -15,7 +15,7 @@ namespace Pushery\WireKit\Support;
  *
  * @deprecated Nothing in the package calls this any more, and new code must not.
  *
- * What it emits is a JavaScript object literal that declares METHODS, and method
+ * What it emits is a JavaScript object literal that declares methods, and method
  * shorthand is not in the grammar Alpine's CSP build parses. A component built
  * this way is inert under a Content-Security-Policy without `'unsafe-eval'` — the
  * disclosure renders, the chevron sits there, and the click does nothing, with
@@ -42,7 +42,7 @@ final class PersistedToggle
      * The returned string is meant to be echoed through Blade `{{ }}` into an
      * `x-data="…"` attribute: the double quotes `json_encode` produces around the
      * key are HTML-escaped by Blade and decoded back by the browser, so Alpine
-     * receives valid JS — and a developer-supplied key is escaped by BOTH
+     * receives valid JS — and a developer-supplied key is escaped by both
      * json_encode and Blade, closing the attribute-injection path. When `$key` is
      * null the state is ephemeral; otherwise it is seeded from and written to
      * `localStorage[$key]` (`'1'`/`'0'`), guarded by try/catch so a disabled or

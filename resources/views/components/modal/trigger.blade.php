@@ -27,10 +27,10 @@
     // Without it the component is a `<div>` calling `show()` on the modal it is nested in,
     // which is the ordinary case.
     //
-    // WITH it the trigger carries its OWN `x-data` and sends the named event instead. The reason is
+    // With it the trigger carries its own `x-data` and sends the named event instead. The reason is
     // narrower than "some callers prefer it": a trigger that cannot be nested in its modal is
     // outside every `x-data`, and Alpine walks only inside `x-data` trees — so a hand-written
-    // `x-on:click` there is not refused, it is NEVER INSTALLED. Even `.prevent` stops applying,
+    // `x-on:click` there is not refused, it is never installed. Even `.prevent` stops applying,
     // which is why the reported symptom was an anchor that plainly navigated rather than a dead
     // one. The shape that forces this is real and common: a `<label>` renders its content inside
     // itself, so a modal cannot be wrapped around a link that sits in a checkbox's sentence.
@@ -42,12 +42,12 @@
     // to leave out: a link carrying the caller's attribute bag needs `rel` protection, because a
     // caller who sets `target="_blank"` otherwise hands the opened page `window.opener`; a link
     // that opens a new tab owes the reader an sr-only hint; an element that prose styles needs
-    // `data-wk-prose-skip` as its FIRST attribute; and a rendered `<button>` needs a cursor.
+    // `data-wk-prose-skip` as its first attribute; and a rendered `<button>` needs a cursor.
     //
-    // `link` and `button` already carry all four, and they carry them in ONE place for the whole
+    // `link` and `button` already carry all four, and they carry them in one place for the whole
     // library. Re-deriving them here would be a fifth copy that drifts.
     //
-    // WHICH primitive is not a detail: the position this exists for is a word inside a consent
+    // Which primitive is not a detail: the position this exists for is a word inside a consent
     // sentence, and a button-styled box in the middle of a sentence is the wrong shape. So an
     // address gives an inline `link`, and no address gives a standalone `button`.
     // An empty address, one of white space or `false` is none (Support\UrlProp), so it gives a
@@ -64,7 +64,7 @@
 @endphp
 
 @if($named)
-{{-- Modal trigger, standalone — opens the NAMED modal from wherever it sits.
+{{-- Modal trigger, standalone — opens the named modal from wherever it sits.
 
      The position this exists for is inside a `<label>`, and a click on it must open the dialog
      without ticking the checkbox the reader has not agreed to yet. A label does nothing for a

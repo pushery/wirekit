@@ -42,9 +42,9 @@ import { prefersReducedMotion } from '../utils/motion.js';
  * decimals it shows.
  *
  * Only the hand-mount path reaches this — the component supplies all four from
- * PHP. The split is by POSITION rather than by class, which matters in every
+ * PHP. The split is by position rather than by class, which matters in every
  * locale including English: stripping the digits out and concatenating everything
- * left over AFTER the number would settle `$1,250.50` as `1250.50$`.
+ * left over after the number would settle `$1,250.50` as `1250.50$`.
  */
 function parseCounterTarget(target) {
     const firstDigit = /\d/.exec(target);
@@ -135,7 +135,7 @@ export default () => ({
         // Format helper — used both for the reduced-motion snap and for the
         // in-flight animation tick, so the two paths cannot disagree.
         //
-        // The prefix goes back on the LEADING side. Concatenating both onto the
+        // The prefix goes back on the leading side. Concatenating both onto the
         // end is what made `$1,250.50` settle as `1250.50$`, in every locale.
         // And the decimal count comes from the display string rather than from
         // the float, because 1250.5 and "1,250.50" are the same number written to
@@ -178,7 +178,7 @@ export default () => ({
             this.animating = true;
 
             // Each run carries a token, and a tick abandons itself when the token has moved
-            // on. Without it a restart during an in-flight animation leaves TWO frame loops
+            // on. Without it a restart during an in-flight animation leaves two frame loops
             // running against the same value: the new one counts up from zero while the old
             // one keeps writing where it had got to, and the reader sees the number stutter
             // between two runs. Found by a test that dispatched mid-animation by accident —
@@ -229,7 +229,7 @@ export default () => ({
                 this._settleTimer = null;
                 // A superseded run's watchdog writes nothing, same as its frames.
                 if (this._run !== run) return;
-                // The question is whether this run ARRIVED, not whether it was ever seen
+                // The question is whether this run arrived, not whether it was ever seen
                 // moving. `t` is wall-clock against a start captured before any pause, so by
                 // now — a full duration plus 400ms — a run whose frames are being delivered
                 // at all has passed t >= 1 and set progress to 1. Anything short of that
@@ -254,14 +254,14 @@ export default () => ({
         // dispatching beats reaching into the component's scope from outside.
         this._replayListener = () => this.replay();
 
-        // Bound to BOTH elements a caller could reasonably aim at, because with an entrance
+        // Bound to both elements a caller could reasonably aim at, because with an entrance
         // wrapper they are not the same element: `data-replayable` — the marker the
-        // documentation site renders its replay control for — sits on the OUTER wrapper,
+        // documentation site renders its replay control for — sits on the outer wrapper,
         // while `x-data` and `data-target` sit on the inner root. Events bubble up, so a
         // dispatch on the wrapper could never reach a listener bound to the root, and the
         // control did nothing at all in exactly the configuration that renders one.
         //
-        // NOT delegated on `window`, which is how `wirekit:reveal` reaches its components:
+        // Not delegated on `window`, which is how `wirekit:reveal` reaches its components:
         // that event is deliberately a broadcast, and a replay is not. A window listener
         // would restart every counter on the page instead of the one that was asked.
         this._replayTargets = [this.$root];
@@ -273,7 +273,7 @@ export default () => ({
 
         this._replayTargets.forEach((el) => el.addEventListener('wirekit:stat-replay', this._replayListener));
 
-        // Safety net. Both start-triggers below can MISS:
+        // Safety net. Both start-triggers below can miss:
         // the entrance path waits for an `animationend` that may never fire (a
         // coalesced / skipped keyframe, or a browser that doesn't emit it), and
         // the standalone IntersectionObserver can fail to report `isIntersecting`
@@ -287,7 +287,7 @@ export default () => ({
         }, 1800);
 
         // Entrance-wrapper detection. The Blade template wraps the counter root
-        // in an outer <div x-data="wirekitAnimate('…')"> when BOTH animate and
+        // in an outer <div x-data="wirekitAnimate('…')"> when both animate and
         // animateIn are set on <x-wirekit::stat>. The outer's entrance keyframe
         // shifts geometry (e.g. wk-slide-up-in: translateY(1rem) → translateY(0))
         // for the entire ~300ms entrance window. If the inner's own

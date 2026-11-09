@@ -15,12 +15,12 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * `value + step`:
  *
  *   Precision. Binary floating point turns 19.01 + 0.01 into
- *   19.020000000000003 — which the field then SHOWS, and which oscillates
+ *   19.020000000000003 — which the field then shows, and which oscillates
  *   between representations on every further click. Each result is snapped back
  *   to the decimal places the step itself implies.
  *
  *   Grid snapping. From an off-grid value the step must move to the next grid
- *   POINT, not add to the value: with value 1.78 and step 0.1, adding gives
+ *   point, not add to the value: with value 1.78 and step 0.1, adding gives
  *   1.88, which rounds to 1.9 and skips 1.8 entirely. Snapping matches the W3C
  *   contract for a native <input type="number">.
  *
@@ -30,7 +30,7 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * with no event. The steppers write through to the input and fire what a native stepper
  * fires, so the model hears them.
  *
- * CLEANUP CONTRACT: `_unhookResync` (the Livewire commit hook, bound fields only) is
+ * Cleanup contract: `_unhookResync` (the Livewire commit hook, bound fields only) is
  * released in destroy(), and so is `_modelEvents`, which fires `blur` on the field for
  * `wire:model.blur` when the reader leaves the component after using only the steppers: the
  * field then never had focus, so its own `blur` never came (utils/model-events.js). So is
@@ -381,8 +381,8 @@ export default function wirekitNumberInput(config = {}) {
         /**
          * Hand the value to the optimistic layer, if one is nested here.
          *
-         * A stepper click IS a completed decision, so it commits at once;
-         * there is nothing continuous to wait out. The FIELD commits separately,
+         * A stepper click is a completed decision, so it commits at once;
+         * there is nothing continuous to wait out. The field commits separately,
          * when it is left, because typing is not finished until the reader is.
          *
          * No `mark()` here, and the reason is the exit rather than an oversight:

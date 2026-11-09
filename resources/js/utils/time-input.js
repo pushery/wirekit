@@ -1,3 +1,4 @@
+import { inlineStep } from './inline-direction.js';
 import { position } from './floating.js';
 import { insideWindow, minutesOf, readTimeLimits, slotClosed, timeText } from './time-slots.js';
 import { digitOf, periodOf, segmentRange, segmentShape, segmentsOf, segmentText, stepSegment, timeFormatter, timeOfSegments, typeDigit } from './time-segments.js';
@@ -213,7 +214,9 @@ export function timeInputState(config = {}) {
 
             if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
                 event.preventDefault();
-                const next = this._timeInputNext(type, event.key === 'ArrowRight' ? 1 : -1);
+                // The segments follow the direction their frame lays out in: on a right-to-left page
+                // Left Arrow moves to the segment that stands to the left, the next one there.
+                const next = this._timeInputNext(type, inlineStep(event, event.target ?? null));
 
                 if (next) {
                     this._timeInputFocusSegment(next);

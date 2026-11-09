@@ -1,7 +1,7 @@
 {{--
     Tailwind v4 source-detection safelist for VariantResolver-emitted classes.
 
-    PROBLEM
+    Problem
     -------
     `Pushery\WireKit\VariantResolver::resolve($intent, $surface)` returns
     Tailwind class strings at PHP runtime — text/bg/border arbitrary classes
@@ -10,27 +10,27 @@
     color-mix expressions.
     Tailwind v4 only scans the file paths the developer declares via `@source`;
     the canonical integration declares `@source 'vendor/pushery/wirekit/resources/views/**/*.blade.php'`,
-    which scans BLADE templates only — Tailwind never reads `src/VariantResolver.php`,
-    so any class that exists ONLY in the resolver and never appears literally in a
+    which scans Blade templates only — Tailwind never reads `src/VariantResolver.php`,
+    so any class that exists only in the resolver and never appears literally in a
     Blade file is silently absent from the compiled CSS. The button renders that
     class but the rule has no definition, the property falls through to inheritance
     (Tailwind's body color = #0a0a0a), and axe contrast fails on the danger-filled
     button (4.05 instead of white-on-red 4.78).
 
-    SOLUTION
+    Solution
     --------
     This file contains every dynamic class VariantResolver may emit, written
     literally so Tailwind's candidate scanner picks them up via the same
     `@source 'vendor/pushery/wirekit/resources/views/**/*.blade.php'` glob the
     developer already configured. The classes live inside one Blade comment, the
-    one this file is, so they DO NOT render to HTML — but Tailwind reads the raw file
+    one this file is, so they do not render to HTML — but Tailwind reads the raw file
     contents and finds the candidates regardless of Blade syntax.
 
-    NO developer-side configuration change is required: every WireKit developer's
+    No developer-side configuration change is required: every WireKit developer's
     Tailwind setup already scans `resources/views/**/*.blade.php` per the
     integration docs, so this file is automatically picked up.
 
-    MAINTENANCE
+    Maintenance
     -----------
     When `Pushery\WireKit\VariantResolver` adds a new intent, surface, or class
     string, add the resulting literal classes here in the same group. Removed
@@ -47,7 +47,7 @@
     filled() — six intents
     ────────────────────────────────────────────────────────────────────────
 
-    Every filled intent draws a TRANSPARENT border: the fill shows through it,
+    Every filled intent draws a transparent border: the fill shows through it,
     so there is no second color to keep in step on hover and no second shape
     to meet the fill along the rounded corner. See filled() for the why.
 
@@ -201,6 +201,9 @@
     -mb-[length:var(--border-wk-width)]
     -me-[length:var(--border-wk-width)]
     [--color-wk-ring:var(--color-wk-accent-fg)]
+    aria-disabled:cursor-not-allowed
+    aria-disabled:hover:text-[color:var(--color-wk-text-muted)]
+    aria-disabled:opacity-[var(--opacity-wk-disabled)]
     bg-[var(--color-wk-accent)]
     bg-[var(--color-wk-bg-elevated)]
     bg-[var(--color-wk-bg-muted)]

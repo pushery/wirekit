@@ -53,15 +53,15 @@
 
      The block is real, and both halves are needed:
 
-       * `x-on:click.capture` and the keydown twin actually REFUSE the activation. A
+       * `x-on:click.capture` and the keydown twin actually refuse the activation. A
          control held back only by `aria-disabled` stays clickable, so a stray Enter would
          fire the irreversible action while the dialog still looked guarded.
-       * `aria-disabled` rather than `disabled` keeps the control FOCUSABLE, which is the
+       * `aria-disabled` rather than `disabled` keeps the control focusable, which is the
          only way its `aria-describedby` reason is ever announced. A `disabled` button is
          skipped by the tab order, so a screen-reader user meets a button that does
          nothing and is told nothing about why.
 
-     Capture phase, deliberately: the caller's handler sits on the button INSIDE this
+     Capture phase, deliberately: the caller's handler sits on the button inside this
      wrapper, so a bubbling listener here would run after it had already fired.
 
      The state goes on the control. A generic element passes neither attribute down:
@@ -87,15 +87,15 @@
     x-on:click.capture="blockUnlessConfirmed($event)"
     x-on:keydown.enter.capture="blockUnlessConfirmed($event)"
     x-on:keydown.space.capture="blockUnlessConfirmed($event)"
-    {{-- And the counterpart, in the BUBBLE phase, which is what makes the ordering work
+    {{-- And the counterpart, in the bubble phase, which is what makes the ordering work
          without a second condition: a blocked activation never reaches here, because
          `blockUnlessConfirmed` calls `stopPropagation()`. So this fires only on an
          activation that actually went through.
 
          It is declared here rather than as a listener the dialog attaches to itself,
-         because the panel is TELEPORTED to `#wk-overlay-root` — it is no longer inside the
+         because the panel is teleported to `#wk-overlay-root` — it is no longer inside the
          dialog's own element, so `$el.addEventListener` in the factory would watch a
-         subtree the confirm control has left. The Alpine SCOPE survives the teleport;
+         subtree the confirm control has left. The Alpine scope survives the teleport;
          the DOM containment does not. --}}
     x-on:click="confirmed()"
     x-on:keydown.enter="confirmed()"
@@ -103,7 +103,7 @@
     x-effect="syncConfirmControlState($el, $id('alert-confirm-reason'))"
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    {{-- The reason, in a region that EXISTS from the first render and whose CONTENT
+    {{-- The reason, in a region that exists from the first render and whose content
          changes. It was written the obvious way first — wrapped in `x-if` so it appeared
          only while the control was held back — and that is the one shape that cannot work:
          assistive technology announces a region whose content changes, and a node that
@@ -116,13 +116,13 @@
         x-text="confirmAllowed ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Type the confirmation phrase to enable this action.')) }}"
     ></span>
 
-    @if(! $slot->hasActualContent())
+    @wirekitLast(! $slot->hasActualContent())
         <x-wirekit::button intent="danger" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Confirm') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
-        {{-- The caller supplied their own control. Matched on the RENDERED markup,
+        {{-- The caller supplied their own control. Matched on the rendered markup,
              because that is what a slot holds: by the time it is cast to a string
              Blade has already compiled `<x-wirekit::button>` into `<button>`, so a
-             test for the tag NAME would never match and every caller would fall
+             test for the tag name would never match and every caller would fall
              through to the branch below -- which wraps its content in a second button.
              Nested buttons are invalid HTML, and a browser repairing them tears the
              surrounding structure apart: the control renders as an empty box beside
@@ -134,5 +134,5 @@
         {{-- Plain text slot — wrap it so keyboard and screen-reader semantics stay
              correct rather than shipping a bare span somebody has to click. --}}
         <x-wirekit::button intent="danger" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
-    @endif
+    @endwirekitLast
 </div>

@@ -29,4 +29,20 @@ final class FloatingPlacement
         'right',
         'right-end',
     ];
+
+    /**
+     * The placements whose side follows the page: `start` and `end` name the sides of the line,
+     * so `end` opens on the right of a page that reads from the left and on the left of one that
+     * reads from the right. The script turns them into the word Floating UI takes, at the trigger.
+     *
+     * @var list<string>
+     */
+    public const LOGICAL = [
+        'start',
+        'start-start',
+        'start-end',
+        'end',
+        'end-start',
+        'end-end',
+    ];
 }

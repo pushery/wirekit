@@ -71,14 +71,14 @@
     //
     // The published copy is the fast path — the web server hands it over without
     // touching PHP. A configured font that was never published must not emit
-    // NOTHING, or the page would silently fall back to system fonts, looking right
+    // nothing, or the page would silently fall back to system fonts, looking right
     // locally, where someone ran the publish once by hand, and wrong in production
     // where nobody did.
     //
     // So an unpublished font falls back to the package route
     // (`/wirekit/fonts/...`), which reads straight from the installed package and
     // is therefore always correct after `composer update`. The inert HTML comment
-    // stays as well, in every environment: the route means the page LOOKS right,
+    // stays as well, in every environment: the route means the page looks right,
     // and the comment is what tells a developer they are paying for PHP on every
     // font request instead of serving a static file.
     $warnMissing = fn (?FontPreset $preset) => $preset
@@ -127,14 +127,14 @@
      * The primary weight's URL, for a preload — or null when there is nothing safe to
      * preload.
      *
-     * Without one the LCP web font is discovered TWO round trips deep: the browser fetches the
+     * Without one the LCP web font is discovered two round trips deep: the browser fetches the
      * page, finds a `<link rel="stylesheet">`, fetches and parses that, and only then learns
      * there is a font to download. The body text paints in the fallback for the whole of that
      * second trip, and the swap is the layout shift the metric-matched face exists to soften
      * rather than remove.
      *
      * Read out of the stylesheet rather than assembled from the key: the file is named after
-     * the FAMILY (`Inter-Regular.woff2`, `VT323-Regular.woff2`), not the preset key, and every
+     * the family (`Inter-Regular.woff2`, `VT323-Regular.woff2`), not the preset key, and every
      * bundled family carries exactly one Regular face. Parsing the `src` the
      * browser would parse anyway means the two can never disagree.
      *
@@ -151,7 +151,7 @@
 
         $css = (string) file_get_contents($publishedCss);
 
-        // The FIRST `src: url(...)` is the 400 weight in every bundled stylesheet: the faces
+        // The first `src: url(...)` is the 400 weight in every bundled stylesheet: the faces
         // are emitted in ascending weight order by the generator.
         if (preg_match("/src:\s*url\(['\"]?([^'\")]+\.woff2)['\"]?\)/", $css, $m) !== 1) {
             return null;
@@ -178,9 +178,9 @@
     };
 @endphp
 
-{{-- Font CSS files — only loaded for activated AND published fonts --}}
+{{-- Font CSS files — only loaded for activated and published fonts --}}
 @if($sansPreset)
-    {{-- The body face, and ONLY the body face. Preloading the serif and mono presets would
+    {{-- The body face, and only the body face. Preloading the serif and mono presets would
          fetch two fonts a given page may never use, which is the classic preload mistake: it
          costs bandwidth and, worse, competes with the one font the reader is actually waiting
          on. `crossorigin` is not optional even same-origin — a font preload without it is
@@ -223,7 +223,7 @@
 @endif
 
 @php
-    // Metric-matched fallbacks for the developer's OWN fonts.
+    // Metric-matched fallbacks for the developer's own fonts.
     //
     // Every bundled family ships one of these, generated from its metrics. A
     // self-hosted font of the developer's own, which is the setup the null font
@@ -231,7 +231,7 @@
     //
     // Only the four overrides are emitted, and nothing is invented: a family with
     // no configured numbers has no entry here, because a guessed `size-adjust`
-    // moves the layout in the OTHER direction and looks deliberate doing it.
+    // moves the layout in the other direction and looks deliberate doing it.
     $customFallbacks = [];
 
     foreach ((array) ($fontConfig['fallbacks'] ?? []) as $family => $spec) {
@@ -259,7 +259,7 @@
             continue;
         }
 
-        // The family NAME is narrowed exactly like the local names above, and for the same
+        // The family name is narrowed exactly like the local names above, and for the same
         // reason — it reaches the same `<style>` block. Blade's `{{ }}` is worse than nothing
         // here: inside `<style>` the browser
         // does not decode HTML entities, so an escaped quote stays the literal `&#039;` and
@@ -271,7 +271,7 @@
         }
 
         // The four overrides are CSS <percentage> or <number> values and nothing else, so
-        // they are VALIDATED rather than filtered: a value that is not one is dropped, not
+        // they are validated rather than filtered: a value that is not one is dropped, not
         // cleaned up into something that still ends up in the rule. `105%; } body {
         // display: none } @font-face {` is the shape this refuses.
         $overrides = array_filter([
@@ -305,7 +305,7 @@
     </style>
 @endforeach
 
-{{-- CSS Custom Properties — one declaration per CONFIGURED category, and nothing
+{{-- CSS Custom Properties — one declaration per configured category, and nothing
      for the others.
 
      A stand-in stack for an unconfigured category would compete with what
@@ -332,7 +332,7 @@
         @if($sansPreset && $sansPreset->key !== 'inter')--font-wk-icon-nudge: 0px;@endif
         {{-- Serif is the exception, and it is a fact about the stylesheet rather
              than a choice: `dist/wirekit.css` declares `--font-wk-sans` and
-             `--font-wk-mono` and NOT `--font-wk-serif`. Omitting the other two
+             `--font-wk-mono` and not `--font-wk-serif`. Omitting the other two
              lets a better value stand; omitting this one would leave the token
              undefined and drop every serif surface to the browser default. --}}
         --font-wk-serif: {!! $serifPreset ? $serifPreset->fontFamily() : 'ui-serif, Georgia, serif' !!};

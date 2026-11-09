@@ -9,7 +9,7 @@ use Pushery\WireKit\Contracts\ChartAdapter;
 /**
  * ApexCharts adapter — normalizes WireKit data into the ApexCharts options shape.
  *
- * License notice — ApexCharts is NOT MIT-licensed. The free Community License
+ * License notice — ApexCharts is not MIT-licensed. The free Community License
  * covers personal use, non-profits, education, and organizations under
  * $2M USD annual revenue. Above that threshold a Commercial License must be
  * purchased directly from ApexCharts. WireKit ships only this adapter glue
@@ -107,7 +107,7 @@ final class ApexChartsAdapter implements ChartAdapter
         /*
          * The funnel shape, since `mapType()` turns this type into a plain `bar`. Set here
          * rather than in the mapping because a developer's own `options` are merged over these
-         * with `array_replace_recursive` — so `isFunnel` is a DEFAULT they can still turn off,
+         * with `array_replace_recursive` — so `isFunnel` is a default they can still turn off,
          * and the bar radius and orientation stay theirs to change.
          */
         $funnelDefaults = $type === 'funnel'
@@ -131,18 +131,13 @@ final class ApexChartsAdapter implements ChartAdapter
                 'animations' => [
                     'enabled' => true,
                     'speed' => 400,
-                    // No `dynamicAnimation` override here — ApexCharts' own
-                    // default (350 ms, enabled) handles `chart.updateSeries()`
-                    // animations cleanly, including the streaming path's
-                    // FIFO slide-left. The previous 250 ms override caused
-                    // a visible lag on hover-heavy charts (heatmap cells,
-                    // pie slices) because ApexCharts fires an internal
-                    // dynamic-animation cycle on every cell hover for
-                    // tooltip-positioning purposes; with the override
-                    // each hover queued a 250 ms re-interpolation and
-                    // the tooltip "trailed" the cursor. Letting Apex use
-                    // its native default keeps the streaming path smooth
-                    // AND restores hover responsiveness everywhere else.
+                    // No `dynamicAnimation` override here: ApexCharts' own
+                    // default (350 ms, enabled) animates `chart.updateSeries()`,
+                    // the streaming path's FIFO slide-left included. ApexCharts
+                    // also runs a dynamic-animation cycle on every hover of a
+                    // heatmap cell or a pie slice to place its tooltip, and an
+                    // override would queue a re-interpolation on each hover,
+                    // so the tooltip would trail the cursor.
                 ],
                 'background' => 'transparent',
             ],
@@ -151,7 +146,7 @@ final class ApexChartsAdapter implements ChartAdapter
                 'show' => true,
                 'position' => 'top',
             ],
-            // Tooltip — uniform STYLING on every type, and hover BEHAVIOR per type family (see
+            // Tooltip — uniform styling on every type, and hover behavior per type family (see
             // defaultTooltip()). Per-element types (scatter, bubble, pie, radar, heatmap,
             // treemap and the rest of that list) get `shared: false` + `intersect: true`, so
             // one tooltip belongs to the element under the pointer; `mixed` and `annotated`
@@ -165,7 +160,7 @@ final class ApexChartsAdapter implements ChartAdapter
             'tooltip' => $this->defaultTooltip($type) + ['custom' => 'WIREKIT_DEFAULT_TOOLTIP'],
         ];
 
-        // Stroke is ONLY emitted when the chart type genuinely wants one
+        // Stroke is only emitted when the chart type genuinely wants one
         // (line / area). For everything else — bar / column / pie / radar /
         // scatter / etc. — `defaultStroke()` returns `[]`. Before the
         // chart-apex.js options-flatten landed, that empty array was
@@ -254,8 +249,8 @@ final class ApexChartsAdapter implements ChartAdapter
     }
 
     /**
-     * Type-aware tooltip defaults. Uniform STYLING (marker shape, font, etc.)
-     * across every chart type — `shared` / `intersect` BEHAVIOR is per-type.
+     * Type-aware tooltip defaults. Uniform styling (marker shape, font, etc.)
+     * across every chart type — `shared` / `intersect` behavior is per-type.
      *
      * Cursor-following behavior (`shared: true, intersect: false` — tooltip
      * tracks the cursor's x-position, shows the closest data point's value)
@@ -264,7 +259,7 @@ final class ApexChartsAdapter implements ChartAdapter
      * sweep the cursor across the chart and expect the tooltip to update.
      *
      * Per-element anchoring (`shared: false, intersect: true` — tooltip
-     * fires only when the cursor is ON a discrete element, anchored at
+     * fires only when the cursor is on a discrete element, anchored at
      * that element) is the right UX for charts where each data unit is a
      * spatially distinct shape: scatter / bubble / radar / polarArea /
      * pie / doughnut / heatmap / treemap / funnel / radialBar / range-bar
@@ -309,7 +304,7 @@ final class ApexChartsAdapter implements ChartAdapter
         // mixed-renderer defers to per-series intersect logic — the bar
         // series catches all hover events while the line series sits
         // unhoverable. Forcing shared cursor-x tracking makes hovering
-        // ANYWHERE on the chart show ALL series' values at that x,
+        // anywhere on the chart show all series' values at that x,
         // matching the developer expectation for combined-series charts.
         $sharedCursorTypes = ['mixed', 'annotated'];
 

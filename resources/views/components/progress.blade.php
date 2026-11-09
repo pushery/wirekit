@@ -9,12 +9,12 @@
     'variant' => config('wirekit.components.progress.variant', 'primary'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: primary | success | warning | danger | info | neutral (+ accent alias). null → falls back to `variant`
     'size' => config('wirekit.components.progress.size', 'md'),           // sm | md | lg
-    // Optional motion on the DETERMINATE fill — the "work in flight" affordance
+    // Optional motion on the determinate fill — the "work in flight" affordance
     // (uploads, streaming). none (default) | stripes (barber-pole) | shimmer
     // (a light sweep). Purely additive polish: gated by prefers-reduced-motion,
     // and the bar's value/width is unchanged, so nothing depends on the motion.
     'animation' => 'none',
-    // The NAME of an Alpine property to read the value from, for a value that only
+    // The name of an Alpine property to read the value from, for a value that only
     // exists in the browser — an upload percentage, a streamed count. `value` is a
     // PHP prop evaluated at render time, so it cannot carry one; binding to the
     // rendered element cannot either, because `x-bind:value` sets an attribute on a
@@ -29,7 +29,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false, 'progress', 'showValue');
@@ -147,32 +147,32 @@
 <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full font-[family-name:var(--font-wk-sans)]'])) }}>
 @endif
     @if($label || $showValue)
-        <div class="mb-1 flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
+        <div class="mb-[var(--space-wk-xs)] flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
             @if($label)
                 <span id="{{ $labelId }}" class="text-[color:var(--color-wk-text)]">{{ $label }}</span>
             @else
                 <span></span>
             @endif
-            @if($showValue && $valueExpression)
+            @wirekitLast($showValue && $valueExpression)
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="valueText()"></span>
             @elseif($showValue && ! $isIndeterminate)
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums">
-                    {{-- Not `(int)`. The BAR is drawn from the exact value, so truncating here
+                    {{-- Not `(int)`. The bar is drawn from the exact value, so truncating here
                          made the number disagree with the thing beside it: 4.7 of 5 drew a
                          94% bar and read "4 / 5". Written in the locale, grouped as a count is, and
                          a whole value without a trailing `,0`. --}}
                     {{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $clamped, maxPrecision: 6) }} / {{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $max, maxPrecision: 6) }}
                 </span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
     {{-- role="progressbar" + aria-value* are the WCAG/WAI-ARIA contract for progress indicators.
-         An accessible name is MANDATORY (axe-core's progressbar-name rule) — we source it from:
+         An accessible name is mandatory (axe-core's progressbar-name rule) — we source it from:
          1. `label` prop (preferred, visible above bar)
          2. `aria-labelledby` attribute (links to another element's id)
          3. `aria-label` attribute (invisible text)
-         4. Fallback: generic "Progress" so the progressbar always has SOME name --}}
+         4. Fallback: generic "Progress" so the progressbar always has some name --}}
     <div
         role="progressbar"
         @if($label) aria-labelledby="{{ $labelId }}"
@@ -182,7 +182,7 @@
         @endif
         @if($valueExpression)
             {{-- Bound rather than printed: the value arrives after this render. The min and
-                 max are static because the RANGE is known now even when the value is not. --}}
+                 max are static because the range is known now even when the value is not. --}}
             x-bind:aria-valuenow="ariaValueNow()"
             aria-valuemin="0"
             aria-valuemax="{{ $max + 0 }}"
@@ -199,7 +199,7 @@
              the bar readable when the palette is forced. --}}
         class="wk-progress-track {{ $trackClasses }} {{ $heightClass }}"
     >
-        @if($valueExpression)
+        @wirekitLast($valueExpression)
             {{-- `wk-progress-indeterminate` is bound too, so the bar animates while there is
                  no value yet and becomes a real bar the moment one arrives — rather than
                  drawing 0%, which claims no work has been done instead of not knowing. --}}
@@ -214,6 +214,6 @@
             {{-- The value rides in an inline style over `w-0`: where a policy drops the style, the
                  bar stays empty rather than claiming the work is done. --}}
             <div class="wk-progress-fill {{ $fillClasses }} w-0" style="width: {{ $percent }}%"></div>
-        @endif
+        @endwirekitLast
     </div>
 </div>

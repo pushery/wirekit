@@ -181,7 +181,7 @@ final class DateModel
      * console, the way the warning about an unknown prop is logged.
      *
      * @param  string  $context  the component the warning names
-     * @param  string  $type  the field's native type, a key of FORMATS
+     * @param  string  $type  the field's native type, a key of formats
      * @param  list<string>  $suffixes
      */
     public static function warn(string $context, string $type, ComponentAttributeBag $attributes, array $suffixes = ['']): void

@@ -20,7 +20,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $shimmer = BooleanProp::from($shimmer, true, 'skeleton.avatar', 'shimmer');
@@ -42,7 +42,7 @@
 @endphp
 
 {{-- Avatar placeholder: circular image + two short text lines (name + subtitle).
-     The off-screen skip is a PROGRESSIVE ENHANCEMENT and lives behind `@supports` in the
+     The off-screen skip is a progressive enhancement and lives behind `@supports` in the
      stylesheet (`.wk-skeleton-skip-offscreen`), not as an inline declaration here: the
      property first shipped in Safari 18.0, above this library's Safari 16.4 floor. Nothing
      depends on it — without support the skeleton renders the ordinary way. The intrinsic-size
@@ -51,7 +51,7 @@
     role="status"
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-live')) aria-live="polite" @endunless
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
-    {{-- No aria-busy here, deliberately. This element IS the live region, and
+    {{-- No aria-busy here, deliberately. This element is the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells
          assistive technology to withhold the very announcement the region
@@ -62,9 +62,9 @@
          and have the shimmer's own pause rule see it. --}}
     {{ $attributes->except('role')->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 60px;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'wk-skeleton-skip-offscreen'])) }}
 >
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-[var(--gap-wk-md)]">
         <div class="{{ $surface }} h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-full)]" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton);"></div>
-        <div class="flex flex-col gap-2 flex-1">
+        <div class="flex flex-col gap-[var(--gap-wk-sm)] flex-1">
             <div class="{{ $baseShimmer }} h-3 w-1/3" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             <div class="{{ $baseShimmer }} h-2 w-1/4" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
         </div>

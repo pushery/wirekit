@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Support;
 /**
  * The translated plural forms of one key, ready to be chosen from in the browser.
  *
- * A component whose accessible name embeds a COUNT cannot build that name on the
+ * A component whose accessible name embeds a count cannot build that name on the
  * server once an optimistic layer can change the count: the page would show six
  * and announce five, and the rollback would put back a number the user was never
  * told about. The forms have to travel to where the number lives.
@@ -63,7 +63,7 @@ final class PluralPhrases
         $seen = [];
         $ordered = $samples ?? self::SAMPLES;
 
-        // Zero is reachable in the browser ONLY by exact match. The category loop
+        // Zero is reachable in the browser only by exact match. The category loop
         // skips it, because `{0} no reactions` says something about the number
         // itself and must not stand in for every count that shares its category.
         // So zero takes no part in the deduplication below: rendered among the
@@ -99,7 +99,7 @@ final class PluralPhrases
             $phrases[$count] = $rendered;
         }
 
-        // Sorted by count, so the map's LAST entry is its largest sample. The
+        // Sorted by count, so the map's last entry is its largest sample. The
         // browser falls back to the last form when no category matches, and a
         // fallback that is a `{0}` phrase would answer an unmatched plural with
         // "no reactions" — the one wrong answer worse than a wrong plural.

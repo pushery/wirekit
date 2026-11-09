@@ -132,8 +132,8 @@
             <span class="inline-flex">@include('wirekit::components.partials.tire-label-image', $tireImage)<span class="sr-only">{{ $statements[$parameter] }}</span></span>
         @endif
     @endforeach
-    @if(filled($sheet))
+    @wirekitLast(filled($sheet))
         <x-wirekit::link :href="$sheet" :target="$target" size="sm">{{ __('wirekit::Product information sheet') }}</x-wirekit::link>
-    @endif
+    @endwirekitLast
 </span>
 @endif

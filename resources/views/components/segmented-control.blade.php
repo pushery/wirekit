@@ -1,7 +1,7 @@
 {{-- optimistic-ui: supported
      Pass `optimistic="method"` and the segment moves the moment it is clicked.
      Discrete choice, one value, and the previous one is the server's — so an
-     undo destroys nothing the user typed. The optimistic scope nests INSIDE
+     undo destroys nothing the user typed. The optimistic scope nests inside
      this component and binds to `selected`. --}}
 @props([
     'label' => null,
@@ -12,7 +12,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out —
-    // an app that runs its OWN error summary would otherwise double-announce here.
+    // an app that runs its own error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
@@ -25,7 +25,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'options' => [],
@@ -49,7 +49,7 @@
     $value = \Pushery\WireKit\Support\FieldValue::one($value, 'segmented-control');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -86,7 +86,7 @@
     $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
     $attributes = $attributes->except('autofocus');
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'segmented-control', 'disabled');
@@ -124,7 +124,7 @@
     // Container wrapping the pill-style segments
     //
     // `max-w-full overflow-x-auto overflow-y-hidden`: when the options are wider than the column,
-    // the TRACK scrolls. It had no rule for that case at all, so the nearest ancestor that could
+    // the track scrolls. It had no rule for that case at all, so the nearest ancestor that could
     // scroll did it instead — a whole page's `main` sliding sideways with nothing on screen saying
     // so — and a layout with no such ancestor clipped the last segment. This is the shape `tabs`
     // already uses for the same problem, including the reason `overflow-y-hidden` is spelled out:
@@ -150,7 +150,7 @@
     //
     // Resolved here rather than written as string literals inside the Alpine `:class`
     // ternary below, where WireKit::scope() could not reach them: resolveClasses runs
-    // at RENDER time in PHP, while `:class` is a RUNTIME reactive binding, so any
+    // at render time in PHP, while `:class` is a runtime reactive binding, so any
     // state-dependent styling written there silently opts out of personalization. A
     // brand that themes its active segment (gold on navy, say) would lose that styling
     // — the accent token does not help, because the selected pill is an elevated
@@ -203,9 +203,9 @@
     ]);
 
     $sizeClasses = match ($size) {
-        'sm' => 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)]',
-        'lg' => 'px-[var(--padding-wk-x-lg)] py-2 text-[length:var(--text-wk-lg)]',
-        default => 'px-[var(--padding-wk-x-md)] py-1.5 text-[length:var(--text-wk-md)]',
+        'sm' => 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)]',
+        'lg' => 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-lg)]',
+        default => 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-md)]',
     };
 
     // The options usually come from `pluck('label', 'value')`, which is a Collection; the first
@@ -228,7 +228,7 @@
 @endphp
 
 @php
-    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // The optimistic layer nests inside this component, and the direction is not
     // interchangeable: a nested Alpine component's method reads and writes its
     // parent's properties through `this`, never the other way around. So it has
     // to be the child to reach `selected`, and the segments have to be inside it
@@ -241,7 +241,7 @@
         'bind' => 'selected',
         'after' => '_notify',
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
@@ -283,7 +283,7 @@
              The factory's init() writes the initial value into the hidden
              input. --}}
         {{-- The server's own channel. Livewire rewrites this on every render and
-             nothing binds it, so a value the SERVER changed reaches the component
+             nothing binds it, so a value the server changed reaches the component
              even though Alpine read `x-data` once and will never read it again.
              A plain attribute rather than the hidden input on purpose: components
              that bind that input with `:value` have Alpine writing its own stale
@@ -298,7 +298,7 @@
              alone, which makes `data-wk-server-value` + observeServerValue the one
              update path. The seed comes from that same attribute at init. --}}
         x-data="wirekitSegmentedControl({ disabled: {{ $disabled ? 'true' : 'false' }} })"
-        {{-- Without the optimistic layer the radiogroup IS this element. With it,
+        {{-- Without the optimistic layer the radiogroup is this element. With it,
              the role moves one level in — because the layer
              carries a live region, and a live region is not a radio. A
              radiogroup may only own radios, so the announcer cannot sit in it. --}}
@@ -306,7 +306,7 @@
             @unless($attributes->has('role')) role="radiogroup" @endunless
             @if($disabled) aria-disabled="true" @endif
             @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
-            {{-- On the GROUP: the message is about the choice, and repeating it on every
+            {{-- On the group: the message is about the choice, and repeating it on every
                  segment would have it read out once per option. --}}
             @if($error) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
@@ -377,7 +377,7 @@
             <button
                 type="button"
                 role="radio"
-                {{-- `aria-disabled`, and NOT the native attribute.
+                {{-- `aria-disabled`, and not the native attribute.
 
                      A natively disabled button is removed from the tab order, and a
                      radiogroup whose every item is removed disappears from keyboard
@@ -388,7 +388,7 @@
                      composite widget, and the reason the whole group also carries the same
                      attribute rather than a `fieldset[disabled]`.
 
-                     The tabindex line below keeps ONE stop for the group, and the click and
+                     The tabindex line below keeps one stop for the group, and the click and
                      key handlers gate on `disabled` so nothing is selectable. --}}
                 aria-disabled="{{ $disabled ? 'true' : 'false' }}"
                 aria-checked="{{ (string) $selected === (string) $optValue ? 'true' : 'false' }}"
@@ -397,7 +397,7 @@
                      close the JS string mid-expression and break every binding
                      on this button. Same defect class already fixed on calendar. --}}
                 :aria-checked="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }} ? 'true' : 'false'"
-                {{-- One tab stop even when disabled: the group has to be REACHABLE to be
+                {{-- One tab stop even when disabled: the group has to be reachable to be
                      announced as unavailable. It sits on the selected item, which is where
                      it sits when the group is live. --}}
                 tabindex="{{ (string) $selected === (string) $optValue ? '0' : '-1' }}"
@@ -415,12 +415,12 @@
                     @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                     @click="{{ $optimisticConfig ? 'run' : 'select' }}({{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }})"
                     {{-- The full documented model: both axes move selection with
-                         focus and wrap at the ends, Home/End jump. All four keys
-                         were promised on the docs page; only the two horizontal
-                         ones were ever bound, and neither wrapped. --}}
-                    @keydown.arrow-right.prevent="focusNext($el)"
+                         focus and wrap at the ends, Home/End jump. A side key moves
+                         toward its side, so on a page that reads from the right,
+                         where the options run from there, Left Arrow goes to the next. --}}
+                    @keydown.arrow-right.prevent="$wkInlineStep($event) === 1 ? focusNext($el) : focusPrevious($el)"
                     @keydown.arrow-down.prevent="focusNext($el)"
-                    @keydown.arrow-left.prevent="focusPrevious($el)"
+                    @keydown.arrow-left.prevent="$wkInlineStep($event) === 1 ? focusNext($el) : focusPrevious($el)"
                     @keydown.arrow-up.prevent="focusPrevious($el)"
                     @keydown.home.prevent="focusFirst()"
                     @keydown.end.prevent="focusLast()"
@@ -457,9 +457,9 @@
     </div>
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing. --}}
-    @if($error)
+    @wirekitLast($error)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @endwirekitLast
 </div>

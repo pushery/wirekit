@@ -26,7 +26,7 @@
      re-open — but narrow is not closed, and a group control that can land on a
      value nobody chose is the failure this contract exists to prevent.
 
-     Closing it needs ONE layer over the whole group, which means a group
+     Closing it needs one layer over the whole group, which means a group
      component to host it. That is a new public surface rather than a wiring
      detail, so it stays a candidate here instead of shipping something that
      looks enabled and can land on a value nobody chose. --}}
@@ -44,7 +44,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.radio-item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -52,7 +52,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'dropdown.radio-item', 'disabled');
@@ -100,6 +100,13 @@
     // The keys of the shortcut hint, one text or a list (Support\KeyShortcuts::hintKeys()),
     // drawn as one line, a space between the keys.
     $shortcutText = implode(' ', \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut));
+
+    // The shortcut hint after the label is an echo rather than a block, so Livewire writes no
+    // morph markers around it: it comes or goes after the label and moves nothing before it. Its
+    // class goes through CompactClasses, as a class attribute in the markup does.
+    $shortcutPart = $shortcutText === '' ? '' : new \Illuminate\Support\HtmlString(
+        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums')).'" aria-hidden="true">'.e($shortcutText).'</span>'
+    );
 @endphp
 
 <button
@@ -114,16 +121,16 @@
     @endif
     @if($disabled) aria-disabled="true" @endif
     {{ $attributes->except(['role', 'tabindex', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $disabledClasses])) }}
->
-    {{-- Radio indicator — an ALWAYS-visible ring (so the whole group reads as a
-         radio set, not just the selected row, and stays distinct from the
-         checkbox-item's checkmark). Selected: the ring goes accent + a filled
-         center dot appears. Reserves its slot so labels stay aligned.
-         `wk-choice-frame` marks the ring: under a preset whose border width is 0px the ring is
-         gone, and `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet
-         brings it back. --}}
-    <span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
-        @if($isBound)
+>{{--
+    Radio indicator — an ALWAYS-visible ring (so the whole group reads as a
+    radio set, not just the selected row, and stays distinct from the
+    checkbox-item's checkmark). Selected: the ring goes accent + a filled
+    center dot appears. Reserves its slot so labels stay aligned.
+    `wk-choice-frame` marks the ring: under a preset whose border width is 0px the ring is
+    gone, and `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet
+    brings it back.
+--}}<span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
+        @wirekitLast($isBound)
             <span
                 class="wk-choice-frame w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
                 :class="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} ? 'border-[var(--color-wk-accent)]' : 'border-[var(--color-wk-border-strong)]'"
@@ -133,12 +140,9 @@
         @else
             {{-- Static (non-model) radio item: a plain outline ring as the affordance. --}}
             <span class="wk-choice-frame w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
-        @endif
-    </span>
-
-    {{ $slot }}
-
-    @if($shortcutText !== '')
-        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcutText }}</span>
-    @endif
-</button>
+        @endwirekitLast
+    </span>{{--
+    The parts of the item touch: no text of this template stands between them, so a `<button>`,
+    which keeps a run of white space as a flex item, sets no gap beside an empty item before or
+    after the label. Every echo is followed by the next directive or tag on its line.
+--}}{{ $slot }}{{ $shortcutPart }}</button>

@@ -26,7 +26,7 @@
     // `flex: 1` to absorb whatever space the others leave behind.
     //
     // The accompanying `<x-wirekit::resizable.handle>` is the other half, and it
-    // is NOT decorative: `wirekitResizableHandle` (resources/js/components/
+    // is not decorative: `wirekitResizableHandle` (resources/js/components/
     // resizable.js) attaches the WAI-ARIA Window Splitter attributes to it at
     // init — role, orientation, aria-controls, the value range and a live
     // aria-valuenow — and owns the pointer-drag and arrow-key handlers, so the

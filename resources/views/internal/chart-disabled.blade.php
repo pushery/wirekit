@@ -5,14 +5,14 @@
      the developer-supplied `height` so layout stays stable once the config
      is fixed.
 
-     The two classes below are this placeholder's OWN. `wk-chart` in
+     The two classes below are this placeholder's own. `wk-chart` in
      particular marks nothing else: the chart component emits no `wk-*` class
      at all, `chart-mixed` emits `wk-chart-mixed`, and `dist/wirekit.css`
      styles neither. A selector built on `wk-chart` expecting to find a
      rendered chart will match this placeholder and nothing else.
 
      The signal a host should aim at is `data-wk-chart`, and this placeholder
-     deliberately does NOT carry it. Every rendered chart emits it with the
+     deliberately does not carry it. Every rendered chart emits it with the
      active library as its value; nothing renders here, so a lazy-loader firing
      on this element would fetch a chart library for a chart that was never
      configured — the exact cost the deferral exists to avoid. The absence is
@@ -25,7 +25,7 @@
 
      The role would make a debug placeholder a page landmark — something a reader navigates by,
      and something axe reports as `landmark-unique` the moment a page renders two charts. This
-     package's rule for a generic region is that the role waits for a name the CALLER chose;
+     package's rule for a generic region is that the role waits for a name the caller chose;
      there is no caller-supplied name reaching here at all: the element merges no attribute bag.
 
      The label would be worse than redundant: an `aria-label` on a container replaces its

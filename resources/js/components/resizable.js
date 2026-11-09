@@ -2,7 +2,7 @@
  * WireKit Resizable Handle — Alpine component.
  *
  * Hybrid architecture: CSS keeps layout (flex + width/height + min/max),
- * JavaScript takes over ONLY the drag + keyboard interaction on the
+ * JavaScript takes over only the drag + keyboard interaction on the
  * divider handle between panels. The previous panel is controlled via
  * inline `width: %` / `height: %` writes; every other layout concern
  * (flex shrink, overflow, containment) stays in `dist/wirekit.css`.
@@ -22,11 +22,14 @@
  *   - Enter / Space           — reset to the panel's declared defaultSize
  *
  * Pointer: drag the handle, or click one of the two step controls beside the grip, which move
- * it a few pixels per click without a drag (WCAG 2.2 SC 2.5.7).
+ * it a few pixels per click without a drag (WCAG 2.2 SC 2.5.7). A control whose bound the value
+ * stands on is listed in `data-wk-steps-spent` and hidden until the value leaves it.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/
  */
+import { inlineStep, isRightToLeft } from '../utils/inline-direction.js';
 import { frameCoalesce } from '../utils/frame-coalesce.js';
+import { SPENT_STEPS_ATTRIBUTE, markSpentSteps, spentSteps } from '../utils/spent-steps.js';
 
 /**
  * How far a click on a step control moves the handle, in CSS pixels. Less than half of a
@@ -45,8 +48,11 @@ const CONTROL_STEP_PX = 10;
  */
 const panelSizes = new WeakMap();
 
-/** The attributes of the handle that the server's markup does not carry, which a morph takes off. */
-const SEPARATOR_ATTRIBUTES = ['role', 'tabindex', 'aria-orientation', 'aria-controls', 'aria-valuemin', 'aria-valuemax', 'aria-valuenow'];
+/**
+ * The attributes of the handle that the server's markup does not carry, which a morph takes off:
+ * the separator's, and the list of step controls that stand on a bound.
+ */
+const SEPARATOR_ATTRIBUTES = ['role', 'tabindex', 'aria-orientation', 'aria-controls', 'aria-valuemin', 'aria-valuemax', 'aria-valuenow', SPENT_STEPS_ATTRIBUTE];
 
 export default function wirekitResizableHandle() {
     return {
@@ -56,12 +62,12 @@ export default function wirekitResizableHandle() {
         direction: 'horizontal',
         wrapper: null,
         panel: null,
-        // The panel that sits immediately AFTER this handle (if any). In
+        // The panel that sits immediately after this handle (if any). In
         // 3+ panel layouts, non-last handles use a "symmetric pair drag"
         // that shuffles space between `panel` and `nextPanel` only —
         // every other panel is left untouched. Two-panel layouts (and the
         // very last handle in any N-panel layout) fall back to the older
-        // single-panel mode because the next panel there IS the flex:1
+        // single-panel mode because the next panel there is the flex:1
         // absorber, which cannot carry an inline width.
         nextPanel: null,
         nextIsLast: false,
@@ -73,7 +79,7 @@ export default function wirekitResizableHandle() {
         currentSize: 50,
         dragging: false,
         /*
-         * The body's own inline `user-select` as it stood when THIS handle started a drag —
+         * The body's own inline `user-select` as it stood when this handle started a drag —
          * null while it holds nothing. Declared here rather than assigned inside the
          * pointerdown, because `_restoreBodyUserSelect()` and `destroy()` both read it, and
          * a handle that only appears inside a method is one nobody reading the teardown
@@ -112,7 +118,7 @@ export default function wirekitResizableHandle() {
 
         init() {
             // Locate the wrapper + the panel this handle controls. In the
-            // Blade template, handles always sit BETWEEN two panels, so the
+            // Blade template, handles always sit between two panels, so the
             // previous sibling is the panel whose size we mutate.
             this.wrapper = this.$el.closest('[data-wk-resizable]');
             this.panel = this.$el.previousElementSibling;
@@ -129,12 +135,12 @@ export default function wirekitResizableHandle() {
             this.defaultSize = this._clamp(this._readNumber(this.panel.dataset.wkDefaultSize, 50));
             this.currentSize = this.defaultSize;
 
-            // Detect the panel immediately AFTER this handle, and whether
+            // Detect the panel immediately after this handle, and whether
             // it is the wrapper's last panel child. The last panel uses
             // flex: 1 (see dist/wirekit.css) and has no inline width, so
             // we can't drive it by writing `style.width`. In that case we
             // stay in single-panel mode and let the flex child absorb
-            // slack via _computeDynamicMax(). For every OTHER handle (3+
+            // slack via _computeDynamicMax(). For every other handle (3+
             // panel layouts, non-last position), we enable the symmetric
             // pair-drag that users actually expect from a splitter UI.
             const nextEl = this.$el.nextElementSibling;
@@ -163,7 +169,7 @@ export default function wirekitResizableHandle() {
 
         /**
          * The WAI-ARIA Window Splitter attributes of the handle. A separator's orientation is
-         * PERPENDICULAR to the layout axis: a horizontally-laid-out split is divided by a
+         * perpendicular to the layout axis: a horizontally-laid-out split is divided by a
          * vertical separator, and vice versa. The value triple is the range `_announceRange()`
          * last announced, and the declared one before it.
          */
@@ -195,6 +201,24 @@ export default function wirekitResizableHandle() {
                     handle.setAttribute(name, value);
                 }
             }
+
+            markSpentSteps(handle, this._spentSteps(handle));
+        },
+
+        /**
+         * The step controls a click would not move: the one toward the bound the value stands on.
+         * Read from the same range the separator announces, so what a reader hears and what the
+         * controls offer never disagree. A hundredth of a percent counts as on the bound: more than a
+         * size loses when the browser writes it back, and far less than one step.
+         */
+        _spentSteps(handle) {
+            return spentSteps({
+                current: this._range?.current ?? this.currentSize,
+                lower: this._range?.lower ?? this.minSize,
+                upper: this._range?.upper ?? this.maxSize,
+                grows: this.direction === 'horizontal' && isRightToLeft(handle) ? -1 : 1,
+                tolerance: 0.01,
+            });
         },
 
         /**
@@ -272,7 +296,7 @@ export default function wirekitResizableHandle() {
             // Capture the pair sum at drag-start so _setSize can split
             // space between `panel` and `nextPanel` without drift. Only
             // meaningful when nextPanel is a non-last sibling (has an
-            // inline width we can mutate). For "next IS last" we fall
+            // inline width we can mutate). For "next is last" we fall
             // back to single-panel mode via _computeDynamicMax().
             if (this.nextPanel && !this.nextIsLast) {
                 const axisKey = this.direction === 'horizontal' ? 'width' : 'height';
@@ -298,7 +322,7 @@ export default function wirekitResizableHandle() {
             // panel content highlights that text and the browser repaints
             // the selection mid-drag — visible as a "flicker" and a
             // confusing UX. Restored on pointerUp / lostpointercapture.
-            // We capture the prior inline value (NOT the computed style)
+            // We capture the prior inline value (not the computed style)
             // so a developer who already set `body { user-select: ... }`
             // via stylesheet keeps that rule on restore.
             this._priorBodyUserSelect = document.body.style.userSelect;
@@ -333,10 +357,10 @@ export default function wirekitResizableHandle() {
                 return;
             }
 
-            // Panel-relative drag math (NOT wrapper-relative). In a two-panel
+            // Panel-relative drag math (not wrapper-relative). In a two-panel
             // layout the controlled panel's left/top edge is flush with the
             // wrapper's, so wrapper-relative math happens to work — but in a
-            // 3+ panel layout the controlled panel starts AFTER any preceding
+            // 3+ panel layout the controlled panel starts after any preceding
             // siblings, and measuring from the wrapper would make the handle
             // believe "cursor at 50% of container = controlled panel at 50%",
             // overwriting the preceding panels' slots. Measuring from the
@@ -395,7 +419,7 @@ export default function wirekitResizableHandle() {
          *
          * Split out because three paths need it: `onPointerUp` (pointerup,
          * pointercancel and lostpointercapture all route through it) and `destroy()`. Idempotent through the null check — restoring twice
-         * would write `''` over a value a SECOND handle had just snapshotted, and a page
+         * would write `''` over a value a second handle had just snapshotted, and a page
          * with two resizable panels has two of these.
          */
         _restoreBodyUserSelect() {
@@ -467,11 +491,12 @@ export default function wirekitResizableHandle() {
             let handled = false;
 
             if (this.direction === 'horizontal') {
-                if (event.key === 'ArrowLeft') {
-                    this._setSize(base - step);
-                    handled = true;
-                } else if (event.key === 'ArrowRight') {
-                    this._setSize(base + step);
+                // The first panel stands at the start of the row, the right on a right-to-left
+                // page, so the key that moves the handle toward the end grows it.
+                const toward = inlineStep(event, this.$el);
+
+                if (toward !== 0) {
+                    this._setSize(base + toward * step);
                     handled = true;
                 }
             } else {
@@ -506,9 +531,12 @@ export default function wirekitResizableHandle() {
          * One step from a control beside the grip: `CONTROL_STEP_PX` of the layout.
          *
          * Dragging was the only way a pointer could resize, and WCAG 2.2 SC 2.5.7 asks for a
-         * single-pointer way that does not drag. `direction` is -1 to make the controlled panel
-         * smaller and 1 to make it larger, which moves the handle the way the arrow keys do, and
-         * the bounds are the ones a drag keeps.
+         * single-pointer way that does not drag. `direction` is -1 for the control drawn before
+         * the line and 1 for the one after it, left and right of a horizontal line, above and below
+         * a vertical one, each pointing the way it moves the line; the bounds are the ones a drag
+         * keeps. The controlled panel stands before the line, so the line moves the way the arrow
+         * points when -1 shrinks it, except on a right-to-left page, where a horizontal row runs
+         * from the right: the controlled panel stands at the right there, and -1 grows it.
          */
         stepFromControl(direction) {
             if (!this.wrapper || !this.panel) {
@@ -522,7 +550,9 @@ export default function wirekitResizableHandle() {
                 return;
             }
 
-            this._setSize(this._liveSize() + (direction * (CONTROL_STEP_PX / length) * 100));
+            const grows = this.direction === 'horizontal' && isRightToLeft(this.$el) ? -direction : direction;
+
+            this._setSize(this._liveSize() + (grows * (CONTROL_STEP_PX / length) * 100));
         },
 
         /**
@@ -531,7 +561,7 @@ export default function wirekitResizableHandle() {
          * mirror the new value into aria-valuenow so screen readers
          * announce it.
          *
-         * There are TWO modes:
+         * There are two modes:
          *
          * 1. **Symmetric pair-drag** — the default for any handle whose
          *    next sibling is a non-last panel. The drag delta flows
@@ -630,7 +660,7 @@ export default function wirekitResizableHandle() {
         },
 
         /**
-         * Announce the range this splitter is ACTUALLY enforcing, not the one it was
+         * Announce the range this splitter is actually enforcing, not the one it was
          * declared with.
          *
          * `aria-valuemin` and `aria-valuemax` were written once at init from `minSize` and
@@ -661,11 +691,11 @@ export default function wirekitResizableHandle() {
          * handle's next sibling is the flex:1 last panel. For pair-drag
          * mode, the bounds come from `dragPairSum` instead.
          *
-         * - Non-last siblings contribute their CURRENT inline size (or
+         * - Non-last siblings contribute their current inline size (or
          *   their declared default if no drag has touched them yet).
-         *   These are "fixed" from the perspective of THIS drag — each
+         *   These are "fixed" from the perspective of this drag — each
          *   non-last panel is driven by its own handle.
-         * - The LAST panel contributes its declared minSize, because it
+         * - The last panel contributes its declared minSize, because it
          *   uses flex:1 and must keep at least that much room visible.
          *   Without this reservation, the last panel can collapse below
          *   its min (or even disappear) during a sibling's drag.
@@ -708,7 +738,7 @@ export default function wirekitResizableHandle() {
          * Read an element's current size along the active axis as a
          * percentage (0–100). Prefers the inline style (set by a prior
          * drag) over the declared defaultSize (written by Blade as a
-         * data attribute AND mirrored into --wk-default-size for CSS).
+         * data attribute and mirrored into --wk-default-size for CSS).
          */
         _readCurrentSize(el, axisKey) {
             const inline = el.style[axisKey];

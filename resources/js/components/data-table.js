@@ -7,7 +7,7 @@
  * a developer drives the same UI from Livewire instead (the server contract:
  * sort-change / search-change / selection-change events + wire:model bridges).
  *
- * Selection emits the id list via a `selection-change` event AND a JSON hidden
+ * Selection emits the id list via a `selection-change` event and a JSON hidden
  * input; sort + search emit `sort-change` / `search-change` so server mode can
  * re-query.
  *
@@ -30,7 +30,7 @@
  * @param {Object} config
  * @param {Array}  config.rows    - row objects, used when there is no state carrier
  * @param {Array}  config.columns - [{key,label,sortable?,align?,cellType?,
- *   subKey?,intentKey?,avatarKey?}] — the three optional keys let a ROW name its
+ *   subKey?,intentKey?,avatarKey?}] — the three optional keys let a row name its
  *   own second line, its own intent, and its own avatar.
  * @param {Object} config.avatarTints - initials -> {bg,fg}, resolved in PHP
  * @param {string} config.rowKey  - unique id field (default 'id')
@@ -44,7 +44,7 @@
  *   language. Same shape as the wizard's announcement template.
  */
 /**
- * The intents a cell may wear — the SAME seven `<x-wirekit::badge>` validates
+ * The intents a cell may wear — the same seven `<x-wirekit::badge>` validates
  * against, and the same seven the Blade class table carries. Module scope
  * because two methods read it: the built-in status-word scan and the
  * row-declared intent. Two copies of a closed list is how one of them quietly
@@ -104,7 +104,7 @@ export default function wirekitDataTable(config = {}) {
         hiddenKeys: Array.isArray(config.hidden) ? [...config.hidden] : [],
         emptyText: typeof config.emptyText === 'string' ? config.emptyText : '',
         // initials -> {bg, fg}, resolved in PHP by `AvatarPalette` and handed over as
-        // data. Deliberately NOT computed here: the palette is a crc32 hash, and a
+        // data. Deliberately not computed here: the palette is a crc32 hash, and a
         // second implementation of it would drift silently against the avatar
         // component the same person is rendered with two rows further up the page.
         avatarTints: config.avatarTints && typeof config.avatarTints === 'object' ? config.avatarTints : {},
@@ -261,7 +261,7 @@ export default function wirekitDataTable(config = {}) {
          * Take what the server rendered into the state carrier.
          *
          * The rows and their avatar tints are the server's outright. The sort and the filter
-         * are shared with the reader, so each is taken only when the server moved it AND the
+         * are shared with the reader, so each is taken only when the server moved it and the
          * local value still equals what the server said last time. Otherwise the reader has
          * moved on while the round trip was out: a query typed one letter further than the
          * results that just arrived, or a second click on a header. Overwriting that would
@@ -472,15 +472,15 @@ export default function wirekitDataTable(config = {}) {
             const ids = this.displayRows.map((r) => this.rowId(r));
             const wasAll = this.allSelected;
 
-            if (this.mode === 'server') {
-                // A server table shows one page of its matches, and the rows of the other pages
-                // keep the state the reader gave them: the header selects or clears this page.
-                this.selected = wasAll
-                    ? this.selected.filter((id) => ! ids.includes(id))
-                    : [...this.selected, ...ids.filter((id) => ! this.selected.includes(id))];
-            } else {
-                this.selected = wasAll ? [] : ids;
-            }
+            // The header selects or clears the rows the reader sees, and every other row keeps the
+            // state the reader gave it: a server table's other pages, and in a client table the rows
+            // a search hides. Replacing the selection with the visible rows dropped a hidden row the
+            // reader had chosen, and clearing it took the hidden ones too, while a row's own box
+            // left them alone. The bar counts every selected row, so a reader hears that there are
+            // more than they see.
+            this.selected = wasAll
+                ? this.selected.filter((id) => ! ids.includes(id))
+                : [...this.selected, ...ids.filter((id) => ! this.selected.includes(id))];
 
             if (wasAll) {
                 this.allMatches = false;
@@ -724,7 +724,7 @@ export default function wirekitDataTable(config = {}) {
          * count. Typing a query that matches nothing left the empty sentence on
          * screen and said nothing at all.
          *
-         * It is bound to a live region's TEXT rather than to the visible empty
+         * It is bound to a live region's text rather than to the visible empty
          * block's visibility, and that is the load-bearing part: a live region
          * announces a content change, and toggling an element between
          * `display: none` and visible is not one that every screen reader reports.
@@ -785,7 +785,7 @@ export default function wirekitDataTable(config = {}) {
          * column can gain a template later and this stays the shortcut for the common case.
          *
          * Empty behaves as absent: a row whose sub-field is null renders one line, not one
-         * line and a gap. Whether a row HAS the second value is data, not configuration.
+         * line and a gap. Whether a row has the second value is data, not configuration.
          */
         subText(row, col) {
             if (! col.subKey) {
@@ -797,13 +797,13 @@ export default function wirekitDataTable(config = {}) {
         },
 
         /**
-         * The intent a ROW declares for itself, when the column points at a field
+         * The intent a row declares for itself, when the column points at a field
          * holding one.
          *
          * This is what makes the admin threshold cell expressible — `stock === 0`
          * reading `Out` in red, `stock < 10` reading `3 low` in amber, and anything
          * above it a plain tabular number. Three things vary there and all three are
-         * functions of the value: the intent, the LABEL, and whether the cell is a
+         * functions of the value: the intent, the label, and whether the cell is a
          * pill at all. A value -> intent map on the column can only ever express the
          * first, so a column-side threshold syntax would have closed one third of the
          * gap while the ticket read as closed.
@@ -839,7 +839,7 @@ export default function wirekitDataTable(config = {}) {
          * The entries of a list-valued cell — one pill per entry.
          *
          * The tags cell of a customer table is the shape this exists for: a row carries none,
-         * one, or four of them, and how many is DATA. `badge` draws exactly one pill from one
+         * one, or four of them, and how many is data. `badge` draws exactly one pill from one
          * value, so a column of tags could not be expressed at all and the page stayed on the
          * plain table.
          *
@@ -901,7 +901,7 @@ export default function wirekitDataTable(config = {}) {
         /**
          * Status word -> intent for a `cellType: 'badge'` column.
          *
-         * The column is consulted FIRST, and that is the whole change. The built-in
+         * The column is consulted first, and that is the whole change. The built-in
          * vocabulary below is a closed list of English status words, and every application
          * whose statuses are not on it — another language, a domain word, `vip`, `lapsed`,
          * `storniert` — got `neutral` with no way to say otherwise. The list was also
@@ -912,7 +912,7 @@ export default function wirekitDataTable(config = {}) {
          * case-insensitively for the same reason the built-in scan lowercases: a status
          * arriving as `Paid` from a database is the same word as `paid`.
          *
-         * An unknown intent NAME falls back to neutral rather than returning a key the
+         * An unknown intent name falls back to neutral rather than returning a key the
          * class table has no entry for — indexing that table with a miss yields undefined,
          * and the pill would render with no classes at all. That would be this same defect
          * one level up: a silent closed list, reached from the escape hatch built to

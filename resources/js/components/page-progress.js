@@ -1,7 +1,7 @@
 /**
  * Page progress — the page-edge bar that reports a request the reader is waiting on.
  *
- * It reports WAITING, not work. A round trip has no percentage, so each step closes a
+ * It reports waiting, not work. A round trip has no percentage, so each step closes a
  * fraction of what is left and the bar slows the longer it waits; only the answer takes
  * it to the end. A bar that fills on a timer lies on the first request that runs long,
  * and one that stops dead on a round number reads as hung.
@@ -10,7 +10,7 @@
  *
  *   A poll is not a request the reader made. A screen polling every three seconds would run
  *   the bar through on every tick, and a bar that blinks on its own teaches its reader to
- *   ignore it — then it no longer reports the waiting that IS worth reporting. The test is
+ *   ignore it — then it no longer reports the waiting that is worth reporting. The test is
  *   Livewire's own metadata, not a list of method names that would need keeping in step with
  *   every template.
  *
@@ -42,7 +42,7 @@ export default function wirekitPageProgress(config = {}) {
         pct: 0,
         pending: 0,
 
-        // How many requests the bar ACCEPTED as the reader's own. It counts in begin(),
+        // How many requests the bar accepted as the reader's own. It counts in begin(),
         // before the delay has decided whether anything becomes visible — on a fast machine
         // a real click shows nothing, so an assertion on the visible bar would be flaky in
         // exactly the direction that matters. The poll rule sits on this seam, so this is
@@ -82,7 +82,7 @@ export default function wirekitPageProgress(config = {}) {
             // the bar where it was and it resumes — which is indistinguishable from having
             // crept the whole time, at no cost to a battery nobody was watching.
             //
-            // The COUNTER keeps running either way. Only the interval sleeps; a message that
+            // The counter keeps running either way. Only the interval sleeps; a message that
             // completes while the tab is hidden still decrements, so the bar does not come
             // back waiting on something already answered.
             this._visibility = pauseWhileHidden({
@@ -130,7 +130,7 @@ export default function wirekitPageProgress(config = {}) {
             }
 
             // `interceptMessage` is what the `commit` hook is itself built on, and it is the only
-            // seam handed the message's ACTIONS. The `commit` hook receives `message.payload`,
+            // seam handed the message's actions. The `commit` hook receives `message.payload`,
             // which carries the calls and not their metadata — so the poll question cannot be
             // asked one layer up. Every Livewire release this package supports provides it.
             this._releaseHook = livewire.interceptMessage(({ message, onFinish, onError, onCancel }) => {
@@ -253,7 +253,7 @@ export default function wirekitPageProgress(config = {}) {
             }, 220);
         },
 
-        // The object form, not a string template. Alpine's style binding REPLACES the whole
+        // The object form, not a string template. Alpine's style binding replaces the whole
         // attribute when handed a string, which would blow away the static declarations the
         // element carries — its color, its height, its anchor. The object form assigns
         // property by property and leaves them standing. Same reason the reading bar states.

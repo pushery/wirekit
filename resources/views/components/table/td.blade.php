@@ -2,9 +2,11 @@
      Renders no interactive element, so there is no action whose result could be
      shown early. --}}
 @props([
-    'align' => 'left', // left | center | right
+    // start | center | end, which follow the direction of the page, or left | right, which name a
+    // physical side whatever the direction.
+    'align' => 'start',
     'hideBelow' => null, // sm | md | lg | xl | 2xl — the same value as the column's header
-    // Hide the column below a width of the TABLE, not of the window.
+    // Hide the column below a width of the table, not of the window.
     //
     // `hideBelow` asks the viewport, and beside a sidebar that is the wrong question: in an
     // app shell the table can have less room at a 1024px viewport than at 768px, because the
@@ -12,11 +14,11 @@
     // exactly where the table has least room.
     //
     // The scale is the container scale and it is not the viewport one. Tailwind's container
-    // sizes are their own ladder: `3xl` here is 48rem of TABLE width, where `hide-below="md"`
-    // is 48rem of WINDOW. Same numbers, different subject — so the two props are deliberately
+    // sizes are their own ladder: `3xl` here is 48rem of table width, where `hide-below="md"`
+    // is 48rem of window. Same numbers, different subject — so the two props are deliberately
     // not interchangeable and a call site should pick one.
     //
-    // The container is NAMED (`@container/wk-table` on the table's frame) rather than
+    // The container is named (`@container/wk-table` on the table's frame) rather than
     // anonymous: an unnamed container would also become the measuring context for every
     // `@`-variant a caller nests inside the table, and silently retarget it.
     'hideBelowContainer' => null,
@@ -60,19 +62,21 @@
     $attributes = $attributes->except(['stackBelow', 'stack-below', 'stackBelowContainer', 'stack-below-container']);
 
     // An unknown value is reported through the strictness gate and, where the gate does not throw,
-    // aligns left.
-    $align = filled($align) ? WireKit::validateProp('table.td', 'align', (string) $align, ['left', 'center', 'right']) : 'left';
+    // aligns to the start of the line.
+    $align = filled($align) ? WireKit::validateProp('table.td', 'align', (string) $align, ['start', 'center', 'end', 'left', 'right']) : 'start';
 
     // Which cell holds the row's actions where the table stacks: the one the caller names, or else
     // a cell aligned to the end, unless a label of its own names its value.
     $isActions = $actions === null
-        ? $align === 'right' && ! filled($label)
+        ? in_array($align, ['end', 'right'], true) && ! filled($label)
         : \Pushery\WireKit\Support\BooleanProp::from($actions, false, 'table.td', 'actions');
 
     $alignClass = match ($align) {
         'center' => 'text-center',
+        'end' => 'text-end',
+        'left' => 'text-left',
         'right' => 'text-right',
-        default => 'text-left',
+        default => 'text-start',
     };
 
     // `hideBelow` takes a column off a narrow screen. The classes are written out per breakpoint
@@ -190,7 +194,7 @@
     ]), $scope);
 @endphp
 
-<td data-wk-prose-skip data-wk-table-td
+<td data-wk-prose-skip data-wk-table-td @if($hideBelowContainer !== null) data-wk-table-measures @endif
     {{-- Stacked, the cell with the row's actions stands as the card's footer, and every other cell
          is a line named by its column, or by a label of its own, which wins over its column's. --}}
     @if(filled($stackBelow))

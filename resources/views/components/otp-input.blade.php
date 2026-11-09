@@ -1,30 +1,30 @@
 {{-- optimistic-ui: supported
-     Uses the `keep` failure exit — a refusal KEEPS the code and says only that
+     Uses the `keep` failure exit — a refusal keeps the code and says only that
      it was not accepted. That is not a preference here, it is the whole reason this
      component was blocked: clearing the boxes on a refusal would make the reader
      re-enter a one-time code that may well have expired in the meantime.
 
-     The commit boundary is the code being COMPLETE, not any single keystroke.
+     The commit boundary is the code being complete, not any single keystroke.
      The field syncs on every character, so anything hung on that would
      fire once per box; `wirekit:otp-complete` fires once, when the last box is
      filled, and again after a correction — which is exactly the moment a
      one-time code is normally submitted. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
     // complain either, because `required` is in its HTML passthrough list — so it looked like
     // a legitimate attribute all the way down. The result was a required field that submits
     // empty, in the same form as a plain input that behaves correctly.
     'required' => false,
-    // The Livewire method to call when the code is COMPLETE — not per keystroke.
+    // The Livewire method to call when the code is complete — not per keystroke.
     // A refusal keeps what was entered; see the note above. Null leaves the
     // component exactly as it has always rendered.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -55,7 +55,7 @@
     // wherever the width runs out: a break in the middle of a code, at no boundary
     // the code has, while somebody copying it from an email reads one line there.
     //
-    // The prop does NOT force a break: the groups sit in a wrapping row and each
+    // The prop does not force a break: the groups sit in a wrapping row and each
     // group itself does not wrap, so a row that fits stays a row and a row that does
     // not breaks at a group boundary. `group="4"` on eight digits is one row on a
     // desktop and 4+4 on a phone.
@@ -81,7 +81,7 @@
     //
     // A touch device already lifts the boxes to the touch target, through the
     // `pointer: coarse` floor in the stylesheet. What it cannot reach is a surface that is
-    // worked by finger and reports a FINE pointer — a till or a kiosk with a mouse plugged
+    // worked by finger and reports a fine pointer — a till or a kiosk with a mouse plugged
     // in, where the boxes stayed 40px. `lg` clears 44px on any pointer, and the class list
     // below gives each size its own box so the square survives. `md` by default, so no
     // existing field changes size.
@@ -124,7 +124,7 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $masked = BooleanProp::from($masked, false, 'otp-input', 'masked');
@@ -140,7 +140,7 @@
     $length = max(1, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::positive($length, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.otp-input.length', 6), 6), 'otp-input', 'length'), 100, 'otp-input', 'length'));
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -174,7 +174,7 @@
         // reason is the catalog rather than the behavior: the two do the same thing here (the
         // same gate decision, fallback and message). `PropValidationParser` reads
         // every `validateProp()` allow-list to publish a prop's values in `/api-map.json`, and it
-        // can only read a LITERAL list. This one depends on another prop: the sizes a code of
+        // can only read a literal list. This one depends on another prop: the sizes a code of
         // `length` can carry. A list built at render time comes back unresolved, which publishes
         // the prop as taking anything — and the machine-readable surface would then promise a
         // developer that any value goes. So this check goes through `StrictnessGate::enforce()`,
@@ -192,11 +192,11 @@
     //
     // On the row itself, not on the wrapper: the wrapper is where the attribute bag lands,
     // and that is precisely the element a call site could already reach and that did not
-    // help. A flex line is justified per LINE, so a wrapped code centers both of its rows
+    // help. A flex line is justified per line, so a wrapped code centers both of its rows
     // rather than hanging the second one off the first's left edge.
     $justify = filled($justify) ? (string) $justify : 'start';
 
-    // Fully qualified: this view's `WireKit` import lives in a LATER `@php` block, and a
+    // Fully qualified: this view's `WireKit` import lives in a later `@php` block, and a
     // later block does not reach this one.
     if (! in_array($justify, ['start', 'center', 'end', 'stretch'], true)) {
         \Pushery\WireKit\WireKit::validateProp('otp-input', 'justify', $justify, ['start', 'center', 'end', 'stretch']);
@@ -216,7 +216,7 @@
     // of about twenty characters, and such a container would grow to boxes of twice their size.
     $stretch = $justify === 'stretch';
 
-    // The default emits NOTHING rather than the leading-edge utility: the flex default
+    // The default emits nothing rather than the leading-edge utility: the flex default
     // already packs to the leading edge, and naming it would add a class that says what is
     // already true.
     $justifyClass = match ($justify) {
@@ -291,7 +291,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -409,7 +409,7 @@
     // retyped: it may have expired while the request was in flight.
     //
     // `value` is handed over as an empty string rather than omitted, because this
-    // layer is the OUTERMOST x-data on the component and an undeclared property
+    // layer is the outermost x-data on the component and an undeclared property
     // is in no scope at all — the binding would name nothing, init() would
     // disarm, and the component would look supported while doing nothing. It
     // seeds the baseline only, which `keep` never writes back.
@@ -527,24 +527,24 @@
              field normally sits in offers about 320px of content width, so it runs
              past the edge. Wrapping is the only adjustment that keeps the boxes at
              their designed size; shrinking them would make the digits unreadable. --}}
-        {{-- The gap between GROUPS is wider than the gap between boxes, and that is the
+        {{-- The gap between groups is wider than the gap between boxes, and that is the
              visible separator — without a glyph, which a screen reader would either read
              out or need hiding from. Ungrouped, the row keeps the boxes' own gap. --}}
         {{-- `trim()` so a field that asks for no alignment carries no trailing space in
              its class list. --}}
-        class="{{ trim('flex flex-wrap '.($group === null ? 'gap-2' : 'gap-4').' '.$justifyClass) }}"
+        class="{{ trim('flex flex-wrap '.($group === null ? 'gap-[var(--gap-wk-sm)]' : 'gap-[var(--gap-wk-lg)]').' '.$justifyClass) }}"
         role="group"
-        {{-- Test hooks written at the call site land here, on the element that IS the
+        {{-- Test hooks written at the call site land here, on the element that is the
              control to a reader and to a test. Only `dusk` and `data-*`: before this line
              everything but `class`, `wire:model` and `aria-label` was dropped, so a suite
              that finds its fields by `dusk` could not find this one at all. --}}
         {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }} {{ $groupListeners }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @else aria-label="{{ \Pushery\WireKit\Support\BlankName::first($label, \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), __('wirekit::One-time code')) }}" @endif
-        {{-- On the GROUP as well as on every box: a reader who lands on the group
+        {{-- On the group as well as on every box: a reader who lands on the group
              before reaching a digit has to hear that the code is not enterable. --}}
         @if($disabled) aria-disabled="true" @endif
-        {{-- The hint or the error on the GROUP as well as on the first box, as the range
+        {{-- The hint or the error on the group as well as on the first box, as the range
              slider's group carries them: a reader who enters at another box, by Shift+Tab or a
              click, hears them on the way in, and the automatic advance from box to box does
              not read them out again at every digit. A caller's own reference describes the
@@ -559,7 +559,7 @@
              Grouped, it is a row that does not wrap: the groups wrap against each other
              in the row above, so a break can only happen at a group boundary. Eight
              digits with `group="4"` are one row where it fits and 4+4 where it does not. --}}
-        <div class="{{ $group === null ? 'contents' : ($stretch ? 'flex gap-2 justify-between' : 'flex gap-2') }}"@if($group !== null && $stretch) style="flex: {{ count($digitGroup) }} 1 0%"@endif>
+        <div class="{{ $group === null ? 'contents' : ($stretch ? 'flex gap-[var(--gap-wk-sm)] justify-between' : 'flex gap-[var(--gap-wk-sm)]') }}"@if($group !== null && $stretch) style="flex: {{ count($digitGroup) }} 1 0%"@endif>
         @foreach($digitGroup as $i)
             <input
                 {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
@@ -590,7 +590,7 @@
                      bare `-N` the digit index and the dedupe counter shared one
                      namespace, and `code-2` meant both "digit 2 of the first
                      control" and "the second control called code". One otp-input
-                     plus ANY second same-name control emitted that id twice, at
+                     plus any second same-name control emitted that id twice, at
                      the default length, which is precisely the state `dedupe_ids`
                      exists to remove. A dedupe suffix is always numeric, so a word
                      segment cannot collide with one. --}}
@@ -614,7 +614,7 @@
                 @elseif($requiredMessageId)
                     x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
                 @endif
-                {{-- Digit 0 only. `autofocus` is honored on the FIRST element in
+                {{-- Digit 0 only. `autofocus` is honored on the first element in
                      the document carrying it and silently ignored on the rest, so
                      emitting it per box would look like six requests and behave
                      like one — and the one it behaved like would be right only by
@@ -633,7 +633,7 @@
                      around them would be a branch no run can enter. It is on every
                      box rather than the group because `disabled` does not inherit —
                      the group carries `aria-disabled` for the same state instead.
-                     (range-slider DOES guard its handlers: its thumbs are
+                     (range-slider does guard its handlers: its thumbs are
                      `div[role="slider"]`, which the attribute cannot switch off.) --}}
                 @disabled($disabled)
                 @if($readonly) readonly @endif
@@ -667,9 +667,9 @@
         @if($required)
             @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled || $readonly])
         @endif
-        @if($requiredMessageId)
+        @wirekitLast($requiredMessageId)
             @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId, 'requiredMessageClass' => 'basis-full'])
-        @endif
+        @endwirekitLast
     </div>
 
     @if($hasError && $errorMessage)
@@ -678,10 +678,7 @@
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @if($optimisticConfig)
-        {{-- Rendered unconditionally and starting empty: a live region that
-             arrives together with its text is a new node, and nothing is
-             announced at all. --}}
-        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
-    @endif
+    {{-- The live region of an optimistic field (partials/optimistic-announcer). It stands last, so
+         it is included rather than written in a block, and Livewire writes no morph markers around it. --}}
+    @includeWhen($optimisticConfig, 'wirekit::components.partials.optimistic-announcer')
 </div>

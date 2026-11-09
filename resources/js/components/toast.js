@@ -9,7 +9,7 @@ import { timerDelay } from '../utils/timer-delay.js';
  * pointer rests on it or the focus is inside it.
  */
 export default function wirekitToast(config = {}) {
-    // The element focus came FROM when the reader first tabbed into the region,
+    // The element focus came from when the reader first tabbed into the region,
     // kept for the case where dismissing the last toast leaves nothing inside to
     // hand focus to.
     //
@@ -39,7 +39,7 @@ export default function wirekitToast(config = {}) {
     let regionEl = null;
 
     /**
-     * The region, resolved ONCE while something is still attached to resolve it
+     * The region, resolved once while something is still attached to resolve it
      * from, and kept.
      *
      * Every caller below reaches this synchronously — from `init()`, from a
@@ -172,7 +172,7 @@ export default function wirekitToast(config = {}) {
         /**
          * Write a toast's text into the persistent live region.
          *
-         * The regions live OUTSIDE the x-for and start empty, because a live region
+         * The regions live outside the x-for and start empty, because a live region
          * has to exist before the text it announces: an element created together
          * with its message is a new node, not a region that changed, and assistive
          * technology stays silent. Every toast in this component announced nothing
@@ -202,6 +202,8 @@ export default function wirekitToast(config = {}) {
          * @param {string} [detail.message] - Body text
          * @param {string} [detail.variant='info'] - info|success|warning|danger
          * @param {number} [detail.duration] - Override auto-dismiss ms (0 = persistent)
+         * @param {boolean} [detail.announce=true] - `false` shows the toast without saying it, for
+         *   a message a screen reader hears elsewhere already, such as an alert that a render added
          */
         add(detail) {
             const id = this._nextId++;
@@ -224,7 +226,10 @@ export default function wirekitToast(config = {}) {
             }
 
             this.toasts.push(toast);
-            this._announce(toast);
+
+            if (detail.announce !== false) {
+                this._announce(toast);
+            }
 
             // A toast that arrives over the element that has the focus moves off it, as one would
             // that the focus moved under.
@@ -252,7 +257,7 @@ export default function wirekitToast(config = {}) {
             while (this.toasts.length > this._max) {
                 const oldest = this.toasts[0];
 
-                // Read BEFORE the shift: afterwards `toasts[0]` is a different toast and
+                // Read before the shift: afterwards `toasts[0]` is a different toast and
                 // the lookup would measure the wrong one. The first non-null answer is
                 // kept, because a second pass looks at a toast focus was never inside and
                 // returns null — which would otherwise erase the landing found here.
@@ -271,17 +276,17 @@ export default function wirekitToast(config = {}) {
          * Record where focus entered the region from.
          *
          * `focusin` bubbles, so this fires for every focus move inside the stack
-         * too — the `relatedTarget` test keeps only the move that CROSSED the
+         * too — the `relatedTarget` test keeps only the move that crossed the
          * boundary, which is the one worth returning to.
          *
          * The captured region rather than `$el` for the boundary test, for the same
-         * reason the lookups below use it: the region IS the boundary, and `$el`
+         * reason the lookups below use it: the region is the boundary, and `$el`
          * only happens to be the region while this listener stays on the `x-data`
          * element. Moving it onto a card would silently turn every intra-stack
          * focus move into a "crossing" and overwrite the origin.
          *
          * It reads `regionEl` and not `$root` for the reason at the top of this
-         * file — this one happens to work, because the listener sits ON the
+         * file — this one happens to work, because the listener sits on the
          * `x-data` element, and "happens to work" is what the other two also did
          * until they were reached from a handler one level down.
          *
@@ -348,7 +353,7 @@ export default function wirekitToast(config = {}) {
          * for each one. WCAG 2.4.3 asks for the opposite: focus follows the
          * reader's place in the sequence.
          *
-         * Only the KEYBOARD path is touched. Focus is looked at first and left
+         * Only the keyboard path is touched. Focus is looked at first and left
          * alone unless it sits inside the toast being removed — so an auto-
          * dismiss, a hover dismiss, and a programmatic `remove()` leave the
          * focus where it is. (The timer path cannot fire on a focused toast

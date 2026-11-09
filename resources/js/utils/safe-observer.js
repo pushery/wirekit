@@ -36,7 +36,7 @@
  *         this._io.stop();
  *     },
  *
- * A MODULE AND NOT A GLOBAL, deliberately. Putting this on `window.WireKit`
+ * A module and not A global, deliberately. Putting this on `window.WireKit`
  * would be a versioned public surface — cheap to add, expensive to take back,
  * and a namespace holding one function is the costlier road to the same place.
  * Plugin authors bundle; an import reaches them and commits us to nothing.
@@ -45,7 +45,7 @@
  * `destroy()`. Nothing can: a plugin that never tears down leaks its observer
  * whatever wrapper it used, and a helper that pretended otherwise would be
  * worse than none because it would read as a guarantee. What it removes is the
- * OTHER half — the null-guard in every callback, which is the half that is easy
+ * other half — the null-guard in every callback, which is the half that is easy
  * to forget and impossible to notice until a morph proves it.
  */
 
@@ -71,7 +71,7 @@ export function safeObserver(Observer, callback, options) {
 
     let live = true;
 
-    // The guard lives HERE rather than in the caller's callback, which is the
+    // The guard lives here rather than in the caller's callback, which is the
     // whole point: the discipline is inherited instead of remembered.
     const observer = new Observer((...args) => {
         if (! live) {

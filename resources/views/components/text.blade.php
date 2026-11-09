@@ -16,7 +16,7 @@
     // and shows the whole text in a tooltip while, and only while, it is cut.
     'truncate' => false,
     'lineClamp' => null,
-    'break' => null,        // where an unbroken token may wrap: normal | anywhere | all. null → the default rules, no class
+    'break' => null,        // where an unbroken token may wrap: normal | anywhere | all | address, which breaks an email address, a host or a URL at its seams first. null → the default rules, no class
     // The line height: tight | normal | relaxed | inherit, on the leading tokens. null keeps the theme's own
     // line height, which is `normal`. A second line under a value in a table cell wants `tight`, so it
     // stands close to the line it belongs to; a class from outside could not say so reliably, because
@@ -61,7 +61,7 @@
         $truncate = \Pushery\WireKit\WireKit::validateProp('text', 'truncate', $truncate, ['true', 'false', 'tooltip']);
     }
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     // Three states: false, true (cut with an ellipsis) and 'tooltip' (cut, with the whole text in a
@@ -115,7 +115,7 @@
     // does not carry still fails validation. That is the point: loud beats a
     // silent fallback to the default color.
     $effectiveIntent = $intent ?? $variant;
-    // The error names the prop the CALLER wrote, not the canonical one.
+    // The error names the prop the caller wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
     $variantClasses = match (WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger', 'inherit'])) {
@@ -139,7 +139,10 @@
         'bold' => 'font-bold',
     };
 
-    $alignClasses = match ($align === null ? null : WireKit::validateProp('text', 'align', $align, ['left', 'center', 'right'])) {
+    // `start` and `end` follow the direction of the page; `left` and `right` name a physical side.
+    $alignClasses = match ($align === null ? null : WireKit::validateProp('text', 'align', $align, ['start', 'center', 'end', 'left', 'right'])) {
+        'start' => 'text-start',
+        'end' => 'text-end',
         'left' => 'text-left',
         'center' => 'text-center',
         'right' => 'text-right',
@@ -175,15 +178,20 @@
     // An unbroken token — a checksum, a key, a long URL — has no space to wrap at, so it widens
     // its container instead, and `truncate` would hide characters a reader may need in full.
     //
-    // Arbitrary PROPERTIES rather than named utilities: Tailwind generates one from the literal
+    // Arbitrary properties rather than named utilities: Tailwind generates one from the literal
     // class on every v4 release, where the named utilities for `overflow-wrap` only arrived in
     // 4.1, and a class with no rule behind it fails silently, as the lineClamp comment above
     // describes. Literal arms for the same reason. `anywhere` also counts toward
     // the element's min-content width, which is what lets it wrap inside a flex row, where
     // `break-word` would not.
-    $breakClasses = match ($break === null ? null : WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all'])) {
+    //
+    // `address` adds a break opportunity at each seam of an address (Support\AddressBreaks), before
+    // an at sign or a full stop, so `ada@example.org` wraps there first, and keeps `anywhere` for a
+    // part that is too wide for the line on its own.
+    $breakMode = $break === null ? null : WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all', 'address']);
+    $breakClasses = match ($breakMode) {
         'normal' => '[overflow-wrap:normal] [word-break:normal]',
-        'anywhere' => '[overflow-wrap:anywhere]',
+        'anywhere', 'address' => '[overflow-wrap:anywhere]',
         'all' => '[word-break:break-all]',
         null => '',
     };
@@ -224,8 +232,9 @@
 
     // The fitted text stands inside the element, so the element's size is the largest it takes, and
     // `wrap` decides whether it keeps to one line or to the fewest lines its floor needs.
+    $content = $breakMode === 'address' ? \Pushery\WireKit\Support\AddressBreaks::mark($slot) : $slot;
     $fitted = $fitFloor === false ? null : \Pushery\WireKit\Support\FitText::box(
-        $slot,
+        $content,
         new \Illuminate\View\ComponentAttributeBag(array_filter(['style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null])),
         $wrap,
     );
@@ -305,4 +314,4 @@
     x-on:pointerup="pointerup($event)"
     x-on:pointerleave="pointerleave($event)"
     x-on:keydown.escape.window.capture="keydownEscape($event)"
-    @endif{{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, $elementClasses)) }}>{{ $truncateTooltip ? $slot : ($fitted ?? $slot) }}{{ $tipPanel }}</{{ $as }}>
+    @endif{{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, $elementClasses)) }}>{{ $truncateTooltip ? $content : ($fitted ?? $content) }}{{ $tipPanel }}</{{ $as }}>

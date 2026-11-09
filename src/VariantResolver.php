@@ -58,7 +58,7 @@ class VariantResolver
 
     private static function filled(string $intent): string
     {
-        // The border is TRANSPARENT on every intent, and the fill shows through it: a filled
+        // The border is transparent on every intent, and the fill shows through it: a filled
         // button keeps the one-pixel box the outline surface has, without drawing a second shape.
         // A border in the fill's own color would be two things to keep in step where one does
         // the job:
@@ -85,7 +85,7 @@ class VariantResolver
                 'border-transparent',
                 // The pairing `soft()`'s comment measures and rejects, fixed here rather than
                 // only described there: muted (L=0.972) hovering to subtle (L=0.985) moves 1.3
-                // points BRIGHTER, which reads as fading out. Mixing toward the text moves away
+                // points brighter, which reads as fading out. Mixing toward the text moves away
                 // from the base in both modes by construction.
                 'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]',
                 'shadow-[var(--shadow-wk-sm)]',
@@ -164,7 +164,7 @@ class VariantResolver
     {
         // Soft = tinted background, intent-colored text, no border. The
         // *-bg tokens (--color-wk-accent-bg / --color-wk-success-bg / etc.)
-        // do NOT exist in dist/wirekit.css — only --color-wk-warning-bg
+        // do not exist in dist/wirekit.css — only --color-wk-warning-bg
         // exists. Use color-mix(in_srgb, var(--color-wk-X) 12%, var(--color-wk-bg))
         // for every intent, mirroring the badge component's soft-tint formula.
         // info tints with its own tone.
@@ -207,9 +207,9 @@ class VariantResolver
         // `neutral` is not `bg-subtle`. `filled()` pairs muted with subtle, which in a light
         // theme makes the hover slightly brighter, at the threshold of perception and pointing
         // the way a reader parses as fading out.
-        // Mixing the surface toward the TEXT color instead is correct in both modes by
+        // Mixing the surface toward the text color instead is correct in both modes by
         // construction — the text is dark on a light theme and light on a dark one, so the
-        // hover always moves AWAY from the background rather than in a fixed direction.
+        // hover always moves away from the background rather than in a fixed direction.
         $hoverClass = $tintToken === null
             ? 'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]'
             : "hover:bg-[color-mix(in_srgb,var({$tintToken})_18%,var(--color-wk-bg))]";
@@ -239,8 +239,8 @@ class VariantResolver
         // on a light page that step sits at the threshold of perception, and a ghost button
         // beside other menu items would look as if it had no hover at all.
         //
-        // Mixing toward the TEXT color is the construction `soft()` already settled on,
-        // and it is a better fit here than there: ghost has NO surface of its own, so
+        // Mixing toward the text color is the construction `soft()` already settled on,
+        // and it is a better fit here than there: ghost has no surface of its own, so
         // it sits on whatever is behind it. A fixed shade can only be right for one
         // background; an overlay derived from the text color moves away from every one
         // of them, in both modes, without knowing what it is on.

@@ -20,7 +20,7 @@
     // `null` or empty string is `floating` without a word.
     $mode = \Pushery\WireKit\WireKit::validateProp('action-bar', 'mode', \Pushery\WireKit\Support\NumericProp::text($mode ?: 'floating'), ['floating', 'static']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $visible = BooleanProp::from($visible, false, 'action-bar', 'visible');
@@ -28,7 +28,7 @@
     // Action Bar — the bar of bulk actions shown when items are selected.
     // Uses role="group" + an aria-live announcement for screen readers.
     //
-    // NOT role="toolbar", and the distinction is the whole reason this comment exists.
+    // Not role="toolbar", and the distinction is the whole reason this comment exists.
     // The toolbar role is a composite-widget promise: one tab stop for the whole bar,
     // Left/Right (or Up/Down) moving between the controls inside it, Home/End jumping
     // to the ends. This component renders no keyboard model — it is a layout wrapper
@@ -66,9 +66,17 @@
     // nothing selected. A Livewire render that flips `visible` swaps the class.
     $display = ! $visible ? 'hidden' : ($isFloating ? 'flex' : 'inline-flex');
 
+    // In the flow, the summary and the actions continue on a second line where they do not fit
+    // side by side, as on a phone or in a narrow card, instead of running past the container.
+    // A floating bar keeps one line. Pinned from the middle of the viewport, the width it may take
+    // before it wraps is half the viewport, so wrapping there would break a bar that fits the
+    // screen in one line.
+    $wrap = $isFloating ? '' : 'flex-wrap';
+
     $classes = WireKit::resolveClasses('action-bar', 'base', implode(' ', [
         $positioningClasses,
         $display,
+        $wrap,
         'items-center gap-[var(--gap-wk-md)]',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-x-lg)]',
@@ -97,11 +105,11 @@
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 @endphp
 
-{{-- The live region sits OUTSIDE the bar, and that is the whole point.
+{{-- The live region sits outside the bar, and that is the whole point.
 
      When `$visible` is false the bar is not displayed, and an undisplayed subtree is not in the
-     accessibility tree at all. A region inside the bar would therefore not CHANGE
-     on the flip — it would APPEAR, already populated, and a live region that appears with its
+     accessibility tree at all. A region inside the bar would therefore not change
+     on the flip — it would appear, already populated, and a live region that appears with its
      text already in it announces nothing.
 
      Out here it is always in the tree, always empty until the bar is shown, and the flip is
@@ -111,7 +119,7 @@
      selected" as the count changes, each change being a change of the region's text. Atomic, so the
      number is said with the words it belongs to. --}}
 <div aria-live="polite" aria-atomic="true" class="sr-only" data-wk-announcer>
-    @if($visible) {{ $hasSummary ? $summary : __('wirekit::Bulk actions available') }} @endif
+    @wirekitLast($visible) {{ $hasSummary ? $summary : __('wirekit::Bulk actions available') }} @endwirekitLast
 </div>
 
 <div

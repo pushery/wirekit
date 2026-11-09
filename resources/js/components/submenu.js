@@ -14,7 +14,7 @@
  *
  * WAI-ARIA submenu keyboard model (https://www.w3.org/WAI/ARIA/apg/patterns/menu/):
  *   - On the parent item: ArrowRight / Enter / Space open the submenu and
- *     focus its first item. ArrowUp / ArrowDown are NOT handled here — they
+ *     focus its first item. ArrowUp / ArrowDown are not handled here — they
  *     bubble to the parent menu's own handler so parent-level roving focus
  *     keeps working.
  *   - Inside the submenu panel: ArrowUp / ArrowDown / Home / End move within
@@ -28,7 +28,7 @@
  * this level does not handle does not fall on the floor: the panel is an
  * ordinary descendant of the parent menu's own keydown handler, so the key
  * would bubble into it, and that handler filters submenu rows out of its list
- * by construction. It would search the PARENT level and focus a parent row:
+ * by construction. It would search the parent level and focus a parent row:
  * one letter, and the reader would be lifted out of the level they were reading.
  *
  * Lifecycle resources held on `this` (released in destroy()):
@@ -45,6 +45,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
+import { inlineKey, isRightToLeft } from '../utils/inline-direction.js';
 import { position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
@@ -56,13 +57,13 @@ const HOVER_CLOSE_DELAY_MS = 140;
 
 /**
  * @param {Object} config - Submenu configuration from Blade
- * @param {string} config.placement - Floating UI placement (default right-start)
+ * @param {string} config.placement - Floating UI placement (default right-start, left-start on a right-to-left page)
+ * @param {boolean} [config.followsDirection] - Whether the flyout follows the page; the view sets it for the default placement
  * @param {number} config.offset - Gap between parent item and child panel
  */
 export default function wirekitSubmenu(config = {}) {
     return {
         subOpen: false,
-        _subPlacement: config.placement || 'right-start',
         _subOffset: config.offset ?? 0,
         _closeTimer: null,
         _typeAheadBuffer: '',
@@ -114,7 +115,7 @@ export default function wirekitSubmenu(config = {}) {
                 this._releaseRepair();
 
                 const placement = await position(trigger, panel, {
-                    placement: this._subPlacement,
+                    placement: this._flyoutPlacement(trigger),
                     offset: this._subOffset,
 
                     // Everything this call writes is inline style, and a framework update patches
@@ -127,7 +128,7 @@ export default function wirekitSubmenu(config = {}) {
                     // rather than the style attribute.
                     //
                     // A submenu is the worst place in the catalog for this. It is a level a
-                    // reader is standing INSIDE — arrowing, typing ahead — and a flyout that
+                    // reader is standing inside — arrowing, typing ahead — and a flyout that
                     // jumps to the end of the document takes their place in the menu with it,
                     // while the parent item still says `aria-expanded="true"`.
                     repairErasure: true,
@@ -192,9 +193,9 @@ export default function wirekitSubmenu(config = {}) {
          * Hover-out close after a short grace period (the diagonal problem).
          *
          * Sets `subOpen = false` inline rather than routing through closeSub() on
-         * purpose: a pointer-driven close must NOT refocus the parent item (that
+         * purpose: a pointer-driven close must not refocus the parent item (that
          * would yank focus on a mouse interaction). closeSub(true) is reserved for
-         * the keyboard paths (ArrowLeft / Escape) where refocusing IS correct.
+         * the keyboard paths (ArrowLeft / Escape) where refocusing is correct.
          */
         scheduleClose() {
             this._clearCloseTimer();
@@ -202,7 +203,7 @@ export default function wirekitSubmenu(config = {}) {
                 this._closeTimer = null;
 
                 /*
-                 * Not while the reader is INSIDE it.
+                 * Not while the reader is inside it.
                  *
                  * The pointer leaving is a statement about the pointer, and the two devices
                  * are independent: a keyboard user opens the flyout with ArrowRight, starts
@@ -251,13 +252,44 @@ export default function wirekitSubmenu(config = {}) {
         },
 
         /**
+         * Whether the flyout follows the page. The default placement does, toward the end of the
+         * row; a placement the caller wrote keeps its side. The view says which; without its word,
+         * no placement means the default.
+         */
+        _followsDirection() {
+            return config.followsDirection ?? !config.placement;
+        },
+
+        /**
+         * The side the flyout opens on: the end of the row while it follows the page, the left on
+         * a page that reads from the right, or the placement the caller wrote.
+         * @param {?Element} trigger
+         */
+        _flyoutPlacement(trigger) {
+            const placement = config.placement || 'right-start';
+
+            return this._followsDirection() && isRightToLeft(trigger) ? placement.replace(/^right/, 'left') : placement;
+        },
+
+        /**
+         * A key as a row that opens the flyout toward its end reads it: while the flyout follows
+         * the page the side keys swap with it, and a placement the caller wrote keeps them as
+         * pressed, as it keeps its side.
+         * @param {KeyboardEvent} e
+         */
+        _flyoutKey(e) {
+            return this._followsDirection() ? inlineKey(e, e.target) : e.key;
+        },
+
+        /**
          * Keyboard on the parent item. Only opens-the-submenu keys are handled
          * (and stopPropagation'd); everything else bubbles to the parent menu's
          * handler so parent-level navigation is untouched.
          * @param {KeyboardEvent} e
          */
         onTriggerKey(e) {
-            switch (e.key) {
+            // The key that points toward the flyout opens it.
+            switch (this._flyoutKey(e)) {
                 case 'ArrowRight':
                 case 'Enter':
                 case ' ':
@@ -279,7 +311,7 @@ export default function wirekitSubmenu(config = {}) {
 
             const idx = items.indexOf(document.activeElement);
 
-            switch (e.key) {
+            switch (this._flyoutKey(e)) {
                 case 'ArrowDown':
                     e.preventDefault();
                     e.stopPropagation();
@@ -318,13 +350,13 @@ export default function wirekitSubmenu(config = {}) {
                     // preventDefault() would suppress the native activation a <button> row
                     // performs on keyup. The menu would answer Space with nothing at all.
                     //
-                    // Activating EXPLICITLY rather than by letting the default through,
+                    // Activating explicitly rather than by letting the default through,
                     // because the rows are not all buttons: `dropdown.item` renders an <a>
                     // whenever it is given an href, and Space on a focused link does not
                     // activate it — it scrolls the page, behind an open menu. One synthetic
                     // click covers both tags, as it does at the parent level.
                     //
-                    // Nothing focused means nothing to activate: break WITHOUT preventDefault
+                    // Nothing focused means nothing to activate: break without preventDefault
                     // so the key keeps whatever meaning it had.
                     if (idx < 0) break;
 
@@ -357,7 +389,7 @@ export default function wirekitSubmenu(config = {}) {
         },
 
         /**
-         * Move focus to the next row of THIS level matching what has been typed.
+         * Move focus to the next row of this level matching what has been typed.
          *
          * The arithmetic lives in `typeAheadIndex` — pure, shared with the parent menu, and
          * unit-tested — so this is only the buffer and its timer. Same half-second to forget
@@ -398,7 +430,7 @@ export default function wirekitSubmenu(config = {}) {
         },
 
         /**
-         * Direct-level items of THIS submenu (a deeper nested submenu's items
+         * Direct-level items of this submenu (a deeper nested submenu's items
          * are excluded — their closest submenu panel is the deeper one).
          * @returns {HTMLElement[]}
          */
@@ -409,7 +441,7 @@ export default function wirekitSubmenu(config = {}) {
             // All three row roles, because a submenu panel holds the same rows its parent
             // does: `dropdown.radio-item` and `dropdown.checkbox-item` render
             // `menuitemradio` and `menuitemcheckbox`. Asking for `menuitem` alone would return
-            // an EMPTY list for a submenu built from them, and an empty list makes the key
+            // an empty list for a submenu built from them, and an empty list makes the key
             // handler return before it does anything, so every key, arrow keys included,
             // would fall through to the level above. The parent collector asks for the same
             // three roles.

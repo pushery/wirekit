@@ -27,8 +27,8 @@ use Pushery\WireKit\Contracts\IconPreset;
  */
 final class HeroiconsMarketingPreset implements IconPreset
 {
-    // An extension ADDS words, it does not redefine them. A shared alias such as `chart-bar`
-    // belongs to the BASE vocabulary, where it means the same thing whichever preset you
+    // An extension adds words, it does not redefine them. A shared alias such as `chart-bar`
+    // belongs to the base vocabulary, where it means the same thing whichever preset you
     // install; declared here it would mean `chart-bar-square` on Heroicons and nothing at all
     // on the other three families.
     public function icons(): array
@@ -39,7 +39,7 @@ final class HeroiconsMarketingPreset implements IconPreset
             'cursor-arrow-rays' => 'heroicon-m-cursor-arrow-rays',
 
             // Time & metrics
-            // `pulse` stays HERE rather than in the base presets, and that is the
+            // `pulse` stays here rather than in the base presets, and that is the
             // vocabulary rule doing its job. Lucide, phosphor and tabler all draw an
             // EKG trace for this word; heroicons has no waveform glyph at all — its
             // nearest neighbor is `arrow-path-rounded-square`, a two-arrow refresh

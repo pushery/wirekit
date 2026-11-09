@@ -53,14 +53,14 @@ class WireKitServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Merge package config with app config (a developer overrides via
-        // vendor:publish). RECURSIVELY, not with the framework's own
+        // vendor:publish). Recursively, not with the framework's own
         // mergeConfigFrom, which is a flat array_merge:
         //
         //     $config->set($key, array_merge(require $path, $config->get($key, [])));
         //
         // A flat merge is correct only for a flat config. Ours nests — every
         // component's defaults live under `components.<name>` — so a published
-        // `components` array REPLACES the package's entire section rather than
+        // `components` array replaces the package's entire section rather than
         // adding to it: a config published with one component override would
         // reduce every component section to that one, and each key added since
         // would be unreachable. Nothing would fail; the components would simply
@@ -96,7 +96,7 @@ class WireKitServiceProvider extends ServiceProvider
         // nothing looks broken, because English is also what a genuinely
         // untranslated key renders as.
         //
-        // The decorator closes it for THIS package's lang directory alone (the
+        // The decorator closes it for this package's lang directory alone (the
         // reasoning for that narrowness is in the class docblock).
         //
         // It belongs in register(), never in boot(): the Translator receives
@@ -111,7 +111,7 @@ class WireKitServiceProvider extends ServiceProvider
         if (! $this->app->resolved('translator')) {
             $this->app->extend(
                 'translation.loader',
-                // The bridge flag is read HERE and passed in, never inside `load()`. This runs
+                // The bridge flag is read here and passed in, never inside `load()`. This runs
                 // in register(), where a config cache is not a safe assumption yet, and a
                 // loader that calls `config()` on every lookup would read it hundreds of times
                 // per request to get the same answer.
@@ -199,7 +199,7 @@ class WireKitServiceProvider extends ServiceProvider
             }
         });
 
-        // ── Publishable assets (FIRST — must register before anything that could fail) ──
+        // ── Publishable assets (first — must register before anything that could fail) ──
         // Registered early so vendor:publish always works, even if later steps throw.
         if ($this->app->runningInConsole()) {
             // Register the artisan commands listed in resources/catalog/commands.php.
@@ -217,21 +217,21 @@ class WireKitServiceProvider extends ServiceProvider
             //
             // WireKit's components run every user- and screen-reader-visible
             // string through `__()` under the `wirekit::` key prefix, so a key
-            // reads `wirekit::Close` and its English VALUE reads `Close`.
+            // reads `wirekit::Close` and its English value reads `Close`.
             // `lang/en.json` is the complete, generated reference of every such
             // key.
             //
-            // The English wording is the VALUE, not the key, which is why an
+            // The English wording is the value, not the key, which is why an
             // app-side catalog written from memory resolves nothing: an app's
             // own `de.json` keyed by the English is a different key from the one
             // a component asks for. Copy the keys out of the reference rather
             // than retyping the English.
             //
-            // What the published copy is: an inert REFERENCE, not a load path.
+            // What the published copy is: an inert reference, not a load path.
             // Laravel's JSON loader reads `lang/{locale}.json` plus any directory
             // registered through `addJsonPath()`, and `lang/vendor/wirekit/` is
             // neither — so a `de.json` placed at the destination below is never
-            // read. To translate, COPY the reference to the app's lang root
+            // read. To translate, copy the reference to the app's lang root
             // (`cp lang/vendor/wirekit/en.json lang/de.json`) and translate the
             // values there; the keys match, so the app copy wins per key.
             //
@@ -240,7 +240,7 @@ class WireKitServiceProvider extends ServiceProvider
             // same path.
             //
             // Every shipped catalog, not just the reference. A translated one is
-            // already ACTIVE without publishing — `loadJsonTranslationsFrom`
+            // already active without publishing — `loadJsonTranslationsFrom`
             // below sees it — so this tag exists for the developer who wants to
             // adjust a phrase to their own product's voice, and that is as true
             // of German as of English.
@@ -261,7 +261,7 @@ class WireKitServiceProvider extends ServiceProvider
 
             // Font files — published to public/vendor/wirekit/fonts/
             //
-            // This tag copies the WHOLE tree: 5.8 MB across sans, serif and mono.
+            // This tag copies the whole tree: 5.8 MB across sans, serif and mono.
             // An app that activates two families uses roughly 430 KB of that, so
             // the rest is dead weight in public/ — and it is re-copied on every
             // composer install when the publish is wired into post-autoload-dump
@@ -331,10 +331,10 @@ class WireKitServiceProvider extends ServiceProvider
         // ── Translations ──
         // Register the package's JSON catalogs so every `lang/*.json` file
         // WireKit ships merges into the global JSON translation set. Runs
-        // OUTSIDE the console guard — translation resolution happens at request
+        // outside the console guard — translation resolution happens at request
         // time, not only when publishing.
         //
-        // A key that no catalog resolves does NOT fall back to readable English:
+        // A key that no catalog resolves does not fall back to readable English:
         // the keys carry the `wirekit::` prefix, so an unresolved one paints
         // `wirekit::Close` onto the page. That is what the English backstop in
         // `Support\BaseLocaleJsonLoader` is for — `en.json` is merged underneath
@@ -353,7 +353,7 @@ class WireKitServiceProvider extends ServiceProvider
 
         // `callAfterResolving`, not `$this->app->afterResolving`.
         //
-        // The container's own hook fires only on a resolution that happens LATER. In an
+        // The container's own hook fires only on a resolution that happens later. In an
         // application where anything reached Blade first — another provider rendering a
         // view, a cached route file, a view composer — the callback never ran, the path
         // was never registered, and every `<x-{prefix}::*>` tag threw "Unable to locate a
@@ -361,7 +361,7 @@ class WireKitServiceProvider extends ServiceProvider
         // where an application is realistic, and green in a test where the provider boots
         // first.
         //
-        // The framework's helper is that hook PLUS "call it now if the service is already
+        // The framework's helper is that hook plus "call it now if the service is already
         // resolved" — the half that was missing.
         $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
             $componentsPath = self::COMPONENTS_PATH;
@@ -473,7 +473,7 @@ class WireKitServiceProvider extends ServiceProvider
         // ── Blade Directives ──
         // @wirekitStyles — outputs a <link> tag for wirekit.min.css.
         //
-        // The MINIFIED twin, not the readable dist/wirekit.css. That file is the source of
+        // The minified twin, not the readable dist/wirekit.css. That file is the source of
         // truth for every design token and stays published so a developer can read it, but
         // most of it is comments and it is RENDER-BLOCKING: linking it would cost every
         // uncached page view several times the gzipped size of the rules it delivers.
@@ -489,11 +489,11 @@ class WireKitServiceProvider extends ServiceProvider
         // may name the file because the directive body hardcodes it; the rule may not.
         //
         //   1. If a published copy of the file this directive links exists under
-        //      public/vendor/wirekit/ AND carries the same bytes as the package's own copy
+        //      public/vendor/wirekit/ and carries the same bytes as the package's own copy
         //      in dist/ (`AssetTags::publishedIsStale()`: the sizes first, a hash when they
         //      agree), the web server serves it directly (fastest path).
         //
-        //   2. Otherwise — either no published copy, OR one that differs from the package's
+        //   2. Otherwise — either no published copy, or one that differs from the package's
         //      (a `composer update pushery/wirekit` without the matching
         //      `vendor:publish --tag=wirekit-assets --force`) — we fall back to the route,
         //      which reads straight from the package's own dist/ directory and is therefore
@@ -510,7 +510,7 @@ class WireKitServiceProvider extends ServiceProvider
         //
         // Why a stylesheet link needs one at all: under a 'self'-based policy it
         // does not — same origin, allowed. Under the 'strict-dynamic' shape OWASP
-        // recommends, the nonce is the ONLY thing that grants a resource, so a
+        // recommends, the nonce is the only thing that grants a resource, so a
         // <link> without one is blocked and the app has no lever to fix it from
         // the outside. The seam already existed on @wirekitThemeScript; it was
         // simply never carried to the other two directives.
@@ -545,7 +545,7 @@ class WireKitServiceProvider extends ServiceProvider
 
         // @wirekitThemeScript — the no-FOUC head script.
         //
-        // Applies the stored theme BEFORE the first paint. It has to be a plain, classic script at the
+        // Applies the stored theme before the first paint. It has to be a plain, classic script at the
         // top of <head>: the browser holds the page until such a script has run, so the theme is set
         // before anything paints. A deferred, async or module script runs after the first paint, the
         // reader sees a light page turn dark, and preventing that flash is the entire reason this
@@ -608,6 +608,11 @@ class WireKitServiceProvider extends ServiceProvider
                 // rewrites to the runtime and the factories the page starts
                 // (Support\\PageScripts), so a response nothing rewrites still works.
                 echo $__wk_bundle === "auto" ? \Pushery\WireKit\Support\PageScripts::region($__wk_tag) : $__wk_tag;
+
+                // The glyphs the kit repeats in every instance, once per page while
+                // `wirekit.icons.sprite` is on, and nothing while it is off. Here, at the
+                // end of the body and outside every component, no morph takes them away.
+                echo \Pushery\WireKit\Support\KitIcons::spriteSheet();
 
                 // The ApexCharts adapter, opt-in via config.
                 //
@@ -678,17 +683,25 @@ class WireKitServiceProvider extends ServiceProvider
             'x-transition:leave-end="opacity-0 scale-95"',
         ]));
 
+        // A block that stands last in its parent element: the same `if` as `@if`, under a name
+        // Livewire does not wrap in morph markers. Nothing follows it on its level, so when a
+        // morph finds it come or go, no sibling moves, and the two markers `@if` writes around a
+        // block on every render inside a Livewire component are left out. `@else` and `@elseif`
+        // work inside it as they do inside `@if`.
+        Blade::directive('wirekitLast', fn (string $expression): string => "<?php if ({$expression}): ?>");
+        Blade::directive('endwirekitLast', fn (): string => '<?php endif; ?>');
+
         $this->validateConfiguredPresets();
     }
 
     /**
      * The configured font and icon presets, checked while the application boots.
      *
-     * An UNKNOWN font preset key (a typo) is fatal in local, so the developer sees it at once;
+     * An unknown font preset key (a typo) is fatal in local, so the developer sees it at once;
      * in production the value falls back to the defaults, since a config typo must never break
      * a deployed page.
      *
-     * A KNOWN preset that is not published is not reported here. Every process boots the
+     * A known preset that is not published is not reported here. Every process boots the
      * application, a Composer run's `package:discover` among them, which comes before
      * `wirekit:publish-fonts` in the same run of a deploy and renders no page. It is reported
      * where a page asks for the font: `<x-wirekit::fonts>` serves it through the package route,
@@ -853,7 +866,7 @@ class WireKitServiceProvider extends ServiceProvider
      * `public, max-age=31536000, immutable`, and `web` added `Set-Cookie` beside
      * it — a response a shared cache may store for a year and hand, cookie
      * included, to the next visitor. Most shared caches refuse a response
-     * carrying `Set-Cookie`, but that is a per-vendor DEFAULT, not a property of
+     * carrying `Set-Cookie`, but that is a per-vendor default, not a property of
      * what we send, and a package cannot ship a header whose safety depends on a
      * stranger's configuration. The cheap one is a session read and write per
      * asset hit, for a file no logged-in state can change.
@@ -1038,7 +1051,7 @@ class WireKitServiceProvider extends ServiceProvider
      * component section and the handful that file happened to carry.
      *
      * The app always wins on a scalar — an override is an override. Recursion
-     * only ADDS what the app never mentioned.
+     * only adds what the app never mentioned.
      */
     protected function mergeConfigRecursivelyFrom(string $path, string $key): void
     {
@@ -1066,7 +1079,7 @@ class WireKitServiceProvider extends ServiceProvider
                 continue;
             }
 
-            // Recurse only where BOTH sides are associative. A list (icon
+            // Recurse only where both sides are associative. A list (icon
             // presets, a locale array) is a value the developer chose wholesale:
             // merging into it would resurrect entries they deliberately removed.
             // An empty array on the app's side counts as associative where the

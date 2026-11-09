@@ -21,7 +21,7 @@
     // Intrinsic aspect ratio of `$logo` / `$darkLogo`, as `'width/height'` — e.g. `'4/1'`
     // for a wide wordmark.
     //
-    // Every logo here is `w-auto` under a fixed height: the height is known and the WIDTH is whatever the
+    // Every logo here is `w-auto` under a fixed height: the height is known and the width is whatever the
     // image turns out to be. Until its bytes arrive there is nothing to derive that width
     // from, so the element is 0 px wide and everything beside it — the product name, the
     // navigation, the whole header row — sits further left than it will a moment later,
@@ -46,7 +46,7 @@
     // keeps decoding the mark off the path that paints the rest of the page.
     'logoLoading' => 'eager',
     'name' => null,
-    // Where the mark links. `:href="false"` (or an empty string) renders NO link: the mark then
+    // Where the mark links. `:href="false"` (or an empty string) renders no link: the mark then
     // sits inside something that is already one, a rail's brand or a header's home link, where an
     // `<a>` of its own would be a link inside a link, which is invalid HTML and two tab stops for
     // one place. Not `null`: Blade gives a prop passed as null its default, so null means "/".
@@ -74,7 +74,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('brand', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -156,12 +156,19 @@
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
     ]), $scope);
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
-    // Rendered EXPLICITLY, bag echoed with except('rel'): $attributes->merge()
-    // treats a non-class attribute as a DEFAULT, so a caller writing rel="me"
+    // Rendered explicitly, bag echoed with except('rel'): $attributes->merge()
+    // treats a non-class attribute as a default, so a caller writing rel="me"
     // (the ordinary IndieAuth/Mastodon verification on a brand link) silently
     // replaced the computed value. See dropdown/item.blade.php.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $isLink && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
@@ -169,7 +176,7 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
     // Accessibility — when the brand renders as a link (an `<a href>` root,
-    // unless `href` is false) AND the only visible content is the logo image
+    // unless `href` is false) and the only visible content is the logo image
     // (no name, no slot content), the link has no accessible name. The img
     // is decorative (`alt=""` + `aria-hidden`) by design — the URL alone
     // doesn't describe the destination. We auto-inject `aria-label="{{ __('wirekit::Home') }}"`
@@ -188,11 +195,11 @@
     $mobileLogo = \Pushery\WireKit\Support\UrlProp::source($mobileLogo);
     $darkLogo = \Pushery\WireKit\Support\UrlProp::source($darkLogo);
 
-    // Only a LINK needs a name. Without one the mark is presentation inside something that is
+    // Only a link needs a name. Without one the mark is presentation inside something that is
     // named already, and a generic element does not take a name anyway.
     $logoOnlyNeedsLabel = $isLink && $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
 
-    // Responsive-logo swap. When $mobileLogo is set, render TWO <img> tags:
+    // Responsive-logo swap. When $mobileLogo is set, render two <img> tags:
     //   - mobile <img>: visible below the breakpoint, hidden at + breakpoint
     //   - main <img>:   hidden below the breakpoint, visible at + breakpoint
     // When $mobileLogo is null, only the main <img> renders (back-compat).
@@ -207,9 +214,9 @@
     // than reaching the page as a `loading` value the browser ignores.
     $wkLogoLoading = WireKit::validateProp('brand', 'logoLoading', (string) ($logoLoading ?? 'eager'), ['eager', 'lazy']);
 
-    // Responsive show/hide classes resolved to FULL literal strings — never
+    // Responsive show/hide classes resolved to full literal strings — never
     // `"{$resolvedBreakpoint}:hidden"`. Tailwind v4's content scanner reads the
-    // raw template TEXT and cannot resolve a PHP variable, so an interpolated
+    // raw template text and cannot resolve a PHP variable, so an interpolated
     // class name (`sm:inline-flex` assembled at render time) is never generated
     // in a developer's CSS-first build — it appears only by accident when the
     // same literal exists elsewhere in their `@source` corpus, and vanishes on a
@@ -238,11 +245,11 @@
     {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @if($logo instanceof \Illuminate\View\ComponentSlot)
-        {{-- A NAMED slot `<x-slot:logo>...</x-slot:logo>` was passed
+        {{-- A named slot `<x-slot:logo>...</x-slot:logo>` was passed
              instead of the URL prop — render its raw markup so callers
              can drop in a custom SVG / colored div / icon without
              being forced into the URL-string contract. Branch placed
-             FIRST so it wins against the URL branches below, which
+             first so it wins against the URL branches below, which
              would stringify the slot inside the <img src="...">
              attribute and leave the rest of the attribute string
              visible as text in the rendered DOM. --}}
@@ -252,7 +259,7 @@
              breakpoint; at + breakpoint the desktop wordmark swaps light↔dark
              by the `.dark` class. The breakpoint lives on the wrapper <span>
              and the mode swap on the inner <img>s (via wk-light-only /
-             wk-dark-only) so the two axes never combine on ONE element — a
+             wk-dark-only) so the two axes never combine on one element — a
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
@@ -289,7 +296,7 @@
              one, so a brand in a header or a footer is untouched. --}}
         <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] wk-rail-hide{{ $truncate ? ' min-w-0 truncate' : '' }}">{{ $name }}</span>
     @endif
-    {{-- Children render ALONGSIDE the logo and the name, not instead of them:
+    {{-- Children render alongside the logo and the name, not instead of them:
          the documented use (a workspace-switcher chevron, a product badge) sets
          both.
 
@@ -300,7 +307,4 @@
     @if($slot->hasActualContent())
         {{ $slot }}
     @endif
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $isLink ? 'a' : 'span' }}>
+    {{ $newTabHint }}</{{ $isLink ? 'a' : 'span' }}>

@@ -25,7 +25,7 @@
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
 
     // Resolved here rather than in @props, because a literal there is frozen for every
-    // locale: this string becomes the accessible NAME of every icon-only dropdown trigger
+    // locale: this string becomes the accessible name of every icon-only dropdown trigger
     // (it is written onto the inner control by trigger-aria.js), so a non-English
     // application would have had to pass the prop at every call site to avoid leaking an
     // English name to screen readers — and forgetting one instance is invisible.
@@ -39,13 +39,13 @@
 {{-- Dropdown trigger wrapper — positioning reference for Floating UI.
 
      ARIA attributes (aria-haspopup, aria-expanded, aria-controls) are applied
-     to the INNER interactive element (button/link) via x-init, NOT to this
+     to the inner interactive element (button/link) via x-init, not to this
      wrapper div. The ARIA spec requires these attributes to live on elements
      with interactive roles; placing them on a generic <div> fails axe-core's
      aria-allowed-attr rule.
 
      Auto-aria-label: when the inner button has no accessible name (no
-     aria-label, no aria-labelledby, no visible OR sr-only text content),
+     aria-label, no aria-labelledby, no visible or sr-only text content),
      we inject `ariaLabelFallback` (the translated "Open menu" by default). This catches
      icon-only triggers and responsive layouts where the visible label is
      hidden below the `sm` breakpoint. Explicit developer-side labels on

@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Support;
 /**
  * Every country's international dialing code, as a table this package carries itself.
  *
- * The country picker's recipe argues, correctly, that country DATA needs no dependency: the `intl`
+ * The country picker's recipe argues, correctly, that country data needs no dependency: the `intl`
  * extension already carries the Unicode CLDR, so it names and sorts every country for free, and a
  * Composer package bundling the same data would be megabytes for nothing.
  *
@@ -21,13 +21,13 @@ namespace Pushery\WireKit\Support;
  * enough to show `+49` beside a field and to assemble an E.164 value from it. Anything past that
  * is an application's own choice, documented as a recipe rather than taken here.
  *
- * The rows are GENERATED from the canonical upstream dataset, never typed by hand. A mistyped
+ * The rows are generated from the canonical upstream dataset, never typed by hand. A mistyped
  * dialing code is the one defect in this file that no test can catch: there is no oracle for "+268
  * is really Eswatini" short of the dataset itself.
  *
- * Source: `giggsey/libphonenumber-for-php-lite` 9.0.39. That package is NOT a dependency here — it
+ * Source: `giggsey/libphonenumber-for-php-lite` 9.0.39. That package is not a dependency here — it
  * is the generator's input, installed in a scratch directory, run once, and discarded. To
- * regenerate, in a directory OUTSIDE this package:
+ * regenerate, in a directory outside this package:
  *
  *     composer require giggsey/libphonenumber-for-php-lite
  *     php -r 'require "vendor/autoload.php";
@@ -92,20 +92,20 @@ final class DialingCodes
      * This is the digit a reader types and E.164 does not carry. A German number written
      * `0151 23456789` is `+4915123456789` once the country code is in front: the `0` is a
      * national-format artifact and disappears. Dropping it is correct for 144 of the 245 regions
-     * here — and WRONG for the other 101, which have no trunk prefix at all, so a leading digit
+     * here — and wrong for the other 101, which have no trunk prefix at all, so a leading digit
      * there is part of the number.
      *
      * Italy is the example worth remembering, because it looks like the German case and is not:
-     * it has NO trunk prefix, so `06…` stays `+3906…` and stripping the zero would delete a real
+     * it has no trunk prefix, so `06…` stays `+3906…` and stripping the zero would delete a real
      * digit from a Rome landline.
      *
      * Only four distinct values occur across every region — `0` (113 times), `1` (26), `8` (4)
      * and `06` (1) — so this is a small table rather than the formatting metadata it looks like
      * the start of. It answers exactly one question, and deliberately not the next one: how a
-     * number should be GROUPED for display is per-region data measured in megabytes, and this
+     * number should be grouped for display is per-region data measured in megabytes, and this
      * package does not have it.
      *
-     * Generated alongside CODES, from `getNationalPrefix()` per region.
+     * Generated alongside codes, from `getNationalPrefix()` per region.
      *
      * @var array<string, string>
      */
@@ -161,8 +161,8 @@ final class DialingCodes
     /**
      * Every region the table carries, sorted by its code.
      *
-     * The order is the table's, which is alphabetical by region code — NOT the order a picker
-     * should show. A picker sorts by the country's NAME in the reader's language, with a
+     * The order is the table's, which is alphabetical by region code — not the order a picker
+     * should show. A picker sorts by the country's name in the reader's language, with a
      * collator, because a byte-wise sort puts every accented name after Z. The country picker
      * recipe does exactly that, and this list is its input rather than its output.
      *
@@ -187,7 +187,7 @@ final class DialingCodes
      * The region's national trunk prefix, or null where it has none.
      *
      * Null and "no prefix" are the same answer here and mean something specific: a leading digit
-     * in a number from this region is PART of the number. That is not the same as "we do not
+     * in a number from this region is part of the number. That is not the same as "we do not
      * know", which this table never says — every supported region is either in it or deliberately
      * absent.
      */
@@ -209,11 +209,11 @@ final class DialingCodes
      *      brackets, and none of them survive into E.164.
      *   2. Digits that start with `00`, the international prefix, name their own country, and the
      *      rest of this list runs for that country. On the North American plan `011` does too.
-     *   3. A leading trunk prefix is removed where the region HAS one — see TRUNK_PREFIXES for
+     *   3. A leading trunk prefix is removed where the region has one — see TRUNK_PREFIXES for
      *      why that is a lookup rather than "strip the zero".
      *   4. The dialing code goes in front, behind a plus.
      *
-     * What it does NOT do is decide whether the result is a real, reachable number. It cannot:
+     * What it does not do is decide whether the result is a real, reachable number. It cannot:
      * that needs per-region length and range data this package does not carry. A field that
      * silently calls a valid number invalid is worse than one that never claims to know, so this
      * returns a well-formed string and leaves the judgment to the application.

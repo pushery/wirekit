@@ -13,8 +13,8 @@
     // breakpoint.
     'forceMobile' => false,
     // `container` — when true, wraps the inner flex-row in a max-width
-    // container so the navbar's CHROME (background, border, sticky
-    // behavior) stays edge-to-edge while the CONTENT (brand, nav items,
+    // container so the navbar's chrome (background, border, sticky
+    // behavior) stays edge-to-edge while the content (brand, nav items,
     // actions) aligns with the body's container-wrapped column. Mirrors
     // the brand-bar `container` prop. Default false preserves the prior
     // edge-to-edge content behavior.
@@ -60,7 +60,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false, 'navbar', 'sticky');
@@ -100,12 +100,12 @@
         );
     }
 
-    // The CHROME layer, not the shared sticky one. A popover opened in page content is a
+    // The chrome layer, not the shared sticky one. A popover opened in page content is a
     // teleported panel at --z-wk-dropdown (50), and at --z-wk-sticky (40) this bar would be
-    // painted over — arithmetic, not a quirk. A panel anchored INSIDE
+    // painted over — arithmetic, not a quirk. A panel anchored inside
     // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
     // above, which is correct.
-    // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
+    // Sticks below a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
     $stickyClasses = $sticky ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-chrome)]' : '';
 
     $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);
@@ -114,7 +114,7 @@
     /*
      * The cap grows by the padding it would otherwise swallow.
      *
-     * This element carries `px-[var(--padding-wk-x-lg)]` AND the cap, and under
+     * This element carries `px-[var(--padding-wk-x-lg)]` and the cap, and under
      * `box-sizing: border-box` the cap eats that padding — so the visible content edge
      * lands at (viewport - tier) / 2 + padding. `main`, `hero`, `cta` and `footer` all
      * use the opposite shape (padding on the outer element, cap on an inner one), so
@@ -154,7 +154,7 @@
     // When $forceMobile is on the desktop row is always hidden and the
     // hamburger is always shown; otherwise we use the `md:` breakpoint
     // classes so the layout is responsive.
-    // ONE navigation list, laid out two ways — a horizontal row beside the brand above the
+    // One navigation list, laid out two ways — a horizontal row beside the brand above the
     // breakpoint, a full-width stack under it below.
     //
     // One list, not a row in the bar plus a copy in the disclosure: a slot is rendered once
@@ -165,15 +165,15 @@
     // once for the same reason.
     $navListClasses = $forceMobile
         ? implode(' ', [
-            'w-full order-last flex-col items-stretch gap-1',
+            'w-full order-last flex-col items-stretch gap-[var(--gap-wk-xs)]',
             'border-t border-[var(--color-wk-border)]',
             'mt-[var(--padding-wk-y-md)] pt-[var(--padding-wk-y-md)] pb-[var(--padding-wk-y-md)]',
         ])
         : implode(' ', [
-            'w-full order-last flex-col items-stretch gap-1',
+            'w-full order-last flex-col items-stretch gap-[var(--gap-wk-xs)]',
             'border-t border-[var(--color-wk-border)]',
             'mt-[var(--padding-wk-y-md)] pt-[var(--padding-wk-y-md)] pb-[var(--padding-wk-y-md)]',
-            'md:w-auto md:order-none md:flex-row md:items-center md:flex-1 md:ml-[var(--padding-wk-x-lg)]',
+            'md:w-auto md:order-none md:flex-row md:items-center md:flex-1 md:ms-[var(--padding-wk-x-lg)]',
             'md:border-t-0 md:mt-0 md:pt-0 md:pb-0',
         ]);
     // One actions cluster, in the bar, at every width, and the "one" is the point. Hiding
@@ -195,7 +195,7 @@
     // and this stays hidden; under `force-mobile` the menu holds it at every width. A scrolling
     // row has no menu, so nothing of the slot is rendered there.
     $hasMenu = ! $scroll && \Pushery\WireKit\Support\SlotContent::given($menu ?? null);
-    $menuClasses = 'flex flex-col items-stretch gap-1'.($forceMobile ? '' : ' md:hidden');
+    $menuClasses = 'flex flex-col items-stretch gap-[var(--gap-wk-xs)]'.($forceMobile ? '' : ' md:hidden');
 
     // The `mobile-menu` personalization key survives the merge of the two containers and now
     // resolves the one list. Same override point, same subject — what the disclosure reveals.
@@ -208,7 +208,7 @@
     // With no scrollbar, `wk-scroll-fade` fades the edge that has entries behind it: the row's
     // script names that edge in `data-fade` as it scrolls, and without the script there is none.
     $scrollListClasses = 'wk-navbar-scroll wk-scroll-fade '.WireKit::resolveClasses('navbar', 'scroll', implode(' ', [
-        'flex flex-row flex-nowrap items-center gap-1',
+        'flex flex-row flex-nowrap items-center gap-[var(--gap-wk-xs)]',
         'min-w-0 flex-1',
         'relative overflow-x-auto overscroll-x-contain',
         '[&>*]:shrink-0 [&>*]:whitespace-nowrap',
@@ -218,11 +218,11 @@
     // A literal `wk-navbar-mobile` would be correct for exactly one navbar per page; a page
     // with two (a `forceMobile` demo beside a live bar, a marketing header above an app bar,
     // several previews in one document) would carry duplicate ids, every hamburger on it
-    // resolving to the FIRST menu and the second bar's button announcing a disclosure it
+    // resolving to the first menu and the second bar's button announcing a disclosure it
     // does not own.
     //
     // The base is passed to the shared registry rather than replaced by a generated id: the
-    // registry hands the FIRST sight of a base back verbatim and only appends `-2`, `-3`, …
+    // registry hands the first sight of a base back verbatim and only appends `-2`, `-3`, …
     // to the ones that follow. So a page with a single navbar keeps `wk-navbar-mobile` —
     // which matters, because this string is a documented handle that developer CSS and
     // page-level scripts are allowed to select on — and only a second navbar's ids carry a
@@ -242,7 +242,7 @@
     {{-- Escape closes the disclosure from anywhere in the bar. A scrolling row has nothing to
          close. --}}
     @unless($scroll) x-on:keydown.escape="mobileOpen = false" @endunless
-    {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
+    {{-- Only when the caller did not name it. HTML keeps the first of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded, silently, on the one element whose name decides how the
          page's navigation landmarks are told apart. --}}
@@ -308,11 +308,11 @@
             x-cloak
         >
             {{ $slot }}
-            @if($hasMenu)
+            @wirekitLast($hasMenu)
                 <div data-wk-navbar-menu class="{{ $menuClasses }}">
                     {{ $menu }}
                 </div>
-            @endif
+            @endwirekitLast
         </div>
         @endif
 
@@ -333,7 +333,7 @@
             :aria-expanded="mobileOpen ? 'true' : 'false'"
             aria-controls="{{ $mobileId }}"
             aria-label="{{ __('wirekit::Toggle navigation') }}"
-            class="wk-touch-target {{ $hamburgerClasses }} p-2 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="wk-touch-target {{ $hamburgerClasses }} p-[var(--space-wk-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             {{-- Hamburger icon (open state) --}}
             <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

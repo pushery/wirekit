@@ -56,7 +56,7 @@
         default => 'var(--color-wk-accent-text)',
     };
 
-    // The spoken outcome, for every intent that HAS one.
+    // The spoken outcome, for every intent that has one.
     //
     // The dot is the only thing that changes between a deployment that succeeded
     // and a pipeline that failed, and the dot is `aria-hidden` — so without this
@@ -106,12 +106,12 @@
             style="z-index: 10; display: flex; height: var(--size-wk-xs, 1.5rem); width: var(--size-wk-xs, 1.5rem); flex-shrink: 0; align-items: center; justify-content: center; border-radius: 9999px; background: {{ $dotColor }};"
             aria-hidden="true"
         >
-            @if($icon)
+            @wirekitLast($icon)
                 <x-wirekit::icon :name="$icon" size="xs" class="text-[color:var(--color-wk-bg)]" />
             @else
                 {{-- Default inner dot --}}
                 <div style="height: 0.5rem; width: 0.5rem; border-radius: 9999px; background: var(--color-wk-bg);"></div>
-            @endif
+            @endwirekitLast
         </div>
 
         {{-- Vertical connector line — solid line between items.
@@ -159,10 +159,10 @@
             @endif
         @endif
 
-        @if($slot->hasActualContent())
+        @wirekitLast($slot->hasActualContent())
             <div style="margin-top: 0.25rem;" class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">
                 {{ $slot }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 </li>

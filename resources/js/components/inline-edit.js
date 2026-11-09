@@ -22,11 +22,11 @@ const hasOwnName = (el) => ['aria-label', 'aria-labelledby'].some((attr) => (el.
  * WireKit Inline Edit Alpine Component.
  *
  * A read mode that turns into an editor in place, and back. The library does
- * NOT own the saving: the developer's Livewire component does, and this emits
+ * not own the saving: the developer's Livewire component does, and this emits
  * the event it acts on. That split is why the state machine below has a
  * `saving` state it cannot leave on its own.
  *
- * CLEANUP CONTRACT
+ * Cleanup contract
  * ---------------------------------------------------------------------------
  * Resources held: `_previous` (a value snapshot, no listener), `_exclusiveHandler`
  * (window listener for the exclusive-open protocol), `_saveTimeout` (the
@@ -60,7 +60,7 @@ export default function wirekitInlineEdit(config = {}) {
         /**
          * The value to restore on cancel. A snapshot rather than a live
          * binding: with an explicit commit there has to be something to go
-         * back TO, and a two-way binding would have already overwritten it.
+         * back to, and a two-way binding would have already overwritten it.
          */
         _previous: '',
         _exclusiveHandler: null,
@@ -76,7 +76,7 @@ export default function wirekitInlineEdit(config = {}) {
         /**
          * Snapshot a value so cancel has something to restore.
          *
-         * A COPY for an array, and that is not defensive tidiness: a flat
+         * A copy for an array, and that is not defensive tidiness: a flat
          * assignment points at the same array, so every edit mutates the
          * "previous" value too and cancel restores what the user just typed.
          * The slot path makes this reachable — a tags-input holds an array.
@@ -95,7 +95,7 @@ export default function wirekitInlineEdit(config = {}) {
             // The pessimistic-close rule keeps the editor open across a failed
             // save — but only while this component instance lives, and a
             // validation failure is exactly the case where it may not. The
-            // failure re-renders the field WITH an error message, which changes
+            // failure re-renders the field with an error message, which changes
             // the subtree enough that Livewire replaces it rather than patching
             // it, and Alpine then runs this init on a fresh instance whose
             // `editing` is false. The reader is thrown back to read mode looking
@@ -113,20 +113,20 @@ export default function wirekitInlineEdit(config = {}) {
             // which a wire:navigate then takes with it. The house pattern for
             // this is the combobox's: announce on window, let the others close.
             if (config.exclusive !== false) {
-                // The sender is identified by its component ROOT on both sides:
+                // The sender is identified by its component root on both sides:
                 // `open()` sends `this.$root`, and this listener compares against
                 // `this.$root` too (the note in `open()` says why it is not `$el`
                 // there).
                 this._exclusiveHandler = (event) => {
                     if (!this._exclusiveHandler) return;      // torn down mid-flight
 
-                    // Resolved AT EVENT TIME, never captured at init. A `this.$el`
+                    // Resolved AT event time, never captured at init. A `this.$el`
                     // frozen here would be the same element in the ordinary case, but
                     // a Livewire morph can swap the root element while Alpine keeps
                     // this instance alive, and then the frozen reference points at a
                     // node that is no longer in the document: the sender's live root
                     // would match neither the stale `===` nor the stale `.contains()`,
-                    // so the component would treat its OWN open as somebody else's and
+                    // so the component would treat its own open as somebody else's and
                     // cancel itself.
                     const root = this.$root;
 
@@ -217,7 +217,7 @@ export default function wirekitInlineEdit(config = {}) {
             this.editing = true;
 
             // `$root`, not `$el`: this method is invoked from the trigger's
-            // x-on:click, where `$el` is the BUTTON. Listeners identify the
+            // x-on:click, where `$el` is the button. Listeners identify the
             // sender by comparing against a component root, so sending the
             // button would mean nobody could recognize it — including this
             // component, which would then cancel itself. `$root` is the same element in every
@@ -376,7 +376,7 @@ export default function wirekitInlineEdit(config = {}) {
         /**
          * The element carrying `x-ref="control"`.
          *
-         * Alpine files a ref under the CLOSEST component root, and an element with
+         * Alpine files a ref under the closest component root, and an element with
          * its own `x-data` is its own closest root, so a control that renders a
          * root of its own keeps the ref to itself, and `$refs` read from here walks
          * upward and never sees it. A WireKit field hands the ref on through
@@ -416,12 +416,12 @@ export default function wirekitInlineEdit(config = {}) {
         },
 
         /**
-         * Open from a click on the VALUE rather than the button.
+         * Open from a click on the value rather than the button.
          *
          * Two exceptions, both of which show up the moment a real page uses
          * this, and both taken from what a mature implementation does:
          *
-         *  - a drag is a text SELECTION, not a request to edit. Without a
+         *  - a drag is a text selection, not a request to edit. Without a
          *    threshold, every attempt to select the value opens the editor and
          *    throws the selection away.
          *  - a link inside the value belongs to the link. Opening the editor
@@ -456,7 +456,7 @@ export default function wirekitInlineEdit(config = {}) {
         },
 
         /**
-         * Commit. The editor stays OPEN until the save is confirmed, because
+         * Commit. The editor stays open until the save is confirmed, because
          * the end of a round trip is not evidence of success — a validation
          * failure ends one too, and closing there would discard the message
          * the developer just rendered.
@@ -526,7 +526,7 @@ export default function wirekitInlineEdit(config = {}) {
                 this._saveTimeout = null;
             }
             this.saving = false;
-            // Editor stays open and focus does NOT move: the error is here, and
+            // Editor stays open and focus does not move: the error is here, and
             // pulling the user away from it would hide what they must fix.
         },
 
@@ -544,7 +544,7 @@ export default function wirekitInlineEdit(config = {}) {
             }
 
             if (event.key === 'Enter') {
-                // Cmd/Ctrl+Enter commits in EVERY control type, which is what
+                // Cmd/Ctrl+Enter commits in every control type, which is what
                 // makes the textarea rule below survivable: there is always one
                 // keyboard path to save, whatever Enter itself does.
                 if (event.metaKey || event.ctrlKey) {
@@ -569,14 +569,14 @@ export default function wirekitInlineEdit(config = {}) {
                 this.commit();
             }
 
-            // ArrowUp / ArrowDown are NOT handled here on purpose. On a number
+            // ArrowUp / ArrowDown are not handled here on purpose. On a number
             // control they belong to the spinbutton, and on a select they are
             // how a keyboard user moves through the options. Intercepting them
             // would break the control's own keyboard model.
         },
 
         /**
-         * Leaving the control without committing does NOT move focus. The user
+         * Leaving the control without committing does not move focus. The user
          * was on their way somewhere; pulling them back to the trigger would
          * undo the navigation they just performed.
          */
@@ -598,7 +598,7 @@ export default function wirekitInlineEdit(config = {}) {
              * A fast morph restores focus before anything observes the gap, so the loss would
              * show only on a loaded machine.
              *
-             * So ask where the focus went, and ask AFTER the browser has moved it: during a blur
+             * So ask where the focus went, and ask after the browser has moved it: during a blur
              * activeElement is transitional whichever way it ends up, so a synchronous check
              * cannot tell a departure from a morph. One tick later it can.
              *
@@ -616,7 +616,7 @@ export default function wirekitInlineEdit(config = {}) {
                 if (control && document.activeElement === control) return;
 
                 /*
-                 * The control is the fast path; the ROOT is the honest question. Focus that
+                 * The control is the fast path; the root is the honest question. Focus that
                  * lands anywhere inside this component has not left it — and the confirm and
                  * cancel buttons are inside it.
                  *

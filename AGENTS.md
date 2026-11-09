@@ -43,6 +43,16 @@ editor, the WireKit MCP server exposes the same catalog as live tools.
   slots — `button` has NO `icon` prop (a stray `icon="…"` renders nothing and
   leaks a dead attribute). `icon` IS a prop on ~20 other components (e.g.
   `sidebar.item`), so don't carry the attribute form over to `button` / `badge`.
+- Buttons are filled. An action takes its rank from `intent`: the main one in the
+  accent, another `intent="neutral"`, a destructive one `intent="danger"`. An
+  outline beside a filled button is a second style, not a lower rank.
+- The content of a screen stands in cards, one per part. A card of settings has a
+  head: `card.header` with an icon, the name of the part and a one-sentence
+  `description` of what it is for.
+- A date or a time a reader sees stays on one line, in an element with
+  `whitespace-nowrap`, so a narrow column never leaves the hour under the day.
+- `php artisan wirekit:doctor:props` reports a place that leaves one of the three
+  conventions above as a hint.
 
 ## Full reference
 

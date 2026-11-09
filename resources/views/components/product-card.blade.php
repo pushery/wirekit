@@ -23,7 +23,7 @@
     'href' => null,
     // Cover image URL.
     'image' => null,
-    // Accessible name for the image. Defaults to empty, NOT to the product name:
+    // Accessible name for the image. Defaults to empty, not to the product name:
     // the name is already right there in text, so repeating it makes a screen
     // reader read the product twice. Pass it when the image shows something the
     // name does not ("Blue, worn open over a white shirt").
@@ -71,7 +71,7 @@
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $minorUnits = BooleanProp::from($minorUnits, false, 'product-card', 'minorUnits');
@@ -144,10 +144,10 @@
 {{-- An <article>: a product card is a self-contained thing, and a screen reader
      should be able to move between them as units.
 
-     Deliberately NOT one big link. Wrapping the whole card makes the link's
+     Deliberately not one big link. Wrapping the whole card makes the link's
      accessible name the entire card — image, price, rating, button text, all read
      as one breathless sentence — and it swallows the add-to-cart button, which
-     cannot legally nest inside an anchor anyway. The NAME is the link. --}}
+     cannot legally nest inside an anchor anyway. The name is the link. --}}
 <article
     data-wk-product-card
     data-availability="{{ $availability }}"
@@ -158,14 +158,14 @@
 
              `image` covers the ordinary case and stays exactly as it was. The slot is for
              everything that is not a URL: a painted placeholder, a `<video>`, a plain color
-             field, a chart. Without it this card could only render a product that HAS a photo
+             field, a chart. Without it this card could only render a product that has a photo
              — an adopting page whose tiles draw their own placeholders had no way in at all,
              and rewriting it onto this component would have silently dropped the artwork.
 
              `@if`/`@elseif` rather than `@isset` with a nested branch, because the fallthrough
              is the point and this way it reads in the order it happens.
 
-             Deliberately NO automatic placeholder when both are absent. A gray box would then
+             Deliberately no automatic placeholder when both are absent. A gray box would then
              appear on every card that legitimately has no picture, and a caller who wants one
              now has the slot to put exactly the box they mean. --}}
         @if($hasMedia)
@@ -193,7 +193,7 @@
                 class="{{ $badgesClass }}"
             >
                 @if($onSale)
-                    {{-- The badge is the visual shorthand. It is NOT the accessible story:
+                    {{-- The badge is the visual shorthand. It is not the accessible story:
                          the price prints the old amount in a real <del> with a visually
                          hidden "Previous price" prefix, so the pair reads as a pair rather
                          than as two unrelated numbers. A reader hears both amounts and the
@@ -209,13 +209,13 @@
                     </span>
                 @endif
 
-                @if($badgeText !== null)
+                @wirekitLast($badgeText !== null)
                     <span data-wk-product-card-badge>{{ $badgeText }}</span>
-                @endif
+                @endwirekitLast
             </div>
         @endif
 
-        @if($isOut)
+        @wirekitLast($isOut)
             {{-- Not a tint over the image: a reader who cannot resolve the wash
                  sees a normal product. The word is the signal. --}}
             <span data-wk-product-card-stock class="{{ $stockClass }}">
@@ -225,16 +225,16 @@
             <span data-wk-product-card-stock class="{{ $stockClass }}">
                 <x-wirekit::badge intent="warning" surface="solid" size="sm">{{ __('wirekit::Low stock') }}</x-wirekit::badge>
             </span>
-        @endif
+        @endwirekitLast
     </div>
 
     <div class="flex flex-1 flex-col gap-[var(--gap-wk-sm)] p-[var(--padding-wk-x-md)]">
         <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
-            @if($href !== null)
+            @wirekitLast($href !== null)
                 {{-- stretched-link: the whole card is clickable by pointer while
-                     the LINK is still just the name. The pointer target and the
+                     the link is still just the name. The pointer target and the
                      accessible name do not have to be the same rectangle. --}}
-                {{-- On card hover the name dims — the SAME cue WireKit links use,
+                {{-- On card hover the name dims — the same cue WireKit links use,
                      the `--opacity-wk-hover` token. The whole card is the pointer target
                      (stretched link), so the reaction belongs on the name it points
                      at. Opacity, not an accent color: on the stock theme accent
@@ -245,7 +245,7 @@
                 </a>
             @else
                 {{ $name }}
-            @endif
+            @endwirekitLast
         </h{{ $levelValue }}>
 
         @if($description)
@@ -267,7 +267,7 @@
                         {{ \Pushery\WireKit\Support\Plural::choice('wirekit::{1} :count review|[2,*] :count reviews', $reviewTotal, ['count' => \Pushery\WireKit\Support\LocalizedNumber::integer($reviewTotal)]) }}
                     </span>
                 @endif
-@if(\Pushery\WireKit\Support\SlotContent::given($ratingNote ?? null))
+@wirekitLast(\Pushery\WireKit\Support\SlotContent::given($ratingNote ?? null))
                 {{-- The `ratingNote` slot stands right after the count, in the same row as the
                      stars: where a shop says whether and how it checks that its reviews come from
                      buyers, or a mark that leads straight to where it says so, which a statement on
@@ -275,7 +275,7 @@
                      it to qualify and renders none, and a card without the slot no trace of it. Its
                      link stands above the card's link, as in the description. --}}
                 <span data-wk-product-card-rating-note class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $ratingNote }}</span>
-@endif
+@endwirekitLast
             </span>
         @endif
 
@@ -325,10 +325,10 @@
         {{-- The CTA sits above the stretched link, or the link would swallow every
              click meant for the button. --}}
         <div class="relative z-10 mt-[var(--gap-wk-sm)]">
-            @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
+            @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
                 {{ $action }}
             @else
-                {{-- The product name is APPENDED to the visible label, not substituted into a
+                {{-- The product name is appended to the visible label, not substituted into a
                      replacement one. A grid of cards needs names that tell the buttons apart,
                      but an aria-label of "Add Blue Shirt to cart" does not contain the words
                      on the button, and a voice-control user who says "click Add to cart" is
@@ -344,7 +344,7 @@
                 >
                     {{ $isOut ? __('wirekit::Out of stock') : __('wirekit::Add to cart') }}<span class="sr-only">: {{ $name }}</span>
                 </x-wirekit::button>
-            @endif
+            @endwirekitLast
         </div>
     </div>
 </article>

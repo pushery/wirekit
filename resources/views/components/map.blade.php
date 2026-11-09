@@ -6,7 +6,7 @@
     'markers' => [],                // [{id,lat,lng,label,body?,intent?}]
     'provider' => config('wirekit.components.map.provider', 'maplibre'), // maplibre | leaflet (peer dependency)
     'styleUrl' => null,             // tile/style URL (provider-specific)
-    'attribution' => null,          // tile attribution HTML, e.g. '© OpenStreetMap contributors' — shown by Leaflet's attribution control; required by some tile sources (OSM)
+    'attribution' => null,          // tile attribution HTML, e.g. '© OpenStreetMap contributors' — shown by Leaflet's attribution control; required by some tile sources (osm)
     'height' => '24rem',            // map canvas height (CSS length)
     'ariaLabel' => __('wirekit::Map'),
     // 'respect' (default) | 'ignore' — what to do when the reader's browser reports
@@ -19,12 +19,12 @@
     // can actually be honored rather than merely acknowledged.
     //
     // On 'respect' the canvas is withheld and the marker list carries the content, with
-    // a control to load the map anyway. Use 'ignore' where the canvas IS the content
+    // a control to load the map anyway. Use 'ignore' where the canvas is the content
     // rather than an illustration of it — a delivery-tracking view, a route editor.
     'reducedData' => config('wirekit.components.map.reduced-data', 'respect'),
-    // Heading above the marker list — and the switch that makes that list a LANDMARK.
+    // Heading above the marker list — and the switch that makes that list a landmark.
     //
-    // The visible heading is ALWAYS rendered, so the fallback survives as a resolved variable;
+    // The visible heading is always rendered, so the fallback survives as a resolved variable;
     // only the `role="region"` waits for a caller-supplied name. A fallback name such as
     // "Locations" would make every map on a store-locator page the same rotor entry (axe:
     // `landmark-unique`).
@@ -51,7 +51,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('map', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $list = BooleanProp::from($list, true, 'map', 'list');
@@ -83,7 +83,7 @@
     // so assistive tech can still reach the locations.
     $showList = filter_var($list, FILTER_VALIDATE_BOOLEAN);
 
-    // The DISPLAY heading, resolved once. The raw `$listLabel` stays the record of whether the
+    // The display heading, resolved once. The raw `$listLabel` stays the record of whether the
     // caller supplied one — that is what the list's landmark role is gated on.
     $listLabelResolved = filled($listLabel) ? $listLabel : __('wirekit::Locations');
 
@@ -151,10 +151,10 @@
     x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ \Pushery\WireKit\Support\NumericProp::int($zoom, 0, 'map', 'zoom') }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution instanceof \Illuminate\Contracts\Support\Htmlable ? $attribution->toHtml() : $attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}"
-    {{-- NO flex gap between canvas and list: the list's own divider border (a top
-         border when stacked, a left border when side by side) IS the separator. A
+    {{-- No flex gap between canvas and list: the list's own divider border (a top
+         border when stacked, a left border when side by side) is the separator. A
          flex gap here adds a dead strip of page background between the map and the
-         list on BOTH engines (a visible gap appears) — the two panes must sit
+         list on both engines (a visible gap appears) — the two panes must sit
          flush inside the rounded, clipped card, split only by that border. (Plain
          prose, no bare utility tokens: Tailwind scans Blade comments too, so a
          literal class name here would emit a dead selector and trip the drift audit.) --}}
@@ -163,7 +163,7 @@
     {{-- Map canvas — the library draws here. Falls back to a placeholder + the
          list when no peer library is loaded (progressive enhancement). --}}
     <div class="relative flex-1 bg-[var(--color-wk-bg-muted)]" style="min-height: {{ $height }};">
-        {{-- The mount carries h-full w-full IN ADDITION to absolute inset-0, and
+        {{-- The mount carries h-full w-full in addition to absolute inset-0, and
              that is load-bearing: MapLibre adds its `maplibregl-map` class to this
              element at construction, and maplibre-gl.css declares
              `.maplibregl-map { position: relative }` outside any cascade layer.
@@ -174,7 +174,7 @@
              to height 0 — MapLibre then falls back to a 300px canvas (clientHeight
              || 300) and the GL canvas paints blank at the wrong size, with
              resize() re-reading 0 forever. h-full/w-full (100% of the sized
-             wrapper above) resolve correctly under EITHER computed position, so
+             wrapper above) resolve correctly under either computed position, so
              the mount is immune to that cascade collision (verified live: mount
              0px → 384px, canvas buffer 300px → 384px). --}}
         {{-- role="application" is load-bearing beyond a11y: docs.wirekit.app's
@@ -187,7 +187,7 @@
              own. Once maplibre-gl.css's `.maplibregl-map { position: relative }`
              applies, and it outranks the layered `.absolute`, `absolute inset-0`
              goes inert and the mount falls back to `h-full` (height: 100%). A
-             percentage height does NOT resolve
+             percentage height does not resolve
              against a parent's `min-height`, and in a flex-COLUMN (the mobile
              stack — the outer wrapper is `flex flex-col sm:flex-row`) the parent
              has no definite height to resolve against, so `h-full` collapses to 0
@@ -195,13 +195,13 @@
              blank, under-sized 300px canvas. The flex-ROW desktop layout hides
              this because `align-items: stretch` gives the column a definite
              height, so `h-full` resolves there. The explicit min-height keeps
-             clientHeight ≥ the wrapper height under EITHER computed position AND
-             EITHER flex direction, so MapLibre never hits the 300px fallback. --}}
+             clientHeight ≥ the wrapper height under either computed position and
+             either flex direction, so MapLibre never hits the 300px fallback. --}}
         {{-- The mount is a tab stop, and its focus indication is an outline set one ring width
              inward, as on context-menu's wrapper: the map's panes cover an inset ring, and the
              clipped frame cuts an outer one off. --}}
         <div x-ref="canvas" class="absolute inset-0 h-full w-full focus-visible:outline-[length:var(--ring-wk-width)] focus-visible:-outline-offset-[var(--ring-wk-width)] focus-visible:outline-[color:var(--color-wk-ring)]" style="min-height: {{ $height }};" role="application" aria-label="{{ __('wirekit:::label (interactive)', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel)]) }}" tabindex="0"></div>
-        <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-1 p-[var(--padding-wk-x-md)] text-center pointer-events-none">
+        <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-[var(--gap-wk-xs)] p-[var(--padding-wk-x-md)] text-center pointer-events-none">
             <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5l6 2.5m-6-2.5V3.5m6 19l5.5-2.5V2.5L15 5m0 17.5V5m0 0L9 3.5"/><circle cx="12" cy="9" r="2.5"/></svg>
             <p data-wk-prose-skip x-show="!dataDeferred" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Interactive map needs a map library — the locations are listed alongside.') }}</p>
             {{-- The data-saving path says something different, and offers a way through.
@@ -209,7 +209,7 @@
                  asked for less data, not for no map ever. `pointer-events-auto` because
                  the panel around it is deliberately transparent to the pointer. --}}
             <template x-if="dataDeferred">
-                <div class="flex flex-col items-center gap-2 pointer-events-auto">
+                <div class="flex flex-col items-center gap-[var(--gap-wk-sm)] pointer-events-auto">
                     <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Map tiles are not loaded because your browser asked for reduced data. The locations are listed alongside.') }}</p>
                     <x-wirekit::button intent="neutral" surface="outline" size="sm" type="button" x-on:click="loadAnyway()">{{ __('wirekit::Load the map anyway') }}</x-wirekit::button>
                 </div>
@@ -236,7 +236,7 @@
          list takes a line below the canvas and the canvas keeps its size. Hidden again once the
          focus leaves. --}}
     {{-- Paper does not scroll: on paper the list prints every place. --}}
-    <div data-wk-print-expand @if(filled($listLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($listLabel) }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'relative w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only focus-within:not-sr-only focus-within:border-t-[length:var(--border-wk-width)] focus-within:border-[var(--color-wk-border)]' }}">
+    <div data-wk-print-expand @if(filled($listLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($listLabel) }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'relative w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-s-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only focus-within:not-sr-only focus-within:border-t-[length:var(--border-wk-width)] focus-within:border-[var(--color-wk-border)]' }}">
         {{-- The heading stays at the top of the list while it scrolls, and tells the list how
              much of the top it covers, so a place that takes the focus on the way up rests
              below it (WCAG 2.4.11). --}}
@@ -252,9 +252,9 @@
                         :aria-label="m.label + (m.body ? ', ' + m.body : '') + {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::, latitude :lat, longitude :lng')) }}.replace(':lat', m.lat).replace(':lng', m.lng)"
                         :aria-current="selectedId === m.id ? 'true' : null"
                         :class="selectedId === m.id ? {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedClasses) }} : ''"
-                        class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
+                        class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-start hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
                     >
-                        <span class="mt-1 shrink-0 h-2.5 w-2.5 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($dotClasses) }}[m.intent || 'accent']"></span>
+                        <span class="mt-[var(--space-wk-xs)] shrink-0 h-2.5 w-2.5 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($dotClasses) }}[m.intent || 'accent']"></span>
                         {{-- Each line wraps instead of being cut at one line. The list is where a
                              sighted reader reads a marker's whole name, since selecting a row only pans
                              the map, and a row has no fixed height to keep. A cut line loses its end

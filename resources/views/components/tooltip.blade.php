@@ -14,7 +14,7 @@
     // stays out of the tab order rather than becoming a second stop with no name. `true` and
     // `false` from the caller are kept as they are.
     'focusableTrigger' => null,
-    // `false` when the tooltip text is ALSO the trigger's accessible name, as on an icon-only
+    // `false` when the tooltip text is also the trigger's accessible name, as on an icon-only
     // control named by its tooltip. Describing a control with its own name makes a screen
     // reader say it twice ("Fast mode, button, Fast mode"), so the pairing is left out. Where
     // that name is in the slot, as its words or its `aria-label`, the component leaves the
@@ -23,7 +23,7 @@
     'describes' => true,
     // Switch the tooltip off without removing it. A tooltip on a control that
     // has become inert — a collapsed sidebar item, a disabled action — has to be
-    // able to go quiet, and `pointer-events-none` on the root is NOT a way to do
+    // able to go quiet, and `pointer-events-none` on the root is not a way to do
     // that however much it looks like one: `mouseenter` is delivered to every
     // ancestor of the element actually hit, whatever their own pointer-events
     // value, so the handler fires and the panel appears over something that is
@@ -42,21 +42,32 @@
     // shortcut the control in its slot carries in `x-wk-shortcut`; `false` draws none. A
     // single-key shortcut is drawn only while single keys work.
     'shortcut' => null,
+    // Draw into one panel the page's tooltips share instead of a panel of its own, which each
+    // tooltip otherwise carries in its markup. Only a tooltip of words alone shares: one with a
+    // content slot, a shortcut or the words of a cut text keeps its own panel, which draws them.
+    // The words then stand once, in an element the trigger is described by, and the shared panel
+    // shows them while the tooltip is open. Off by default; `components.tooltip.shared` in
+    // `config/wirekit.php` turns it on for every tooltip.
+    'shared' => config('wirekit.components.tooltip.shared', false),
+    // The id of an element on the page that already holds the tooltip's words, such as the hidden
+    // help text a field is described by. A shared tooltip is described by it and shows its words,
+    // so they are not written a second time. Without it, a shared tooltip writes its own.
+    'textFrom' => null,
     'scope' => null,
-    // What the host AND the trigger wrapper root in. `div` is the default; `as="span"` is
+    // What the host and the trigger wrapper root in. `div` is the default; `as="span"` is
     // what makes this component usable inside a
     // text-level one.
     //
-    // It has to move BOTH elements, and that is the whole reason it is one prop rather
+    // It has to move both elements, and that is the whole reason it is one prop rather
     // than two. A `<div>` inside a `<p>` is invalid HTML, so the parser closes the paragraph
     // and hoists the div out — the trigger stops being a child of its text node and becomes
-    // its SIBLING. In a grid that sibling gets a cell of its own, which is how a warning
+    // its sibling. In a grid that sibling gets a cell of its own, which is how a warning
     // glyph ends up next to the wrong row. Nothing about that is red: the Blade reads
     // correctly, both markers are in the output so every assertion passes, and there is no
     // overflow and no console error for a screen sweep to catch.
     //
     // The panel is unaffected either way — it lives in a `<template x-teleport>`, and a
-    // `<template>` IS phrasing content, so it is valid inside a `<p>` and its children are an
+    // `<template>` is phrasing content, so it is valid inside a `<p>` and its children are an
     // inert fragment the paragraph's content model never sees.
     //
     // The default stays `div` deliberately rather than becoming `span`: a span wrapper is
@@ -72,7 +83,7 @@
     // `describes="false"` on an unbound tag is the string "false", which is truthy.
     $describes = BooleanProp::from($describes, true, 'tooltip', 'describes');
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'tooltip', 'disabled');
@@ -84,7 +95,7 @@
 
     // `$as` is interpolated into two opening tags below, and Blade's escaping does not make
     // that safe: `e()` escapes neither a space nor an `=`, so `as="div onmouseover=alert(1)"`
-    // would arrive as a working event handler. `tagName()` checks the SHAPE rather than an
+    // would arrive as a working event handler. `tagName()` checks the shape rather than an
     // allowlist, the same way `card` does — an enum would have to guess which elements a
     // developer legitimately wants.
     $as = WireKit::tagName('tooltip', (string) $as);
@@ -93,10 +104,12 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
 
-    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
-    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // One of the twelve placements Floating UI takes, or a side of the line, `start` or `end`, which
+    // the script turns into one of them by the page's direction (Support\FloatingPlacement). A word
+    // neither knows would put the panel on the top-left corner of its trigger: debug refuses it,
+    // production logs it and uses the default.
     // No placement at all, `null` or empty, is the default, as the script reads it.
-    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('tooltip', 'placement', (string) ($placement ?: 'top'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'top');
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('tooltip', 'placement', (string) ($placement ?: 'top'), [...\Pushery\WireKit\Support\FloatingPlacement::ALL, ...\Pushery\WireKit\Support\FloatingPlacement::LOGICAL], 'top');
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -199,7 +212,7 @@
         $surface === 'elevated' ? 'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]' : '',
         // There is deliberately no `pointer-events-none` here, and the absence is the
         // rule rather than an omission. WCAG 1.4.13 requires content shown on hover to
-        // be HOVERABLE: the pointer must be able to travel onto it without it
+        // be hoverable: the pointer must be able to travel onto it without it
         // disappearing, which is what lets somebody reading a long tip at high zoom, or
         // with an unsteady hand, finish reading it at all. A panel that cannot receive
         // `mouseenter` also cannot cancel the hide the trigger's `mouseleave` just
@@ -207,6 +220,18 @@
         // The panel binds `mouseenter`/`mouseleave` below; the `offset` gap between
         // trigger and panel is crossed well inside `delayHide`.
     ])), $scope);
+    // The page's shared panel, for a tooltip of words alone. Content, a shortcut and the words of a
+    // cut text are drawn by a panel of the tooltip's own, which keeps them.
+    $shared = BooleanProp::from($shared, false, 'tooltip', 'shared');
+    $sharedPanel = $shared && ! $hasContent && $tipShortcutKeys === null && ! $tipCutLead;
+    // What a shared tooltip is described by and shows: an element the caller names, which holds the
+    // words already, or one this tooltip writes, hidden, in place of its panel.
+    $textFromId = is_string($textFrom) && trim($textFrom) !== '' ? trim($textFrom) : null;
+    $describedById = $sharedPanel && $textFromId !== null ? $textFromId : $tooltipId;
+    $ownWords = $sharedPanel && $textFromId === null
+        ? new \Illuminate\Support\HtmlString('<span id="'.e($tooltipId).'" hidden data-wk-tooltip-words>'.e($text).'</span>')
+        : '';
+
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -216,11 +241,14 @@
 <{{ $as }} data-wk-prose-skip
     @if($disabled) data-wk-tooltip-disabled="true" @endif
     @if($surface === 'elevated') data-wk-tooltip-surface="elevated" @endif
+    @if($sharedPanel) data-wk-tooltip-panel-class="{{ \Pushery\WireKit\Support\CompactClasses::map('wk-tooltip-panel '.$tooltipClasses) }}" @endif
     x-data="wirekitTooltip({
         placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }},
         offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'tooltip', 'offset') }},
         delayShow: {{ \Pushery\WireKit\Support\NumericProp::int($delayShow, 0, 'tooltip', 'delayShow') }},
-        delayHide: {{ \Pushery\WireKit\Support\NumericProp::int($delayHide, 0, 'tooltip', 'delayHide') }}
+        delayHide: {{ \Pushery\WireKit\Support\NumericProp::int($delayHide, 0, 'tooltip', 'delayHide') }}@if($sharedPanel),
+        shared: true,
+        textFrom: {{ \Pushery\WireKit\Support\AlpinePayload::string($describedById) }}@endif
     })"
     x-on:mouseenter="mouseenter()"
     x-on:mouseleave="mouseleave()"
@@ -235,10 +263,10 @@
          to, the one case that needs it least. WCAG 1.4.13 requires
          content shown on hover or focus to be dismissible without moving the pointer or
          the focus, and Escape is the mechanism it names.
-         In the CAPTURE phase, because a modal or a drawer around the reader reads the
+         In the capture phase, because a modal or a drawer around the reader reads the
          key on the document and on the window too, and a tooltip on screen marks the
          press it hides on: the overlay leaves a marked press alone.
-         Deliberately NOT guarded on `open`, unlike the hover card's counterpart: a
+         Deliberately not guarded on `open`, unlike the hover card's counterpart: a
          tooltip opens on a `delayShow` timer, so the key regularly arrives while the
          panel is still pending, and a guard on `open` would let it appear a moment
          after the Escape that was meant to answer it. `keydownEscape()` clears the
@@ -250,7 +278,7 @@
     {{-- Trigger element — linked to tooltip via aria-describedby. `data-wk-tooltip-trigger` is what
          the stylesheet stands a control in the slot at the top of the trigger's line by, so the
          trigger ends where the control ends. --}}
-    {{-- The description sits on this WRAPPER, and a wrapper `<div>` is not what a reader
+    {{-- The description sits on this wrapper, and a wrapper `<div>` is not what a reader
          lands on. With `focusable-trigger` the wrapper takes the tab stop and carries the
          name itself, which works. Without it — the documented shape for wrapping a caller's
          own `<button>` — the button is what gets focused, and it has no `aria-describedby`:
@@ -260,99 +288,13 @@
          reader actually arrives, and leaves it here when there is none so the wrapper case
          is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
          markup — this template never sees the element it needs to annotate. --}}
-    <{{ $as }} data-wk-prose-skip data-wk-tooltip-trigger x-ref="trigger" @if($triggerDescribes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @if($triggerIsButton) role="button" @if($triggerExplainsDisabled) aria-disabled="true" @endif {{ $triggerName }} x-on:keydown.enter="activate($event)" x-on:keydown.space="activate($event)" @endif class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
+    <{{ $as }} data-wk-prose-skip data-wk-tooltip-trigger x-ref="trigger" @if($triggerDescribes) data-wk-tooltip-describedby="{{ $describedById }}" aria-describedby="{{ $describedById }}" @endif @if($focusableTrigger) tabindex="0" @if($triggerIsButton) role="button" @if($triggerExplainsDisabled) aria-disabled="true" @endif {{ $triggerName }} x-on:keydown.enter="activate($event)" x-on:keydown.space="activate($event)" @endif class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
         {{ $slot }}
     </{{ $as }}>
 
-    {{-- Tooltip panel, teleported out of the document flow.
-
-         Left inside a `<x-wirekit::scroll-area fade="…">`, a tooltip would be cut
-         off at the scroll area's edge. The panel is `position: fixed` and so
-         escapes overflow clipping, but `fade` works by `mask-image`, and a mask
-         applies to the whole rendered subtree, fixed descendants included. The
-         stylesheet's escape hatch (`.wk-scroll-fade…:focus-within { mask-image:
-         none }`) cannot fire here: a tooltip opens on hover, and focus-within
-         does not see a hover.
-
-         Teleporting settles it at the root rather than widening that hatch — the
-         panel leaves the masked subtree entirely, which also settles every
-         other stacking-context case (a clipping card, a transformed ancestor,
-         an `isolation: isolate` wrapper) in one move.
-
-         `$refs` survive the teleport: Alpine registers the ref in the ORIGINAL
-         scope, so the positioning code that reads `this.$refs.tooltip` is
-         unaffected. --}}
-    <template x-teleport="#wk-overlay-root">
-    <div
-        {{-- THE MORPH KEY, and it is what makes writing the id below safe.
-             Livewire resolves a node's morph identity as `wire:id`, then
-             `wire:key`, then `el.id`. With neither of the first two present the id
-             WAS the key — and this panel mints a fresh one on every render, so two
-             renders could never agree by construction. A key mismatch does not
-             patch, it SWAPS: `swapElements` inserts a native `cloneNode(true)`,
-             which copies attributes and children and no Alpine expandos.
-             The replacement therefore arrives with no `_x_dataStack`, and Alpine's
-             scope walk climbs `parentNode` only — from inside the overlay root,
-             which hangs off <body> in no `x-data`, that walk finds nothing. So
-             `x-show="open"` resolved `open` on the GLOBAL object, where it is
-             `window.open`, a real function; Alpine auto-invokes a function-valued
-             expression and applies it with the scope proxy as the receiver, which
-             the brand check on a global operation refuses. The `Illegal
-             invocation` that raises is re-thrown from a timer, so it surfaces one
-             tick later as an uncaught page error whose stack names nothing on the
-             page, so it does not read as a tooltip bug at all. No interaction is
-             needed to trigger it: `x-show` is
-             evaluated the moment the clone is initialized.
-             A STATIC value on purpose, and it must never become the id. The morph
-             patches a teleported node against its own counterpart, one to one, and
-             never looks a key up among siblings — so many tooltips on one page do
-             not compete — while the per-instance value is exactly the one that
-             cannot agree across two renders. The id stays per-instance for the
-             opposite reason: `aria-describedby` on the trigger has to name this
-             panel. --}}
-        wire:key="wk-tooltip-panel"
-        x-ref="tooltip"
-        {{-- The panel holds itself open while the pointer rests on it — the "Hoverable"
-             half of WCAG 1.4.13. The trigger's `mouseleave` arms a hide on the
-             `delayHide` timer; arriving here cancels it, leaving here arms it again.
-             Both handlers are the component's own, shared with the trigger, so there is
-             one hide timer for the pair rather than two racing each other. --}}
-        x-on:mouseenter="mouseenter()"
-        x-on:mouseleave="mouseleave()"
-        x-show="isOpen"
-        x-transition:enter="transition ease-out duration-100"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-75"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0"
-        x-cloak
-        role="tooltip"
-        id="{{ $tooltipId }}"
-        {{-- `wk-tooltip-panel` is the marker the stylesheet's forced-colors rule selects, outside
-             the resolved classes so a project that restyles the panel keeps its edge there. --}}
-        class="wk-tooltip-panel {{ $tooltipClasses }}"
-    >
-        {{-- The words of the cut text in the trigger, on a line of their own above the tooltip's,
-             written by the script while that text is cut and empty while it fits. A screen reader
-             reads them in the trigger already, so the description leaves them out. --}}
-        @if($tipCutLead)
-            <span data-wk-tooltip-cut-words class="block" aria-hidden="true"></span>
-        @endif
-        {{-- Rich content slot or plain text, and the shortcut after it: beside the text, and on a
-             line of its own under content, which is lines itself. A single-key shortcut goes with
-             its line while single keys are off. --}}
-        @if($hasContent)
-            {{ $content }}
-            @if($tipShortcutKeys !== null)
-                <span class="block mt-[var(--space-wk-xs)]"@if($tipShortcutKeys['single']) data-wk-kbd-single=""@endif><x-wirekit::kbd :shortcut="$tipShortcut" size="sm" :scope="$scope" /></span>
-            @endif
-        @else
-            {{ $text }}
-            @if($tipShortcutKeys !== null)
-                <x-wirekit::kbd :shortcut="$tipShortcut" size="sm" class="ms-[var(--space-wk-sm)]" :scope="$scope" />
-            @endif
-        @endif
-    </div>
-    </template>
+    {{-- The panel of its own, teleported to the overlay root, or, drawing into the page's shared
+         panel, the words the trigger is described by, hidden, where none is named. An include
+         and an echo rather than a conditional, which Livewire would mark at both ends. --}}
+    @includeWhen(! $sharedPanel, 'wirekit::components.partials.tooltip-panel')
+    {{ $ownWords }}
 </{{ $as }}>

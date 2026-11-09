@@ -55,7 +55,7 @@
 
     // The colors in any of the four CSS hex forms (`#fff` is `#ffffff`; the alpha of `#rgba` and
     // `#rrggbbaa` becomes the fill's opacity), and the error-correction level from its four.
-    // Checked HERE, outside the try below: that catch exists for the library's own failures, and
+    // Checked here, outside the try below: that catch exists for the library's own failures, and
     // a typo in a prop must reach the developer through the strictness gate rather than turn into
     // the placeholder there. Splitting `fff` into pairs would read it as rgb(255, 15, 0).
     $hexColor = static fn (string $prop, string $value, string $default): array => \Pushery\WireKit\Support\HexColor::parse($value)

@@ -33,7 +33,7 @@ class PublishIconsCommand extends Command
     /**
      * Map preset keys to their composer package.
      *
-     * The package is written down; the SVG DIRECTORY is not, and that asymmetry is the
+     * The package is written down; the SVG directory is not, and that asymmetry is the
      * point. A path here was wrong twice over: it named `ryangjchandler/blade-tabler-icons`
      * (abandoned, and uninstallable against the Laravel versions this package supports),
      * and it named `resources/svg` for Lucide, which v2 emptied when it moved its icons one

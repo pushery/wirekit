@@ -37,7 +37,7 @@
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'cta');
 
     // Validate `size` against the three-tier enum. An off-enum value is reported through the
-    // strictness gate, and where the gate does not throw it renders the FIRST allowed value,
+    // strictness gate, and where the gate does not throw it renders the first allowed value,
     // which is why `md`, the default, leads the list.
     $validSize = in_array($size, ['sm', 'md', 'lg'], true)
         ? $size
@@ -65,7 +65,7 @@
         'text-center',
     ]), $scope);
 
-    // `dark` establishes a real dark TOKEN CONTEXT (the bare `dark` class), not
+    // `dark` establishes a real dark token context (the bare `dark` class), not
     // just a dark band — every --color-wk-* token resolves to its `.dark` value
     // for the subtree, so token-surfaced children (code-block, card, input)
     // render dark surfaces instead of light (white-on-white bug class). Regular
@@ -106,10 +106,10 @@
             </div>
         @endif
 
-        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             <div class="flex flex-wrap gap-[var(--gap-wk-sm)] justify-center">
                 {{ $actions }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 </section>

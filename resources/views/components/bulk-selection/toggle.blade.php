@@ -44,15 +44,18 @@
     ]), $scope);
 @endphp
 
-{{-- Checked when every row of the page is, mixed when some are: `indeterminate` is a property,
-     so it is set from the block's state rather than rendered. Disabled while the page has no row
-     to choose. Outside the Shift range, which covers the rows. --}}
+{{-- Checked when every row of the page is, mixed when some are. `indeterminate` is a property,
+     so the block's state is bound to `data-wk-indeterminate` and `x-wk-indeterminate` sets the
+     property from it: the CSP build's evaluator assigns no property of an element, so an
+     expression that sets it throws there. Disabled while the page has no row to choose. Outside
+     the Shift range, which covers the rows. --}}
 <input
     type="checkbox"
     data-wk-bulk-toggle
     data-wk-range-skip
     x-bind:checked="pageAll"
-    x-effect="$el.indeterminate = pageSome"
+    x-bind:data-wk-indeterminate="pageSome"
+    x-wk-indeterminate
     @if($bindsDisabled) x-bind:disabled="pageEmpty" @endif
     x-on:change="toggle()"
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ $label }}" @endunless

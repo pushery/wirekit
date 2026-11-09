@@ -16,17 +16,21 @@
     use Pushery\WireKit\WireKit;
 
     // command => [accessible label, glyph, glyph-style, isActive() expr | null (action, not toggle)].
-    // Glyphs are TEXT where a letterform IS the convention (B / I / H1 / ¶) and
+    // Glyphs are text where a letterform is the convention and the letter stands in the
+    // label (B / I / U / S), or where it is a sign a name never contains (¶, •, arrows), and
     // flat inline SVGs (stroke currentColor — never emoji codepoints, which
     // render as colored "3D" emoji and clash with the flat set; the link 🔗 was
     // exactly that bug) where the convention is pictographic (link, undo/redo,
-    // task-list). Static blade-authored markup, never developer-controlled.
+    // task-list). A letter or a figure that is no part of the label is drawn as well: the
+    // headings and the numbered list stand for their command as a symbol does, and as text
+    // `H1` and `1.` would be a visible label the button's name does not contain (WCAG 2.5.3).
+    // Static blade-authored markup, never developer-controlled.
     //
     // The label goes through the translator. It reaches the page twice — as the button's
     // `aria-label` and as the visible tooltip text below it — so an untranslated literal
     // here would give a German application a translated form with a toolbar that announces
     // and hovers "Bold", "Italic", "Bullet list".
-    // The keys are written out LITERALLY, one `__()` per row, for the same reason
+    // The keys are written out literally, one `__()` per row, for the same reason
     // countdown.blade.php gives: `lang:extract` reads the source, so a key built from a
     // variable is a key no reference file can ever know about.
     $svgAttrs = 'class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
@@ -37,13 +41,13 @@
         'strike' => [__('wirekit::Strikethrough'), 'S', 'line-through', "isActive('strike')"],
         'code' => [__('wirekit::Inline code'), '</>', 'font-mono text-[0.7em]', "isActive('code')"],
         'link' => [__('wirekit::Link'), '<svg '.$svgAttrs.'><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', '', "isActive('link')"],
-        'heading-1' => [__('wirekit::Heading 1'), 'H1', 'font-bold text-[0.8em]', "isActive('heading', { level: 1 })"],
-        'heading-2' => [__('wirekit::Heading 2'), 'H2', 'font-bold text-[0.8em]', "isActive('heading', { level: 2 })"],
-        'heading-3' => [__('wirekit::Heading 3'), 'H3', 'font-bold text-[0.8em]', "isActive('heading', { level: 3 })"],
+        'heading-1' => [__('wirekit::Heading 1'), '<svg '.$svgAttrs.'><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="m17 12 3-2v8"/></svg>', '', "isActive('heading', { level: 1 })"],
+        'heading-2' => [__('wirekit::Heading 2'), '<svg '.$svgAttrs.'><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg>', '', "isActive('heading', { level: 2 })"],
+        'heading-3' => [__('wirekit::Heading 3'), '<svg '.$svgAttrs.'><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2"/><path d="M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2"/></svg>', '', "isActive('heading', { level: 3 })"],
         'paragraph' => [__('wirekit::Paragraph'), '¶', '', "isActive('paragraph')"],
         'quote' => [__('wirekit::Quote'), '”', 'font-serif', "isActive('blockquote')"],
         'bullet-list' => [__('wirekit::Bullet list'), '•', '', "isActive('bulletList')"],
-        'ordered-list' => [__('wirekit::Numbered list'), '1.', 'text-[0.8em]', "isActive('orderedList')"],
+        'ordered-list' => [__('wirekit::Numbered list'), '<svg '.$svgAttrs.'><path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>', '', "isActive('orderedList')"],
         'task-list' => [__('wirekit::Task list'), '<svg '.$svgAttrs.'><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="m9 11 3 3L22 4"/></svg>', '', "isActive('taskList')"],
         'code-block' => [__('wirekit::Code block'), '{}', 'font-mono', "isActive('codeBlock')"],
         'horizontal-rule' => [__('wirekit::Divider'), '―', '', null],
@@ -81,7 +85,7 @@
     $historyGuard = ['undo' => 'canUndo()', 'redo' => 'canRedo()'];
 
     // Which button is the toolbar's single tab stop. `role="toolbar"` promises a
-    // screen reader that Tab reaches the group ONCE and the arrow keys move
+    // screen reader that Tab reaches the group once and the arrow keys move
     // inside it, so exactly one button may carry tabindex="0" — the `full` preset
     // is otherwise seventeen consecutive tab stops between whatever precedes the
     // editor and the editable surface itself. From there the tabindex roves with
@@ -118,15 +122,15 @@
 <div
     role="toolbar"
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Editor commands') }}" @endunless
-    x-on:keydown.arrow-right.prevent="focusToolbarCommand($event, 'next')"
-    x-on:keydown.arrow-left.prevent="focusToolbarCommand($event, 'prev')"
+    x-on:keydown.arrow-right.prevent="focusToolbarCommand($event, $wkInlineStep($event) === 1 ? 'next' : 'prev')"
+    x-on:keydown.arrow-left.prevent="focusToolbarCommand($event, $wkInlineStep($event) === 1 ? 'next' : 'prev')"
     x-on:keydown.home.prevent="focusToolbarCommand($event, 'first')"
     x-on:keydown.end.prevent="focusToolbarCommand($event, 'last')"
     {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$toolbarClasses])) }}
 >
     @foreach($commands as $commandKey => $command)
         @if($command === '|')
-            <span class="mx-1 h-5 w-px shrink-0 bg-[var(--color-wk-border)]" aria-hidden="true"></span>
+            <span class="mx-[var(--space-wk-xs)] h-5 w-px shrink-0 bg-[var(--color-wk-border)]" aria-hidden="true"></span>
         @elseif(isset($meta[$command]))
             @php([$label, $glyph, $glyphClass, $active] = $meta[$command])
             {{-- WireKit's own tooltip (not the native browser `title`): a styled,
@@ -173,11 +177,11 @@
                     {{-- SVG glyphs are static blade-authored markup from the $meta map
                          above (same safe class as alert's $defaultIcon — never
                          developer-controlled), so raw output is safe here. --}}
-                    @if(str_starts_with($glyph, '<svg'))
+                    @wirekitLast(str_starts_with($glyph, '<svg'))
                         <span class="{{ $glyphClass }}" aria-hidden="true">{!! $glyph !!}</span>
                     @else
                         <span class="{{ $glyphClass }}" aria-hidden="true">{{ $glyph }}</span>
-                    @endif
+                    @endwirekitLast
                 </button>
             </x-wirekit::tooltip>
         @endif

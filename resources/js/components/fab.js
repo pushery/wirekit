@@ -21,8 +21,8 @@ export default function wirekitFab() {
          * behind them — the panel has no focus trap, deliberately, because its actions are
          * ordinary controls rather than a menu.
          *
-         * `relatedTarget` is where focus is GOING. It is null when focus leaves the document
-         * altogether (a window blur, or a click on browser chrome), and that must NOT close
+         * `relatedTarget` is where focus is going. It is null when focus leaves the document
+         * altogether (a window blur, or a click on browser chrome), and that must not close
          * the panel: coming back to the tab would find it gone.
          */
         closeIfFocusLeft(event) {

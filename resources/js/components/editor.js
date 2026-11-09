@@ -1,8 +1,8 @@
 /**
  * WireKit Editor — thin Alpine glue around a ProseMirror-based rich-text editor
- * (a PEER DEPENDENCY; Tiptap is the recommended engine).
+ * (a peer dependency; Tiptap is the recommended engine).
  *
- * The editor engine is NOT bundled (same shape as the Chart.js / ApexCharts
+ * The editor engine is not bundled (same shape as the Chart.js / ApexCharts
  * adapters). The developer installs their editor (e.g. `@tiptap/core` +
  * `@tiptap/starter-kit`) and exposes a `window.wirekitEditor(config)` factory
  * that returns an `Editor` instance (see the docs page). The legacy factory name
@@ -56,7 +56,7 @@ export default function wirekitEditor(config = {}) {
         // Bumped on every Tiptap transaction so the toolbar's isActive() bindings
         // re-evaluate reactively (Tiptap's own state is not Alpine-reactive).
         _version: 0,
-        // Bumped only when the DOCUMENT changes, not the selection, so the `content`
+        // Bumped only when the document changes, not the selection, so the `content`
         // accessor is re-read when there is something new to read and not on every
         // caret move.
         _docVersion: 0,
@@ -95,7 +95,7 @@ export default function wirekitEditor(config = {}) {
         _editable: config.editable !== false,
         // Character count (soft limit). charCount drives the visible counter; the
         // sr-only announce string is debounced so a screen reader speaks when the
-        // user pauses, not on every keystroke. maxLength accepts a number OR a
+        // user pauses, not on every keystroke. maxLength accepts a number or a
         // numeric string (from a plain `max-length="500"` Blade attribute).
         charCount: 0,
         charAnnounce: '',
@@ -253,10 +253,10 @@ export default function wirekitEditor(config = {}) {
          */
         _mount(factory, content, late) {
             // Second defensive layer for the Livewire-morph path: Livewire can
-            // re-render the markup and KEEP the content node (with its already-
-            // mounted ProseMirror view) while Alpine constructs a FRESH component
+            // re-render the markup and keep the content node (with its already-
+            // mounted ProseMirror view) while Alpine constructs a fresh component
             // object — so `this.editor` is undefined here and the guard in init()
-            // misses it. Mounting again would put TWO ProseMirror views on one
+            // misses it. Mounting again would put two ProseMirror views on one
             // node: the content renders twice and every toolbar command throws
             // "Applying a mismatched transaction" (it dispatches against a stale
             // view). Remove any orphaned view so exactly one fresh view mounts.
@@ -264,9 +264,9 @@ export default function wirekitEditor(config = {}) {
             // never morphs the editor subtree) — documented for integrators.
             const host = this.$refs.content;
             if (host && typeof host.querySelectorAll === 'function') {
-                // Tiptap APPENDS its view to `element` and never empties it — so the
+                // Tiptap appends its view to `element` and never empties it — so the
                 // server-rendered seed ([data-wk-editor-seed], the pre-hydration
-                // first paint) MUST go before mounting, or the content renders twice
+                // first paint) must go before mounting, or the content renders twice
                 // (seed on top, editable view below). Stale .ProseMirror views from
                 // a Livewire morph (which keeps the DOM but rebuilds the Alpine
                 // component) are swept in the same pass.
@@ -290,7 +290,7 @@ export default function wirekitEditor(config = {}) {
                         // First, so none of it can replace a key below.
                         ...(config.fieldAttributes || {}),
                         // The editable surface is a multiline textbox (WAI-ARIA textbox pattern).
-                        // wk-editor-content is REAL shipped CSS (typography + flex-fill +
+                        // wk-editor-content is real shipped CSS (typography + flex-fill +
                         // outline:none + wrap rules in dist/wirekit.css) — never put Tailwind
                         // utility classes here: Tailwind doesn't scan JS config strings, so
                         // they'd silently not exist in the developer's build, and an
@@ -315,7 +315,7 @@ export default function wirekitEditor(config = {}) {
                 // it the same way. The field keeps the server's bytes until the first real edit
                 // writes it.
                 onCreate: () => { this._version++; this._updateCount(); },
-                // The commit boundary for rich text is LEAVING the editor.
+                // The commit boundary for rich text is leaving the editor.
                 //
                 // Not `onUpdate`, and not the `change` this component emits from
                 // it: that fires on a 200ms debounce, so committing there would
@@ -328,11 +328,11 @@ export default function wirekitEditor(config = {}) {
                 onTransaction: () => { this._version++; },
             });
 
-            // Mark the Editor raw BEFORE storing it on Alpine state. Alpine
+            // Mark the Editor raw before storing it on Alpine state. Alpine
             // deep-proxies component data via its vendored Vue reactivity, and a
-            // PROXIED ProseMirror editor builds every command's transaction against
+            // proxied ProseMirror editor builds every command's transaction against
             // the proxied state.doc — a different object identity from the view's
-            // real doc — so EVERY command throws "Applying a mismatched transaction"
+            // real doc — so every command throws "Applying a mismatched transaction"
             // (proven: proxied selectAll() throws, Alpine.raw(editor) works).
             // `__v_skip` is the flag Vue's markRaw() sets and reactive() honors;
             // setting it here protects every integrator no matter what their
@@ -353,7 +353,7 @@ export default function wirekitEditor(config = {}) {
             this._stopFieldsetWatch ??= watchFieldsetDisabled(this.$root, (locked) => this._lockByFieldset(locked));
 
             // Autofocus the Tiptap surface when requested, so the `autofocus` prop
-            // reaches it and not only the textarea fallback. Done AFTER the assignment
+            // reaches it and not only the textarea fallback. Done after the assignment
             // — not in onCreate, which can fire mid-construction while this.editor is
             // still undefined (the same reason _writeOut guards on it) — and
             // factory-independent: it doesn't rely on the editor factory
@@ -797,7 +797,7 @@ export default function wirekitEditor(config = {}) {
                     fn().run();
                 } catch (e) {
                     // A command whose Tiptap extension isn't registered throws here —
-                    // TaskList / TextAlign are NOT in StarterKit (and on Tiptap 2 neither
+                    // TaskList / TextAlign are not in StarterKit (and on Tiptap 2 neither
                     // is Underline), so an `align-*` or `task-list` button wired with only
                     // StarterKit hits this on a click. Surface a DX hint instead of letting
                     // an uncaught error break the editor (same "never silently broken"
@@ -859,7 +859,7 @@ export default function wirekitEditor(config = {}) {
         // button with nothing to undo/redo reads as disabled instead of a dead no-op. Reads
         // `_version` (bumped on every transaction) so the bindings re-evaluate as the
         // history stack changes. Tiptap exposes `editor.can().undo()/redo()` (booleans);
-        // `?.` guards a minimal factory return or an editor wired WITHOUT the History
+        // `?.` guards a minimal factory return or an editor wired without the History
         // extension — in that case there's nothing to undo/redo, so `false` (disabled)
         // is the honest state. `_canRun` centralizes the can()-probe + its guards.
         canUndo() {
@@ -888,14 +888,14 @@ export default function wirekitEditor(config = {}) {
         /**
          * Move focus along the toolbar's commands, and take the tab stop with it.
          *
-         * `role="toolbar"` promises a reader that Tab reaches the group ONCE and the
+         * `role="toolbar"` promises a reader that Tab reaches the group once and the
          * arrow keys move inside it. The template renders the first enabled command
          * with `tabindex="0"` and every other one with `-1`, which is one half of that
          * promise; without this method the other commands are reachable by pointer
          * alone, which is worse than the many tab stops it replaced.
          *
          * The buttons are read out of the DOM on every press rather than counted once
-         * at init. The vocabulary is server-rendered and Livewire REPLACES the markup
+         * at init. The vocabulary is server-rendered and Livewire replaces the markup
          * on every round trip, so an index captured earlier would survive the morph and
          * point into a list that no longer exists — and it would do it quietly, landing
          * focus on the wrong command or on nothing.
@@ -927,7 +927,7 @@ export default function wirekitEditor(config = {}) {
         // engine-neutral: `window.wirekitEditor` is canonical; `window.tiptapEditor`
         // is a deprecated alias that keeps working, and no removal is scheduled.
         // A one-time console.info nudges old-name integrators to rename,
-        // gated on a window flag so a page with N editors hints ONCE, not N times.
+        // gated on a window flag so a page with N editors hints once, not N times.
         // (No collision with the `wirekitEditor` Alpine.data component: that name lives
         // in Alpine's registry, never on `window`. The bundles do put a few names on
         // `window` — `wirekitPosition`, `Alpine` in the Alpine build, and the one-shot
@@ -971,11 +971,11 @@ export default function wirekitEditor(config = {}) {
         // ── Engine-absent fallback ───────────────────────────────────
 
         _activateFallback() {
-            // One-time DX hint — gate ONLY the console.error behind a module-scoped
-            // flag so a page with N engine-less editors logs ONCE, not N times.
+            // One-time DX hint — gate only the console.error behind a module-scoped
+            // flag so a page with N engine-less editors logs once, not N times.
             // Mirrors the missing-peer-dependency hint in chart.js / chart-apex.js /
             // map.js (all gate on window.__wirekit_<lib>_missing_warned__). The
-            // textarea-fallback DOM work below still runs for EVERY editor — each
+            // textarea-fallback DOM work below still runs for every editor — each
             // instance needs its own field un-hidden — so the dedup wraps the log
             // only, never the fallback itself.
             if (typeof window !== 'undefined' && engine !== null) {

@@ -9,7 +9,7 @@ namespace Pushery\WireKit\Support;
  *
  * The package serves files from its own tree through routes, and the font route takes part of
  * the path from the request. Both checks run on the resolved path: `realpath()` collapses `..`
- * and follows links, and the result has to sit BELOW the root. That is a comparison against the
+ * and follows links, and the result has to sit below the root. That is a comparison against the
  * root plus a separator. Against the bare root, `resources/fonts-extra/x.css` and
  * `resources/fonts.css` both begin with `resources/fonts` and would pass as if they were inside.
  */

@@ -10,7 +10,7 @@
     'icon' => null,
     'submenu' => false,
     // A trailing counter/dot (an unread badge) — a count or short string renders a
-    // pill AFTER the label, OUTSIDE the label span so a long name can never push it out, and
+    // pill after the label, outside the label span so a long name can never push it out, and
     // stays visible in the collapsed rail.
     'badge' => null,
     'scope' => null,
@@ -38,6 +38,10 @@
     'collapsible' => false,
     // The sidebar's `track-current`: the row carries what `x-wk-current` moves after a visit.
     'trackCurrent' => false,
+    // Whether the name is cut with an ellipsis instead of wrapping. The row's own tag wins,
+    // then the group or the section it stands in, then the sidebar (the argument is at the
+    // sidebar's prop).
+    'truncate' => false,
 ])
 
 @php
@@ -54,13 +58,19 @@
     // own does on an update, cannot tell, and writes them (the link's counter reads this as well).
     $folds = \Pushery\WireKit\Support\AwareProp::within(['sidebar']) !== true
         || \Pushery\WireKit\Support\BooleanProp::from($collapsible, false);
+    $truncate = \Pushery\WireKit\Support\BooleanProp::from(
+        \Pushery\WireKit\Support\AwareProp::read('truncate', ['sidebar'], false, ['sidebar.group', 'sidebar.collapsible']),
+        false,
+        'sidebar.item',
+        'truncate',
+    );
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -72,30 +82,30 @@
     use Pushery\WireKit\WireKit;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into the bag the link partial
     // echoes and renders as a stray HTML attribute on the <a>/<button>. `selected`
-    // is the one that bites hardest: it IS a real HTML attribute, just not on these
+    // is the one that bites hardest: it is a real HTML attribute, just not on these
     // elements, so it reads as intentional to anyone looking at the DOM.
-    $attributes = $attributes->except(['mode', 'selected', 'collapsible', 'trackCurrent', 'track-current']);
+    $attributes = $attributes->except(['mode', 'selected', 'collapsible', 'trackCurrent', 'track-current', 'truncate']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $selectionMode = $mode === 'selection';
 
-    // WHICH attribute marks "this is the one", and it is not cosmetic which one.
+    // Which attribute marks "this is the one", and it is not cosmetic which one.
     //
     // The three variants below exist because the muted rule and the active rule have
-    // EQUAL specificity and Tailwind emits the muted one last — see the block comment on
+    // equal specificity and Tailwind emits the muted one last — see the block comment on
     // the first of them. In `selection` mode no row carries `aria-current` at all, so a
-    // variant keyed on it matches EVERY row, and the chosen one renders muted along with
+    // variant keyed on it matches every row, and the chosen one renders muted along with
     // the rest. The mechanism is right; only the attribute it watches has to follow the
     // contract the column is actually under.
     // Both sets are written out in full, and that is not verbosity.
     //
     // Interpolating the attribute into the class name would read well and be silently
-    // wrong: Tailwind scans SOURCE for complete class names, so a name assembled at runtime
+    // wrong: Tailwind scans source for complete class names, so a name assembled at runtime
     // is a name it never sees, the rules would not be generated, and every row would
     // render unstyled in the direction the variant exists to control, with nothing in the
     // markup or the ARIA looking wrong.
@@ -119,7 +129,7 @@
     // pointer, `scrollIntoView` sometimes moved the list, and nothing on screen
     // said which row the reader was on.
     //
-    // A RING rather than a fill, because the fill is taken. The chosen row already
+    // A ring rather than a fill, because the fill is taken. The chosen row already
     // renders `$activeClasses` — `bg-[var(--color-wk-bg-active)]` — so painting the
     // keyboard's position with that same token would make the chosen row and the
     // marked row look identical, which is the one distinction the two states exist
@@ -163,7 +173,7 @@
     $classes = WireKit::resolveClasses('sidebar.item', 'base', implode(' ', [
         // `relative` is the containing block the collapsed-rail counter dot
         // positions against — without it the dot would anchor to the nav.
-        'relative flex items-center gap-[var(--padding-wk-x-sm)]',
+        'relative flex items-center gap-[var(--space-wk-nav-icon-gap)]',
         // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
         ...($folds ? ['group-data-[collapsed]/wk-sidebar:justify-center'] : []),
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
@@ -182,11 +192,11 @@
         // Derived from the container rather than fixed — see dist/wirekit.css. In a card
         // sidebar the concentric answer is 4px, not the 8px of a flat radius.
         'rounded-[var(--radius-wk-nav-item)]',
-        // The RESTING foreground is scoped to non-active items for the same reason
+        // The resting foreground is scoped to non-active items for the same reason
         // the hover below is, and it is not optional. Unscoped, this and the active
         // block's `text-[color:var(--color-wk-text)]` are both bare single-class
         // selectors — specificity (0,1,0), same layer — so the winner is decided by
-        // EMISSION ORDER, and Tailwind v4 sorts arbitrary color utilities by value:
+        // emission order, and Tailwind v4 sorts arbitrary color utilities by value:
         // `--color-wk-text` comes before `--color-wk-text-muted`, so the muted rule
         // is emitted last and wins. The active item rendered muted, never the
         // emphasized foreground the block below documents.
@@ -197,7 +207,7 @@
         ...$notCurrentClasses,
         ...$keyboardActiveClasses,
         // Hover is scoped to NON-active items via `:not([aria-current])`. An active item
-        // already carries `aria-current="page"`, and an UNSCOPED `hover:bg` here (specificity
+        // already carries `aria-current="page"`, and an unscoped `hover:bg` here (specificity
         // 0,2,0) would override a retinted active block (a developer's 0,1,0 utilities) the
         // instant the pointer arrives — the pill would snap back to muted mid-hover, forcing
         // the developer to reach for `!important`. Scoping matches the common expectation too:
@@ -216,7 +226,7 @@
     // It was written straight into the `svg()` helper, which put it out of reach of
     // every personalization route at once — there was no block name to address. The
     // cost shows up only once delta personalization exists: an application that wants
-    // a 16px icon has to take over the SURROUNDING block and reach the icon through a
+    // a 16px icon has to take over the surrounding block and reach the icon through a
     // descendant selector, and a taken-over block stops inheriting improvements
     // silently. It still renders; it renders the version from the day it was copied.
     //
@@ -238,7 +248,7 @@
         : [];
 
     // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank".
-    // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
+    // Careful: $attributes->merge(['rel' => ...]) treats rel as a default —
     // if the caller passed their own rel (even rel="prev"), theirs wins and
     // our auto-injection would silently fail, re-introducing tabnabbing.
     // To force-override, we remove rel from the bag and render it separately
@@ -305,7 +315,7 @@
     }
 @endphp
 
-{{-- The tooltip is the LABEL for a reader holding a pointer, and only then.
+{{-- The tooltip is the label for a reader holding a pointer, and only then.
 
      `disabled` is bound to live state rather than decided at render: the sidebar
      collapses in the browser, so a render-time decision would either show the bubble

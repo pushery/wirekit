@@ -16,7 +16,7 @@
  *
  * The words go in a moment after the region is emptied, so a second "Saved." after the first is
  * announced as well, and leave it a while later, so a reader moving through the page does not
- * come across them there. Alerts a single render adds are said together.
+ * come across them there. Alerts a single render adds are said together, the same words once.
  *
  * The region survives a page a `wire:navigate` swapped in, and an overlay that makes the rest of
  * the page inert keeps it reachable (`PAGE_INERT_KEEP` in `utils/overlay.js`). Installed once per
@@ -26,6 +26,11 @@
 export const WK_ALERT_ATTRIBUTE = 'data-wk-alert';
 export const WK_ALERT_TEXT_ATTRIBUTE = 'data-wk-alert-text';
 export const WK_ALERT_REGION_ATTRIBUTE = 'data-wk-alert-announcer';
+// An alert that shows itself as a toast as well when a render adds it out of view, and the parts
+// of it the toast takes: its title and its message.
+export const WK_ALERT_TOAST_ATTRIBUTE = 'data-wk-alert-toast';
+export const WK_ALERT_TITLE_ATTRIBUTE = 'data-wk-alert-title';
+export const WK_ALERT_MESSAGE_ATTRIBUTE = 'data-wk-alert-message';
 
 /** How long after emptying the region the words go in, in milliseconds. */
 export const ALERT_ANNOUNCE_DELAY = 100;
@@ -152,7 +157,13 @@ export function announceArrival(el) {
         return;
     }
 
-    pending.push(...words);
+    // Two alerts of one render that say the same, such as a saved notice at the top of the page
+    // and one beside its button, are said once; a later render says the words again.
+    for (const text of words) {
+        if (! pending.includes(text)) {
+            pending.push(text);
+        }
+    }
     region.textContent = '';
     clearTimeout(clearTimer);
     clearTimeout(writeTimer);
@@ -171,11 +182,85 @@ export function announceArrival(el) {
     }, ALERT_ANNOUNCE_DELAY);
 }
 
+/** The toast variant an alert's intent stands for: the four a toast knows, and `info` for the rest. */
+export function toastVariantOf(alert) {
+    const intent = alert.getAttribute('data-intent');
+
+    return ['info', 'success', 'warning', 'danger'].includes(intent) ? intent : 'info';
+}
+
+/** Whether no part of a shown alert stands in the window: wholly above its top or below its bottom. */
+export function outOfView(alert) {
+    const view = alert.ownerDocument ? alert.ownerDocument.defaultView : null;
+
+    if (! view || alert.getClientRects().length === 0) {
+        return false;
+    }
+
+    const box = alert.getBoundingClientRect();
+
+    return box.bottom <= 0 || box.top >= view.innerHeight;
+}
+
+/** The text of the alert's own part that carries the attribute, or an empty string. */
+function ownPart(alert, attribute) {
+    const part = Array.from(alert.querySelectorAll(`[${attribute}]`)).find((node) => node.closest(`[${WK_ALERT_ATTRIBUTE}]`) === alert);
+
+    return part ? (part.textContent ?? '').replace(/\s+/g, ' ').trim() : '';
+}
+
+/**
+ * An alert that asks for it with `toast-when-hidden`, added where the reader does not see it, shows
+ * its title and its message as a toast as well. The alert stays where it stands, and the toast says
+ * nothing: a polite alert is said by the region above and one with `role="alert"` by the browser,
+ * so a reader hears it once. Dispatched from the alert, so a toast region scoped to a part of the
+ * page takes the toast of an alert in that part.
+ *
+ * @param {Element} alert
+ * @returns {boolean} whether a toast was asked for
+ */
+export function toastIfOutOfView(alert) {
+    if (! alert.hasAttribute(WK_ALERT_TOAST_ATTRIBUTE) || ! outOfView(alert)) {
+        return false;
+    }
+
+    const title = ownPart(alert, WK_ALERT_TITLE_ATTRIBUTE);
+    const message = ownPart(alert, WK_ALERT_MESSAGE_ATTRIBUTE);
+
+    if (title === '' && message === '') {
+        return false;
+    }
+
+    alert.dispatchEvent(new CustomEvent('wirekit-toast', {
+        bubbles: true,
+        detail: { title: title || null, message, variant: toastVariantOf(alert), announce: false },
+    }));
+
+    return true;
+}
+
+/**
+ * The alerts a render added that ask for a toast, a moment later: the rest of the render has
+ * placed what stands around them by then, which decides whether they stand in view.
+ *
+ * @param {Element} el
+ */
+export function toastArrival(el) {
+    const alerts = alertsIn(el).filter((alert) => alert.hasAttribute(WK_ALERT_TOAST_ATTRIBUTE));
+
+    if (alerts.length > 0) {
+        setTimeout(() => alerts.forEach(toastIfOutOfView), ALERT_ANNOUNCE_DELAY);
+    }
+}
+
 /** @param {{hook: Function}} livewire */
 function hookLivewire(livewire) {
     alertRegion(document);
 
-    livewire.hook('morph.added', ({ el }) => announceArrival(el));
+    livewire.hook('morph.added', ({ el }) => {
+        announceArrival(el);
+        toastArrival(el);
+    });
 
     // A navigation swaps the body, region included, so the next page gets its own before any
     // render can add an alert to it.

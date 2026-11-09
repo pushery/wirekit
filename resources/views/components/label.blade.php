@@ -23,7 +23,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('label', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $required = BooleanProp::from($required, false, 'label', 'required');
@@ -45,6 +45,14 @@
     // the <label> and outside the help button, so it joins neither the field's name nor the
     // button's.
     $hasAfter = isset($after) && $after->hasActualContent();
+
+    // The asterisk of a required field, the last child of the <label>. A string rather than a
+    // conditional in the markup, which Livewire would mark at both ends on every label: when
+    // the field turns required or optional, the morph adds or drops a last child and moves no
+    // other.
+    $requiredMark = $required
+        ? new \Illuminate\Support\HtmlString('<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>')
+        : '';
 @endphp
 
 @if($hasAfter)
@@ -54,9 +62,9 @@
     <div data-wk-label-row class="{{ trim('flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
         <span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">
             <label data-wk-field-label {{ $attributes->except('class')->class([$classes]) }}>
-                {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
+                {{ $slot }}{{ $requiredMark }}
             </label>
-            @if(filled($help))
+            @wirekitLast(filled($help))
                 @include('wirekit::components.partials.field-help', [
                     'helpText' => $help,
                     'helpName' => trim(html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5)),
@@ -64,7 +72,7 @@
                     'helpButton' => ! in_array('sr-only', preg_split('/\s+/', (string) $attributes->get('class', '')) ?: [], true),
                     'helpField' => (string) $helpField,
                 ])
-            @endif
+            @endwirekitLast
         </span>
         @include('wirekit::components.partials.label-after', ['labelAfter' => $after])
     </div>
@@ -74,7 +82,7 @@
          same place. A label that is visually hidden shows no button, see the partial. --}}
     <div data-wk-label-row class="{{ trim('flex items-center gap-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
         <label data-wk-field-label {{ $attributes->except('class')->class([$classes]) }}>
-            {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
+            {{ $slot }}{{ $requiredMark }}
         </label>
         @include('wirekit::components.partials.field-help', [
             'helpText' => $help,
@@ -91,5 +99,5 @@
          the slot and this span is HTML whitespace, which collapses to a space and lands on
          top of `ms-0.5`, so the gap would be visibly wider than in the components that
          write it dense. --}}
-    {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
+    {{ $slot }}{{ $requiredMark }}
 </label>@endif

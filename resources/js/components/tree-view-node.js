@@ -15,7 +15,7 @@
  * clone against this node's live data, and the morph leaves it as it is.
  *
  * `aria-expanded` belongs on the element carrying `role="treeitem"`, the label
- * ROW a reader focuses, while this component's scope is the `<li>` around it;
+ * row a reader focuses, while this component's scope is the `<li>` around it;
  * the row is inside that scope, so the binding reads this node's flag.
  *
  * @param {Object}  config

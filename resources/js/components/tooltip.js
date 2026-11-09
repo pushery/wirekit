@@ -44,6 +44,39 @@ const COMPOSITE_WIDGET = [
     '[role="menubar"]', '[role="tablist"]', '[role="tree"]', '[role="radiogroup"]', '[role="toolbar"]',
 ].join(', ');
 
+// The one panel a page's shared tooltips draw into (`shared` on the component).
+const SHARED_PANEL_ID = 'wk-tooltip-shared';
+
+/**
+ * The page's shared panel, made on the first showing in the overlay root, outside every component, so
+ * no framework update takes it away. Each tooltip that draws into it is described by an element of its
+ * own, which holds its words once, so the panel only shows them and stays out of the accessibility
+ * tree rather than being read a second time.
+ *
+ * The pointer may rest on it, as on a panel of a tooltip's own (WCAG 1.4.13): its enter and leave go
+ * to the tooltip that shows it, which keeps one hide timer for the pair.
+ */
+function sharedPanel() {
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
+    let panel = document.getElementById(SHARED_PANEL_ID);
+
+    if (! panel) {
+        panel = document.createElement('div');
+        panel.id = SHARED_PANEL_ID;
+        panel.setAttribute('role', 'tooltip');
+        panel.setAttribute('aria-hidden', 'true');
+        panel.hidden = true;
+        panel.addEventListener('mouseenter', () => panel._wkOwner?.mouseenter());
+        panel.addEventListener('mouseleave', () => panel._wkOwner?.mouseleave());
+        (document.getElementById('wk-overlay-root') ?? document.body).appendChild(panel);
+    }
+
+    return panel;
+}
+
 /**
  * @param {Object} config - Tooltip configuration from Blade
  * @param {string} config.placement - Floating UI placement
@@ -51,17 +84,19 @@ const COMPOSITE_WIDGET = [
  * @param {number} config.delayShow - Delay before showing on hover (ms)
  * @param {number} config.delayHide - Delay before hiding on mouseleave (ms)
  * @param {boolean} [config.whenTruncated] - Repeat the text of the element it sits on, only while that text is cut off
+ * @param {boolean} [config.shared] - Draw into the page's shared panel instead of a panel of its own
+ * @param {string} [config.textFrom] - The id of the element whose words the shared panel shows
  */
 export default function wirekitTooltip(config = {}) {
     return withOpenAlias({
         isOpen: false,
-        // `||` is CORRECT here — placement is a string enum and '' is not a valid
+        // `||` is correct here — placement is a string enum and '' is not a valid
         // placement, so there is no falsy-but-legitimate value to preserve.
         _placement: config.placement || 'top',
-        // `??` (not `||`) for the numeric props: 0 is a LEGITIMATE value (`offset="0"`
+        // `??` (not `||`) for the numeric props: 0 is a legitimate value (`offset="0"`
         // = flush tooltip, `delay-show="0"` = instant), and `0 || default` would
         // silently discard exactly that value and revert to the default. Only
-        // undefined/null should fall back. Do NOT "consistency-fix" these to `||`.
+        // undefined/null should fall back. Do not "consistency-fix" these to `||`.
         _offset: config.offset ?? 6,
         _delayShow: config.delayShow ?? 300,
         _delayHide: config.delayHide ?? 100,
@@ -95,6 +130,11 @@ export default function wirekitTooltip(config = {}) {
         // `text truncate="tooltip"`: the tooltip repeats the text of the element it sits on, which
         // that element cuts off, and only while it does. See `_watchTheCut()`.
         _whenTruncated: config.whenTruncated === true,
+
+        // A tooltip of words alone may draw into the page's shared panel, and shows the words of the
+        // element its trigger is described by. See `sharedPanel()`.
+        _shared: config.shared === true,
+        _textFrom: config.textFrom || null,
 
         // That text's own tab stop, bound as `x-bind:tabindex="tabStop"`: '0' while the text is cut
         // and stands in no control, null otherwise, which removes the attribute.
@@ -162,7 +202,7 @@ export default function wirekitTooltip(config = {}) {
             const quiet = this._disabled();
 
             // The wrapper itself takes the tab stop under `focusable-trigger`; in that case
-            // it IS the element a reader lands on and keeps the attribute.
+            // it is the element a reader lands on and keeps the attribute.
             if (root.hasAttribute('tabindex')) {
                 if (quiet) {
                     root.removeAttribute('aria-describedby');
@@ -537,7 +577,7 @@ export default function wirekitTooltip(config = {}) {
         mouseenter() {
             clearTimeout(this._hideTimer);
 
-            // Guarded on `open`, because this handler is bound to the PANEL as well as
+            // Guarded on `open`, because this handler is bound to the panel as well as
             // to the trigger — that pairing is what makes the tip hoverable, and WCAG
             // 1.4.13 asks for it. Moving the pointer onto an already-open panel has to
             // cancel the pending hide (the line above) and nothing else; arming a
@@ -551,7 +591,7 @@ export default function wirekitTooltip(config = {}) {
         /**
          * Desktop mouse leave — hide with delay.
          *
-         * Bound to the trigger AND to the panel. The delay is what bridges the `offset`
+         * Bound to the trigger and to the panel. The delay is what bridges the `offset`
          * gap between the two: leaving the trigger towards the panel arms this timer,
          * and the panel's own `mouseenter` clears it on the way in. Setting
          * `delay-hide="0"` therefore switches the hoverable behavior off — the panel
@@ -565,7 +605,7 @@ export default function wirekitTooltip(config = {}) {
         /**
          * Keyboard focus — show immediately.
          *
-         * Only a VISIBLE focus, the one a keyboard gives. Focus that a script moved, like the
+         * Only a visible focus, the one a keyboard gives. Focus that a script moved, like the
          * first control a dialog focuses when it opens, showed the tooltip over the dialog with no
          * input at all, and it stayed for as long as the dialog was open. A pointer already shows
          * it on hover, so nothing is lost for a mouse.
@@ -654,13 +694,13 @@ export default function wirekitTooltip(config = {}) {
         /**
          * Escape anywhere: hide the tooltip and clear every pending timer.
          *
-         * Heard on the WINDOW, not on the component, because a tooltip is normally
+         * Heard on the window, not on the component, because a tooltip is normally
          * opened by a pointer and a pointer moves no focus: a key bound inside the
          * component never saw the keystroke that was meant for it. WCAG 1.4.13 names
          * Escape as the way hover-shown content is dismissed without moving the
          * pointer or the focus.
          *
-         * Heard in the CAPTURE phase, and a tooltip on screen marks the press as
+         * Heard in the capture phase, and a tooltip on screen marks the press as
          * handled. A modal or a drawer around the reader reads Escape later, on the
          * document and on the window, and leaves a marked press alone: the reader
          * asked the tooltip to go, and nothing else. A tooltip only shows for what the
@@ -668,7 +708,7 @@ export default function wirekitTooltip(config = {}) {
          * the key first.
          *
          * Clearing the timers is not housekeeping here — it is the point. A pending
-         * `delayShow` that survives Escape puts the panel on screen a moment AFTER
+         * `delayShow` that survives Escape puts the panel on screen a moment after
          * the key that was meant to answer it. A press that only cleared a pending
          * show stays unmarked: nothing was on screen for the reader to dismiss.
          *
@@ -689,7 +729,7 @@ export default function wirekitTooltip(config = {}) {
         /**
          * Is this tooltip switched off right now?
          *
-         * Read off the ROOT ATTRIBUTE rather than held as state, and that is the
+         * Read off the root attribute rather than held as state, and that is the
          * whole design. A boolean passed into the factory would only ever answer
          * for the render that created it — but the case this exists for is a
          * tooltip that must go quiet when something else on the page changes,
@@ -697,7 +737,7 @@ export default function wirekitTooltip(config = {}) {
          * at trigger time means `x-bind:data-wk-tooltip-disabled` from the
          * call site works reactively with no further API at all.
          *
-         * `pointer-events-none` on the root is NOT a way to do this, however
+         * `pointer-events-none` on the root is not a way to do this, however
          * much it looks like one: `mouseenter` is delivered to every ancestor of
          * the element actually hit, whatever their own pointer-events value, so
          * the handler fires and the tooltip appears over a control that is
@@ -713,7 +753,7 @@ export default function wirekitTooltip(config = {}) {
         async show() {
             if (this.isOpen) return;
 
-            // Checked HERE as well as in the handlers, because show() is public:
+            // Checked here as well as in the handlers, because show() is public:
             // it is reachable from a call site that dispatches it directly, and a
             // switch that only guards the doors it knows about is not a switch.
             if (this._disabled()) return;
@@ -743,16 +783,32 @@ export default function wirekitTooltip(config = {}) {
             // tick stays as the fallback for a first show that resolves late.
             // Running it twice costs nothing: it reads computed style and
             // writes the same values.
-            if (this.$refs.tooltip) {
-                this._inheritThemeVars(this.$refs.tooltip);
+            if (this._shared) {
+                this._claimTheSharedPanel();
+            }
+
+            const panel = this._panel();
+
+            if (panel) {
+                this._inheritThemeVars(panel);
             }
 
             this.isOpen = true;
 
+            // The shared panel has no `x-show` of this tooltip's to follow, so it is shown here.
+            if (this._shared && panel && panel._wkOwner === this) {
+                panel.hidden = false;
+            }
+
             await this.$nextTick();
 
             const trigger = this.$refs.trigger;
-            const tooltip = this.$refs.tooltip;
+            const tooltip = this._panel();
+
+            // Another tooltip may have taken the shared panel during the tick, and places it itself.
+            if (this._shared && tooltip?._wkOwner !== this) {
+                return;
+            }
 
             if (trigger && tooltip) {
                 this._inheritThemeVars(tooltip);
@@ -773,7 +829,7 @@ export default function wirekitTooltip(config = {}) {
                     // the panel against its own template, whose `style` attribute carries none of
                     // it. The placement is then gone while the tooltip is still open, and since
                     // this panel is teleported to the overlay root, with no `top` it sits at the
-                    // END of the document.
+                    // end of the document.
                     //
                     // The obvious objection is that a tooltip lasts a moment, so an update can
                     // hardly catch one. That holds for the pointer, and not at all for the
@@ -799,7 +855,7 @@ export default function wirekitTooltip(config = {}) {
                     autoReposition: true,
                     // Without this a `placement="right"` tooltip runs off the
                     // right edge of a phone and stays there. Floating UI's
-                    // default shift only moves along the placement's MAIN axis,
+                    // default shift only moves along the placement's main axis,
                     // which for left/right is vertical — so nothing pulls it
                     // back horizontally, and `flip` gives up when both sides
                     // overflow, which on a 375px viewport they do.
@@ -822,6 +878,49 @@ export default function wirekitTooltip(config = {}) {
             }
         },
 
+        /** The panel this tooltip draws into: its own, or the page's shared one. */
+        _panel() {
+            return this._shared ? sharedPanel() : this.$refs?.tooltip;
+        },
+
+        /**
+         * Make the page's shared panel this tooltip's: the tooltip that shows it closes, and the panel
+         * takes this tooltip's classes and the words of the element its trigger is described by. The
+         * placement and colors of the tooltip before go with the old `style`.
+         */
+        _claimTheSharedPanel() {
+            const panel = sharedPanel();
+
+            if (! panel) {
+                return;
+            }
+
+            if (panel._wkOwner && panel._wkOwner !== this) {
+                panel._wkOwner.close();
+            }
+
+            panel._wkOwner = this;
+            panel.className = this.$root?.getAttribute?.('data-wk-tooltip-panel-class') ?? '';
+            panel.removeAttribute('style');
+
+            const source = this._textFrom ? document.getElementById(this._textFrom) : null;
+            panel.textContent = wordsOf(source);
+        },
+
+        /** Hide the shared panel where this tooltip is the one showing it. */
+        _releaseTheSharedPanel() {
+            if (! this._shared || typeof document === 'undefined') {
+                return;
+            }
+
+            const panel = document.getElementById(SHARED_PANEL_ID);
+
+            if (panel && panel._wkOwner === this) {
+                panel.hidden = true;
+                panel._wkOwner = null;
+            }
+        },
+
         /**
          * Put back what a framework update took off the panel while it was open: the colors
          * copied onto it and, on a cut text, its words.
@@ -841,14 +940,14 @@ export default function wirekitTooltip(config = {}) {
          *
          * The documented way to restyle one tooltip is an inline `style` on the component,
          * which sets `--color-wk-tooltip-bg` / `-text` on the trigger wrapper; the panel read
-         * them by INHERITANCE, as a descendant.
+         * them by inheritance, as a descendant.
          *
          * Teleporting the panel to `<body>` — which it needs, so a masking or clipping
          * ancestor cannot cut it off — ends that descent. The panel keeps rendering, with the
          * theme defaults, and every per-tooltip override silently stops working. The whole
          * "Styling Variants" section of the documentation was showing six identical tooltips.
          *
-         * So the values are copied explicitly. Read from the WRAPPER with `getComputedStyle`,
+         * So the values are copied explicitly. Read from the wrapper with `getComputedStyle`,
          * which resolves whatever actually applies there — an inline style, a class, a scoped
          * theme — rather than reading the inline attribute and missing the other two routes.
          *
@@ -875,6 +974,7 @@ export default function wirekitTooltip(config = {}) {
             this._stopRepair?.();
             this._stopRepair = null;
             this._clearAllTimers();
+            this._releaseTheSharedPanel();
         },
 
         /**
@@ -895,6 +995,7 @@ export default function wirekitTooltip(config = {}) {
             this._stopRepair?.();
             this._stopRepair = null;
             this._clearAllTimers();
+            this._releaseTheSharedPanel();
         },
     });
 }

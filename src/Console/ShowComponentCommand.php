@@ -40,7 +40,7 @@ class ShowComponentCommand extends Command
             $this->error("Unknown component: {$name}");
 
             // Uniform "Did you mean?" via Levenshtein distance — covers
-            // single-char typos (`buttn` → `button`) AND dotted sub-names
+            // single-char typos (`buttn` → `button`) and dotted sub-names
             // (`card.bdy` → `card.body`). Wired through SuggestSimilar so
             // every CLI surface uses the same suggestion contract.
             $all = array_keys(ComponentRegistry::all());
@@ -126,7 +126,7 @@ class ShowComponentCommand extends Command
         $this->line('');
 
         // Slots — named-slot quick forms (e.g. dropdown's <x-slot:trigger>) plus
-        // the default slot. Uses the SAME source-of-truth extractor as
+        // the default slot. Uses the same source-of-truth extractor as
         // wirekit:export-json + the .wirekit-schema.json writer, so `show` lists
         // the slot contract a developer needs to discover.
         $slots = $this->extractSlots($name);
@@ -244,15 +244,15 @@ class ShowComponentCommand extends Command
     }
 
     /**
-     * Every attribute name the component answers to — `@props` UNION `@aware`.
+     * Every attribute name the component answers to — `@props` union `@aware`.
      *
      * The two are deliberately separate everywhere else: `ComponentRegistry::extractProps()`
-     * means "the props this component declares", and an `@aware` key is a value the PARENT
+     * means "the props this component declares", and an `@aware` key is a value the parent
      * owns. Folding them together would widen the JSON manifest, the API map and the docs
      * pipeline with names those surfaces do not mean.
      *
      * The unknown-attribute question is the one place they belong together, because Blade
-     * accepts either spelling on the tag — and this package answers that question TWICE.
+     * accepts either spelling on the tag — and this package answers that question twice.
      * `StrictnessGate` (the runtime warning) unions them, and `--validate-against` has to as
      * well: otherwise `<x-wirekit::input announce-errors="false">` renders clean at runtime and
      * fails the pre-commit linter as an unknown attribute, on a name the form controls accept
@@ -289,7 +289,7 @@ class ShowComponentCommand extends Command
      * warning. Lets developers wire `wirekit:show foo --validate-against=resources/views/page.blade.php`
      * into pre-commit hooks.
      *
-     * The accepted names arrive as a PARAMETER rather than being looked up here, because the
+     * The accepted names arrive as a parameter rather than being looked up here, because the
      * two callers resolve them from different places: a top-level component reads its
      * `@props` and `@aware` through the registry, a sub-component reads them straight off the
      * nested Blade file the registry does not track.
@@ -326,14 +326,14 @@ class ShowComponentCommand extends Command
             $line = substr_count(substr($content, 0, $tag['start']), "\n") + 1;
 
             foreach ($tag['attributes'] as $attr) {
-                // The spelling the developer WROTE, minus the binding punctuation.
+                // The spelling the developer wrote, minus the binding punctuation.
                 // Reported back as-is: a warning that names a string absent from their
                 // file reads as a bug in the linter.
                 $written = ltrim($attr, ':@');
 
                 // Laravel camelCases every component attribute before it ever reaches
                 // the component — `ComponentTagCompiler` does `[Str::camel($key) => $value]`
-                // — so `aside-width` IS `$asideWidth` and the two spellings render
+                // — so `aside-width` is `$asideWidth` and the two spellings render
                 // identically. Comparing the written form against the declared prop names
                 // reported the kebab-case spelling as unknown, and kebab-case is what this
                 // library's own documentation teaches on nearly every page. The flag is
@@ -348,7 +348,7 @@ class ShowComponentCommand extends Command
                 // Allowlist common Blade / Alpine / Livewire attributes
                 // that aren't WireKit props but are valid usage.
                 //
-                // Matched against the COLON-stripped spelling, and camelCasing FIRST
+                // Matched against the COLON-stripped spelling, and camelCasing first
                 // would be the mirror-image bug: `x-on:click` camelCases to `xOn:click`,
                 // which stops matching `^x-`, so a fix aimed at `:class` would break the
                 // passthrough family this already got right. Only the `:` comes off — the
@@ -439,7 +439,7 @@ class ShowComponentCommand extends Command
 
         /*
          * `wirekit:fonts`, `wirekit:list` and `wirekit:icons` all
-         * suggest on THIS flag name. A developer who has seen it work there reads the
+         * suggest on this flag name. A developer who has seen it work there reads the
          * bare list here as "too far off to match" rather than as a missing feature.
          *
          * The accepted set is one entry, and that is still worth a hint: `--as=jsn`

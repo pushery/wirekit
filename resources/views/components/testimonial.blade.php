@@ -16,7 +16,7 @@
     'logo' => null,
     // Accessible name for the logo. Leave null when the author is already named
     // in text (the logo is then decoration and stays silent); pass it when the
-    // logo is the ONLY attribution.
+    // logo is the only attribution.
     'logoAlt' => null,
     // Intrinsic aspect ratio of `$logo`, as `'width/height'` — e.g. `'3/1'`.
     //
@@ -76,7 +76,7 @@
      with an attribution: assistive tech announces it as a quote and ties the
      attribution to it. A stack of divs says nothing.
 
-     Deliberately NOT built on the message component — that is a chat bubble
+     Deliberately not built on the message component — that is a chat bubble
      (author, timestamp, side, reactions). This is a cited quotation. --}}
 <figure data-wk-testimonial {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     @if($ratingValue !== null)
@@ -108,12 +108,12 @@
             {{-- Name and role wrap rather than end in an ellipsis: they are the quote's source, read
                  whole. A token with no break point breaks through the card's own overflow-wrap. --}}
             <span class="block text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $author }}</span>
-            @if($role)
+            @wirekitLast($role)
                 <span data-wk-testimonial-role class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $role }}</span>
-            @endif
+            @endwirekitLast
         </span>
 
-        @if($logo)
+        @wirekitLast($logo)
             {{-- A bare img, not the image component: that one always wraps its
                  output in a figure, and a figure nested inside this figcaption
                  would make a screen reader announce the company mark as its own
@@ -125,6 +125,6 @@
                 class="h-[var(--size-wk-xs)] w-auto shrink-0 opacity-70"
                 style="{{ $wkLogoStyle }}"
             />
-        @endif
+        @endwirekitLast
     </figcaption>
 </figure>

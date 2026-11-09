@@ -15,7 +15,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('aspect-ratio', $attributes->getAttributes());
 
     // No parsing, and the comment here claimed some: the value goes straight into the CSS
-    // `aspect-ratio` property, which accepts BOTH forms natively — the ratio notation
+    // `aspect-ratio` property, which accepts both forms natively — the ratio notation
     // `16/9` and a bare number alike. The line was `is_numeric($ratio) ? $ratio : $ratio`,
     // two identical branches under a comment describing a parser, which reads as an
     // unfinished conversion and invites someone to "finish" it into a real difference the
@@ -32,7 +32,7 @@
     ]), $scope);
 @endphp
 
-{{-- The ratio goes THROUGH the attribute bag, never beside it. Written as a
+{{-- The ratio goes through the attribute bag, never beside it. Written as a
      second literal style= it produced two style attributes on one element, and
      a browser keeps the first — so any caller who styled the box (a background,
      a radius) silently took the ratio away, which is the one thing this

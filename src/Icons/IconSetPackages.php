@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  * gone" has no answer in the message unless something knows which package to name.
  * That is all this class is for.
  *
- * The map is deliberately NOT a method on the preset contract: adding one would be a
+ * The map is deliberately not a method on the preset contract: adding one would be a
  * breaking change for anyone who has implemented `IconPreset` themselves. It names the
  * packages of the `suggest` block in composer.json, which is the list a developer actually
  * reads.
@@ -82,9 +82,9 @@ final class IconSetPackages
     /**
      * Report a missing set once per prefix, and say whether this call did the reporting.
      *
-     * Once per PREFIX rather than once per process: a page can legitimately mix two
+     * Once per prefix rather than once per process: a page can legitimately mix two
      * presets, and a developer who installed one of the two packages needs to hear about
-     * the other. Once per RENDER would be worse than useless — a single page draws icons
+     * the other. Once per render would be worse than useless — a single page draws icons
      * through buttons, dropdowns and modals, so the same sentence would arrive fifty
      * times and the log would be the thing the developer stops reading.
      *

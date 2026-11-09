@@ -2,7 +2,7 @@
  * WireKit Alert Dialog Alpine Component.
  *
  * Specialized modal for destructive confirmation dialogs.
- * Uses role="alertdialog" and focuses the CANCEL button by default (safety).
+ * Uses role="alertdialog" and focuses the cancel button by default (safety).
  * Non-dismissible by default — user must explicitly choose an action.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
@@ -38,7 +38,7 @@ export default function wirekitAlertDialog(config = {}) {
     const overlay = createOverlay({
         name: config.name || '',
         // Alert dialogs are non-dismissible by default for safety —
-        // a stray backdrop click should NOT approve a destructive action.
+        // a stray backdrop click should not approve a destructive action.
         dismissible: config.dismissible === true,
         showEvent: 'wirekit-alert-dialog-show',
         closeEvent: 'wirekit-alert-dialog-close',
@@ -51,13 +51,13 @@ export default function wirekitAlertDialog(config = {}) {
         /**
          * Focus Cancel, not whatever happens to come first in the DOM.
          *
-         * This is the safety promise this component is recommended FOR, and for
+         * This is the safety promise this component is recommended for, and for
          * a long time it was only a docblock: without an explicit initialFocus,
          * focus-trap falls back to the first focusable element in the panel —
          * which, depending on how the caller composed the dialog, can be the
          * destructive button itself. A stray Enter would then confirm the very
          * action the pattern exists to guard. The APG alertdialog pattern is
-         * explicit that initial focus belongs on the LEAST destructive control.
+         * explicit that initial focus belongs on the least destructive control.
          *
          * A caller can name a different control; falling back to the panel keeps
          * focus inside the dialog when no Cancel is rendered at all.
@@ -79,7 +79,7 @@ export default function wirekitAlertDialog(config = {}) {
             }
 
             // Nothing identified itself as the safe action: return undefined so
-            // focus-trap keeps its own default. Deliberately NOT the panel — an
+            // focus-trap keeps its own default. Deliberately not the panel — an
             // element that is not focusable would make focus-trap throw, and
             // guessing which of several bare buttons is the harmless one would be
             // worse than saying so. The guarantee holds when the dialog is built
@@ -110,7 +110,7 @@ export default function wirekitAlertDialog(config = {}) {
          * True whenever no phrase was asked for — a dialog without a brake does not
          * hold its action back.
          *
-         * The comparison trims the ends and is otherwise EXACT. Trimming is the one
+         * The comparison trims the ends and is otherwise exact. Trimming is the one
          * concession, and it is there because a trailing space arrives from a
          * copy-paste rather than from a decision; case-folding or collapsing inner
          * whitespace would quietly widen what counts as "typed it", which is the
@@ -125,7 +125,7 @@ export default function wirekitAlertDialog(config = {}) {
         /**
          * Refuse an activation of the confirm control while the phrase is unmet.
          *
-         * This BLOCKS rather than merely describing itself as blocked. A control held
+         * This blocks rather than merely describing itself as blocked. A control held
          * back only by `aria-disabled` stays clickable, so a stray Enter — or an Alpine
          * boot that never ran — fires the irreversible action while the dialog still
          * looks guarded. `disabled` alone is not the answer either: a disabled button is
@@ -140,7 +140,7 @@ export default function wirekitAlertDialog(config = {}) {
         },
 
         /**
-         * Put the blocked state on the CONTROL, not on the wrapper around it.
+         * Put the blocked state on the control, not on the wrapper around it.
          *
          * `aria-disabled` and `aria-describedby` were bound on the wrapper element
          * first, and neither reaches the button inside it: a generic element passes
@@ -168,7 +168,7 @@ export default function wirekitAlertDialog(config = {}) {
             this._watchConfirmControl(wrapper, reasonId);
 
             // A caller's control may already be described by something of their own, so the
-            // reason is ADDED to that rather than replacing it. Their description is what the
+            // reason is added to that rather than replacing it. Their description is what the
             // control carries but the reason's id, read on every run, so a render that changes
             // it is followed and our own id is never taken for theirs.
             const base = String(control.getAttribute('aria-describedby') ?? '')
@@ -219,7 +219,7 @@ export default function wirekitAlertDialog(config = {}) {
          *
          * It is not cosmetic, and that is why the option exists. A dialog that stays up
          * after its action holds `aria-modal="true"`, so the `role="status"` the action
-         * produces on the page BELOW is outside the modal and is never announced (WCAG
+         * produces on the page below is outside the modal and is never announced (WCAG
          * 4.1.3). The backdrop also keeps the page unreachable after the work is done.
          *
          * Default off, deliberately: closing is a behavior change for every dialog that

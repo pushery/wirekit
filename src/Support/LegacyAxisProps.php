@@ -11,7 +11,7 @@ namespace Pushery\WireKit\Support;
  * The kit grew three spellings for one color role — `intent` on button and badge, `variant`
  * on alert and callout, `tone` on feature — and two for one surface treatment, `surface` on
  * button against `variant` on card. Each of those components now declares the canonical name
- * ALONGSIDE the one it shipped with, and resolves the older through the newer. Both spellings
+ * alongside the one it shipped with, and resolves the older through the newer. Both spellings
  * work, and both keep working for the whole of v2; what a reader needs is to be told which one
  * the kit calls canonical, once, at the moment they write the other.
  *
@@ -20,8 +20,8 @@ namespace Pushery\WireKit\Support;
  * `timeline.item` that no reading of the top-level catalog turns up.
  *
  * The signal is behavioral rather than a comment: an older spelling is one the template reads
- * ONLY when the canonical one is absent — `$intent ?? $variant`. That distinguishes the pairs
- * from the components which declare both names for two GENUINELY different axes and validate
+ * only when the canonical one is absent — `$intent ?? $variant`. That distinguishes the pairs
+ * from the components which declare both names for two genuinely different axes and validate
  * each on its own: `chat-marker` pairs a shape (`default | border | separator`) with a color,
  * and `theme-controller` pairs a shape (`button | dropdown | toggle`) with a surface. A rule
  * that keyed on "declares both" would report those two as legacy usage, which is not just
@@ -31,7 +31,7 @@ final class LegacyAxisProps
 {
     /**
      * The canonical spelling of each shared axis. A pair is only a pair when the name on the
-     * LEFT of the `??` is one of these — `$foo ?? $bar` between two ordinary props is an
+     * left of the `??` is one of these — `$foo ?? $bar` between two ordinary props is an
      * ordinary default, not a vocabulary decision.
      *
      * @var list<string>

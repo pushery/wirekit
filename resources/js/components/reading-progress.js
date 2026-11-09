@@ -9,7 +9,7 @@
  * The scroll math is the delicate part. Two things in it look like they could be
  * simplified and cannot:
  *
- *   The scroll root is PROBED rather than assumed. Reading scrollTop from one
+ *   The scroll root is probed rather than assumed. Reading scrollTop from one
  *   element and scrollHeight from another mixes scroll roots and caps the
  *   proportional math below 100%, so the bar would never fill while the dot
  *   still looked close enough. document.scrollingElement always reports
@@ -77,7 +77,7 @@ export default function wirekitReadingProgress(config = {}) {
         },
 
         /**
-         * The fill transform, as an OBJECT.
+         * The fill transform, as an object.
          *
          * Alpine's `bind:style` given a string rewrites the whole style
          * attribute on every reactive update. This element carries its
@@ -124,7 +124,7 @@ export default function wirekitReadingProgress(config = {}) {
             }
         },
 
-        /** Scroll metrics, read from ONE element so the proportion cannot mix roots. */
+        /** Scroll metrics, read from one element so the proportion cannot mix roots. */
         _metrics() {
             const scope = this._target ? document.querySelector(this._target) : null;
 

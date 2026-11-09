@@ -49,25 +49,27 @@
              `data-wk-icon-nudge` moves either of them up onto the label's letters while the
              label shows (the rule beside `wk-rail-hide` in the stylesheet). --}}
         <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
-            @if(is_string($icon) && ! str_contains($icon, '<'))
+            @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
                 {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses]) }}
             @else
                 {{ $icon }}
-            @endif
+            @endwirekitLast
         </span>
     @endif
     {{-- In a collapsed rail the label becomes sr-only — visually hidden but
          still the link's accessible name (the icon is decorative). --}}
-    {{-- WRAPS, never truncates. A navigation entry whose name is clipped does not name
-         anything — "Terminal set…" is not a destination, and the reader cannot tell it from
-         its neighbor without hovering.
+    {{-- Wraps by default, and truncates only where the sidebar, a group or the row asks for it.
+         A navigation entry whose name is clipped does not name anything — "Terminal set…" is
+         not a destination, and the reader cannot tell it from its neighbor without hovering.
          `break-words` lets a single long word break inside itself, where it has no space to
          break at, and `min-w-0` gives that break room to happen: a flex item is never narrower
          than its min-content width, which `break-words` does not lower, so without it the word
-         keeps its full width and runs past the column. --}}
-    <span class="min-w-0 flex-1 break-words wk-rail-hide">{{ $slot }}</span>
-    {{-- Trailing counter (an unread badge). Rendered OUTSIDE the label span so a long
-         name wraps beside it rather than pushing it out, and pushed to the end with ml-auto.
+         keeps its full width and runs past the column. With `truncate` the same `min-w-0`
+         bounds the box the ellipsis needs; the text stays whole for a screen reader, and the
+         `title` gives it back to a pointer. --}}
+    <span class="min-w-0 flex-1 {{ $truncate ? 'truncate' : 'break-words' }} wk-rail-hide"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($slot) }}"@endif>{{ $slot }}</span>
+    {{-- Trailing counter (an unread badge). Rendered outside the label span so a long
+         name wraps beside it rather than pushing it out, and pushed to the end with ms-auto.
 
          In the collapsed rail it becomes a dot. The digits have no room at rail
          width, but the counter must not simply vanish either — that is where an
@@ -77,7 +79,7 @@
          the icon visibly off-center, which is what the browser test measures.
 
          The digits move to sr-only rather than being hidden, so the count stays
-         part of the link's accessible name in BOTH states — a screen-reader user
+         part of the link's accessible name in both states — a screen-reader user
          gets no icon cue at all and would otherwise lose the information
          outright. Note this differs from hiding the counter and announcing it
          separately; adopting `badge` over a hand-rolled counter changes what
@@ -89,23 +91,28 @@
         $badgeFold = ($folds ?? true) ? ' '.implode(' ', [
             'group-data-[collapsed]/wk-sidebar:absolute',
             'group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]',
-            'group-data-[collapsed]/wk-sidebar:right-[var(--padding-wk-x-sm)]',
-            'group-data-[collapsed]/wk-sidebar:ml-0',
+            'group-data-[collapsed]/wk-sidebar:end-[var(--padding-wk-x-sm)]',
+            'group-data-[collapsed]/wk-sidebar:ms-0',
             'group-data-[collapsed]/wk-sidebar:p-0',
             'group-data-[collapsed]/wk-sidebar:h-2',
             'group-data-[collapsed]/wk-sidebar:w-2',
         ]) : '';
+
+        // The new-tab hint stands after the label, so it is an echo rather than a block and
+        // Livewire writes no morph markers around it. Its class goes through CompactClasses, as
+        // a class attribute in the markup does.
+        $newTabHint = $opensNewTab
+            ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+            : '';
     @endphp
     @if($badgeText !== null)
-        <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]{{ $badgeFold }}"><span class="wk-rail-hide">{{ $badgeText }}</span></span>
+        <span class="shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]{{ $badgeFold }}"><span class="wk-rail-hide">{{ $badgeText }}</span></span>
     @endif
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
+    {{ $newTabHint }}
     @if($submenu)
         {{-- Submenu indicator — signals a flyout or sub-navigation exists.
              Purely visual hint; only shown when the developer opts in via :submenu="true". --}}
-        <svg data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 text-[color:var(--color-wk-text-subtle)] wk-submenu-indicator" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <svg data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 text-[color:var(--color-wk-text-subtle)] wk-submenu-indicator rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
     @endif

@@ -22,14 +22,14 @@
     ]), $scope);
 @endphp
 
-{{-- The appearance of this block IS the answer to the reader's search: the input
+{{-- The appearance of this block is the answer to the reader's search: the input
      keeps `aria-expanded="true"` and reports no active descendant, which is also what
      an untouched list looks like. The palette says it from its one status region,
      which holds the `empty` slot and is in the tree before the block shows, so the
      block carries no role of its own: a region shown together with its text is
      announced unreliably, and a second one inside the palette's would be heard twice.
 
-     Belongs in the palette's `empty` slot, NOT the default one: the default slot
+     Belongs in the palette's `empty` slot, not the default one: the default slot
      is the inside of `role="listbox"`, whose children are options, and a roleless
      line of prose sitting among them is what axe reports as
      `aria-required-children`. See the slot in command-palette.blade.php.

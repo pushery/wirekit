@@ -4,7 +4,7 @@
      on time-picker — the previous date is the server's, and an undo destroys
      nothing the user typed.
 
-     `range` mode stays OUT, and not for want of wiring: a range is TWO values,
+     `range` mode stays out, and not for want of wiring: a range is two values,
      so an undo has to answer what it restores when only one end moved, and the
      two inputs constrain each other — rolling one back can leave the other
      holding a bound that no longer applies. That is a contract question, not a
@@ -19,7 +19,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -56,7 +56,7 @@
     // language and the page disagree: an operator on an English laptop entering a date on a
     // German screen is the common case.
     //
-    // Off by default. On, it renders NOTHING when the two orders agree — the overwhelmingly
+    // Off by default. On, it renders nothing when the two orders agree — the overwhelmingly
     // common case.
     //
     // If you want the application's own format, the answer is a different component.
@@ -118,7 +118,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $range = BooleanProp::from($range, false, 'date-picker', 'range');
@@ -132,7 +132,7 @@
     $fixedWeeks = BooleanProp::from($fixedWeeks, false, 'date-picker', 'fixedWeeks');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -147,7 +147,7 @@
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -215,7 +215,7 @@
         }
     }
 
-    // The same on every render, or Livewire's morph REPLACES the input on each round trip and
+    // The same on every render, or Livewire's morph replaces the input on each round trip and
     // a reader typing a date into a `wire:model.live` field loses focus after the first key.
     // Seeded from the bound property when there is no name, counted when there is neither.
     // A second picker with the same name or property on the page gets `-2`, so its label and
@@ -230,7 +230,7 @@
 
     // The bag read is guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
-    // makes a date-picker with no `name` report itself invalid the moment ANY
+    // makes a date-picker with no `name` report itself invalid the moment any
     // unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
@@ -281,7 +281,7 @@
     // disclose.
     $formatHint = BooleanProp::from($formatHint, false, 'date-picker', 'formatHint') && ! $popover;
 
-    // The format hint joins the description whenever the prop is on, and NOT only when it has
+    // The format hint joins the description whenever the prop is on, and not only when it has
     // something to say — its text is decided in the browser, after this markup is written. An
     // element with no text contributes nothing to a computed description, so the stable idref
     // costs nothing; a describedby rewritten at runtime would be the fragile half.
@@ -310,7 +310,7 @@
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
     // have a programmatically-determinable name. When no visible `label`
-    // prop is set AND no `aria-label` / `aria-labelledby` is passed via
+    // prop is set and no `aria-label` / `aria-labelledby` is passed via
     // attributes, derive a sr-only fallback from `name` (humanized) so
     // screen readers always announce something. Caller-provided
     // `aria-label` always wins.
@@ -357,12 +357,12 @@
     $rangeName = $fallbackLabel;
 
     if ($isRange) {
-        // 1. `wire:model` is a BINDING, and a binding cannot be duplicated: both inputs
+        // 1. `wire:model` is a binding, and a binding cannot be duplicated: both inputs
         //    writing one scalar property would resolve by whichever commit landed last.
         //    It therefore follows the shape this component already emits and documents
         //    for the native post — `name="stay[start]"` / `name="stay[end]"` becomes
         //    `wire:model="stay.start"` / `wire:model="stay.end"`, which is Livewire's own
-        //    path notation for the same array. The DIRECTIVE is copied verbatim so the
+        //    path notation for the same array. The directive is copied verbatim so the
         //    modifiers survive (`wire:model.live`, `wire:model.blur.debounce.500ms`);
         //    only the property path gains its end.
         $startPairs = [];
@@ -377,7 +377,7 @@
             $endPairs[$directive] = $property.'.end';
         }
 
-        // 2. `aria-label` / `aria-labelledby` are NAMES, and a name on the flex row reaches
+        // 2. `aria-label` / `aria-labelledby` are names, and a name on the flex row reaches
         //    nothing: it carries no role and is not focusable, so assistive technology
         //    ignores it there. The caller's name goes onto the two inputs instead.
         //
@@ -410,7 +410,7 @@
         $rangeStartAttributes = new \Illuminate\View\ComponentAttributeBag($startPairs);
         $rangeEndAttributes = new \Illuminate\View\ComponentAttributeBag($endPairs);
 
-        // 3. Everything else lands on the flex row — the element that IS the range control,
+        // 3. Everything else lands on the flex row — the element that is the range control,
         //    which is what the single-date `<input>` is to the other arm. The outer `w-full`
         //    div also wraps the label, the hint and the error, none of which the bag has
         //    ever reached.
@@ -426,11 +426,11 @@
 @endphp
 
 @php
-    // Range mode is excluded HERE rather than at the call site, so a developer
+    // Range mode is excluded here rather than at the call site, so a developer
     // who passes both gets the component they had rather than a half-applied
     // layer that rolls back one end of a range and not the other.
     $optimisticConfig = ($optimistic === null || $isRange || $disabled || $popover) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
-        // `value` IS a declared prop here, unlike on time-picker where it passes
+        // `value` is a declared prop here, unlike on time-picker where it passes
         // through the attribute bag — read it from the prop, not from the bag,
         // or the layer mounts empty and the first rollback restores nothing.
         'value' => (string) ($value ?? ''),
@@ -569,7 +569,7 @@
 
     @if($formatHint)
         {{-- The sentence is composed in the browser because only the browser knows its own
-             date order. The translated TEMPLATE travels from here, so the wording is the
+             date order. The translated template travels from here, so the wording is the
              page's language; the two dates in it are formatted at runtime. --}}
         <p
             data-wk-prose-skip
@@ -589,12 +589,10 @@
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
-    @if($optimisticConfig)
-        {{-- Rendered unconditionally and starting empty: a live region that
-             arrives together with its text is a new node, and nothing is
-             announced at all. It comes after the error paragraph, which is the
-             one the layer yields to when both would speak. --}}
-        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
-    @endif
+    {{-- The live region of an optimistic field (partials/optimistic-announcer). It comes after the
+         error paragraph, which is the one the layer yields to when both would speak, and it stands
+         last, so it is included rather than written in a block, and Livewire writes no morph markers
+         around it. --}}
+    @includeWhen($optimisticConfig, 'wirekit::components.partials.optimistic-announcer')
 </div>
 @endif

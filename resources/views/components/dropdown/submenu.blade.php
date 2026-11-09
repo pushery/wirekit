@@ -4,7 +4,7 @@
 @props([
     'label' => null,        // Parent item text (or pass a <x-slot:label> for rich content)
     'icon' => null,         // Optional leading icon (WireKit icon system)
-    'placement' => 'right-start', // Floating UI placement of the child panel
+    'placement' => null, // Floating UI placement of the child panel; the end of the row by default
     'offset' => 0,          // Gap between the parent item and the child panel
     'disabled' => false,
     'scope' => null,
@@ -21,12 +21,16 @@
 
     // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
     // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
-    // No placement at all, `null` or empty, is the default, as the script reads it.
+    // No placement at all, `null` or empty, is the default: the end of the row, which the script
+    // mirrors on a page that reads from the right, with the chevron and the keys that open and
+    // close the flyout. A placement the caller writes keeps its side, its chevron and its keys.
+    // A word the gate refuses takes the default, so it follows the page as well.
     // The default names a physical side of the trigger, as every placement word does. The
     // direction ratchet counts the word with the utilities, although it is none.
+    $followsDirection = blank($placement) || ! in_array((string) $placement, \Pushery\WireKit\Support\FloatingPlacement::ALL, true);
     $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('dropdown.submenu', 'placement', (string) ($placement ?: 'right-start'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'right-start');
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -34,7 +38,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'dropdown.submenu', 'disabled');
@@ -48,7 +52,7 @@
     // every panel ("Menu panels: role=\"menu\", aria-label from the label prop"), which is
     // what made this the sharpest instance: the page said it was already done.
     //
-    // `aria-labelledby` at the TRIGGER rather than `aria-label` from the prop, because the
+    // `aria-labelledby` at the trigger rather than `aria-label` from the prop, because the
     // label reaches this component two ways — as a prop and as `<x-slot:label>` — and only
     // the rendered trigger has both. It also tracks the visible text instead of restating
     // it. The icon and the chevron inside the trigger are `aria-hidden`, so the computed
@@ -60,7 +64,7 @@
     $subTriggerId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-dropdown-submenu-');
 
     // Parent item classes — reuse the dropdown.item token key so a submenu
-    // parent is visually identical to a regular item AND inherits the same
+    // parent is visually identical to a regular item and inherits the same
     // per-scope overrides a developer may have set for dropdown.item.
     $itemClasses = WireKit::resolveClasses('dropdown.item', 'base', implode(' ', [
         'flex items-center gap-x-[var(--gap-wk-sm)] w-full',
@@ -123,13 +127,13 @@
      parent by Floating UI (right-start, collision-flip handled by the shared
      position() util). Purely additive — a flat menu never renders this.
 
-     x-effect="isOpen || closeSub()" resets the submenu when the OUTER dropdown
+     x-effect="isOpen || closeSub()" resets the submenu when the outer dropdown
      closes (the outer scope's `open`), so a reopened dropdown never shows a
      stale-open submenu. The parent item's @click.stop keeps a click on the
      parent from bubbling to the dropdown root's auto-close delegated handler
      (which would otherwise dismiss the whole menu). --}}
 <div {{ $outerAttributes }}
-    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'dropdown.submenu', 'offset') }} })"
+    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, followsDirection: {{ $followsDirection ? 'true' : 'false' }}, offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'dropdown.submenu', 'offset') }} })"
     x-effect="isOpen || closeSub()"
     data-wk-submenu
     class="block w-full"
@@ -164,14 +168,14 @@
         {{-- Trailing chevron-right indicator — points toward the flyout side.
              Decorative; aria-haspopup/aria-expanded carry the semantics. --}}
         <span class="ms-auto ps-[var(--padding-wk-x-md)] shrink-0" aria-hidden="true">
-            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <svg class="w-4 h-4{{ $followsDirection ? ' rtl:-scale-x-100' : '' }}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                 <path d="M7.5 5l5 5-5 5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
         </span>
     </button>
 
     {{-- Child panel — the nested menu items. data-wk-submenu-panel scopes both
-         this submenu's own roving focus AND the parent menu's _getItems() (which
+         this submenu's own roving focus and the parent menu's _getItems() (which
          excludes items inside any submenu panel so parent-level nav stays flat). --}}
     <div
         x-ref="subPanel"

@@ -6,6 +6,7 @@
  */
 import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as offsetMiddleware } from '@floating-ui/dom';
 import { FOCUSABLE } from './first-control.js';
+import { isRightToLeft } from './inline-direction.js';
 
 /**
  * Is focus already inside `container`?
@@ -121,6 +122,27 @@ export function liftAboveTriggerDialog(reference, floating) {
 }
 
 /**
+ * A placement as Floating UI takes it. `start` and `end` name the sides of the line and follow
+ * the page at the reference: `end` is the right on a page that reads from the left and the left
+ * on one that reads from the right. Every other word passes through as it is.
+ *
+ * @param {string} placement - e.g. 'end' or 'end-start'
+ * @param {?Element} reference - the element whose direction decides
+ * @returns {string}
+ */
+export function physicalPlacement(placement, reference) {
+    const [side, ...alignment] = String(placement).split('-');
+
+    if (side !== 'start' && side !== 'end') {
+        return placement;
+    }
+
+    const physical = (side === 'end') !== isRightToLeft(reference) ? 'right' : 'left';
+
+    return [physical, ...alignment].join('-');
+}
+
+/**
  * Is a placement beside its reference rather than above or below it?
  *
  * The axes of `shift` turn with it: beside the reference the main axis is the vertical one and the
@@ -130,7 +152,7 @@ export function liftAboveTriggerDialog(reference, floating) {
  * @returns {boolean}
  */
 export function isSideways(placement) {
-    return ['left', 'right'].includes(String(placement).split('-')[0]);
+    return ['left', 'right', 'start', 'end'].includes(String(placement).split('-')[0]);
 }
 
 /**
@@ -207,11 +229,11 @@ export function placementMiddleware({
  * @param {Object} options - Positioning options
  * @param {string} options.placement - Floating UI placement (e.g. 'bottom-start')
  * @param {number} options.offset - Distance in px between reference and floating
- * @param {boolean|'sideways'} options.crossAxisShift - Also shift along the CROSS
+ * @param {boolean|'sideways'} options.crossAxisShift - Also shift along the cross
  *   axis to keep the panel inside the viewport. Floating UI's default `shift()`
- *   only shifts along the placement's MAIN axis — which for `left`/`right`
+ *   only shifts along the placement's main axis — which for `left`/`right`
  *   placements is the Y (vertical) axis, so a `right`-placed panel that
- *   overflows the RIGHT viewport edge is never pulled back horizontally. For a
+ *   overflows the right viewport edge is never pulled back horizontally. For a
  *   `top`/`bottom` placement the cross axis is the vertical one, and the shift
  *   lifts a panel taller than the room beside its trigger over the trigger.
  *   `'sideways'` shifts across only while the placement in use is `left` or
@@ -223,7 +245,7 @@ export function placementMiddleware({
  * @param {boolean} options.fitViewport - Cap the panel's height to the space
  *   actually available and let it scroll instead of overflowing. Without it a
  *   panel taller than the room below its trigger is pinned to the viewport edge
- *   by `shift` and then CLIPPED by the panel's own `overflow-hidden`, so the
+ *   by `shift` and then clipped by the panel's own `overflow-hidden`, so the
  *   entries at the top — usually the important ones — simply disappear. Opt-in
  *   for the same reason as `crossAxisShift`: most of the overlay family calls
  *   this helper, and a caller that does not ask keeps its geometry.
@@ -239,21 +261,21 @@ export function placementMiddleware({
  *   inherits the field's width through `w-full`; one positioned `fixed` (which
  *   is what lets it escape a clipping ancestor) has no such parent, so the width
  *   has to be carried over explicitly.
- * @param {boolean} options.minReferenceWidth - Let the panel be WIDER than its reference but
+ * @param {boolean} options.minReferenceWidth - Let the panel be wider than its reference but
  *   never narrower, and never wider than the viewport allows. For a panel that sizes itself by
  *   its content or by a width its caller chose: it starts at the field's width, grows to what it
  *   asks for, and is capped at the room the chosen placement leaves. Opt-in like the options
  *   above; `matchReferenceWidth` wins when both are set, since an exact width leaves nothing to
  *   bound.
  * @param {boolean} options.autoReposition - Keep the panel pinned to its trigger
- *   while it is open: re-run the SAME middleware pipeline on scroll, resize, and
+ *   while it is open: re-run the same middleware pipeline on scroll, resize, and
  *   ancestor-scroll via Floating UI's `autoUpdate`. Opt-in (default `false`, like
  *   `fitViewport`/`crossAxisShift`), so a caller that does not ask places once. When
  *   enabled, `position()` resolves with a `stop` cleanup function on the result —
- *   the caller MUST call it on close/destroy or the scroll/resize listeners leak
+ *   the caller must call it on close/destroy or the scroll/resize listeners leak
  *   (the caller owns teardown). No `animationFrame` option: the default
  *   scroll+resize listeners are cheap; a per-frame rAF loop would burn CPU here.
- * @param {boolean|function(HTMLElement): void} options.repairErasure - Put the placement back when something REMOVES it.
+ * @param {boolean|function(HTMLElement): void} options.repairErasure - Put the placement back when something removes it.
  *   A framework that re-renders the panel patches it against its own template, whose `style`
  *   attribute carries none of what this function writes — so `top`, `left`, the width and the
  *   height cap all disappear at once, while the state that opened the panel never changed and
@@ -269,7 +291,7 @@ export function placementMiddleware({
  *   away. The mutation record arrives with `top` already empty when the callback runs, early
  *   enough to put it back.
  *
- *   It re-places ONLY when `top` is empty, and that condition is the termination proof rather
+ *   It re-places only when `top` is empty, and that condition is the termination proof rather
  *   than an optimization: a write from inside the callback re-enters the observer, so an
  *   unconditional repair loops forever. Writing a `top`
  *   makes the re-entrant run see a placed panel and stop, after exactly one extra pass.
@@ -296,6 +318,9 @@ export async function position(reference, floating, {
     autoReposition = false,
     repairErasure = false,
 } = {}) {
+    // A side of the line is resolved here, once, so every overlay that places through this takes it.
+    placement = physicalPlacement(placement, reference);
+
     const middleware = placementMiddleware({
         placement,
         offset,
@@ -306,7 +331,7 @@ export async function position(reference, floating, {
         minReferenceWidth,
     });
 
-    // ONE code path for the initial placement AND every autoUpdate tick, so the
+    // One code path for the initial placement and every autoUpdate tick, so the
     // first paint and the repositioned geometry never drift — important because the
     // `size`/`matchReferenceWidth` middleware mutate inline styles on every run.
     const run = async () => {

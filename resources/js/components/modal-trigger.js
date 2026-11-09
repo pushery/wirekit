@@ -1,12 +1,12 @@
 import { dispatchFromTrigger, isNamedOverlayOpen } from '../utils/overlay.js';
 
 /**
- * Opens a NAMED overlay from a trigger that is nowhere near it.
+ * Opens a named overlay from a trigger that is nowhere near it.
  *
  * `modal.trigger` without a name is a child of its modal and calls `show()` on the scope it sits
  * in. That covers the ordinary case and needs nothing from this file.
  *
- * It does not cover the case where the trigger CANNOT sit there. An application reported the
+ * It does not cover the case where the trigger cannot sit there. An application reported the
  * shape: a consent checkbox names its document inside the sentence and links the word, and that
  * anchor has to open the full text in a dialog. The checkbox renders its slot inside its own
  * `<label>`, so the modal cannot be placed around it — and the anchor is then outside every

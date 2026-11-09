@@ -20,7 +20,7 @@
     // meter inside keeps its own threshold/intent logic.
     $cols = (int) WireKit::validateProp('usage-meter', 'columns', \Pushery\WireKit\Support\NumericProp::text($columns), ['1', '2', '3']);
 
-    // The visible heading IS the group's accessible name (via aria-labelledby) —
+    // The visible heading is the group's accessible name (via aria-labelledby) —
     // not a duplicate aria-label, which would double-announce the title.
     // The same on every render, where a random id would not be: the group's
     // aria-labelledby and the heading's id are the two halves of one pairing, and a usage

@@ -192,7 +192,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * The active section is the LAST heading at or above the jump line.
+     * The active section is the last heading at or above the jump line.
      *
      * A tall section becomes active once the reader scrolls past its first paragraph, rather than
      * waiting for the next heading. At the end of the scroller the last heading in view wins: a
@@ -327,7 +327,7 @@ export default (options = {}) => ({
         this._mirrorHash(entry ? entry.id : id);
 
         // Focus goes where the reader asked to go. `preventDefault()` above suppressed the
-        // anchor's default, and that default moves TWO things: the scroll and the
+        // anchor's default, and that default moves two things: the scroll and the
         // sequential-navigation starting point. Only the first was replaced, so the next Tab
         // went to the next TOC link instead of into the section.
         focusHeading(el);
@@ -336,7 +336,7 @@ export default (options = {}) => ({
     /**
      * Put the heading's id in the address bar, without a history entry.
      *
-     * `replaceState` rather than a push, so the back button still goes to the previous PAGE
+     * `replaceState` rather than a push, so the back button still goes to the previous page
      * rather than walking back up the article one heading at a time.
      *
      * Extracted because both scroll paths need it and only one of them had it. The

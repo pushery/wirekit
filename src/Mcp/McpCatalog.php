@@ -15,19 +15,19 @@ use Pushery\WireKit\WireKit;
 /**
  * Read-only catalog the MCP server exposes to AI coding assistants.
  *
- * It is sourced ENTIRELY from surfaces that ship in the Packagist tarball —
+ * It is sourced entirely from surfaces that ship in the Packagist tarball —
  * `ComponentRegistry` (props via the PropsParser-backed `extractProps`), the
  * compiled `dist/wirekit.css` design tokens, and the baked
  * `resources/mcp/component-examples.json`. It never re-implements prop parsing
  * (the PropsParser caller-drift guard forbids regex `@props` scanners; this
  * routes through the canonical registry instead).
  *
- * It reads nothing from `docs/` at RUNTIME, and that distinction is the whole
+ * It reads nothing from `docs/` at runtime, and that distinction is the whole
  * design of the examples: `docs/` is export-ignored, so it is absent in a real
  * `composer require` install, and a catalog that read it would answer correctly
  * in this repository and "no examples" in every installation — the worst shape
  * for a defect, because it cannot be reproduced where it is developed. The
- * examples are therefore extracted from the documentation at BUILD time into a
+ * examples are therefore extracted from the documentation at build time into a
  * file that ships, and a test fails when the two drift apart.
  */
 final class McpCatalog
@@ -46,11 +46,11 @@ final class McpCatalog
      * The component catalog.
      *
      * Sub-components ride along on their parent's entry rather than as entries of
-     * their own: they ARE part of the API an agent must reach for, but they are
+     * their own: they are part of the API an agent must reach for, but they are
      * not components in the sense the counts in this project use the word, and
      * listing them flat would inflate the component count by close to half without
      * one new component shipping. Naming them on the parent means an agent listing the
-     * catalog SEES that card has a body — the thing it needs to know — and can
+     * catalog sees that card has a body — the thing it needs to know — and can
      * then ask for `card.body` directly.
      *
      * @return list<array{name: string, category: string, description: string, sub_components?: list<string>}>
@@ -182,7 +182,7 @@ final class McpCatalog
      */
     public function getComponent(string $name): ?array
     {
-        // resolve() answers for BOTH shapes — `card` and `card.body`. Asking only
+        // resolve() answers for both shapes — `card` and `card.body`. Asking only
         // for top-level components returned null for every sub-component, which an
         // agent reads as "no such component"; it then puts content directly into
         // <x-wirekit::card> instead of card.body — the exact mistake the shipped
@@ -209,7 +209,7 @@ final class McpCatalog
         // anonymous component's `@props` block declares no types, so `type_hint` is
         // null for almost every prop.
         //
-        // Resolving the fallback literal is worth doing and would need a NEW
+        // Resolving the fallback literal is worth doing and would need a new
         // field: `default_normalized`'s whitespace-collapse semantics are a
         // documented contract of the component registry, so repurposing the
         // field would break it.
@@ -227,7 +227,7 @@ final class McpCatalog
             'tag' => ComponentRegistry::tag($name),
             'docs_url' => $this->docsUrl($name),
             // How the component exposes its API. An anonymous component takes
-            // props AND named template slots; a class-based one takes constructor
+            // props and named template slots; a class-based one takes constructor
             // arguments and has no developer-facing slots. An agent that knows
             // which it is generates the right wrapping shape instead of deriving
             // it from prop names.
@@ -263,7 +263,7 @@ final class McpCatalog
         // Three sources, most authoritative first.
         //
         // `parent` is what the registry states outright. The baked map covers the
-        // case it does not: a component that carries NO parent and still has no
+        // case it does not: a component that carries no parent and still has no
         // page of its own, because a family documents all of its primitives on
         // one page. The `reading-*` primitives are among them, and the registry
         // states a parent for none.
@@ -382,7 +382,7 @@ final class McpCatalog
      * The component's documentation URL, or null when it has no publicly
      * rendered page.
      *
-     * Read from a BAKED list, never from `docs/`, for the reason this whole
+     * Read from a baked list, never from `docs/`, for the reason this whole
      * class is built around: `docs/` is export-ignored and simply absent in a
      * real installation, so a visibility check against it answers correctly here
      * and "nothing is public" everywhere else — a defect that cannot be
@@ -619,7 +619,7 @@ final class McpCatalog
     /**
      * Title, summary and docs URL, read out of the stub's own header comment.
      *
-     * Every stub opens with the same TWO lines — `{{-- Recipe: <Title> — <summary>` and a
+     * Every stub opens with the same two lines — `{{-- Recipe: <Title> — <summary>` and a
      * `Full reference:` URL — so the metadata lives next to the code it describes rather than
      * in a table beside it. Whatever follows inside the comment is per-stub guidance for the
      * developer who just scaffolded the view, and this parser ignores it: some stubs carry a
@@ -671,7 +671,7 @@ final class McpCatalog
      * The house conventions, as shipped prose rather than as a list held here.
      *
      * `AGENTS.md` tells an assistant that "for an MCP-native editor, the WireKit MCP server
-     * exposes the same CATALOG as live tools" — the catalog, not the conventions. This carries
+     * exposes the same catalog as live tools" — the catalog, not the conventions. This carries
      * the conventions to the MCP path, so an agent there learns that a Tailwind palette class,
      * a `dark:` prefix or a hand-written color will fail the guards: an MCP client has no
      * filesystem, and reads neither `AGENTS.md` nor `.cursor/rules/wirekit.mdc`.

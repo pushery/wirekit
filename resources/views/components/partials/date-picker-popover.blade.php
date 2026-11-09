@@ -173,7 +173,7 @@
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
         </svg>
 
-        @if($popoverClearable)
+        @wirekitLast($popoverClearable)
             <button
                 type="button"
                 x-show="! showsPlaceholder"
@@ -186,7 +186,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
             </button>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- The fields a form submits and `wire:model` binds, written by the script with the events a
@@ -285,7 +285,7 @@
         <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @if($showsError)
+    @wirekitLast($showsError)
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @endif
+    @endwirekitLast
 </div>

@@ -5,14 +5,14 @@
     // Image URL. The component only renders — the developer supplies a ready URL
     // (a signed / ACL-protected download URL works unchanged).
     'src' => null,
-    // Accessible name. REQUIRED for a content image; pass an empty string ONLY
+    // Accessible name. Required for a content image; pass an empty string only
     // for a purely decorative image (renders alt="" so screen readers skip it).
     //
     // The default is null rather than '' so the two cases can be told apart. With ''
     // as the default, "the developer marked this decorative" and "the developer forgot"
     // would produce identical markup — and the forgotten one is a content image that
-    // announces nothing, which no automated check can see either, because `alt=""` IS
-    // valid HTML and IS the correct answer for the other case.
+    // announces nothing, which no automated check can see either, because `alt=""` is
+    // valid HTML and is the correct answer for the other case.
     'alt' => null,
     // Optional visible caption — renders a <figcaption> under the image.
     'caption' => null,
@@ -22,7 +22,7 @@
     'altLang' => null,
     'captionLang' => null,
     // Optional intrinsic aspect-ratio ("16/9", "4/3", "1/1", or a number). Sizes
-    // the box BEFORE the image loads, so the layout never shifts (CLS-safe) even
+    // the box before the image loads, so the layout never shifts (CLS-safe) even
     // when the natural dimensions are unknown. Null → the image sizes itself.
     'ratio' => null,
     // object-fit for a ratio-boxed image: 'cover' (fill + crop) or 'contain'
@@ -95,7 +95,7 @@
         );
     }
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $rounded = BooleanProp::from($rounded, false, 'image', 'rounded');

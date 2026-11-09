@@ -5,12 +5,12 @@
     // Error-announcement policy inherited by every WireKit form control nested
     // inside this form.
     //   null  — inherit the global wirekit.a11y.announce_error config (the default)
-    //   false — turn the per-control aria-live error region OFF for all controls
-    //           inside. Use this when THIS form renders its OWN error summary — a
+    //   false — turn the per-control aria-live error region off for all controls
+    //           inside. Use this when this form renders its own error summary — a
     //           role="alert" list that announces every message and pulls focus (the
     //           WCAG 3.3.1 pattern) — so the per-field live regions would otherwise
     //           double-announce.
-    //   true  — force it ON for all controls inside.
+    //   true  — force it on for all controls inside.
     // A per-control :announce-error still overrides this for that one control.
     'announceErrors' => null,
     // After its first submission the form holds every further one back until the page changes,

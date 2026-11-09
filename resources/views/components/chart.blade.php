@@ -27,7 +27,7 @@
     // attribute when the bag is echoed below.
     //
     // The fallback goes through `__()` like every other built-in accessible name in
-    // this package. It was the one literal left: a reader on a Spanish site heard the
+    // this package. It was the one hardcoded string: a reader on a Spanish site heard the
     // English word, and the only way out was publishing the view — which then drifts
     // on every update.
     $chartAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label', __('wirekit::Chart'));
@@ -80,7 +80,7 @@
     // as a pale box on a card in any theme that lifts its cards off the page. A caller's `style`
     // can still give the chart one.
     /*
-     * Wrapper width MUST be inline `width: 100%` — NOT the Tailwind
+     * Wrapper width must be inline `width: 100%` — not the Tailwind
      * `w-full` utility. In every rendering context that doesn't load
      * the developer's Tailwind bundle (a docs-preview iframe-srcdoc,
      * or any tenant-isolated context with its own CSS scope) the
@@ -110,7 +110,6 @@
     // One value for the height, so a `;` in it carries no declaration of its own (Support\CssValue).
     $height = \Pushery\WireKit\Support\CssValue::prop($height, 'chart', 'height', '380px');
     $defaultStyle = "width: 100%; min-width: 0; display: {$defaultDisplay}; height: {$height}; overflow: hidden; position: relative;";
-    $mergedStyle = trim($defaultStyle.' '.$callerStyle);
     $chartAttributes = $attributes->except(['aria-label', 'style']);
 
     // 'canvas' when the prop is missing, as it is in a Blade render that does not
@@ -170,6 +169,40 @@
     $chartAttributes = \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
     $needsReplayWrapper = $emitReplayable || $callerReplayable !== null;
 
+    // The list of the points' links and the data table render beside the drawing, outside its
+    // `wire:ignore`. Each is an element of its own, so in a grid or a flex row of the caller's it
+    // would take a place of its own beside the chart, the links as soon as one of them has the
+    // focus. With either of them the chart renders inside one element that holds every part, the
+    // replay wrapper where that renders anyway. An inline chart writes its links as spans in its
+    // sentence and takes no table.
+    $holdsCompanions = ! ($inline ?? false) && ($pointLinks !== [] || $tableMode !== null);
+    $needsWrapper = $needsReplayWrapper || $holdsCompanions;
+
+    // That element is then the chart's outermost one, the one its container lays out, so it takes
+    // what places the component: the caller's `class`, and `wire:key`, `x-show` and the attributes
+    // that come with them (Support\OuterAttributes). `style` stays on the chart, where its height
+    // is, and so does everything that names or addresses it: `id`, the ARIA attributes, a `data-*`
+    // attribute and the caller's `x-ref`.
+    $wrapperAttributes = new \Illuminate\View\ComponentAttributeBag;
+
+    if ($needsWrapper) {
+        [$wrapperAttributes, $chartAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($chartAttributes);
+        $wrapperAttributes = $wrapperAttributes->merge($chartAttributes->only(['class'])->getAttributes());
+        $chartAttributes = $chartAttributes->except(['class']);
+    }
+
+    // The display and the position written inline would win over every class, so a caller's
+    // `hidden md:block` or `absolute` would never reach the chart. On the element that takes the
+    // caller's class they are left out where that class sets them, and come back as utilities
+    // that the caller's own class replaces (Support\UtilityClasses::yieldStyleToCaller). The
+    // width stays inline: the parent sets the chart's width.
+    [$frameStyle, $frameStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($chartAttributes, $defaultStyle);
+    $mergedStyle = trim($frameStyle.' '.$callerStyle);
+    [$wrapperStyle, $wrapperStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller(
+        $wrapperAttributes,
+        'display: '.(($inline ?? false) ? 'inline-block' : 'block').'; width: 100%; min-width: 0;',
+    );
+
     // The scripts a custom adapter names in `scripts()`. Both built-in adapters name none, so
     // the nonce is only resolved when there is a tag to put it on.
     $wkChartScripts = $adapterScripts ?? [];
@@ -185,23 +218,20 @@
         <script src="{{ $wkChartScript }}" defer data-navigate-once="true"@if ($wkChartScriptNonce) nonce="{{ $wkChartScriptNonce }}"@endif></script>
     @endonce
 @endforeach
-@if ($needsReplayWrapper)
-    {{-- Outer wrapper carries `data-replayable="true"` for docs.wirekit.app
-         replay button. CRITICAL: the attribute MUST sit on a DIFFERENT
-         element than the chart's `x-data` scope. The docs.wirekit.app replay
-         path does `target.innerHTML = ''; target.innerHTML = saved;
-         Alpine.initTree(target)` — if `target` is the same element that
-         carries `x-data`, the wrapper itself persists with its already-
-         initialized Alpine scope, only its children get re-injected,
-         and the chart's `init()` (which creates the ApexCharts instance
-         and fires the entrance animation) never re-runs. Wrapping the
-         chart in a non-Alpine, non-wire:ignore div makes the ENTIRE
-         chart subtree get destroyed and re-created on replay — fresh
-         Alpine init, fresh ApexCharts.render(), fresh entrance
-         animation. --}}
+@if ($needsWrapper)
+    {{-- The element around every part of the chart. It carries `data-replayable="true"` for
+         docs.wirekit.app's replay button when the chart is replayable, and it must be a
+         different element than the chart's `x-data` scope: the replay path does
+         `target.innerHTML = ''; target.innerHTML = saved; Alpine.initTree(target)`, and a
+         target that carried `x-data` would keep its initialized scope, so the chart's `init()`,
+         which draws the chart and its entrance, would never run again. Around a chart in a
+         non-Alpine, non-`wire:ignore` element the whole chart is destroyed and drawn anew.
+         Its display and width are written inline for the reason the chart's own are, and
+         `min-width: 0` lets it shrink in a flex row as the chart does. --}}
     <{{ $wrapperTag }} data-wk-prose-skip
-        data-replayable="true"
-        style="display: {{ ($inline ?? false) ? 'inline-block' : 'block' }}; width: 100%;"
+        @if ($needsReplayWrapper) data-replayable="true" @endif
+        {{ $wrapperStyleClasses === '' ? $wrapperAttributes : $wrapperAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($wrapperAttributes, [$wrapperStyleClasses])) }}
+        style="{{ $wrapperStyle }}"
     >
 @endif
 <{{ $wrapperTag }} data-wk-prose-skip
@@ -210,7 +240,7 @@
          active adapter's library identifier as its value. A host that defers a
          chart library until the first chart appears has nothing else to aim at:
          the component emits no `wk-*` class of its own, so before this the only
-         handle was the Alpine factory's NAME — an implementation detail whose
+         handle was the Alpine factory's name — an implementation detail whose
          rename is not a breaking change from here, which makes a selector built
          on it stop matching without a word.
 
@@ -218,7 +248,7 @@
          `[data-wk-chart]` counts charts. `chart-mixed` renders through this same
          view, so it is marked by delegation rather than by a second copy. The
          debug placeholder — rendered when no adapter is configured and
-         APP_DEBUG is on — deliberately does NOT carry it: no chart renders
+         APP_DEBUG is on — deliberately does not carry it: no chart renders
          there, and a lazy-loader firing on it would fetch a chart library for
          a chart that was never configured. --}}
     data-wk-chart="{{ $chartLibrary }}"
@@ -228,11 +258,12 @@
         data-wire-stream-cap="{{ $wireStreamCapAttr }}"
     @endif
     {{-- Tailwind utilities still applied as a courtesy for developers
-         whose CSS bundle DOES load `relative` / `w-full` (the inline
+         whose CSS bundle does load `relative` / `w-full` (the inline
          style above is the source of truth for either class's behavior;
          these merely keep the rendered class= tidy for any styling that
-         developers might want to override on top). --}}
-    {{ $chartAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [\Pushery\WireKit\WireKit::resolveClasses('chart', 'base', 'relative w-full')])) }}
+         developers might want to override on top). They yield to the caller's
+         class only where it lands here, without a wrapper around the chart. --}}
+    {{ $chartAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($chartAttributes, [\Pushery\WireKit\WireKit::resolveClasses('chart', 'base', 'relative w-full'), $frameStyleClasses => $frameStyleClasses !== ''])) }}
     style="{{ $mergedStyle }}"
     wire:ignore
     @unless($chartAttributes->has('role')) role="img" @endunless
@@ -265,7 +296,7 @@
         <canvas x-ref="canvas" aria-hidden="true" style="width: 100%; height: 100%;"></canvas>
     @endif
 </{{ $wrapperTag }}>
-{{-- The data half of the chart, OUTSIDE the `wire:ignore` above on purpose. The morph leaves
+{{-- The data half of the chart, outside the `wire:ignore` above on purpose. The morph leaves
      the chart root alone, attributes included, so new labels and series from a Livewire update
      never reached a drawn chart. This element is updated like any other, and the factory
      follows its attribute and updates the chart in place, with no rebuild and no entrance
@@ -300,14 +331,15 @@
      above, so a Livewire update reaches it with the data. `disclosure` puts it behind a summary any
      reader can open, a keyboard included; `screen-reader` keeps it out of sight, read after the
      chart's name. Its frame scrolls a table with more datasets than the width holds, so it is a tab
-     stop with a ring. --}}
+     stop with a ring, and it is positioned: the table's hidden caption is placed against it, and
+     scrolls and clips with the table rather than with the page around the chart. --}}
 @if ($tableMode === 'disclosure')
     {{-- `wire:ignore.self`: the browser sets `open` when a reader opens the summary, the server's
          markup never carries it, and a morph would take it away on the next update and close the
          table under the reader. The rows inside still follow the data. --}}
     <details data-wk-prose-skip data-wk-chart-table wire:ignore.self class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
         <summary data-wk-prose-skip class="wk-focus-ring w-fit cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]">{{ __('wirekit::Chart data') }}</summary>
-        <div data-wk-prose-skip tabindex="0" class="wk-scrollbar mt-[var(--space-wk-xs)] overflow-x-auto rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <div data-wk-prose-skip tabindex="0" class="wk-scrollbar relative mt-[var(--space-wk-xs)] overflow-x-auto rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             @include('wirekit::components.partials.chart-data-table', ['wkTable' => $tableModel, 'wkCaption' => $chartAriaLabel])
         </div>
     </details>
@@ -316,6 +348,6 @@
         @include('wirekit::components.partials.chart-data-table', ['wkTable' => $tableModel, 'wkCaption' => $chartAriaLabel])
     </div>
 @endif
-@if ($needsReplayWrapper)
+@if ($needsWrapper)
     </{{ $wrapperTag }}>
 @endif

@@ -13,7 +13,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  * a strict Content-Security-Policy the trigger got no ARIA at all: it still
  * opened on click, and announced itself as a plain button that leads nowhere.
  *
- * It was also the THIRD copy of this logic, after popover and hover-card, and it
+ * It was also the third copy of this logic, after popover and hover-card, and it
  * had drifted from both — hence the shared util rather than a fourth.
  *
  * `aria-controls` points at the panel, whose id lives on an ancestor: the

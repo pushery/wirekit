@@ -42,7 +42,7 @@ function dayOr(value, fallback) {
  * `event-click` event; the component never mutates events itself.
  *
  * All date math uses the native Date API — no external dependency. Recurrence
- * (RRULE), drag-editing, the resource view, timezone/DST handling, and ICS
+ * (rrule), drag-editing, the resource view, timezone/DST handling, and ICS
  * export are intentionally out of scope for this build.
  *
  * Lifecycle resources held on `this`:
@@ -74,7 +74,7 @@ function dayOr(value, fallback) {
  * @param {string} config.view   - 'month' | 'week' | 'agenda'
  * @param {string} config.date   - ISO date the calendar opens on
  * @param {number} config.weekStartsOn - 0 (Sun) .. 1 (Mon, default)
- * @param {string} [config.allDayLabel] - what an all-day event is CALLED, translated.
+ * @param {string} [config.allDayLabel] - what an all-day event is called, translated.
  *   The English fallback is for a developer who mounts the factory by hand; the
  *   component passes the catalog string.
  * @param {string} [config.locale] - BCP-47 tag for every date and time this
@@ -100,8 +100,8 @@ function intakeEvents(list) {
 }
 
 /**
- * Day-level markers (holidays / working days / notes), a SEPARATE dimension from timed events.
- * `date` is parsed date-only at LOCAL midnight (slice to 10 chars + 'T00:00:00') so a
+ * Day-level markers (holidays / working days / notes), a separate dimension from timed events.
+ * `date` is parsed date-only at local midnight (slice to 10 chars + 'T00:00:00') so a
  * YYYY-MM-DD string never drifts a day across a timezone boundary. `type` is clamped to the
  * three known kinds; `blocked` is a hard boolean. WireKit owns the visual/semantic state only:
  * the host enforces any booking logic behind a `blocked` day.
@@ -178,7 +178,7 @@ export default function wirekitEventCalendar(config = {}) {
         now: new Date(),
         _clock: null,
 
-        // What an all-day event is CALLED. The agenda row prints it and `eventLabel`
+        // What an all-day event is called. The agenda row prints it and `eventLabel`
         // puts it in every event's accessible name, so a literal here is a word the
         // catalog cannot reach: the week view's own axis label goes through `__()` two
         // files over, and a German app would read "Ganztägig" above a list of events
@@ -197,7 +197,7 @@ export default function wirekitEventCalendar(config = {}) {
         // The day the built-in detail shows, at local midnight; null while none is open.
         selectedDate: null,
 
-        // Category filter, opt-in. What is stored is the HIDDEN set rather than the shown one,
+        // Category filter, opt-in. What is stored is the hidden set rather than the shown one,
         // so every category starts visible, including one that only arrives with later data.
         filterable: !!config.filterable,
         hiddenCategories: [],
@@ -439,9 +439,9 @@ export default function wirekitEventCalendar(config = {}) {
 
         // ── Title + navigation ───────────────────────────────────────────
         get title() {
-            // Week + agenda show the visible RANGE (not just the month) so the
+            // Week + agenda show the visible range (not just the month) so the
             // header never lies about which days are on screen. Month shows the
-            // month + year. The end side ALWAYS formats month+day+year: a
+            // month + year. The end side always formats month+day+year: a
             // day+year-only option set is an invalid ICU combination that real
             // browsers render as fallback garbage ("2026 (day: 14)") even though
             // Node's ICU happens to produce something sane. Only a real browser
@@ -460,7 +460,7 @@ export default function wirekitEventCalendar(config = {}) {
             this.view = v;
             this.$dispatch('view-change', { view: v });
         },
-        // Radio-group keyboard model for the view switcher: arrows move AND
+        // Radio-group keyboard model for the view switcher: arrows move and
         // select (selection follows focus, per the ARIA radio pattern),
         // wrapping at the ends. Focus lands on the newly active radio.
         viewMove(dir) {
@@ -473,11 +473,11 @@ export default function wirekitEventCalendar(config = {}) {
                 if (radio) radio.focus();
             });
         },
-        // Agenda time-column auto-width: measure the widest RENDERED time label
+        // Agenda time-column auto-width: measure the widest rendered time label
         // and expose it as --wk-agenda-time on the root. A fixed 5rem column left
         // a large gap before short locale times ("9:00") and would clip long ones
         // ("12:30 PM"); the timeline spine and every row consume the same var, so
-        // the vertical line stays straight AND hugs the actual content width
+        // the vertical line stays straight and hugs the actual content width
         // Only measures while the agenda view is visible — hidden
         // elements measure 0 and would collapse the column.
         /**
@@ -592,7 +592,7 @@ export default function wirekitEventCalendar(config = {}) {
         _markersFor(day) {
             return this.dayMarkers.filter((m) => this._sameDay(m._date, day));
         },
-        // True when ANY day in the focused week carries a marker — markers share the
+        // True when any day in the focused week carries a marker — markers share the
         // all-day band, so the band must also open for a marker-only week.
         get weekHasMarkers() {
             const start = this._startOfWeek(this.focusedDate);
@@ -601,7 +601,7 @@ export default function wirekitEventCalendar(config = {}) {
             }
             return false;
         },
-        // All-day events for a day, sorted by start. Kept SEPARATE from the timed
+        // All-day events for a day, sorted by start. Kept separate from the timed
         // _layoutDay (which filters !allDay): all-day events have no hour position,
         // so they render in the dedicated all-day band, not the hour grid. Before
         // this band existed they were silently dropped from week view entirely.
@@ -610,7 +610,7 @@ export default function wirekitEventCalendar(config = {}) {
                 .filter((e) => e.allDay && this._coversDay(e, day))
                 .sort((a, b) => this._eventStart(a) - this._eventStart(b));
         },
-        // True when ANY day in the focused week carries an all-day event — gates the
+        // True when any day in the focused week carries an all-day event — gates the
         // band so a week with none doesn't render an empty row. Computed directly
         // (not via weekDays) to avoid re-running the per-day overlap layout.
         get weekHasAllDay() {
@@ -629,11 +629,11 @@ export default function wirekitEventCalendar(config = {}) {
         // Overlap-split layout: greedily assign each day's timed events to the
         // first free column, then size every block to 1/columns width.
         //
-        // Collision uses an EFFECTIVE end — max(actual end, start + MIN_BLOCK_MIN) —
+        // Collision uses an effective end — max(actual end, start + MIN_BLOCK_MIN) —
         // not the raw end. Reason: the blade floors every block to min-h-[2.5rem]
         // (= MIN_BLOCK_MIN of grid height) so a sub-hour event is still tall enough
         // for its title+time. Without the effective-end floor, a 15-min event and
-        // the event immediately after it land in the SAME column (their real times
+        // the event immediately after it land in the same column (their real times
         // don't overlap), but the floored 15-min block renders ~1h tall and visually
         // collides with the next block's text. Treating each block as occupying its
         // rendered footprint pushes such pairs into side-by-side columns instead.
@@ -647,7 +647,7 @@ export default function wirekitEventCalendar(config = {}) {
             const from = this._startOfDay(day);
             const to = this._addDays(from, 1);
             const timed = this._eventsOnDay(day).filter((e) => !e.allDay);
-            const cols = []; // each entry = the EFFECTIVE end occupying that column
+            const cols = []; // each entry = the effective end occupying that column
             const placed = timed.map((e) => {
                 const span = this._eventSpan(e);
                 const s = span.start < from ? from : span.start;
@@ -693,10 +693,12 @@ export default function wirekitEventCalendar(config = {}) {
         },
 
         blockStyle(b) {
+            // The column offset is a side of the line, so events that share a time stand in
+            // reading order on a page that reads from the right as well.
             return {
                 top: `calc(${b.top}% + 2px)`,
                 height: `calc(${b.height}% - 5px)`,
-                left: `calc(${b.left}% + 2px)`,
+                insetInlineStart: `calc(${b.left}% + 2px)`,
                 width: `calc(${b.width}% - 4px)`,
             };
         },
@@ -788,7 +790,7 @@ export default function wirekitEventCalendar(config = {}) {
         attendeeOverflow(e) {
             return Math.max(0, this._attendeesOf(e).length - 3);
         },
-        // The accessible name of an agenda or day-detail row: the event's own label, then EVERY
+        // The accessible name of an agenda or day-detail row: the event's own label, then every
         // attendee. The stack beside the title is decoration for sighted readers; a screen
         // reader hears the names here, all of them, rather than three faces and a number.
         rowLabel(e) {
@@ -815,15 +817,15 @@ export default function wirekitEventCalendar(config = {}) {
         moreWord(day) {
             return pluralize(this._moreWords, day.overflow, labelLocale);
         },
-        // The start time a MONTH pill shows to the right of its title.
+        // The start time a month pill shows to the right of its title.
         //
         // Empty for an all-day event, and that is the whole decision here rather than an
-        // omission: a day cell already IS the date, so an "All day" chip would spend the
+        // omission: a day cell already is the date, so an "All day" chip would spend the
         // pill's scarcest resource — its width — restating what the reader can see. The
         // agenda view says "All day" because a flat list has no cell to say it for it.
         //
         // Same format as `eventLabel` and the agenda, so a reader comparing the two views
-        // sees one clock rather than two. The pill truncates its TITLE to make room; the
+        // sees one clock rather than two. The pill truncates its title to make room; the
         // time is the part that must stay whole, because a clipped time is unreadable
         // while a clipped title is still recognizable.
         //
@@ -849,7 +851,7 @@ export default function wirekitEventCalendar(config = {}) {
         // infra for this; switching to the hour grid reveals every event.
         //
         // With the day detail built in, the hidden events have a place in the month view
-        // itself, so "+N more" opens that day there instead of leaving the view. It OPENS
+        // itself, so "+N more" opens that day there instead of leaving the view. It opens
         // rather than toggles: the control promises more events, and a second press that hid
         // them again would contradict its own name.
         showMore(date) {
@@ -883,7 +885,7 @@ export default function wirekitEventCalendar(config = {}) {
         },
 
         // ── Day selection (opt-in) ───────────────────────────────────────
-        // A day as the host would write it: YYYY-MM-DD from the LOCAL date parts.
+        // A day as the host would write it: YYYY-MM-DD from the local date parts.
         // `toISOString()` is UTC, and names the previous day for any reader east of UTC
         // at local midnight — the drift `dayMarkers` already parses around.
         _isoDay(date) {
@@ -894,7 +896,7 @@ export default function wirekitEventCalendar(config = {}) {
             return `${d.getFullYear()}-${month}-${day}`;
         },
         // Tell the host which day was pressed, and open it in the built-in detail when there
-        // is one. A second press on the open day closes it WITHOUT a second event: closing is
+        // is one. A second press on the open day closes it without a second event: closing is
         // not a selection, and a host listening for `wirekit:event-calendar-day-select` should not have to tell the
         // two apart.
         selectDay(date) {
@@ -948,9 +950,9 @@ export default function wirekitEventCalendar(config = {}) {
 
         // ── Truncated-title tooltip (one shared bubble) ──────────────────
         // Event pills / chips / agenda rows are client-side x-for nodes, so the
-        // Blade <x-wirekit::tooltip> cannot wrap them. ONE shared bubble (x-ref
+        // Blade <x-wirekit::tooltip> cannot wrap them. One shared bubble (x-ref
         // "tip", styled identically to the tooltip component's panel) serves
-        // every [data-wk-tip] target: shown on hover/focus ONLY when the text is
+        // every [data-wk-tip] target: shown on hover/focus only when the text is
         // actually truncated, anchored by the shared floating util. The bubble
         // is aria-hidden — every target's aria-label already carries the full
         // text, so a described-by bubble would double-announce. Listeners are
@@ -1046,8 +1048,8 @@ export default function wirekitEventCalendar(config = {}) {
                     // of it: after a refresh the bubble is still shown, with no `top` and the
                     // same box.
                     //
-                    // This bubble is NOT teleported, and it makes no difference. It is
-                    // `position: fixed`, so with no `top` it falls back to its STATIC position —
+                    // This bubble is not teleported, and it makes no difference. It is
+                    // `position: fixed`, so with no `top` it falls back to its static position —
                     // which for a div declared at the end of the calendar root is wherever that
                     // div happens to sit, far from the chip it belongs to.
                     //
@@ -1070,7 +1072,7 @@ export default function wirekitEventCalendar(config = {}) {
             }
         },
         tipHide(e) {
-            // pointerout fires when moving INTO a child of the same target — ignore.
+            // pointerout fires when moving into a child of the same target — ignore.
             if (e && this._tipTarget && e.relatedTarget && this._tipTarget.contains
                 && this._tipTarget.contains(e.relatedTarget)) {
                 return;

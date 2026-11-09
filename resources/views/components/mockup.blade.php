@@ -35,11 +35,18 @@
     $barLabel = $variantValue === 'browser' ? $url : $title;
 
     $classes = WireKit::resolveClasses('mockup', 'base', 'wk-mockup', $scope);
+
+    // A width class the caller puts on the frame (`w-*`, `max-w-*`, `size-*`) takes the place of
+    // the frame's default width. That default lives in wirekit.css, which is unlayered and so
+    // outranks every utility; the attribute is what its rules leave out. `min-w-*` sets no width,
+    // and a class under a variant (`md:w-full`) applies at a width of its own, so both leave the
+    // default in place.
+    $sized = preg_match('/(?:^|\s)(?:w|max-w|size)-\S/', (string) $attributes->get('class', '')) === 1;
 @endphp
 
 {{-- Frame chrome around a screenshot or a live composition.
 
-     ALL of the chrome — the traffic lights, the address bar, the notch — is
+     All of the chrome — the traffic lights, the address bar, the notch — is
      decorative and aria-hidden. It is a picture frame: the slot content carries
      every bit of the meaning, and a screen-reader user is not told about fake
      window buttons they cannot press.
@@ -47,7 +54,7 @@
      Nothing here is interactive: the dots are not close/minimize controls, so
      they are spans, not buttons. Rendering them as buttons would put three
      dead controls in the tab order of every marketing page. --}}
-<div data-wk-mockup data-variant="{{ $variantValue }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
+<div data-wk-mockup data-variant="{{ $variantValue }}" @if($sized) data-wk-mockup-sized @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     @if($hasBar)
         <div data-wk-mockup-bar aria-hidden="true">
             <span data-wk-mockup-dots>
@@ -56,9 +63,9 @@
                 <span data-wk-mockup-dot></span>
             </span>
 
-            @if($barLabel)
+            @wirekitLast($barLabel)
                 <span data-wk-mockup-label>{{ $barLabel }}</span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 

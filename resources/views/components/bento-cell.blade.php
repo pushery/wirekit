@@ -29,13 +29,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('bento-cell', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $emphasis = BooleanProp::from($emphasis, false, 'bento-cell', 'emphasis');
     $bleed = BooleanProp::from($bleed, false, 'bento-cell', 'bleed');
 
-    // Match on the RESULT, not the raw prop: where the strictness gate does not throw,
+    // Match on the result, not the raw prop: where the strictness gate does not throw,
     // validateProp returns the first allowed value — '1x1' here, which is both
     // the default and the only span that is safe at any grid width.
     $span = WireKit::validateProp('bento-cell', 'span', $span, ['1x1', '2x1', '1x2', '2x2']);

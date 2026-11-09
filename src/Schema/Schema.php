@@ -20,7 +20,7 @@ use Pushery\WireKit\Support\SafeUrl;
  * )" />
  * ```
  *
- * What these do not do: they cannot tell whether the page actually SHOWS what
+ * What these do not do: they cannot tell whether the page actually shows what
  * the markup claims. Structured data that describes content the user cannot see
  * is a Google policy violation and gets the rich result withdrawn — so emit a
  * FAQPage only where the questions are really rendered, an AggregateRating only
@@ -144,7 +144,7 @@ final class Schema
      * An FAQ page. Accepts either a question => answer map or a list of
      * ['question' => …, 'answer' => …] rows.
      *
-     * ONLY emit this where the questions and answers are actually visible on the
+     * Only emit this where the questions and answers are actually visible on the
      * page — a FAQPage describing content the user cannot see is a policy
      * violation.
      *
@@ -228,7 +228,7 @@ final class Schema
     /**
      * The `ListItem`s of a breadcrumb trail, built the way a search engine accepts them.
      *
-     * Every entry but the last needs an `item` URL, and ONE entry without it makes Google
+     * Every entry but the last needs an `item` URL, and one entry without it makes Google
      * discard the whole list — the result page then shows a bare URL instead of the trail. So
      * a step with no page of its own (a navigation group) stays in the visible trail and is
      * left out here, and the positions are counted over what remains. Consecutive steps that
@@ -239,8 +239,8 @@ final class Schema
      * One rule for every producer: the breadcrumb component and `breadcrumbList()` above both
      * build their trail here, so the two cannot answer the question differently. That includes
      * which address is a page at all. A URL is read through the rule the component links by:
-     * `http`, `https`, `mailto`, `tel` or a relative address. Any other scheme, `javascript:`
-     * among them, is a step without a page.
+     * `http`, `https`, `mailto`, `tel` or a relative address, and a relative one goes into the
+     * JSON-LD made absolute. Any other scheme, `javascript:` among them, is a step without a page.
      *
      * Internal: public only so `breadcrumb.blade.php` can reach it from another
      * namespace, which is a PHP visibility necessity rather than an API promise. The
@@ -260,7 +260,11 @@ final class Schema
 
         foreach ($steps as $index => $step) {
             $url = SafeUrl::href($step['url']);
-            $url = $url === '' ? null : $url;
+            // A crawler reads `item` without the page around it, and the only form Google's
+            // breadcrumb documentation shows is an absolute URL: a relative address is resolved
+            // against the application's URL. `url()` leaves an absolute `http(s)` address, a
+            // `mailto:`, a `tel:` and a fragment as they are.
+            $url = $url === '' ? null : url($url);
 
             if ($url === null && $index !== $last) {
                 continue;
@@ -388,7 +392,7 @@ final class Schema
      * Combine several nodes into one `@graph`.
      *
      * This is how a page describes more than one thing at once — the site, the
-     * organization behind it, the product it offers — as ONE connected document
+     * organization behind it, the product it offers — as one connected document
      * instead of a pile of separate scripts. Give the nodes `@id`s and they can
      * reference each other by it.
      *
@@ -432,7 +436,7 @@ final class Schema
     }
 
     /**
-     * Build one node of ANY schema.org type — the escape hatch.
+     * Build one node of any schema.org type — the escape hatch.
      *
      * The typed builders above cover the types WireKit models. This is how you
      * reach every other one without waiting for us to add it: same null-pruning
@@ -447,7 +451,7 @@ final class Schema
      * ```
      *
      * `@type` is a parameter rather than a property so it can never be shadowed:
-     * it is prepended AFTER the merge, which means an `@type` inside `$props` or
+     * it is prepended after the merge, which means an `@type` inside `$props` or
      * `$extra` would be silently ignored.
      *
      * @param  array<string, mixed>  $props
@@ -463,10 +467,10 @@ final class Schema
             static fn (mixed $v): bool => $v !== null && $v !== [] && $v !== '',
         );
 
-        // array_merge (not `+`) so `$extra` genuinely OVERRIDES a modeled
+        // array_merge (not `+`) so `$extra` genuinely overrides a modeled
         // property — `+` keeps the left-hand key and would silently ignore the
         // override the docblock promises. `@type` is prepended with `+` after
-        // the merge, so it stays first AND cannot be clobbered.
+        // the merge, so it stays first and cannot be clobbered.
         return ['@type' => $type] + array_merge($filtered, $extra);
     }
 }

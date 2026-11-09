@@ -8,14 +8,14 @@ import { timerDelay } from '../utils/timer-delay.js';
  * shape, so under a strict Content-Security-Policy the button rendered, took
  * focus, and copied nothing — with no error a reader could act on.
  *
- * The confirmation is OPTIMISTIC: `copied` flips as soon as the write is
+ * The confirmation is optimistic: `copied` flips as soon as the write is
  * requested, not when it resolves. That is what the template did, and changing
  * it here would quietly alter what the live region announces.
  *
  * Lifecycle resources held on `this`:
  *   - _resetTimer (setTimeout) — cleared in destroy(), null-guarded inside the
  *     callback against a post-destroy fire, and cleared before each new one so
- *     the confirmation belongs to the LAST click rather than the first.
+ *     the confirmation belongs to the last click rather than the first.
  *
  * @param {Object} config
  * @param {string} config.value     text written to the clipboard
@@ -24,7 +24,7 @@ import { timerDelay } from '../utils/timer-delay.js';
 export default function wirekitClipboardButton(config = {}) {
     return {
         copied: false,
-        // Set when the write was REFUSED, so the template can take back the success the
+        // Set when the write was refused, so the template can take back the success the
         // optimistic flip announced. Separate from `copied` because they are three states,
         // not two: idle, copied, failed.
         failed: false,
@@ -71,7 +71,7 @@ export default function wirekitClipboardButton(config = {}) {
          *
          * Flipping first is right — the label swap and the live region are the reader's only
          * feedback and must not wait on a promise that may never settle. What was missing is
-         * the other half of that bargain: when the write is REFUSED, "Copied to clipboard"
+         * the other half of that bargain: when the write is refused, "Copied to clipboard"
          * has been announced and nothing corrects it, so the reader believes they have
          * something they do not, pastes nothing, and has no way to find out why.
          *

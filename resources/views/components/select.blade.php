@@ -11,7 +11,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -69,7 +69,7 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false, 'select', 'hideLabel');
@@ -79,7 +79,7 @@
     $emptyNavigates = $emptyNavigate && ! str_starts_with((string) $emptyHref, '#');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -104,7 +104,7 @@
     $value = \Pushery\WireKit\Support\FieldValue::one($value, 'select');
 
     // Compared as strings, deliberately. Option keys arrive from PHP arrays, where
-    // `['1' => 'One']` is an INT key, while a `value` written on a tag is always a
+    // `['1' => 'One']` is an int key, while a `value` written on a tag is always a
     // string — a strict comparison would leave numeric-keyed option lists unable to
     // pre-select anything, which is the same defect one type-cast further down.
     $isSelected = fn ($candidate): bool => $value !== null && (string) $value === (string) $candidate;
@@ -117,7 +117,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -162,7 +162,7 @@
     // Without a `name`, the bag files this field's error under the property its `wire:model`
     // binds (FieldError::nameOf).
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
-    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // Strip the caller's `id` and `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
@@ -170,7 +170,7 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Error detection: explicit prop OR Laravel validation bag
+    // Error detection: explicit prop or Laravel validation bag
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
     $hasError = $errorMessage !== null;
 
@@ -242,13 +242,6 @@
         'cursor-pointer',
     ]), $scope);
 
-    // A width utility in the caller's `class` replaces the field's own `w-full`, as on a number input.
-    // Beside it the stylesheet's order would decide which width wins, not the attribute. A width
-    // under a variant is left alone, because it applies at a width of its own.
-    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
-        $selectClasses = \Pushery\WireKit\Support\UtilityClasses::without($selectClasses, '/^w-/');
-    }
-
     // Border and focus-ring color switch between error, success, and normal state — all via
     // tokens. Each state names its own ring color: a second one in the base list would be
     // decided by the stylesheet's order, which put the resting ring over the error one.
@@ -261,33 +254,33 @@
     };
 
     // Size classes: height, padding, font size, radius — all from sizing tokens
-    // pr-8 kept for dropdown arrow space
+    // pe-8 keeps the value clear of the arrow at the end of the box
     $sizeClasses = match ($size) {
         'sm' => implode(' ', [
             'h-[var(--size-wk-sm)]',
             'px-[var(--padding-wk-x-sm)]',
-            'pr-8',
+            'pe-8',
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-sm)]',
         ]),
         'md-compact' => implode(' ', [
             'h-[var(--size-wk-md-compact)]',
             'px-[var(--padding-wk-x-md)]',
-            'pr-8',
+            'pe-8',
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
         'md' => implode(' ', [
             'h-[var(--size-wk-md)]',
             'px-[var(--padding-wk-x-md)]',
-            'pr-8',
+            'pe-8',
             'text-[length:var(--text-wk-md)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
         'lg' => implode(' ', [
             'h-[var(--size-wk-lg)]',
             'px-[var(--padding-wk-x-lg)]',
-            'pr-8',
+            'pe-8',
             'text-[length:var(--text-wk-lg)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
@@ -325,8 +318,8 @@
 
 <div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
-        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
-             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+        {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
@@ -351,12 +344,6 @@
             {{-- wk-field: lifts font-size to the 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $selectClasses, $stateClasses, $sizeClasses])) }}
         >
-            @if($placeholder)
-                {{-- The placeholder only pre-selects itself when nothing else is
-                     chosen. Marking it `selected` unconditionally is what made a
-                     `value` prop invisible even once the options below honored it. --}}
-                <option value="" disabled{{ ($value === null || $value === '') ? ' selected' : '' }}>{{ $placeholder }}</option>
-            @endif
             {{--
                 Options accept three shapes (mix freely):
                   - Flat:            ['de' => 'Germany']                       → <option>
@@ -364,50 +351,32 @@
                                                'disabled' => true,
                                                'lang' => 'de']]                → disabled <option>
                   - Grouped:         ['Europe' => ['de' => 'Germany', ...]]    → <optgroup>
-                A group is an array value WITHOUT a 'label' key; a single option
-                with attributes is an array value WITH a 'label' key.
+                A group is an array value without a 'label' key; a single option
+                with attributes is an array value with a 'label' key.
 
                 `lang` exists for one control and that control is common: a language picker
                 lists endonyms, so `Deutsch`, `Español` and `Français` are words in a language
                 the document is not in. Without it a screen reader says all of them in the
                 page's voice — WCAG 2.1 AA 3.1.2, whose proper-name exception does not apply,
                 because an endonym is not a borrowed word. It is the one control that exists
-                FOR readers of those languages, so it is the one place their language must not
+                for readers of those languages, so it is the one place their language must not
                 be mispronounced.
 
                 No automated run catches its absence. axe's `valid-lang` rule carries the
-                wcag312 tag but only validates a lang attribute that is PRESENT; with none
+                wcag312 tag but only validates a lang attribute that is present; with none
                 there are no nodes to judge, and the scan reports zero violations.
+
+                The placeholder and the options are written as one string (Support\SelectOptions):
+                Livewire puts two comments around every control structure, once per pass of a loop.
             --}}
-            @foreach($optionList as $optionValue => $optionLabel)
-                @if(is_array($optionLabel) && ! array_key_exists('label', $optionLabel))
-                    <optgroup label="{{ $optionValue }}">
-                        @foreach($optionLabel as $subValue => $subLabel)
-                            @php
-                                $sLabel = is_array($subLabel) ? ($subLabel['label'] ?? $subValue) : $subLabel;
-                                $sDisabled = is_array($subLabel) && ! empty($subLabel['disabled']);
-                                $sLang = is_array($subLabel) ? \Pushery\WireKit\Support\LanguageTag::of($subLabel['lang'] ?? null) : null;
-                            @endphp
-                            <option value="{{ $subValue }}"@if($sLang !== '' && $sLang !== null) lang="{{ $sLang }}"@endif{{ $sDisabled ? ' disabled' : '' }}{{ $isSelected($subValue) ? ' selected' : '' }}>{{ $sLabel }}</option>
-                        @endforeach
-                    </optgroup>
-                @else
-                    @php
-                        $oLabel = is_array($optionLabel) ? ($optionLabel['label'] ?? $optionValue) : $optionLabel;
-                        $oDisabled = is_array($optionLabel) && ! empty($optionLabel['disabled']);
-                        $oLang = is_array($optionLabel) ? \Pushery\WireKit\Support\LanguageTag::of($optionLabel['lang'] ?? null) : null;
-                    @endphp
-                    <option value="{{ $optionValue }}"@if($oLang !== '' && $oLang !== null) lang="{{ $oLang }}"@endif{{ $oDisabled ? ' disabled' : '' }}{{ $isSelected($optionValue) ? ' selected' : '' }}>{{ $oLabel }}</option>
-                @endif
-            @endforeach
+            {{ \Pushery\WireKit\Support\SelectOptions::html($optionList, $isSelected, $placeholder, $value === null || $value === '') }}
             {{ $slot }}
         </select>
 
         {{-- Dropdown arrow indicator — color via design token for automatic dark mode --}}
-        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
-            <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
+        <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]">
+            {{-- Drawn whole, or a pointer into the page's glyphs while `wirekit.icons.sprite` is on. --}}
+            {{ \Pushery\WireKit\Support\KitIcons::svg('select-arrow', 'h-4 w-4 text-[color:var(--color-wk-text-subtle)]') }}
         </div>
     </div>
 
@@ -441,11 +410,15 @@
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $showHint || $showEmpty))
         <p data-wk-prose-skip aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hasSuccess && $successMessage)
-        <p data-wk-prose-skip id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
-    @elseif($showHint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hasSuccess && $successMessage
+                ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-success" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]')).'">'.e($successMessage).'</p>')
+                : ($showHint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : ''));
+    @endphp
+    {{ $messagePart }}
 </div>

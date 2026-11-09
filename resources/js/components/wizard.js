@@ -161,7 +161,7 @@ export default function wirekitWizard(config = {}) {
             if (this.isLast) return;
 
             /*
-             * A refusal SAYS SO. It was completely silent.
+             * A refusal says so. It was completely silent.
              *
              * The button carries `aria-disabled` rather than `disabled`, deliberately, so it
              * stays focusable and a reader can press it and find out why — that is the whole
@@ -206,7 +206,7 @@ export default function wirekitWizard(config = {}) {
 
             this._refusals = (this._refusals || 0) + 1;
 
-            // A live region announces a CHANGE. The same string assigned again is not one,
+            // A live region announces a change. The same string assigned again is not one,
             // so a second refused press would be silent — which is exactly the moment a
             // reader is most likely to try again.
             this.announcement = message + '\u200b'.repeat(this._refusals % 2);
@@ -215,7 +215,7 @@ export default function wirekitWizard(config = {}) {
         _refusals: 0,
 
         prev() {
-            // Going BACK is never gated. The condition guards leaving a step forward with
+            // Going back is never gated. The condition guards leaving a step forward with
             // it unfinished; refusing to return to a step someone already completed would
             // trap them on the one they cannot finish.
             if (this.isFirst) return;
@@ -231,7 +231,7 @@ export default function wirekitWizard(config = {}) {
             this._syncStepComplete();
             this.announce();
 
-            // The control that asked for the step is deliberately NOT read here and handed
+            // The control that asked for the step is deliberately not read here and handed
             // on. Whether it survived the change is only knowable after the bindings have
             // settled, which is a tick later — so the rescue asks then, and asks the one
             // question that answers it: is focus on `<body>`?

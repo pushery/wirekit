@@ -1,5 +1,5 @@
 {{-- optimistic-ui: n/a — navigation
-     A completed step may carry `href` or `wire:click`, so this file CAN render an interactive
+     A completed step may carry `href` or `wire:click`, so this file can render an interactive
      element. What it never renders is an action with a result to show early: the step either
      navigates or hands the click to the application, and the stepper's own state comes from
      `current` on the next render. --}}
@@ -62,14 +62,14 @@
         // and marker indent. Stepper renders its own numbered circles per step,
         // so the UA "1. 2. 3." prefixes would visually duplicate the step number.
         'list-none m-0 p-0',
-        $isVertical ? 'flex flex-col gap-[var(--padding-wk-y-md)]' : 'flex flex-row items-start gap-2',
+        $isVertical ? 'flex flex-col gap-[var(--padding-wk-y-md)]' : 'flex flex-row items-start gap-[var(--gap-wk-sm)]',
         'w-full',
     ]), $scope);
 
     // Each step wrapper.
     $itemClasses = WireKit::resolveClasses('stepper', 'item', implode(' ', [
         'flex',
-        // Horizontal: `flex-1 min-w-0` so each step takes an equal share AND
+        // Horizontal: `flex-1 min-w-0` so each step takes an equal share and
         // can shrink below its label's intrinsic width. Without `min-w-0` the
         // default `min-width: auto` pins each item to its longest-word width,
         // so a multi-word step label ("Supporting documents") pushed the item
@@ -100,8 +100,8 @@
     // to the next circle's left edge (the 0.5rem is the gap between steps).
     $connectorClasses = implode(' ', [
         $isVertical
-            ? 'absolute left-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] top-[var(--wk-stepper-circle,var(--size-wk-sm))] w-[1px] h-[calc(100%-0.5rem)] -translate-x-[0.5px]'
-            : 'absolute top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] left-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)] right-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)] h-[1px]',
+            ? 'absolute start-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] top-[var(--wk-stepper-circle,var(--size-wk-sm))] w-[1px] h-[calc(100%-0.5rem)] -translate-x-[0.5px] rtl:translate-x-[0.5px]'
+            : 'absolute top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] start-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)] end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)] h-[1px]',
         'bg-[var(--color-wk-border)]',
     ]);
 
@@ -112,8 +112,9 @@
         // within their min-w-0 column on a phone instead of overflowing the
         // horizontal row. A long word breaks at a syllable, with a hyphen, where the
         // document's `lang` says how; the arbitrary break stays the fallback for a word the
-        // browser cannot hyphenate. The shipped stylesheet keeps a word under twelve letters
-        // whole, so hyphenation does not split one that fits on the next line. A column
+        // browser cannot hyphenate. The shipped stylesheet hyphenates only a word of eight
+        // letters or more, never closer than four letters to either end, so hyphenation does
+        // not split one that fits on the next line. A column
         // narrower than a word does not get this far: the shipped stylesheet draws the
         // compact form there (see the caption below).
         $isVertical ? '' : 'max-w-full [overflow-wrap:anywhere] hyphens-auto',
@@ -160,10 +161,10 @@
             $isCompleted = $stepNumber < $current;
             $isCurrent = $stepNumber === $current;
 
-            // ONLY a completed step becomes operable, and the restriction is the point rather
+            // Only a completed step becomes operable, and the restriction is the point rather
             // than caution. A stepper looks like the way back, so a finished step that does not
             // answer a click costs the reader a click and a guess about the state of the page.
-            // A FUTURE step is the opposite case: making it operable would offer a jump the
+            // A future step is the opposite case: making it operable would offer a jump the
             // application never said was allowed, and the component cannot know whether it is.
             // The current step is already where the reader is.
             // A stepper that follows a flow in the browser has no operable steps: which steps
@@ -190,6 +191,10 @@
             @unless($isVertical) style="--wk-stepper-index: {{ $stepNumber - 1 }};" @endunless
             @if($isCurrent) aria-current="step" @endif
             @if($follow !== null) x-bind:aria-current="{{ $follow }} === {{ $stepNumber }} ? 'step' : null" @endif
+            {{-- Past the last step no step is current, and the compact form's line would have no
+                 step to belong to: the last one carries it then, saying that every step is done. --}}
+            @if($isLast && $current > $count) data-wk-stepper-done @endif
+            @if($isLast && $follow !== null) x-bind:data-wk-stepper-done="{{ $follow }} > {{ $count }} ? '' : null" @endif
         >
             {{-- Connector: drawn for all but the last step. Lives inside <li>
                  as absolutely positioned element so it never breaks flow. --}}
@@ -197,11 +202,11 @@
                 <span class="{{ $connectorClasses }}" aria-hidden="true"></span>
             @endunless
 
-            {{-- The tag is chosen above, and it is a PLAIN HTML tag rather than a component, so
+            {{-- The tag is chosen above, and it is a plain HTML tag rather than a component, so
                  building it from a variable is safe here — Blade's component scanner is what
                  cannot cope with that, and there is no component in this line.
 
-                 The interactive element wraps the circle AND the label, so its accessible name
+                 The interactive element wraps the circle and the label, so its accessible name
                  is computed from everything inside it — which is more than the label. The
                  circle contributes the visually hidden "Completed:" (the check is aria-hidden,
                  and the number never appears here at all, since only a completed step is ever
@@ -227,7 +232,7 @@
             >
                 @if($follow === null)
                     <div class="wk-stepper-circle {{ $circleBase }} {{ $stateClasses }}">
-                        @if($isCompleted)
+                        @wirekitLast($isCompleted)
                             {{-- Check mark — decorative; state is communicated via aria-current / visually-hidden text. --}}
                             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M16.704 5.29a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-3.5-3.5a.75.75 0 111.06-1.06L8.674 12.23l6.97-6.94a.75.75 0 011.06 0z" clip-rule="evenodd"/>
@@ -238,7 +243,7 @@
                             <span class="sr-only">{{ __('wirekit::Completed') }}:</span>
                         @else
                             <span aria-hidden="true">{{ $stepNumber }}</span>
-                        @endif
+                        @endwirekitLast
                     </div>
                 @else
                     {{-- Following a flow in the browser: the circle is drawn in all three states and
@@ -266,10 +271,10 @@
                      description after it keeps its weight. --}}
                 <div data-wk-stepper-label class="{{ $labelClasses }}">
                     <div>{{ $label }}</div>
-                    @if($description)
+                    @wirekitLast($description)
                         {{-- Optional helper text, small and muted. --}}
                         <div class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>
-                    @endif
+                    @endwirekitLast
                 </div>
             </{{ $stepTag }}>
 
@@ -282,6 +287,9 @@
                 <div data-wk-stepper-caption aria-hidden="true">{{ trim($label) !== ''
                     ? __('wirekit::Step :current of :total: :label', ['current' => $stepNumber, 'total' => $count, 'label' => \Pushery\WireKit\Support\SlotContent::textOf($label)])
                     : __('wirekit::Step :current of :total', ['current' => $stepNumber, 'total' => $count]) }}</div>
+                @if($isLast && ($current > $count || $follow !== null))
+                    <div data-wk-stepper-caption data-wk-stepper-caption-done aria-hidden="true">{{ __('wirekit::All steps done') }}</div>
+                @endif
             @endunless
         </li>
     @endforeach

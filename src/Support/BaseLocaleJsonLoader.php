@@ -9,11 +9,11 @@ use Illuminate\Contracts\Translation\Loader;
 /**
  * Makes a regional locale fall back to its base-language JSON catalog.
  *
- * Laravel's JSON translation channel matches the locale filename EXACTLY: the
+ * Laravel's JSON translation channel matches the locale filename exactly: the
  * loader reads `{$path}/{$locale}.json`, and nothing anywhere between the
  * application's locale and that filename derives a base language from a
  * regional tag. `fallback_locale` does not cover the gap either — the fallback
- * loop in `Translator::get()` runs only AFTER the JSON lookup has already
+ * loop in `Translator::get()` runs only after the JSON lookup has already
  * missed, and it walks the PHP-group path (`{$path}/{$locale}/{$group}.php`),
  * never the JSON one.
  *
@@ -27,13 +27,13 @@ use Illuminate\Contracts\Translation\Loader;
  * an untranslated key is supposed to look like.
  *
  * This decorator sits in front of the real loader, notices the JSON channel,
- * and merges the base-language catalog UNDERNEATH whatever the real loader
+ * and merges the base-language catalog underneath whatever the real loader
  * found. Underneath is the whole design: the developer's own
  * `lang/{locale}.json` is in that result and must keep winning per key, so a
  * merge in the other direction would silently overwrite a translation someone
  * wrote on purpose.
  *
- * SCOPE — deliberately narrow. It reads one directory, the one this package
+ * Scope — deliberately narrow. It reads one directory, the one this package
  * ships its own catalogs in, and it is blind to every other registered
  * translation path. Whether an application's own `lang/pt.json` ought to
  * answer for `pt-PT` is that application's decision; a UI library taking it on
@@ -58,9 +58,9 @@ final class BaseLocaleJsonLoader implements Loader
     /**
      * The prefix every key this package ships carries.
      *
-     * Laravel's JSON channel has NO namespace of its own: `FileLoader::load()`
+     * Laravel's JSON channel has no namespace of its own: `FileLoader::load()`
      * only reaches `loadJsonPaths()` when group and namespace are both `*`, so
-     * `addNamespace()` never touches it. What DOES work is that
+     * `addNamespace()` never touches it. What does work is that
      * `Translator::get()` looks the raw key up as a literal array key in the
      * merged flat catalog before it ever calls `parseKey()` — so a catalog
      * holding the literal key `wirekit::Close` answers `__('wirekit::Close')`.
@@ -73,7 +73,7 @@ final class BaseLocaleJsonLoader implements Loader
     public const NAMESPACE = 'wirekit::';
 
     /**
-     * Keys this package has RENAMED, old spelling to current.
+     * Keys this package has renamed, old spelling to current.
      *
      * A rename is the one catalog change an application cannot see coming. Their override sits
      * under the old key, the components ask for the new one, and the wording simply reverts to
@@ -82,7 +82,7 @@ final class BaseLocaleJsonLoader implements Loader
      * same answer rather than a changelog line and a shrug.
      *
      * The three entries here are one change: the ellipsis. `lang/en.json` is the English
-     * backstop and its value IS its key minus the prefix, so a key spelled with three dots is
+     * backstop and its value is its key minus the prefix, so a key spelled with three dots is
      * a `Select...` painted onto an English page while all seven other catalogs already render
      * `Auswählen …`, `Seleccionar…`, `Selecionar…`. English was the only locale reading wrong,
      * and the key was the reason.
@@ -130,9 +130,9 @@ final class BaseLocaleJsonLoader implements Loader
             return $lines;
         }
 
-        // THE ENGLISH BACKSTOP, and it is unconditional on purpose.
+        // The English backstop, and it is unconditional on purpose.
         //
-        // Before the keys carried a prefix this layer did not need to exist: the key WAS the
+        // Before the keys carried a prefix this layer did not need to exist: the key was the
         // English text, so a locale nobody ships a catalog for rendered correct English by
         // falling through to the key itself. `lang/en.json` was a 252-entry identity map, which
         // is exactly what that property looks like written down.
@@ -140,7 +140,7 @@ final class BaseLocaleJsonLoader implements Loader
         // The prefix destroys it. An unresolved `wirekit::Close` paints the literal string
         // `wirekit::Close` onto the page — a new class of visible failure, and one no test
         // notices unless it asks for a locale with no catalog at all. So the English catalog is
-        // merged underneath EVERY locale, not only the regional ones, and `lang/en.json` stops
+        // merged underneath every locale, not only the regional ones, and `lang/en.json` stops
         // being an identity map and becomes the backstop it now has to be.
         $english = $this->catalog('en');
 
@@ -151,22 +151,22 @@ final class BaseLocaleJsonLoader implements Loader
         // This package's catalog for the locale itself, under its canonical
         // dash spelling. It covers two jobs.
         //
-        // The REGIONAL one: `pt_BR` and `pt-BR` are one locale, but the real
+        // The regional one: `pt_BR` and `pt-BR` are one locale, but the real
         // loader interpolates the locale into a filename verbatim, so the
         // underscore form never reaches the `pt-BR.json` shipped here. It
         // misses, the base merge above supplies `pt.json`, and the reader gets
-        // fluent, complete, EUROPEAN Portuguese. No key is missing and nothing
+        // fluent, complete, European Portuguese. No key is missing and nothing
         // throws — it is simply the wrong variety, which is the outcome
         // shipping a regional catalog was meant to end. The underscore spelling
         // is not exotic: PHP's own locale primitives emit it, and it is a
         // common `config/app.php` value.
         //
-        // The BRIDGE one, and it is why this runs whether or not the spelling
-        // changed. `bridgeLegacyKeys()` below has to tell OUR entry for a key
+        // The bridge one, and it is why this runs whether or not the spelling
+        // changed. `bridgeLegacyKeys()` below has to tell our entry for a key
         // from the application's, and it does that by comparing against what
         // this package ships. For `de` the real loader has already read `de.json`
         // into `$lines`, so without it in `$ours` that comparison would hold the
-        // ENGLISH backstop value — which never equals
+        // English backstop value — which never equals
         // the German one, so every key would look like the application's and
         // the bridge would skip all of them in every locale it exists to serve.
         $own = $this->ownCatalog((string) $locale);
@@ -175,7 +175,7 @@ final class BaseLocaleJsonLoader implements Loader
             return $lines;
         }
 
-        // Base UNDERNEATH: `array_merge` lets the right-hand side win per key,
+        // Base underneath: `array_merge` lets the right-hand side win per key,
         // and `$lines` holds everything the real loader found — this package's
         // own exact-locale file should one ever ship, and the application's
         // `lang/{locale}.json`, which has to keep overriding us key by key.
@@ -193,13 +193,13 @@ final class BaseLocaleJsonLoader implements Loader
         // The un-prefixed copy, at the very bottom, and it is a compatibility layer rather
         // than a leftover.
         //
-        // This package's lang directory is registered as a JSON path, so an APPLICATION calling
+        // This package's lang directory is registered as a JSON path, so an application calling
         // `__('Close')` in its own template reads a plain key from this catalog. Without the
         // plain copy that text would revert to English silently — no error, no failing test,
         // and the reader notices before anyone else does.
         //
-        // So the catalog is offered BOTH ways: `wirekit::Close` for the components, and `Close`
-        // for the application's own lookups. The plain copy sits UNDERNEATH `$lines`, so an
+        // So the catalog is offered both ways: `wirekit::Close` for the components, and `Close`
+        // for the application's own lookups. The plain copy sits underneath `$lines`, so an
         // application's own entry still wins over it — this adds a fallback, it never takes a
         // decision away.
         //
@@ -218,15 +218,15 @@ final class BaseLocaleJsonLoader implements Loader
     }
 
     /**
-     * Let an application's override of a RENAMED key keep applying under its new spelling.
+     * Let an application's override of a renamed key keep applying under its new spelling.
      *
      * Read in both spellings, because an override can predate either change: `wirekit::Select...`
      * from an application that had already adopted the prefix, and a plain `Select...` from one
      * that has not. Whichever it wrote, it wrote it about this string.
      *
      * Not gated on `$legacyKeyBridge`, and the difference is deliberate. That flag governs
-     * whether a plain key is INFERRED to mean ours — an inference an application may reasonably
-     * decline, and one the docs say goes away in the next major. This is not an inference: the
+     * whether a plain key is inferred to mean ours — an inference an application may reasonably
+     * decline. This is not an inference: the
      * application named a key an earlier release of this package shipped, and the only question
      * is whether the rename takes their wording away. Tying the two together would mean an application that
      * turned off the inference silently lost its overrides on the day of an unrelated rename.
@@ -239,17 +239,17 @@ final class BaseLocaleJsonLoader implements Loader
     private function bridgeRenamedKeys(array $ours, array $merged, array $lines): array
     {
         foreach (self::RENAMED_KEYS as $was => $now) {
-            // The application has ADOPTED the new key, and an explicit choice outranks a
-            // carried-over one. Told apart from OUR OWN entry the same way the plain-key
+            // The application has adopted the new key, and an explicit choice outranks a
+            // carried-over one. Told apart from our own entry the same way the plain-key
             // bridge does it — the real loader reads this package's `{locale}.json` too, so
             // `$lines` carries our namespaced keys as well.
             if (array_key_exists($now, $lines) && $lines[$now] !== ($ours[$now] ?? null)) {
                 continue;
             }
 
-            // The two spellings answer to different rules. The PREFIXED old key is not an inference — the application
+            // The two spellings answer to different rules. The prefixed old key is not an inference — the application
             // named a key an earlier release of this package shipped, so a rename must not take it away
-            // whatever the flag says. A PLAIN old key IS the inference `$legacyKeyBridge`
+            // whatever the flag says. A plain old key is the inference `$legacyKeyBridge`
             // governs: an application that switched the flag off has said "do not read my
             // bare keys as yours", and honoring it here anyway re-opens exactly the door
             // they closed.
@@ -280,7 +280,7 @@ final class BaseLocaleJsonLoader implements Loader
      * override would not apply, silently and with no error anywhere.
      *
      * The price is named rather than hidden: for an application that has the collision, the
-     * bridge PRESERVES it. If their `Map` means "to map" and ours means "a map", the bridge
+     * bridge preserves it. If their `Map` means "to map" and ours means "a map", the bridge
      * still hands their wording to our component. That application has to act — rename their
      * key, adopt `wirekit::Map`, or turn the bridge off. What it gives them is that
      * `wirekit:verify` names the collision, and that adopting the namespaced key is a way out.
@@ -304,8 +304,8 @@ final class BaseLocaleJsonLoader implements Loader
                 continue;
             }
 
-            // The application has ADOPTED the namespaced key, and an explicit choice outranks
-            // an inferred one. Told apart from OUR OWN entry — the real loader reads this
+            // The application has adopted the namespaced key, and an explicit choice outranks
+            // an inferred one. Told apart from our own entry — the real loader reads this
             // package's `{locale}.json` too, so `$lines` carries our namespaced keys as well —
             // by comparing against what we ship: equal means it is ours, different means theirs.
             if (array_key_exists($key, $lines) && $lines[$key] !== $ourValue) {
@@ -344,7 +344,7 @@ final class BaseLocaleJsonLoader implements Loader
     }
 
     /**
-     * Forward everything the Loader CONTRACT does not declare.
+     * Forward everything the Loader contract does not declare.
      *
      * The interface names four methods. The FileLoader every Laravel
      * application actually runs also exposes `paths()`, `jsonPaths()` and
@@ -362,7 +362,7 @@ final class BaseLocaleJsonLoader implements Loader
     }
 
     /**
-     * This package's OWN catalog for the locale, under its canonical dash
+     * This package's own catalog for the locale, under its canonical dash
      * spelling — `de` for `de`, `pt-BR` for both `pt-BR` and `pt_BR`.
      *
      * It is read even when the real loader has already read the same file. That
@@ -404,7 +404,7 @@ final class BaseLocaleJsonLoader implements Loader
         $normalized = str_replace('_', '-', $locale);
         $base = explode('-', $normalized, 2)[0];
 
-        // A locale that IS its own base — `pt`, `de`, `en` — has nothing to
+        // A locale that is its own base — `pt`, `de`, `en` — has nothing to
         // fall back to, so this whole class is a strict no-op for it. That is
         // the common case, and it costs one string comparison.
         if ($base === $normalized) {

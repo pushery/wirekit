@@ -9,7 +9,7 @@
     // text context and matches. Set to a semantic intent for a standalone
     // colored indicator.
     'intent' => config('wirekit.components.spinner.intent', null),
-    // Screen-reader accessible name announced via the role="status" live region.
+    // Screen-reader accessible name, the text of the role="status" live region.
     'label' => __('wirekit::Loading'),
     'scope' => null,
 ])
@@ -23,7 +23,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('spinner', $attributes->getAttributes());
 
     // Validate up front so an invalid value resolves to a real allowed value
-    // (then mapped below) — NOT the raw fallback string. Glyph dimensions are
+    // (then mapped below) — not the raw fallback string. Glyph dimensions are
     // structural SVG sizes (not themeable tokens) — the same convention every
     // inline WireKit icon uses (h-4 w-4 etc.).
     if (! in_array($size, ['sm', 'md', 'lg', 'xl'], true)) {
@@ -38,11 +38,9 @@
 
     // Color: null/'' inherits currentColor; a semantic intent maps to its token.
     // Full literal class strings (not interpolated) so the Tailwind scanner sees
-    // them. info takes --color-wk-info-tone, as in the rest of the intent palette. A spinner
-    // is a non-text GRAPHIC (WCAG 1.4.11, 3:1) — its intent color is the semantic
-    // FILL token (like success/warning/danger below), NOT the readable accent-text
-    // alias links use; accent-text defaults to near-black, which would strip the
-    // brand color from an accent spinner, which the accent-as-text repoint exempts.
+    // them. Each intent draws in its text tone, as every state graphic in the kit does:
+    // a spinner is a non-text graphic, which needs 3:1 (WCAG 1.4.11), and the text
+    // tones hold 4.5:1 on the surfaces. `primary` is an alias of `accent`.
     $intentColors = [
         'accent' => 'text-[color:var(--color-wk-accent-text)]',
         'primary' => 'text-[color:var(--color-wk-accent-text)]',
@@ -70,14 +68,15 @@
 @endphp
 
 {{-- role="status" makes this a polite live region; the visually-hidden label is
-     its accessible name, so the loading state is announced even though the SVG
-     itself is decorative (aria-hidden). The same ring + arc glyph the button
+     its accessible name, so the loading state is text a screen reader reads even
+     though the SVG itself is decorative (aria-hidden). A change of the label is
+     announced; a region that appears already holding it generally is not. The same ring + arc glyph the button
      loading state uses, scaled by size and spun with the Tailwind animate-spin
      utility.
 
      `wk-spinner` is the marker the stylesheet's reduced-motion rule selects, and
-     it sits OUTSIDE resolveClasses on purpose: that helper returns a configured
-     override INSTEAD of the default string, so a marker placed inside it would
+     it sits outside resolveClasses on purpose: that helper returns a configured
+     override instead of the default string, so a marker placed inside it would
      vanish for exactly the developer who restyled the component. An accessibility
      guarantee must not be removable by a class override.
 

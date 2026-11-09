@@ -10,11 +10,11 @@
  * `04/03/2026` are both valid dates; nothing is rejected, no error appears, and the record
  * simply carries a different day than the person meant.
  *
- * What this does NOT do: change the order. It states it, in the language of the page, with a
+ * What this does not do: change the order. It states it, in the language of the page, with a
  * worked example rather than a letter pattern — `dd/mm/yyyy` has to be decoded, "4 March 2026 is
  * written 03/04/2026 here" does not.
  *
- * It renders NOTHING when the two agree, which is the overwhelmingly common case. An empty
+ * It renders nothing when the two agree, which is the overwhelmingly common case. An empty
  * string rather than a hidden element: the paragraph is already in `aria-describedby`, and an
  * element with no text contributes nothing to a computed description.
  *

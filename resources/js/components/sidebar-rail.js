@@ -16,7 +16,7 @@ import { timerDelay } from '../utils/timer-delay.js';
  * is why the flag has to stay a plain property here rather than becoming a
  * getter.
  *
- * A trigger OUTSIDE this component cannot call `toggle()` — Alpine merges scope
+ * A trigger outside this component cannot call `toggle()` — Alpine merges scope
  * downwards only, so a button in a topbar is not in the sidebar's tree and never
  * sees it. Moving the toggle out would otherwise mean switching the collapsible mode
  * off and rebuilding this state, the persisted flag and the marker the items read, in
@@ -58,7 +58,7 @@ export default function wirekitSidebarRail(config = {}) {
          * every rule of the folded column keys off that attribute — centering, badge shape,
          * headings, the column width itself — and holding it back would hold all of them
          * back. This one is
-         * read by exactly the rules that hide TEXT, so the geometry moves on time and only
+         * read by exactly the rules that hide text, so the geometry moves on time and only
          * the words wait.
          */
         settling: false,
@@ -69,11 +69,11 @@ export default function wirekitSidebarRail(config = {}) {
         justExpanded: false,
 
         /**
-         * Whether this column may ANIMATE its width yet. False for the first frame.
+         * Whether this column may animate its width yet. False for the first frame.
          *
          * The transition is declared on the element, so on a cold load — no cache, stylesheet
          * still in flight — the column lays out at its unstyled width, and the moment the CSS
-         * lands the browser animates the ARRIVAL of the styled width. The reader sees a column
+         * lands the browser animates the arrival of the styled width. The reader sees a column
          * unfold on a page where nothing was toggled. With a warm cache the styles are there
          * before first paint and nothing shows; a hard reload is where it would show.
          *
@@ -160,8 +160,8 @@ export default function wirekitSidebarRail(config = {}) {
             // an external button either lies until the first click or has to read a
             // DOM attribute the component owns.
             //
-            // DEFERRED, and that is the whole correctness of it. Announcing synchronously
-            // inside init() fires before a trigger that sits AFTER the sidebar in the
+            // Deferred, and that is the whole correctness of it. Announcing synchronously
+            // inside init() fires before a trigger that sits after the sidebar in the
             // document has registered its `wirekit:sidebar:toggled.window` listener — Alpine
             // initializes in document order, so the listener does not exist yet and the
             // announcement lands on nobody. That order is not an edge case: it is the order
@@ -306,7 +306,7 @@ export default function wirekitSidebarRail(config = {}) {
         _announce(cause) {
             window.dispatchEvent(
                 new CustomEvent('wirekit:sidebar:toggled', {
-                    // Optional chaining because the id is optional AND because $el is an
+                    // Optional chaining because the id is optional and because $el is an
                     // Alpine magic that a plain unit harness does not provide -- reading it
                     // unguarded would make the component untestable outside a browser.
                     detail: { id: this.$el?.id || null, collapsed: this.collapsed, chosenCollapsed: this._chosen, cause },

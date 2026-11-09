@@ -1,13 +1,13 @@
 {{-- optimistic-ui: n/a — sub-component
      A partial of inline-edit; that component owns the editing state. --}}
-{{-- Shared editor area for BOTH paths: the built-in control types and a
+{{-- Shared editor area for both paths: the built-in control types and a
      developer-supplied control in the `editor` slot.
 
      One partial rather than two branches, because the failure mode otherwise is
      silent and one-directional: the slot path quietly loses a wiring detail the
      enum path sets — an aria-describedby, an aria-busy — and nothing renders
      differently enough for anyone to notice. A guard compares the two paths'
-     emitted ARIA, and it renders the SLOT fixture to do it, so it cannot end up
+     emitted ARIA, and it renders the slot fixture to do it, so it cannot end up
      checking itself.
 
      @param string       $id
@@ -55,13 +55,13 @@
      it shrink below the control's intrinsic width on a narrow row instead of
      pushing the buttons out of the container. --}}
 
-{{-- ONE wrapper for all five paths, not five. It is the flex item the row's
+{{-- One wrapper for all five paths, not five. It is the flex item the row's
      width has to land on, and every branch below needs exactly the same
      treatment — so a per-branch class is four chances for one of them to drift
      out of step. --}}
 <div class="flex-1 min-w-0">
-@if($editor !== null)
-    {{-- The developer's control. It is compiled INSIDE the parent's x-data, so
+@wirekitLast($editor !== null)
+    {{-- The developer's control. It is compiled inside the parent's x-data, so
          `draft`, `commit()` and `cancel()` resolve through Alpine's scope chain
          with no props needing to be threaded in — the same mechanism the
          dropdown trigger already relies on.
@@ -107,7 +107,7 @@
 @elseif($control === 'select')
     {{-- `onBlur()` is the only path by which an editor hears that the reader left, and it
          carries the close-and-discard as well as the commit decision. Its own first line
-         excludes a select from COMMITTING on blur — which is about saving, not about
+         excludes a select from committing on blur — which is about saving, not about
          closing, and is the sentence that made this omission read as deliberate. Without
          the binding a click anywhere else left the editor open with an uncommitted draft;
          in a table of inline-edit cells, several of them at once. --}}
@@ -176,7 +176,7 @@
         :aria-invalid="$hasError ? 'true' : null"
         class="w-full"
     />
-@endif
+@endwirekitLast
 </div>
 
 @if($actions)

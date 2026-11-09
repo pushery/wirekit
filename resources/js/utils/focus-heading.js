@@ -1,13 +1,13 @@
 /**
  * Send the reader's focus to a heading they have just jumped to.
  *
- * A native in-page anchor moves TWO things: the scroll position and the sequential-navigation
+ * A native in-page anchor moves two things: the scroll position and the sequential-navigation
  * starting point. Every component here calls `preventDefault()` on the click so it can do the
  * scroll itself — smooth, offset for a sticky header, inside the right scroll container — and
  * so it inherits responsibility for the second half.
  *
  * None of them did it. Focus stayed on the link that was clicked, so the next Tab went to the
- * NEXT link in the navigation instead of into the section the reader had just asked for. A
+ * next link in the navigation instead of into the section the reader had just asked for. A
  * keyboard reader jumping to "Installation" landed there visually and, on their next keypress,
  * was back in the table of contents.
  *

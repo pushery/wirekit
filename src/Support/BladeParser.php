@@ -13,13 +13,13 @@ namespace Pushery\WireKit\Support;
  * extraction.
  *
  * Every developer that needs to introspect Blade content (CLI commands,
- * drift audits, future schema-export pipelines) routes through here OR
+ * drift audits, future schema-export pipelines) routes through here or
  * through PropsParser. Direct regex scanning of Blade source for this data is a
  * build failure: a drift guard refuses a new regex against the props directive
  * anywhere in `src/`, and allowlists only PropsParser itself.
  *
  * Why this exists alongside PropsParser: the parser strategies overlap
- * but the use cases differ. PropsParser parses ONE PHP-syntax block
+ * but the use cases differ. PropsParser parses one PHP-syntax block
  * (the array literal inside `@props(...)`). BladeParser scans the
  * whole Blade file with semantic awareness of Blade's own syntax
  * (`@directive`, `{{ }}`, `{{-- --}}`, `<x-…>`).
@@ -74,31 +74,31 @@ final class BladeParser
      * Extract named slots with per-slot metadata (currently just
      * `required: bool`). The metadata flavor catches a bug class the
      * plain extraction misses: components that reference a named slot
-     * directly via `{{ $name }}` WITHOUT an `@isset($name)` guard
+     * directly via `{{ $name }}` without an `@isset($name)` guard
      * render `Undefined variable $name` when the developer omits the
      * slot. popover / hover-card / context-menu all do this for their
      * `trigger` slot, and the plain extraction alone would report them as
      * default-slot only, hiding the requirement.
      *
      * Detection heuristic:
-     *   - A slot wrapped in `@isset($name)` / `isset($name)` is OPTIONAL
+     *   - A slot wrapped in `@isset($name)` / `isset($name)` is optional
      *     (the component explicitly checks presence before rendering).
      *   - A slot referenced bare via `{{ $name }}` or `{!! $name !!}`
-     *     OR a method call (`$name->isNotEmpty()`) without an enclosing
-     *     `@isset` guard is REQUIRED.
-     *   - The default `$slot` is always REQUIRED when referenced (Laravel
+     *     or a method call (`$name->isNotEmpty()`) without an enclosing
+     *     `@isset` guard is required.
+     *   - The default `$slot` is always required when referenced (Laravel
      *     provides it automatically, but the component's rendering
      *     contract assumes it).
      *
      * Heuristic limitations: the scanner is line-aware, not
      * AST-aware — a `{{ $trigger }}` reference inside an `@isset($trigger)`
-     * branch IS scanned as bare. For the current component catalog
+     * branch is scanned as bare. For the current component catalog
      * this is correct because `@isset` blocks DON'T re-interpolate
-     * the slot inside themselves (they conditionally include OTHER
+     * the slot inside themselves (they conditionally include other
      * markup based on slot presence). If a component starts doing
      * `@isset($trigger) {{ $trigger }} @endisset`, this heuristic
      * would mark it as required when it's optional — at that point
-     * the heuristic needs to widen, OR the component author should
+     * the heuristic needs to widen, or the component author should
      * use the canonical `{{ $trigger ?? '' }}` shape.
      *
      * @param  list<string>  $additionalExcludes  Extra names to drop from the
@@ -108,12 +108,12 @@ final class BladeParser
      *                                            public-property names, which
      *                                            appear as bare `{{ $name }}`
      *                                            references in the template
-     *                                            but are NOT real slots.
+     *                                            but are not real slots.
      * @return list<array{name: string, required: bool}>
      */
     public static function extractSlotsWithMetadataFromSource(string $contents, ?string $bladePathForPropExclusion = null, array $additionalExcludes = []): array
     {
-        // Strip Blade `{{-- … --}}` comments BEFORE scanning so phantom
+        // Strip Blade `{{-- … --}}` comments before scanning so phantom
         // slot signals inside documentation comments don't leak into
         // the detected slot list.
         $contents = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
@@ -125,7 +125,7 @@ final class BladeParser
         // The PHP comments go too, for the same reason: see withoutPhpComments().
         $contents = self::withoutPhpComments($contents);
 
-        // Collected as flag-less maps: the KEY is the name, and the value is
+        // Collected as flag-less maps: the key is the name, and the value is
         // never read, so it is `null` rather than a flag nothing looks at.
         $issetNames = [];
         $bareNames = [];
@@ -146,7 +146,7 @@ final class BladeParser
          *
          * `{{ $bulkActions ?? '' }}` says "optional" as plainly as `@isset` does — it names a
          * default for the case where the slot is absent. Read as a bare reference alone, it
-         * came out MANDATORY, and that is what shipped to components.json and the MCP
+         * came out mandatory, and that is what shipped to components.json and the MCP
          * catalog: three slots a developer was told to supply, one of which (`swap`'s `off`)
          * falls back to the default slot by design.
          *
@@ -167,7 +167,7 @@ final class BladeParser
         // A `{{ … }}` inside an `@php` block is not output — it is characters in a PHP
         // string, not an expression.
         //
-        // `reading-bookmark` throws an exception whose MESSAGE shows the developer how to
+        // `reading-bookmark` throws an exception whose message shows the developer how to
         // call it: `key="article-{{ $post->slug }}"`. That documentation string made `post`
         // a required slot in every artifact derived from this parser — `components.json`,
         // the api-map, the MCP catalog an assistant reads.
@@ -228,9 +228,9 @@ final class BladeParser
         $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $loopLocals, $awareNames, $additionalExcludes));
 
         // Build the merged slot set:
-        //   - Every isset-checked name → OPTIONAL.
-        //   - Every bare-referenced name NOT in the isset set → REQUIRED.
-        //   - Bare-referenced `slot` (the default) → REQUIRED when used.
+        //   - Every isset-checked name → optional.
+        //   - Every bare-referenced name not in the isset set → required.
+        //   - Bare-referenced `slot` (the default) → required when used.
         $records = [];
         foreach (array_keys($issetNames) as $name) {
             if (in_array($name, $exclude, true)) {
@@ -242,7 +242,7 @@ final class BladeParser
             if (in_array($name, $exclude, true)) {
                 continue;
             }
-            // A name that ALSO appears in isset stays optional — the
+            // A name that also appears in isset stays optional — the
             // explicit guard wins. A `??` beside it is the same statement in
             // another spelling, so it wins too. Otherwise it's required.
             if (! isset($records[$name])) {
@@ -381,7 +381,7 @@ final class BladeParser
     }
 
     /**
-     * Variables a Blade LOOP binds, which are not slots and never were.
+     * Variables a Blade loop binds, which are not slots and never were.
      *
      * The exclusion list drops props, reserved names and `@php` locals, and loop bindings join
      * them here: every `@for($i = …)` and `@foreach($xs as $x)` would otherwise leave its
@@ -443,7 +443,7 @@ final class BladeParser
 
     /**
      * Best-effort extraction of `$name = ...` assignments inside
-     * `@php` blocks AND `@php(...)` inline directives. Used to filter the
+     * `@php` blocks and `@php(...)` inline directives. Used to filter the
      * `@php`-declared locals out of the slot-detection set so they don't
      * false-positive as required slots.
      *
@@ -506,7 +506,7 @@ final class BladeParser
         // an arrow function two lines away, and that answer ships in `components.json`, the
         // api-map and the MCP catalog an assistant reads.
         //
-        // The parameter LIST rather than the whole body, so a call like `foo($bar)` — which
+        // The parameter list rather than the whole body, so a call like `foo($bar)` — which
         // uses a name rather than binding one — is untouched.
         if (preg_match_all('/\b(?:function|fn)\s*\(([^)]*)\)/', $body, $signatures)) {
             foreach ($signatures[1] as $params) {
@@ -590,7 +590,7 @@ final class BladeParser
     }
 
     /**
-     * Does this source set `$attribute` on a line that ALWAYS renders?
+     * Does this source set `$attribute` on a line that always renders?
      *
      * The question is deliberately about the unconditional case, because the only caller
      * makes an absolute claim with the answer: `StrictnessGate` tells a developer their own
@@ -626,7 +626,7 @@ final class BladeParser
         $depth = 0;
 
         foreach (preg_split('/\R/', $contents) ?: [] as $line) {
-            // The depth BEFORE this line is what governs the line itself — an `@if` and the
+            // The depth before this line is what governs the line itself — an `@if` and the
             // attribute on the same line means the attribute is inside it, and an `@endif`
             // on the same line does not retroactively free what came before it.
             if ($depth === 0 && preg_match($needle, $line) === 1) {
@@ -643,7 +643,7 @@ final class BladeParser
      * How much one line changes the conditional nesting depth.
      *
      * `@else`, `@elseif`, `@case`, `@default` and the bare `@empty` of a `@forelse` are
-     * NOT openers — they continue a block someone else opened and have no `@end…` of their
+     * not openers — they continue a block someone else opened and have no `@end…` of their
      * own. Counting them opens a level that never closes, so after the first `@if … @else …
      *
      * @endif` the depth never returns to zero and every later attribute in the file reads as
@@ -808,7 +808,7 @@ final class BladeParser
     /**
      * Every tag in a Blade source string, with the boundaries of its attribute region.
      *
-     * This is the ONE tag walk. Everything in this package that needs to know where a tag
+     * This is the one tag walk. Everything in this package that needs to know where a tag
      * starts, where its attributes end, or what names it carries goes through here — the
      * usage extractor below, `wirekit:csp-audit`, `wirekit:show --validate-against`. The
      * reason is not tidiness: a hand-written scanner re-learns Blade from scratch and stops
@@ -825,7 +825,7 @@ final class BladeParser
      *      between attributes, an `{{ $attributes->merge([…]) }}` in the same position, an
      *      `@php` block whose strings contain `<svg …>`, an `@if(str_contains($slot, '…'))`
      *      — all of them are PHP or prose, and a walk that reads them as markup opens a
-     *      quoted value on an English genitive that closes at the next apostrophe ANYWHERE
+     *      quoted value on an English genitive that closes at the next apostrophe anywhere
      *      in the file, or off the end of it. So they are stepped over whole.
      *
      * Boundaries are returned, never values. The question a value answers is different for
@@ -867,7 +867,7 @@ final class BladeParser
             while ($cursor < $length) {
                 $char = $contents[$cursor];
 
-                // Deliberately NOT gated on being outside a quoted value. A Blade
+                // Deliberately not gated on being outside a quoted value. A Blade
                 // construct inside an attribute value is still a Blade construct,
                 // and its own quotes are its own: `title="{{ __('a.b') }}"` is one
                 // value, not a value that ends at the apostrophe. Skipping the
@@ -887,7 +887,7 @@ final class BladeParser
 
                 if ($quote !== null) {
                     // A backslash escapes the next character, so `\"` inside a
-                    // double-quoted value does NOT close it. Without this, a real
+                    // double-quoted value does not close it. Without this, a real
                     // documented snippet — `:sort-action="\"sortBy('{$field}')\""` on
                     // `table.th` — ended its value at the first `\"`, and the walk then
                     // read the PHP that followed as attribute names, reporting `sortBy()\`
@@ -921,7 +921,7 @@ final class BladeParser
 
                 // An unquoted `<` means this tag never closed: in well-formed Blade a `<`
                 // inside a tag is always inside a quoted value, so an unquoted one starts a
-                // NEW element. Without this bound the walk keeps consuming whatever follows
+                // new element. Without this bound the walk keeps consuming whatever follows
                 // as attribute names, and the failure is the expensive kind — it does not
                 // throw, it returns plausible-looking output.
                 if ($char === '<') {
@@ -1054,7 +1054,7 @@ final class BladeParser
         // A directive's argument is PHP too — `@if(str_contains($slot, '<x-wirekit'))` puts
         // both an apostrophe and a `<` in front of the walk, and `@if($active) … @endif`
         // between attributes puts one inside a tag. The parentheses are matched rather than
-        // searched for, because arguments nest and carry strings of their own. An `@` NOT
+        // searched for, because arguments nest and carry strings of their own. An `@` not
         // followed by `(` is left alone: that is how `@click="…"` stays an Alpine shorthand
         // and `@example.com` stays prose. An `@` right after another is Blade's escape, so
         // `@@include(` stays text as well.
@@ -1169,14 +1169,14 @@ final class BladeParser
      * a whole comment into one placeholder and yields an expression that is not in the file —
      * a violation reported against a line that does not say what the developer was told it says.
      *
-     * `@js(…)` is closed by MATCHING its parens rather than by searching for the next one,
+     * `@js(…)` is closed by matching its parens rather than by searching for the next one,
      * because its argument is PHP: `@js($a ? 'x)' : 'y')` is valid, and stopping at the first
      * `)` leaves `: 'y')` behind, which reads no better than the `@` did. That matcher already
      * exists here for directive arguments, and reusing it is the reason this lives in this
      * class rather than in the command — a fourth hand-written scanner would have to learn PHP
      * strings and comments all over again, which is how each of the first three went wrong.
      *
-     * A construct that cannot be substituted is LEFT IN PLACE rather than guessed at, so
+     * A construct that cannot be substituted is left in place rather than guessed at, so
      * `hasServerSideConstruct()` below can still see it. A directive that opens a block is the
      * ordinary case: `x-data="{ a: 1, @if($x) b: 2, @endif }"` is a fragment rather than an
      * expression, and no placeholder turns it into one.
@@ -1189,7 +1189,7 @@ final class BladeParser
      */
     public static function substituteServerSideConstructs(string $value, string $placeholder): string
     {
-        // Comments first, and removed OUTRIGHT rather than replaced: a comment leaves nothing
+        // Comments first, and removed outright rather than replaced: a comment leaves nothing
         // behind at all, and standing a placeholder in for one puts a token where the browser
         // sees whitespace.
         $value = (string) preg_replace('/\{\{--.*?--\}\}/su', '', $value);
@@ -1212,7 +1212,7 @@ final class BladeParser
      * is fine — and after being sent there once, they stop reading the report.
      *
      * Deliberately narrow: the residual echo openers, and the parenthesized directive form that
-     * substitution leaves behind when it cannot close it. A bare `@` is NOT matched, because it
+     * substitution leaves behind when it cannot close it. A bare `@` is not matched, because it
      * is ordinary inside a string, and over-matching here quietly downgrades a real violation to
      * "could not check" — the one direction in which being wrong leaves no trace. An escaped
      * `@{{`, `@{!!` or `@@if(` is not matched either: Blade writes each of them as text.
@@ -1487,7 +1487,7 @@ final class BladeParser
                 continue;
             }
 
-            // A tag another element interrupted is DISCARDED rather than reported with
+            // A tag another element interrupted is discarded rather than reported with
             // whatever it managed to collect. Pointed at PHP fixtures, where a component tag
             // is split across string concatenation, a partial read yields entries like
             // `<button $html>` and `<ticker \;>`: artifacts, on a guard whose whole purpose
@@ -1525,14 +1525,14 @@ final class BladeParser
     /**
      * Remove every span of a Blade file a browser would never execute.
      *
-     * A question about what a template DOES — does it use a directive, render a component,
-     * close `<head>` — is answered just as well by text that only MENTIONS the thing. A note
+     * A question about what a template does — does it use a directive, render a component,
+     * close `<head>` — is answered just as well by text that only mentions the thing. A note
      * explaining a rule satisfies a search for the rule, and a check built on raw text then
      * reports a working setup over a broken one, which is precisely the case such a check
      * exists for.
      *
      * The Blade half was stripped first, after a `{{-- … @livewireScripts … --}}` note mis-cued
-     * the doctor's ORDER check. Three syntaxes were left:
+     * the doctor's order check. Three syntaxes were left:
      *
      *   - an HTML comment — `<!-- @wirekitStyles goes here -->`
      *   - a `//` or `#` line comment inside `@php … @endphp`

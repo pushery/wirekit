@@ -1,8 +1,8 @@
 {{-- optimistic-ui: n/a — client-only
      The thumbnails switch which image is shown. All of it happens in the browser. --}}
 @props([
-    // The empty state. `empty` REPLACES the body rather than sitting beside it: the screen a
-    // new user sees FIRST is the one with no data, and a single muted sentence can only say
+    // The empty state. `empty` replaces the body rather than sitting beside it: the screen a
+    // new user sees first is the one with no data, and a single muted sentence can only say
     // that nothing is here — it cannot say what to do about it, which is the whole job of that
     // screen. `emptyText` is the default, so a caller that does not care changes nothing.
     // Same shape as data-table, which is where the reasoning was first written down.
@@ -13,7 +13,7 @@
     // 'altLang' and 'captionLang' name the language of either text where it differs from the
     // page's, in the grid and in the lightbox; a 'caption' may be an Htmlable.
     //
-    // 'full' is the address the LIGHTBOX loads, and it defaults to 'src'. A grid tile is a
+    // 'full' is the address the lightbox loads, and it defaults to 'src'. A grid tile is a
     // few hundred pixels wide with ten of them on a page; the zoom view is the whole screen.
     // Serving one address to both is the compromise an image ladder exists to end.
     'images' => [],
@@ -31,13 +31,13 @@
     // Enable the click-to-zoom lightbox. When false the grid is static.
     'lightbox' => true,
     // Per-item overlay render-callback: a closure `fn($item, $i)` that
-    // returns the markup to layer OVER thumbnail #$i (a badge, a report control, an
+    // returns the markup to layer over thumbnail #$i (a badge, a report control, an
     // "AI-generated" label). It renders as a sibling of the zoom trigger — not nested
     // inside it — so the overlay wrapper is pointer-events-none and the thumbnail still
     // opens the lightbox; interactive controls inside the overlay opt back in with
     // `pointer-events-auto`. Return a view or HtmlString for HTML (a plain string is
     // escaped). Null → no overlay.
-    // It covers the THUMBNAIL only; the zoom view takes `zoomOverlay` below.
+    // It covers the thumbnail only; the zoom view takes `zoomOverlay` below.
     'itemOverlay' => null,
     // The zoom view's own overlay: the same `fn($item, $i)` shape as itemOverlay, laid over the
     // image in the lightbox instead of over the thumbnail. A separate callback because the two
@@ -63,7 +63,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('image-gallery', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $lightbox = BooleanProp::from($lightbox, true, 'image-gallery', 'lightbox');
@@ -77,7 +77,7 @@
     // developer has to pick a side: the small step makes the zoom blurry, the large one makes
     // every tile in a feed pay the zoom's resolution.
     //
-    // Absent — or present and empty — it falls back to `src`. `??` alone would NOT do that: an
+    // Absent — or present and empty — it falls back to `src`. `??` alone would not do that: an
     // entry carrying `'full' => ''`
     // is a developer's own empty variable, and honoring it would point the lightbox at nothing.
     //
@@ -118,7 +118,7 @@
 
     // The lightbox normalizes its own entries on `src`, so the zoom address is handed over
     // under that name. The grid below keeps reading `$item['src']`, which is the thumbnail —
-    // mapping here rather than teaching the lightbox a second key keeps ITS contract at one
+    // mapping here rather than teaching the lightbox a second key keeps its contract at one
     // address per slide, which is right for a component that only ever shows the large one.
     $lightboxItems = array_map(
         static fn (array $item): array => array_replace($item, ['src' => $item['full']]),
@@ -161,19 +161,19 @@
 @endphp
 
 @if($count === 0)
-    {{-- The empty state comes FIRST, before either render branch: both of them produce a grid
+    {{-- The empty state comes first, before either render branch: both of them produce a grid
          with nothing in it, which reads as a broken layout rather than as "no images yet". The
          `empty` slot replaces the sentence entirely — see data-table, where the reasoning for
          that shape was first written down. --}}
-    <div id="{{ $rootId }}" {{ $attributes->except('id')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center'])) }}>
-        @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
+    <div id="{{ $rootId }}" {{ $attributes->except('id')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'flex flex-col items-center justify-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center'])) }}>
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
             {{ $empty }}
         @else
             <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-        @endif
+        @endwirekitLast
     </div>
 @elseif($lightbox && $count > 0)
-    {{-- The gallery IS a lightbox instance: the thumbnail buttons live in the
+    {{-- The gallery is a lightbox instance: the thumbnail buttons live in the
          lightbox's default slot, so they share its Alpine scope and call
          openAt(i) directly. The dialog / focus-trap / keyboard / captions all
          come from the shared <x-wirekit::lightbox> component — the gallery
@@ -184,7 +184,7 @@
                 {{-- Each thumbnail is a real button so the lightbox is
                      keyboard-operable; focus returns here on close. The relative
                      wrapper is the positioning context for the optional per-item
-                     overlay rendered as a SIBLING below. --}}
+                     overlay rendered as a sibling below. --}}
                 <div class="relative">
                     <button
                         type="button"
@@ -196,12 +196,12 @@
                         {{-- A span: a button takes text-level content alone, and a figure is none. --}}
                         <x-wirekit::image as="span" :src="$item['src']" :alt="$item['alt']" :alt-lang="$item['altLang']" :ratio="$ratio" :fit="$fit" rounded />
                     </button>
-                    @if(is_callable($itemOverlay))
+                    @wirekitLast(is_callable($itemOverlay))
                         {{-- per-item overlay, a sibling of (not nested in) the
                              zoom trigger so its controls don't fire openAt(). Wrapper is
                              pointer-events-none; controls opt back in with pointer-events-auto. --}}
                         <div class="pointer-events-none absolute inset-0">{{ $itemOverlay($item, $i) }}</div>
-                    @endif
+                    @endwirekitLast
                 </div>
             @endforeach
         </x-wirekit::grid>

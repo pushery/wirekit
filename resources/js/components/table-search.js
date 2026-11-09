@@ -19,27 +19,45 @@
  * reader filtered out never shows. It writes only where a row's state differs, so the round its
  * own writes start ends with the next call.
  *
- * Lifecycle resources: the MutationObserver on the table and the timer of the announcement, kept
- * in the closure with the table and the caches, never in the component's reactive data, and both
- * released in destroy().
+ * With `server` the application filters the rows, over every row, also those the page does not
+ * render: the field binds a property of its Livewire component, and the field hides no row
+ * itself. The counts come from the server in `data-wk-search-counts`, and once the answer to a
+ * query is rendered the field says them, as it does in the browser, and shows the sentence for
+ * no match. The rows are folded there by `WireKit::foldForSearch()`, the rule of this field.
+ *
+ * Lifecycle resources: the MutationObserver on the table, the timer of the announcement and, with
+ * `server`, the Livewire commit hook, kept in the closure with the table and the caches, never in
+ * the component's reactive data, and all released in destroy().
  *
  * @param {Object} config
  * @param {string} config.table     the id of the `<table>` the field filters, or of an element
  *                                  around it
- * @param {Object} [config.phrases] sample count -> sentence (`PluralPhrases`), the number of
- *                                  matching rows
+ * @param {Object} [config.phrases] sample count -> sentence (`PluralPhrases`): `:count` is the
+ *                                  number of matching rows, which chooses the form, and `:total`
+ *                                  the number of rows the field searches
  * @param {string} [config.empty]   the sentence for a query that matches no row
  * @param {string} [config.locale]  the application's locale, which chooses the plural form and
- *                                  groups the count
+ *                                  groups both numbers
  * @param {number} [config.delay]   milliseconds after the last keystroke before the count is
  *                                  announced
+ * @param {boolean} [config.server] the application filters the rows and gives the counts
  */
+import { afterRenderFrame } from '../utils/commit-end.js';
 import { foldForSearch } from '../utils/search-fold.js';
+import { formatCount } from '../utils/locale-number.js';
 import { pluralizeGrouped } from '../utils/plural.js';
 import { timerDelay } from '../utils/timer-delay.js';
 
 /** The attributes a row's text depends on besides its content, and the one this field writes. */
 const WATCHED = ['hidden', 'data-wk-search', 'data-wk-search-skip'];
+
+/** Where the server writes the counts of its answer, with `server`: `{"matches": 3, "total": 40}`. */
+export const WK_SEARCH_COUNTS_ATTRIBUTE = 'data-wk-search-counts';
+
+/** A count the server wrote, or 0 for anything that is no count. */
+function countOf(value) {
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+}
 
 export default function wirekitTableSearch(config = {}) {
     // The table and what is known about its rows, outside the component's data: Alpine makes its
@@ -51,6 +69,9 @@ export default function wirekitTableSearch(config = {}) {
     let folded = new WeakMap();
     // The rows this field hid, so an empty query gives back only those.
     const ours = new WeakSet();
+    // With `server`: the application filters, and the Livewire hook hears its answer.
+    const server = config.server === true;
+    let unhook = null;
 
     /** The text a row is found by. */
     function textOf(row) {
@@ -109,13 +130,22 @@ export default function wirekitTableSearch(config = {}) {
         // What the status region says. Set a moment after the last keystroke, so a reader who
         // types a word hears its count once rather than one count per letter.
         announcement: '',
+        // With `server`, between a query and the answer that brings its counts.
+        waiting: false,
 
-        /** A query that matches no row: the field says so beside itself. */
+        /** A query that matches no row: the field says so beside itself, once it knows. */
         get isEmpty() {
-            return this.query.trim() !== '' && this.matches === 0;
+            return this.query.trim() !== '' && this.matches === 0 && ! this.waiting;
         },
 
         init() {
+            if (server) {
+                this._readCounts();
+                this._hearServer();
+
+                return;
+            }
+
             this.$nextTick(() => this.apply());
         },
 
@@ -125,6 +155,8 @@ export default function wirekitTableSearch(config = {}) {
             clearTimeout(timer);
             timer = null;
             table = null;
+            unhook?.();
+            unhook = null;
         },
 
         /**
@@ -132,6 +164,13 @@ export default function wirekitTableSearch(config = {}) {
          * typing pauses.
          */
         search() {
+            // The application filters the rows; its answer brings the counts to announce.
+            if (server) {
+                this.waiting = true;
+
+                return;
+            }
+
             this.apply();
             this.$dispatch('wirekit:table-search', { query: this.query, matches: this.matches, total: this.total });
 
@@ -144,6 +183,10 @@ export default function wirekitTableSearch(config = {}) {
 
         /** Show the records the query matches and hide the others, and count both. */
         apply() {
+            if (server) {
+                return;
+            }
+
             const target = this._table();
             let matches = 0;
             let total = 0;
@@ -190,13 +233,68 @@ export default function wirekitTableSearch(config = {}) {
             this.total = total;
         },
 
-        /** The sentence for the current count: nothing without a query. */
+        /**
+         * The sentence for the current count: nothing without a query. `:total` is filled the way
+         * `:count` is, so a sentence of the caller's can say how many of how many rows match.
+         */
         _sentence() {
             if (this.query.trim() === '') {
                 return '';
             }
 
-            return this.matches === 0 ? (config.empty ?? '') : pluralizeGrouped(config.phrases ?? {}, this.matches, config.locale || 'en');
+            if (this.matches === 0) {
+                return config.empty ?? '';
+            }
+
+            const locale = config.locale || 'en';
+
+            return pluralizeGrouped(config.phrases ?? {}, this.matches, locale).replace(':total', formatCount(this.total, locale));
+        },
+
+        /** The counts of the server's last answer. */
+        _readCounts() {
+            let counts;
+
+            try {
+                counts = JSON.parse(this.$root?.getAttribute?.(WK_SEARCH_COUNTS_ATTRIBUTE) ?? 'null');
+            } catch {
+                counts = null;
+            }
+
+            this.matches = countOf(counts?.matches);
+            this.total = countOf(counts?.total);
+        },
+
+        /**
+         * The answer to a query: the commit of the component the field sits in, once it is
+         * rendered. Another component's commit brings no answer.
+         */
+        _hearServer() {
+            const livewire = typeof window !== 'undefined' ? window.Livewire : null;
+
+            if (typeof livewire?.hook !== 'function') {
+                return;
+            }
+
+            unhook = livewire.hook('commit', ({ component, succeed, fail }) => {
+                if (! this.waiting || component?.el?.contains?.(this.$root) !== true) {
+                    return;
+                }
+
+                succeed(() => afterRenderFrame(() => this._answered()));
+                // A refused request brings no counts: the field stops waiting and says the last.
+                fail?.(() => {
+                    this.waiting = false;
+                });
+            });
+        },
+
+        /** Say what the answer counts, as a search in the browser says it after a pause. */
+        _answered() {
+            this.waiting = false;
+            this._readCounts();
+            this.announcement = this._sentence();
+            this.$dispatch('wirekit:table-search', { query: this.query, matches: this.matches, total: this.total });
         },
 
         /**

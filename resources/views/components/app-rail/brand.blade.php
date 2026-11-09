@@ -9,6 +9,11 @@
     // A second, quieter line under the name — the plan, the environment, the role. Drawn
     // only beside the name, never on its own: a subline without its subject says nothing.
     'description' => null,
+    // Keeps the name out of sight in the wide rail too, as the mark's accessible name only. For
+    // a wide mark that already carries the name, a wordmark in the `expanded` slot, beside which
+    // the drawn name would stand twice. The description goes with it, since it is only ever
+    // drawn beside the name.
+    'hideName' => false,
     // Makes the whole block a link. Leave it out for a switcher — wrap the component in a
     // dropdown trigger instead, so the control is a button and announces itself as one.
     'href' => null,
@@ -18,7 +23,7 @@
     // A rail that opens has two widths, and a brand usually has two forms: a signet that fits
     // in the narrow column, and a wordmark that is only legible in the wide one. Put the signet
     // in the default slot and the wordmark in `<x-slot:expanded>`, and the two swap with the
-    // rail's LIVE state.
+    // rail's live state.
     //
     // Leave the slot out and the default slot is drawn at every width. The markers below are
     // emitted only when there is something to swap
@@ -49,6 +54,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail.brand', $attributes->getAttributes());
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
+    $hideName = \Pushery\WireKit\Support\BooleanProp::from($hideName, false, 'app-rail.brand', 'hideName');
 
     // `@aware` — unlike `@props` — leaves its key in the attribute bag, so a key also written
     // on this tag would render as a stray HTML attribute.
@@ -92,7 +98,7 @@
         // it a further half-mark to the left. Only the wide rail needs it: symmetric padding
         // does not move a centered mark.
         //
-        // The inset is taken from a variable rather than added outright, because there are TWO
+        // The inset is taken from a variable rather than added outright, because there are two
         // shapes and only one of them is short of it. Put inside a shell-bar — the shape the
         // documentation teaches, so that the mark lines up with the heads of the columns beside
         // it — the bar has already taken the inset for the whole row, and a mark adding it again
@@ -139,10 +145,17 @@
     // so a caller's target would otherwise reach a bare anchor; for that shape the
     // injection is unconditional. Rendered explicitly with the bag echoed via
     // except('rel'), because
-    // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
+    // $attributes->merge() treats rel as a default and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -156,7 +169,7 @@
     {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $interactiveClasses])) }}
 >
     {{-- The mark. `shrink-0` so a long name can never squeeze it.
-         NOT aria-hidden: this is a slot, and what a developer puts in it is theirs. Hiding it
+         Not aria-hidden: this is a slot, and what a developer puts in it is theirs. Hiding it
          unconditionally would silence a logo with a title, or a status dot that means
          something — and the guard that caught this exists because that mistake is invisible
          until somebody who needs it reports it. A decorative avatar in here announces nothing
@@ -171,7 +184,10 @@
         <span class="shrink-0">{{ $slot }}</span>
     @endif
 
-    @if(filled($name))
+    @if(filled($name) && $hideName)
+        {{-- Out of sight at every width, and still the link's name. --}}
+        <span class="sr-only">{{ $name }}</span>
+    @elseif(filled($name))
         {{-- Visually hidden while the rail is narrow, never absent: the name is what
              identifies the workspace, and a screen-reader user gets no visual mark to fall
              back on.
@@ -188,27 +204,24 @@
              package. --}}
         <span data-wk-rail-brand-name class="min-w-0 flex flex-col">
             <span class="{{ $nameClasses }}">{{ $name }}</span>
-            @if(filled($description))
+            @wirekitLast(filled($description))
                 {{-- Drawn only beside the name. In the narrow rail it is dropped entirely
                      rather than read out: "Free plan" with no subject is noise in a screen
                      reader's landmark summary, and the name above already carries the
                      identity.
 
                      So this one is `display: none` and not merely visually hidden — that
-                     distinction IS the paragraph above, and the stylesheet keeps it while
+                     distinction is the paragraph above, and the stylesheet keeps it while
                      moving the decision to the live marker. --}}
                 <span data-wk-rail-brand-desc class="{{ $descriptionClasses }}">{{ $description }}</span>
-            @endif
+            @endwirekitLast
         </span>
     @endif
 
     {{-- The other half of the target="_blank" rule: rel protects the opener, this
          warns the person who cannot see the new tab appear. It sits in the
-         CONTENT because this link carries no aria-label — the workspace name
+         content because this link carries no aria-label — the workspace name
          above is its accessible name, computed from what is written here, so a
          span appended to it is announced. Every sibling that names itself the
          same way places the hint the same way. --}}
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    {{ $newTabHint }}</{{ $tag }}>

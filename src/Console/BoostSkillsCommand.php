@@ -96,7 +96,7 @@ final class BoostSkillsCommand extends Command
     /**
      * Compare the published manifest against the installed package and say what differs.
      *
-     * The comparison is over the WHOLE structure, never the version stamp
+     * The comparison is over the whole structure, never the version stamp
      * alone. A stamp-only check is green over a manifest that describes
      * components wrongly — a minor release that adds a prop changes the catalog
      * and the stamp together, so an agreeing stamp proves only that both sides

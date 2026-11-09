@@ -54,12 +54,12 @@
 
 <div @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="group" @endunless @if($label && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif {{ $attributes->merge(['data-size' => $size])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$groupClasses])) }}>
     {{ $slot }}
-    @if(\Pushery\WireKit\Support\NumericProp::int($remaining, 0, 'avatar.group', 'remaining') > 0)
-        {{-- Hidden from assistive technology ONLY when something else says the total.
+    @wirekitLast(\Pushery\WireKit\Support\NumericProp::int($remaining, 0, 'avatar.group', 'remaining') > 0)
+        {{-- Hidden from assistive technology only when something else says the total.
              The reasoning was right and its premise was not: `aria-label` is optional here,
-             so an unlabeled group hid the chip AND had no name — the "+3" existed for
+             so an unlabeled group hid the chip and had no name — the "+3" existed for
              sighted readers alone, and nothing conveyed how many people were not shown.
              With a label the chip is genuinely redundant and stays hidden. --}}
         <span class="{{ $chipClasses }}" @if(filled($label)) aria-hidden="true" @endif>+{{ \Pushery\WireKit\Support\NumericProp::int($remaining, 0, 'avatar.group', 'remaining') }}</span>
-    @endif
+    @endwirekitLast
 </div>

@@ -5,13 +5,13 @@
     // a stronger claim on the viewport than most announcements deserve.
     'position' => 'top',
     'sticky' => false,
-    // A strip ABOVE the page: pinned to the top of the viewport, one line tall, never
+    // A strip above the page: pinned to the top of the viewport, one line tall, never
     // dismissible — for the line that says "this is staging", which has to be visible on every
     // screen and must not change the application underneath it.
     //
     // It sets `--wk-strip-inset` on :root, and every surface that pins itself to the top of the
     // viewport or takes the viewport's height folds that in — `app-shell viewport` gives the
-    // strip its height back, sticky page bars stick BELOW it. So the application moves down by
+    // strip its height back, sticky page bars stick below it. So the application moves down by
     // exactly the strip and changes nothing else, whichever shell it uses.
     //
     // One line on purpose, and it is what makes "changes nothing" true from the first frame.
@@ -27,7 +27,7 @@
     // `solid` fills it with the intent's color and its own contrast-paired text. The same two
     // treatments `badge` has, with the same names — a strip saying "staging" wants `solid`.
     'surface' => 'soft',
-    // A HUE instead of an intent, 0-360: `250` is blue, `300` violet. For the environment line,
+    // A hue instead of an intent, 0-360: `250` is blue, `300` violet. For the environment line,
     // where the color identifies the instance rather than a state — `warning` on staging would
     // read as a warning about something that is not one. Independent of the theme's accent,
     // which is monochrome by default, so `intent="info"` is not blue out of the box.
@@ -37,23 +37,23 @@
     // — `.env-staging { --wk-banner-hue: 300 }` — which survives a Content-Security-Policy that
     // strips inline styles; without either, it follows `--theme-hue` where a preset sets one.
     'hue' => null,
-    // A stable key makes the dismissal STICK across page loads. Without one the
+    // A stable key makes the dismissal stick across page loads. Without one the
     // bar is not dismissible unless `persist` is explicitly turned off (below) —
     // a close button that silently forgets is worse than no close button, so
     // forgetfulness has to be a deliberate choice, never an accident.
     'dismissKey' => null,
     // Whether a dismissal is remembered across page loads (localStorage). On by
-    // default. Turn it OFF for a session-scoped notice that should reappear next
+    // default. Turn it off for a session-scoped notice that should reappear next
     // visit — and it is what makes a live demo resettable, since a re-mount then
     // brings the bar back instead of reading a stored "dismissed" flag.
     'persist' => true,
     // Whether a close button exists at all, stated rather than derived. Left null, it is derived
-    // as it always was — and that derivation has a trap: `persist="false"` WITHOUT a key makes a
+    // as it always was — and that derivation has a trap: `persist="false"` without a key makes a
     // bar dismissible (session-only), so a developer turning persistence off to be safe gets a
     // close button they never asked for. `false` means never, whatever the other two props say.
     // A strip is never dismissible regardless.
     'dismissible' => null,
-    // Accessible name for the region — and the LANDMARK waits for it.
+    // Accessible name for the region — and the landmark waits for it.
     //
     // No default name, because one would make every banner the same landmark. `position`
     // validates against top and bottom, so a page with a promo bar above and a notice below
@@ -62,7 +62,7 @@
     // apart. A component may not invent the name that turns itself into a landmark, so the
     // role is gated on `filled()`, as in its siblings.
     //
-    // Null, so the role is gated on the CALLER having supplied a name rather than on this file
+    // Null, so the role is gated on the caller having supplied a name rather than on this file
     // being able to invent one. The dismiss button still gets a composed name below, because a
     // control needs one whether or not the banner is a landmark.
     'label' => null,
@@ -81,7 +81,7 @@
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false, 'announcement-banner', 'sticky');
@@ -98,7 +98,7 @@
 
     // A number of degrees and nothing else, because it is interpolated into a style attribute.
     // Stated positively rather than by stripping, the same way `grid` guards `min`.
-    // `theme` switches the hue tone on WITHOUT writing a value, so the hue comes from the
+    // `theme` switches the hue tone on without writing a value, so the hue comes from the
     // stylesheet (`--wk-banner-hue`) or the theme (`--theme-hue`) — the form that survives a
     // policy stripping inline styles, and the one a design system sets once for all banners.
     $hueMode = false;
@@ -127,8 +127,8 @@
     $persistValue = filter_var($persist, FILTER_VALIDATE_BOOLEAN);
 
     // The bar is dismissible when it can be dismissed: either it has a key (and
-    // remembers) OR persistence was deliberately turned off (session-only). It
-    // only PERSISTS when there is a key AND persist is on.
+    // remembers) or persistence was deliberately turned off (session-only). It
+    // only persists when there is a key and persist is on.
     //
     // A strip is never dismissible. A stated `dismissible` beats the derivation. Only when
     // neither applies is it derived, exactly as it always was.
@@ -149,7 +149,7 @@
     // Full literal class strings via match so the drift auditor can harvest them.
     //
     // A hue beats an intent, because it is the more specific statement. The formula sits on the
-    // ELEMENT rather than in a :root token, and that is load-bearing: a custom property is
+    // element rather than in a :root token, and that is load-bearing: a custom property is
     // computed where it is declared, so a token holding `oklch(… var(--wk-banner-hue))` would be
     // resolved on :root, where no hue exists, and inherit as invalid. Only the constants are
     // tokens. The fallback chain ends at 264 (indigo) so a strip never paints transparent.
@@ -243,7 +243,7 @@
         <span data-wk-announcement-action class="shrink-0">{{ $action }}</span>
     @endif
 
-    @if($isDismissible)
+    @wirekitLast($isDismissible)
         {{-- A real button with a real name — never a bare glyph. --}}
         <button
             type="button"
@@ -259,5 +259,5 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
-    @endif
+    @endwirekitLast
 </div>

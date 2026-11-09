@@ -1,2 +1,0 @@
-/*! WireKit per page v2.72.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
-function r(t){if(!t||typeof t.getBoundingClientRect!="function")return null;let n=t.getBoundingClientRect();return{top:n.top,left:n.left}}function u(t,n){if(!t||!n||typeof n.getBoundingClientRect!="function")return!0;let e=n.getBoundingClientRect();return Math.abs(e.top-t.top)>.5||Math.abs(e.left-t.left)>.5}export{r as a,u as b};

@@ -78,7 +78,7 @@ class ExportApiMapCommand extends Command
     /**
      * The package root every docs-derived group is scanned relative to.
      *
-     * Its own method so a test can point the command at a tree WITHOUT a
+     * Its own method so a test can point the command at a tree without a
      * `docs/` directory — which is the state every Composer install is in,
      * because `docs/` is export-ignored. Resolving it inline in `handle()`
      * is what kept the one environment this command actually runs in
@@ -101,7 +101,7 @@ class ExportApiMapCommand extends Command
 
         $payload = [
             'version' => $this->detectVersion($packageRoot),
-            // The newest RELEASED version, which is a different question from
+            // The newest released version, which is a different question from
             // `version` above: that one is the build installed here, and on a
             // deployment pinned to a development branch it is literally that branch
             // name. So it cannot be compared against a version a page claims to
@@ -160,14 +160,14 @@ class ExportApiMapCommand extends Command
             $pageStatus = DocsVisibility::componentPageStatus($name);
 
             // --public: a component whose page is not publicly rendered
-            // is omitted ENTIRELY — same contract as ExportJsonCommand.
-            // MISSING is kept (page-less sub-component on a parent page).
+            // is omitted entirely — same contract as ExportJsonCommand.
+            // Missing is kept (page-less sub-component on a parent page).
             if ($this->option('public') && $pageStatus === DocsVisibility::STATUS_STAGED) {
                 continue;
             }
 
             // Transform the canonical open-tag form (`<x-wirekit::name>`
-            // OR class-based override `<x-wirekit-chart>`) into the
+            // or class-based override `<x-wirekit-chart>`) into the
             // self-closing form expected by AI / IDE tooling
             // (`<x-wirekit::name />`, `<x-wirekit-chart />`). One
             // source of truth in ComponentRegistry::tag().
@@ -336,7 +336,7 @@ class ExportApiMapCommand extends Command
         $items = array_map(fn (string $p): array => [
             'id' => $p,
             'install' => 'php artisan wirekit:publish-icons '.$p,
-            // components/icon, and WITHOUT the per-preset anchor: that page has no
+            // components/icon, and without the per-preset anchor: that page has no
             // per-preset headings, so `#lucide` would be dead at the new target too.
             // The presets are listed under one heading, which is where this lands.
             'docs_url' => WireKit::DOCS_URL.'/components/icon#available-presets',
@@ -354,7 +354,7 @@ class ExportApiMapCommand extends Command
         // sections merged — `docs/layouts/` is gone, and scanning it produced a warning
         // line ahead of the JSON, which made the whole manifest unparseable.
         //
-        // They keep a group of their own because they ARE a different thing: a page layout
+        // They keep a group of their own because they are a different thing: a page layout
         // is a generic shape (a shell, a dashboard, a sign-in screen) that the product
         // verticals below are built out of. Folding them into `blueprints` would describe
         // 21 pages as something they are not, and `blueprintsGroup()` excludes them for the
@@ -376,13 +376,13 @@ class ExportApiMapCommand extends Command
      */
     private function blueprintsGroup(string $packageRoot): array
     {
-        // `partials/` and `recipes/` live UNDER `docs/blueprints/` and are not
+        // `partials/` and `recipes/` live under `docs/blueprints/` and are not
         // blueprints — they are composition fragments and short how-tos, and each
         // already has a group of its own here.
         //
         // Without the exclusion this group describes nothing it claims to.
         // Every partial and every recipe already has a group of its own above,
-        // so leaving them here lists each of them TWICE — and when an export
+        // so leaving them here lists each of them twice — and when an export
         // carries no blueprint page in its own right, `blueprints` is left
         // holding nothing but entries that were passing through on their way
         // to a different group.
@@ -512,7 +512,7 @@ class ExportApiMapCommand extends Command
                 continue;
             }
 
-            // --public: these groups ARE pages — a page that is not
+            // --public: these groups are pages — a page that is not
             // publicly rendered (or a draft) is omitted, mirroring the
             // blocks export's public filter. This keeps non-public pages
             // out of the publicly-served /api-map.json.
@@ -565,7 +565,7 @@ class ExportApiMapCommand extends Command
      * The command ID is not the anchor, and assuming it was cost eleven broken
      * deep links in the published manifest. `## `wirekit:show {name}`` slugs to
      * `wirekitshow-name`, not `wirekitshow`: the argument placeholder is part of
-     * the heading, and GitHub's rule DELETES disallowed characters rather than
+     * the heading, and GitHub's rule deletes disallowed characters rather than
      * replacing them, so the braces vanish while the space before them becomes
      * the hyphen. Two headings follow from no id at all — `wirekit:glass
      * install` names a subcommand, and verify and doctor share one heading.
@@ -612,7 +612,7 @@ class ExportApiMapCommand extends Command
     private function commandsGroup(): array
     {
         // Discover commands dynamically from Symfony's Application — the
-        // service provider's registered command list IS the source of
+        // service provider's registered command list is the source of
         // truth. A hardcoded inventory drifts every time a new command
         // ships (the cross-plan audit caught wirekit:class-by-area +
         // wirekit:glass missing from a stale literal list).
@@ -641,7 +641,7 @@ class ExportApiMapCommand extends Command
                 // A hidden command is not part of the public CLI contract — that is
                 // what the flag means, and the CLI reference is written on that basis:
                 // a hidden command is exempt from needing a heading, so it also has no
-                // anchor to link to. Advertising one in the PUBLIC map therefore points
+                // anchor to link to. Advertising one in the public map therefore points
                 // an agent at a command the reference deliberately does not document,
                 // with a URL that lands on the top of the page. The full map keeps it:
                 // there it is inventory, not an advertisement.
@@ -756,9 +756,9 @@ class ExportApiMapCommand extends Command
 
         // --public: drop the marker class of a component whose docs
         // page is not publicly rendered — a class whose wk-stripped name
-        // IS a registry component with a non-public docs page names that
+        // is a registry component with a non-public docs page names that
         // component to AI tooling enumerating the list. The public-CSS-API
-        // catalog PAGE row is a separate, deliberate surface and is NOT
+        // catalog page row is a separate, deliberate surface and is not
         // affected by this filter.
         // Non-component class names (wk-glass-refract, wk-stagger, …)
         // never match a registry key and always stay.

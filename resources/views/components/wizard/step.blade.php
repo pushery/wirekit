@@ -14,7 +14,7 @@
 ])
 
 {{-- Which step the flow starts on, read from the container rather than asked for a second
-     time at every panel. It decides what the FIRST PAINT looks like — see the render note
+     time at every panel. It decides what the first paint looks like — see the render note
      below. A panel used outside a wizard falls back to 1, which is the same answer the
      container's own default gives. --}}
 @aware([
@@ -31,7 +31,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('wizard.step', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -40,14 +40,14 @@
     use Pushery\WireKit\WireKit;
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element.
     $attributes = $attributes->except(['current']);
 
     $position = \Pushery\WireKit\Support\NumericProp::int($index, 0, 'wizard.step', 'index');
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `complete="false"` would mean the opposite of what the call site reads as.
     $isComplete = $complete === null ? null : BooleanProp::from($complete, true, 'wizard.step', 'complete');
 
@@ -67,7 +67,7 @@
 @endphp
 
 {{-- `x-show` rather than `x-if`, deliberately, and the difference is the whole reason a
-     multi-step FORM is different from a tab set: `x-if` destroys the panel, so every field
+     multi-step form is different from a tab set: `x-if` destroys the panel, so every field
      in a step you stepped back from loses its value and any `wire:model` binding with it.
      Hidden-but-present keeps what was typed.
 

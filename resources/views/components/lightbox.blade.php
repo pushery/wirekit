@@ -19,11 +19,11 @@
     'lockScroll' => true,
     // Show each item's caption inside the lightbox.
     'showCaptions' => true,
-    // Backdrop color / opacity for THIS instance (any CSS color). Null → the
+    // Backdrop color / opacity for this instance (any CSS color). Null → the
     // themeable --color-wk-overlay-media token, the darker backdrop for media.
     'overlay' => null,
     // Per-slide overlay render-callback: a closure `fn($slide, $i)` returning markup to lay
-    // OVER the media of slide #$i in the viewer (a label, a watermark, a report control), shown
+    // over the media of slide #$i in the viewer (a label, a watermark, a report control), shown
     // only while that slide is. The wrapper is pointer-events-none; interactive controls inside
     // opt back in with `pointer-events-auto`. Return a view or HtmlString for HTML (a plain
     // string is escaped). Null → no overlay.
@@ -46,7 +46,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('lightbox', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $loop = BooleanProp::from($loop, true, 'lightbox', 'loop');
@@ -70,7 +70,7 @@
     // surface is not blank while it buffers); null for non-video items.
     /*
      * An `embed` item becomes an iframe `src`, and a `javascript:` URL in an iframe `src`
-     * runs in the PARENT document's context — so an item built from a database row was a
+     * runs in the parent document's context — so an item built from a database row was a
      * script-execution channel, not merely a bad link. `data:` is the same class one step
      * removed: a `data:text/html` frame gets its own origin but can still paint a
      * convincing overlay on top of the page it was opened from.
@@ -83,14 +83,20 @@
     $safeEmbedSrc = static fn (string $src): string => \Pushery\WireKit\Support\SafeUrl::href($src, \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 
     $slides = [];
-    foreach (\Pushery\WireKit\Support\ListProp::records($items, 'lightbox', 'items') as $item) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($items, 'lightbox', 'items') as $index => $item) {
         if (is_array($item)) {
             $type = $item['type'] ?? 'image';
+            // A slide is an image, a video or an embed. Any other type is reported like a prop, with
+            // the item in the name, and the slide stays an image where nothing throws; an empty type
+            // is no type.
+            if (filled($type) && ! in_array($type, ['image', 'video', 'embed'], true)) {
+                \Pushery\WireKit\Support\StrictnessGate::enforce('lightbox', 'items['.$index.'].type', is_scalar($type) ? (string) $type : get_debug_type($type), ['image', 'video', 'embed']);
+            }
             $slides[] = [
                 'src' => ($type === 'embed')
                     ? $safeEmbedSrc((string) ($item['src'] ?? ''))
                     : (string) ($item['src'] ?? ''),
-                // An embed's `alt` becomes the iframe's `title`, and `title=""` is a NAMELESS
+                // An embed's `alt` becomes the iframe's `title`, and `title=""` is a nameless
                 // frame — announced as an unlabeled region the reader has no way to identify.
                 // Images may legitimately be decorative, so the fallback is scoped to embeds.
                 //
@@ -115,7 +121,7 @@
         }
     }
 
-    // Translated on the server and handed to the factory as a TEMPLATE. A sentence
+    // Translated on the server and handed to the factory as a template. A sentence
     // assembled from fragments in JavaScript cannot be translated, and "of" is not a
     // word every language puts in the middle — the same route the carousel's position
     // announcement takes.
@@ -150,7 +156,7 @@
          wirekit-lightbox-open { name, index }. --}}
     {{ $slot }}
 
-    @if($count > 0)
+    @wirekitLast($count > 0)
         {{-- The overlay — teleported to the overlay root, focus-trapped, arrow/Escape keyboard.
              createFocusTrap returns focus to the trigger on close. `tabindex="-1"` makes the
              dialog the place focus stays after a click on something that takes none (a button
@@ -170,8 +176,8 @@
 @if($zoomable)
                 x-on:keydown="onZoomKey($event)"
 @endif
-                x-on:keydown.arrow-right.prevent="next()"
-                x-on:keydown.arrow-left.prevent="prev()"
+                x-on:keydown.arrow-right.prevent="$wkInlineStep($event) === 1 ? next() : prev()"
+                x-on:keydown.arrow-left.prevent="$wkInlineStep($event) === 1 ? next() : prev()"
                 class="wk-overlay-fixed wk-overlay-layer-modal fixed inset-0 z-[var(--z-wk-modal)] flex items-center justify-center p-[var(--space-wk-md)] outline-hidden"
             >
                 {{-- Backdrop — click closes. Per-instance color via inline style. --}}
@@ -216,7 +222,7 @@
                                 <template x-if="! item.type || item.type === 'image'">
                                     {{-- Large images scale to fit the viewport: object-contain +
                                          max-h-[85vh] (vertical cap) + max-w-[90vw] (horizontal
-                                         cap) keeps the aspect ratio for BOTH very tall and very
+                                         cap) keeps the aspect ratio for both very tall and very
                                          wide images, using most of the screen (not a fixed box).
                                          Off-screen slides load lazily (loading="lazy"); a spinner
                                          shows while a large image downloads, then the image
@@ -306,16 +312,19 @@
                          Every control stands its spacing plus the screen's inset on its
                          edge in from that edge: under `viewport-fit=cover` it clears a
                          notch, a camera island or a home indicator, and the inset is 0
-                         on a screen without one. --}}
+                         on a screen without one. The controls stand at the start and the
+                         end of the line, so on a page that reads from the right Prev is at
+                         the right; the inset is the one of the edge a control stands at,
+                         which is why each side carries an `rtl:` twin with the other inset. --}}
                     <button
                         type="button"
                         x-on:click="prev()"
                         :aria-disabled="hasPrev ? null : 'true'"
                         :class="hasPrev ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Previous') }}"
-                        class="wk-touch-target absolute left-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-touch-target absolute start-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] rtl:start-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
-                        <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M12.5 4L7 10l5.5 6"/></svg>
+                        <svg aria-hidden="true" class="h-5 w-5 rtl:-scale-x-100" viewBox="0 0 20 20" fill="currentColor"><path d="M12.5 4L7 10l5.5 6"/></svg>
                     </button>
                     {{-- Same reason as Prev above: the end of the set must not take the
                          focused control out of the tab order with it. --}}
@@ -325,9 +334,9 @@
                         :aria-disabled="hasNext ? null : 'true'"
                         :class="hasNext ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Next') }}"
-                        class="wk-touch-target absolute right-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-touch-target absolute end-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] rtl:end-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
-                        <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 4L13 10l-5.5 6"/></svg>
+                        <svg aria-hidden="true" class="h-5 w-5 rtl:-scale-x-100" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 4L13 10l-5.5 6"/></svg>
                     </button>
                 @endif
 
@@ -335,19 +344,18 @@
                     type="button"
                     x-on:click="close()"
                     aria-label="{{ __('wirekit::Close') }}"
-                    class="wk-touch-target absolute right-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-[calc(var(--space-wk-md)+env(safe-area-inset-top,0px))] z-20 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-touch-target absolute end-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] rtl:end-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-[calc(var(--space-wk-md)+env(safe-area-inset-top,0px))] z-20 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 >
                     <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
 
 @if($zoomable)
-                {{-- Zoom, in the corner opposite Close. `aria-disabled` at the ends for the reason Prev
-                     and Next give above: the button under the reader's focus stays in the tab order.
-                     After Close in the markup, so the control that takes focus on opening is the one
-                     it was without zoom. A physical `left`, as Close's `right` is physical: the corner
-                     opposite Close stays opposite it in either reading direction, until the viewer's
-                     controls move to logical sides together. --}}
-                <div role="group" aria-label="{{ __('wirekit::Zoom') }}" class="absolute left-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-[calc(var(--space-wk-md)+env(safe-area-inset-top,0px))] z-20 flex gap-[var(--gap-wk-sm)]">
+                {{-- Zoom, in the corner opposite Close: at the start of the line, where Close is at its
+                     end, so the two stay opposite in either reading direction. `aria-disabled` at the
+                     ends for the reason Prev and Next give above: the button under the reader's focus
+                     stays in the tab order. After Close in the markup, so the control that takes focus
+                     on opening is the one it was without zoom. --}}
+                <div role="group" aria-label="{{ __('wirekit::Zoom') }}" class="absolute start-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] rtl:start-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-[calc(var(--space-wk-md)+env(safe-area-inset-top,0px))] z-20 flex gap-[var(--gap-wk-sm)]">
                     <button
                         type="button"
                         x-on:click="zoomIn()"
@@ -382,9 +390,10 @@
 
                 {{-- Pan, one row under Zoom while the image is enlarged: each button moves it the step
                      of its arrow key, so a pointer that cannot drag reaches every part of it (WCAG
-                     2.5.7). Hidden at the fitted size, where there is nothing to move. A physical
-                     side on purpose, the one of the Zoom row it stands under. --}}
-                <div role="group" aria-label="{{ __('wirekit::Pan') }}" x-show="canPan" x-cloak class="absolute left-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-[calc(var(--space-wk-md)+var(--size-wk-md)+var(--gap-wk-sm)+env(safe-area-inset-top,0px))] z-20 flex gap-[var(--gap-wk-sm)]">
+                     2.5.7). Hidden at the fitted size, where there is nothing to move. The group stands
+                     under the Zoom row, at the start of the line; its arrows keep their sides, since
+                     they move the image, and the image does not mirror. --}}
+                <div role="group" aria-label="{{ __('wirekit::Pan') }}" x-show="canPan" x-cloak class="absolute start-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] rtl:start-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-[calc(var(--space-wk-md)+var(--size-wk-md)+var(--gap-wk-sm)+env(safe-area-inset-top,0px))] z-20 flex gap-[var(--gap-wk-sm)]">
                     @foreach ([
                         'left' => [__('wirekit::Pan left'), 'M12 5l-5 5 5 5'],
                         'up' => [__('wirekit::Pan up'), 'M5 12l5-5 5 5'],
@@ -424,5 +433,5 @@
                 </div>
             </div>
         </template>
-    @endif
+    @endwirekitLast
 </div>

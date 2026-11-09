@@ -101,10 +101,10 @@
             x-bind:aria-disabled="! canGoPrevious()"
             x-bind:disabled="total <= 1"
             x-on:click="previous($el)"
-            x-on:keydown.arrow-left.prevent="previous()"
-            x-on:keydown.arrow-right.prevent="next()"
+            x-on:keydown.arrow-left.prevent="$wkInlineStep($event) === 1 ? next() : previous()"
+            x-on:keydown.arrow-right.prevent="$wkInlineStep($event) === 1 ? next() : previous()"
         >
-            <x-wirekit::icon name="chevron-left" size="sm" />
+            <x-wirekit::icon name="chevron-left" size="sm" class="rtl:-scale-x-100" />
         </button>
 
         {{-- The count is a plain label rather than a live region: it changes on every step, and
@@ -120,10 +120,10 @@
             x-bind:aria-disabled="! canGoNext()"
             x-bind:disabled="total <= 1"
             x-on:click="next($el)"
-            x-on:keydown.arrow-left.prevent="previous()"
-            x-on:keydown.arrow-right.prevent="next()"
+            x-on:keydown.arrow-left.prevent="$wkInlineStep($event) === 1 ? next() : previous()"
+            x-on:keydown.arrow-right.prevent="$wkInlineStep($event) === 1 ? next() : previous()"
         >
-            <x-wirekit::icon name="chevron-right" size="sm" />
+            <x-wirekit::icon name="chevron-right" size="sm" class="rtl:-scale-x-100" />
         </button>
 
         {{-- Rendered up front and filled afterwards. A live region created together with its

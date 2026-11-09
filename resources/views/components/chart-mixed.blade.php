@@ -8,7 +8,7 @@
     'height' => '380px',
     // Pass-through props that flow into the underlying class-based
     // chart delegate. Without these declared here, attribute-bag
-    // would NOT carry them onto the inner chart — the chart-mixed wrapper
+    // would not carry them onto the inner chart — the chart-mixed wrapper
     // is anonymous Blade, so attributes only flow where explicitly
     // bound. Each prop mirrors the Chart class constructor (src/Components/Chart.php).
     'wireStream' => null,
@@ -49,14 +49,14 @@
     // number within 0 to 100.
     $valueDecimals = \Pushery\WireKit\Support\NumericProp::intOrNull($valueDecimals, 'chart-mixed', 'valueDecimals');
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $inline = BooleanProp::from($inline, false, 'chart-mixed', 'inline');
     $replayable = BooleanProp::from($replayable, false, 'chart-mixed', 'replayable');
 
     // Chart-mixed — multi-type / multi-axis dashboard chart. Each dataset
-    // carries its OWN `type` (line/bar/area) plus an optional `yAxisID`
+    // carries its own `type` (line/bar/area) plus an optional `yAxisID`
     // pointing at a per-axis configuration in $options.
     //
     // Both adapters consume the same per-dataset `type` field:
@@ -66,7 +66,7 @@
     // Multi-axis: when datasets carry yAxisID values like 'y1' / 'y2',
     // the developer-supplied $options must include matching scale entries
     // (Chart.js shape) or yaxis entries (ApexCharts shape). The component
-    // does NOT auto-create them — multi-axis configuration is library-
+    // does not auto-create them — multi-axis configuration is library-
     // specific and benefits from explicit developer control.
     //
     // Delegates to <x-wirekit-chart type="mixed"> which both adapters'
@@ -126,7 +126,7 @@
         ),
     );
 
-    // Stripped from the wrapper so the name is not ALSO emitted where it is
+    // Stripped from the wrapper so the name is not also emitted where it is
     // prohibited; the wrapper keeps every other attribute the caller passed.
     $mixedAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
 
@@ -141,7 +141,7 @@
 <div {{ $mixedAttributes->merge(['style' => $mixedStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $mixedStyleClasses => $mixedStyleClasses !== ''])) }} >
     {{--
         Explicit `width: 100%; min-width: 0; display: block;` so the
-        wrapper reliably resolves its width inside ANY parent context.
+        wrapper reliably resolves its width inside any parent context.
         Without it, when the chart-mixed sits inside a flex / grid /
         iframe-srcdoc container that doesn't propagate intrinsic
         width down to its children, the inner chart's

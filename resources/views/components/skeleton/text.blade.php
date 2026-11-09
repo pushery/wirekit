@@ -26,7 +26,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $shimmer = BooleanProp::from($shimmer, true, 'skeleton.text', 'shimmer');
@@ -43,7 +43,7 @@
     ]), $scope);
 @endphp
 
-{{-- The off-screen skip is a PROGRESSIVE ENHANCEMENT and lives behind `@supports` in the
+{{-- The off-screen skip is a progressive enhancement and lives behind `@supports` in the
      stylesheet (`.wk-skeleton-skip-offscreen`), not as an inline declaration here.
      `content-visibility: auto` first shipped in Safari 18.0, above this library's Safari 16.4
      floor. Nothing depends on it: without support the skeleton renders the ordinary way, which
@@ -53,7 +53,7 @@
     role="status"
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-live')) aria-live="polite" @endunless
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
-    {{-- No aria-busy here, deliberately. This element IS the live region, and
+    {{-- No aria-busy here, deliberately. This element is the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells
          assistive technology to withhold the very announcement the region
@@ -64,7 +64,7 @@
          and have the shimmer's own pause rule see it. --}}
     {{ $attributes->except('role')->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 80px;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'wk-skeleton-skip-offscreen'])) }}
 >
-    <div class="space-y-2">
+    <div class="space-y-[var(--space-wk-sm)]">
         @for($i = 0; $i < $lines; $i++)
             <div class="{{ $baseShimmer }} h-3 {{ $i === $lines - 1 ? 'w-2/3' : 'w-full' }}" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
         @endfor

@@ -15,7 +15,7 @@
      wiring `$dispatch('wirekit-alert-dialog-close', { name })`.
 
      Defaults: renders a neutral filled button reading "Cancel". Pass
-     a default slot to override the button label, OR pass any inner
+     a default slot to override the button label, or pass any inner
      <x-wirekit::button> to customize variant / size / icon.
 
      Example:
@@ -62,16 +62,16 @@
     data-wk-alert-cancel
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    @if(! $slot->hasActualContent())
+    @wirekitLast(! $slot->hasActualContent())
         {{-- Translated through the catalog: a literal `Cancel` would leave a German app
              with a fully translated dialog and an English cancel button, while
              lang/de.json carries "Abbrechen". --}}
         <x-wirekit::button intent="neutral" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Cancel') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
-        {{-- The caller supplied their own control. Matched on the RENDERED markup,
+        {{-- The caller supplied their own control. Matched on the rendered markup,
              because that is what a slot holds: by the time it is cast to a string
              Blade has already compiled `<x-wirekit::button>` into `<button>`, so a
-             test for the tag NAME would never match and every caller would fall
+             test for the tag name would never match and every caller would fall
              through to the branch below -- which wraps its content in a second button.
              Nested buttons are invalid HTML, and a browser repairing them tears the
              surrounding structure apart: the control renders as an empty box beside
@@ -85,5 +85,5 @@
         {{-- Plain text slot — wrap it in the default Cancel button so
              keyboard + screen-reader semantics stay correct. --}}
         <x-wirekit::button intent="neutral" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
-    @endif
+    @endwirekitLast
 </div>

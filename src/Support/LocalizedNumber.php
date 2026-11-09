@@ -17,7 +17,7 @@ use Stringable;
  * the same component had just translated correctly. Half-localized output
  * reads as a defect rather than a missing locale.
  *
- * Two things this deliberately does NOT do:
+ * Two things this deliberately does not do:
  *
  * 1. It does not reach for `Number::format()` unconditionally. That helper
  *    throws when `ext-intl` is absent, and WireKit does not require the
@@ -196,9 +196,9 @@ final class LocalizedNumber
      * Argument order mirrors `Number::format()` so the two read the same at a
      * call site.
      *
-     * @param  int|null  $precision  Exactly this many decimals, trailing zeros KEPT
+     * @param  int|null  $precision  Exactly this many decimals, trailing zeros kept
      *                               (`2.0` stays `2.0` — a file size reads as "2.0 KB").
-     * @param  int|null  $maxPrecision  At most this many decimals, trailing zeros DROPPED
+     * @param  int|null  $maxPrecision  At most this many decimals, trailing zeros dropped
      *                                  (`4.0` becomes `4` — a rating reads as "4", not "4.0").
      *                                  With neither, at most three, the locale's own default.
      * @param  string|null  $locale  Defaults to the active application locale.
@@ -269,8 +269,15 @@ final class LocalizedNumber
      * Where the application gave its own formatter, the grouping mark and the decimal mark are the
      * ones it writes, with intl and without it.
      *
+     * `$digits` stands in for the currency's own digits, with intl and without it: the digits
+     * ISO 4217 gives its minor unit, for an amount read in that unit. ICU displays the digits CLDR
+     * gives a currency, and for some they differ from the standard's: the Iraqi dinar has three in
+     * the standard and none in CLDR, so `1.5` in dinars reads `IQD 1.500` with three and `IQD 2`
+     * without them.
+     *
      * @param  string  $currency  An ISO 4217 code, `EUR`.
      * @param  int|null  $maxPrecision  The most decimals to show, never fewer than the currency's.
+     * @param  int|null  $digits  The currency's digits to use in place of the formatter's.
      */
     public static function currency(
         float $amount,
@@ -278,9 +285,10 @@ final class LocalizedNumber
         ?string $locale = null,
         ?bool $intlAvailable = null,
         ?int $maxPrecision = null,
+        ?int $digits = null,
     ): string {
         $intlAvailable ??= extension_loaded('intl');
-        $plain = self::plainWithTheApplicationsMarks(self::currencyWithoutIntl($amount, $currency, $maxPrecision));
+        $plain = self::plainWithTheApplicationsMarks(self::currencyWithoutIntl($amount, $currency, $maxPrecision, $digits));
 
         if (! $intlAvailable) {
             return $plain;
@@ -291,30 +299,33 @@ final class LocalizedNumber
         self::markWithTheApplicationsMarks($formatter);
 
         // The currency's own digits, two for the euro and none for the yen, are the formatter's once
-        // it is set to that currency. The precision asked for adds to them and never takes away.
-        if ($maxPrecision !== null && $formatter->setTextAttribute(\NumberFormatter::CURRENCY_CODE, $currency)) {
-            $digits = (int) $formatter->getAttribute(\NumberFormatter::FRACTION_DIGITS);
-            $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, $digits);
-            $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, max($digits, $maxPrecision));
+        // it is set to that currency, or the ones given in `$digits`. The precision asked for adds
+        // to them and never takes away.
+        if (($maxPrecision !== null || $digits !== null) && $formatter->setTextAttribute(\NumberFormatter::CURRENCY_CODE, $currency)) {
+            $own = $digits ?? (int) $formatter->getAttribute(\NumberFormatter::FRACTION_DIGITS);
+            $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, $own);
+            $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, max($own, $maxPrecision ?? $own));
         }
 
         $formatted = self::unsignedZero($amount, static fn (float $number): string|false => $formatter->formatCurrency($number, $currency));
-        $formatted = $formatted === false ? self::withTheTextAsSymbol($amount, $currency, $locale, $maxPrecision) : $formatted;
+        $formatted = $formatted === false ? self::withTheTextAsSymbol($amount, $currency, $locale, $maxPrecision, $digits) : $formatted;
 
         return $formatted === false ? $plain : $formatted;
     }
 
     /**
      * An amount in the locale's own pattern for one, with `$currency`'s text where the symbol
-     * stands, for a currency the formatter has no code for. Two decimals, or more up to
-     * `$maxPrecision`, as the text without intl keeps them: the currency's own are not known.
+     * stands, for a currency the formatter has no code for. Two decimals, or the `$digits` given,
+     * or more up to `$maxPrecision`, as the text without intl keeps them: the currency's own are
+     * not known.
      */
-    private static function withTheTextAsSymbol(float $amount, string $currency, ?string $locale, ?int $maxPrecision): string|false
+    private static function withTheTextAsSymbol(float $amount, string $currency, ?string $locale, ?int $maxPrecision, ?int $digits = null): string|false
     {
+        $own = $digits ?? 2;
         $formatter = new \NumberFormatter(IcuLocale::usable($locale), \NumberFormatter::CURRENCY);
         $formatter->setAttribute(\NumberFormatter::ROUNDING_MODE, \NumberFormatter::ROUND_HALFUP);
-        $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 2);
-        $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, max(2, $maxPrecision ?? 2));
+        $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, $own);
+        $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, max($own, $maxPrecision ?? $own));
         $formatter->setSymbol(\NumberFormatter::CURRENCY_SYMBOL, $currency);
         $formatter->setSymbol(\NumberFormatter::INTL_CURRENCY_SYMBOL, $currency);
         self::markWithTheApplicationsMarks($formatter);
@@ -323,17 +334,19 @@ final class LocalizedNumber
     }
 
     /**
-     * An amount in a currency without intl: two decimals, or up to `$maxPrecision` with the zeros
-     * after the second dropped, and the ISO code after the number. `number_format()` rounds half
-     * away from zero, as the formatter above is set to.
+     * An amount in a currency without intl: two decimals, or the `$digits` given, or up to
+     * `$maxPrecision` with the zeros after those dropped, and the ISO code after the number.
+     * `number_format()` rounds half away from zero, as the formatter above is set to.
      */
-    private static function currencyWithoutIntl(float $amount, string $currency, ?int $maxPrecision): string
+    private static function currencyWithoutIntl(float $amount, string $currency, ?int $maxPrecision, ?int $digits = null): string
     {
-        $digits = max(2, $maxPrecision ?? 2);
-        $formatted = number_format($amount, $digits);
+        $own = $digits ?? 2;
+        $shown = max($own, $maxPrecision ?? $own);
+        $formatted = number_format($amount, $shown);
 
-        if ($digits > 2) {
-            $formatted = (string) preg_replace('/(\.\d{2}\d*?)0+$/', '$1', $formatted);
+        if ($shown > $own) {
+            // A currency without decimals of its own loses its decimal mark with its last zero.
+            $formatted = rtrim((string) preg_replace('/(\.\d{'.$own.'}\d*?)0+$/', '$1', $formatted), '.');
         }
 
         return $formatted.' '.strtoupper($currency);

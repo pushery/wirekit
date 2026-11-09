@@ -23,7 +23,7 @@ final class CompiledViewsFreshnessCheck extends VerifyCheck
      * Detects compiled-view staleness — the canonical reason a developer
      * test sees "the new prop isn't there" even after their Blade source
      * carries it. Laravel's `storage/framework/views/` retains pre-edit
-     * compiled templates whose filemtime granularity (1-second) AND
+     * compiled templates whose filemtime granularity (1-second) and
      * filesystem-cache lag can let stale output survive a fast file-edit
      * cycle. The first diagnostic chain a developer walks is "did I wire
      * the prop?" — this check short-circuits that and points at
@@ -67,7 +67,7 @@ final class CompiledViewsFreshnessCheck extends VerifyCheck
             return;
         }
 
-        // The PACKAGE counts as a source here, and leaving it out is what made this check
+        // The package counts as a source here, and leaving it out is what made this check
         // unable to see the one event it most needs to: a `composer update pushery/wirekit`
         // moves the package's views and touches nothing under `resources/views/`, so the
         // comparison above stayed green while every compiled template still held the

@@ -17,7 +17,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('attachment-group', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -51,7 +51,7 @@
 <div
     @unless($attributes->has('role')) role="group" @endunless
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
-    {{-- The condition lives in the VALUE, not around the attribute. A `tabindex` behind
+    {{-- The condition lives in the value, not around the attribute. A `tabindex` behind
          `@if` reads as a keyboard model and is not one: the guard that holds this contract
          strips Blade conditionals before it looks at the wiring, so it was passing this
          element through on its role alone — delete the line and nothing would have said so,

@@ -70,7 +70,7 @@
     // The sidebar's own control, class for class, so the two are one button in two places.
     $classes = WireKit::resolveClasses('sidebar.collapse-toggle', 'base', implode(' ', [
         'inline-flex items-center justify-center shrink-0',
-        'p-1 rounded-[var(--radius-wk-sm)]',
+        'p-[var(--space-wk-xs)] rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',

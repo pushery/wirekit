@@ -11,7 +11,7 @@
     'warn' => config('wirekit.components.usage-meter.warn', 0.8),   // warning threshold ratio
     'danger' => config('wirekit.components.usage-meter.danger', 1.0), // danger/over threshold ratio
     'showValue' => true,             // show "X / Y (Z%)" readout
-    'unlimitedLabel' => null,        // override the "Unlimited" word (a plan NAME is a proper noun)
+    'unlimitedLabel' => null,        // override the "Unlimited" word (a plan name is a proper noun)
     'scope' => null,
 ])
 
@@ -33,7 +33,7 @@
         $period = null;
     }
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, true, 'usage-meter', 'showValue');
@@ -50,7 +50,7 @@
     // Mutually-exclusive bands: over > danger > warn > ok. The danger band only
     // exists when `danger` is configured below 1.0 (the docs recommend 0.95); with
     // the default danger=1.0, $isDanger is always false (ratio>=1.0 is already
-    // $isOver), so default behavior is unchanged. Each band has its OWN text state
+    // $isOver), so default behavior is unchanged. Each band has its own text state
     // below, so the danger band is never signaled by the red bar color alone (a11y).
     // A limit of 0 means the plan does not include the dimension: nothing is left to use,
     // which is what `>=` says for every other limit, so 0 / 0 and 3 / 0 are over it too.
@@ -62,7 +62,7 @@
     $isDanger = ! $isOver && ! $isUnlimited && $limitNum > 0 && $ratio >= (float) $danger;
     $isWarn = ! $isOver && ! $isDanger && ! $isUnlimited && $ratio >= (float) $warn;
 
-    // Threshold → intent (ok → warn → danger → over). ALSO conveyed by the text
+    // Threshold → intent (ok → warn → danger → over). Also conveyed by the text
     // line below (never color alone — a11y). Mirrors progress' intent palette.
     $intent = match (true) {
         $isUnlimited => 'neutral',
@@ -88,17 +88,17 @@
         default => null,
     };
 
-    // STABLE across re-renders, which a random id is not: the bar's aria-labelledby and
+    // Stable across re-renders, which a random id is not: the bar's aria-labelledby and
     // this heading's id are the two halves of one pairing, and a usage meter is a natural
     // wire:poll surface — quotas tick. A fresh id on every tick costs the bar its
     // accessible name each time, and Livewire resolves a node's morph identity through its
-    // id, so the label span is REPLACED rather than patched. The sibling panel carries the
+    // id, so the label span is replaced rather than patched. The sibling panel carries the
     // same reasoning for its heading.
     $labelId = DomId::unique($attributes->get('id'), 'usage-meter-').'-label';
     $fmt = fn ($n) => LocalizedNumber::format((float) $n);
 
     // Precompute the bar's accessible name (a visible label wins; else a
-    // generic "Usage"). Computed here — NOT as inline @if inside the
+    // generic "Usage"). Computed here — not as inline @if inside the
     // <x-wirekit::progress> tag, which the component-tag compiler can't parse.
     $barLabelledby = $label ? $labelId : null;
     $barAriaLabel = $label ? null : __('wirekit::Usage');
@@ -117,18 +117,18 @@
 <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($isOver) data-over-limit="true" @endif>
     {{-- Header: label + "X / Y (Z%)" readout (or "Unlimited") --}}
     @if($label || $showValue)
-        <div class="mb-1 flex items-baseline justify-between gap-2 text-[length:var(--text-wk-sm)]">
+        <div class="mb-[var(--space-wk-xs)] flex items-baseline justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
             @if($label)
                 <span id="{{ $labelId }}" class="text-[color:var(--color-wk-text)] font-[number:var(--font-wk-heading-weight)]">{{ $label }}</span>
             @else
                 <span></span>
             @endif
-            @if($showValue)
+            @wirekitLast($showValue)
                 <span class="tabular-nums text-[color:var(--color-wk-text-muted)]">
-                    @if($isUnlimited)
+                    @wirekitLast($isUnlimited)
                         {{ $fmt($usedNum) }}@if($unit) {{ $unit }}@endif
                         {{-- Translated by default. A caller passes the prop when the word is
-                             the NAME of a tier rather than a quantity, and must stay identical
+                             the name of a tier rather than a quantity, and must stay identical
                              in every language — a thing the translator cannot know. --}}
                         <span class="text-[color:var(--color-wk-text-subtle)]">· {{ $unlimitedLabel ?? __('wirekit::Unlimited') }}</span>
                     @else
@@ -136,9 +136,9 @@
                         @if($rawPercent !== null)
                             <span class="text-[color:var(--color-wk-text-subtle)]">({{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) $rawPercent, 0) }})</span>
                         @endif
-                    @endif
+                    @endwirekitLast
                 </span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
@@ -155,31 +155,31 @@
         />
     @endunless
 
-    {{-- Status line — threshold conveyed by TEXT (not color alone). The colored
+    {{-- Status line — threshold conveyed by text (not color alone). The colored
          token is redundant reinforcement on top of the explicit wording. --}}
     @if($isOver || $isDanger || $isWarn || $resetNote)
-        <div class="mt-1 flex items-center justify-between gap-2 text-[length:var(--text-wk-xs)]">
+        <div class="mt-[var(--space-wk-xs)] flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-xs)]">
             <span>
-                @if($isOver)
+                @wirekitLast($isOver)
                     <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-text)]">{{ __('wirekit::Over limit') }}</span>
                 @elseif($isDanger)
-                    {{-- Danger band [danger, 1.0): the red bar gets matching red TEXT so
+                    {{-- Danger band [danger, 1.0): the red bar gets matching red text so
                          the band is never conveyed by color alone. More urgent wording
                          than the warning band's "Approaching limit". --}}
                     <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-text)]">{{ __('wirekit::Near limit') }}</span>
                 @elseif($isWarn)
                     <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-warning-text)]">{{ __('wirekit::Approaching limit') }}</span>
-                @endif
+                @endwirekitLast
             </span>
-            @if($resetNote)
+            @wirekitLast($resetNote)
                 <span class="text-[color:var(--color-wk-text-subtle)]">{{ $resetNote }}</span>
-            @endif
+            @endwirekitLast
         </div>
     @endif
 
     {{-- Optional upgrade CTA hook (slot). The usage-meter owns the meter + the CTA
          hook only; the upgrade/plan-compare surface is a pricing-table recipe. --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
-        <div class="mt-2">{{ $action }}</div>
-    @endif
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
+        <div class="mt-[var(--space-wk-sm)]">{{ $action }}</div>
+    @endwirekitLast
 </div>

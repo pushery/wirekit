@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — sub-component
      Not a component but an @include shared by `strength-meter` and `password-input`. It draws
      the bars of a strength meter and accepts nothing a server could refuse. --}}
-{{-- THE BARS OF A STRENGTH METER, one markup for both meters so the two look the same by
+{{-- the bars of A strength meter, one markup for both meters so the two look the same by
      construction. Each bar is drawn in its color before Alpine starts, so a page that has not
      booted yet shows the strength rather than an empty track, and follows `barStyle(i)` of the
      surrounding scope after that. The color ladder is utils/strength.js.

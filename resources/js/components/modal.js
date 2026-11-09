@@ -30,7 +30,7 @@ export default function wirekitModal(config = {}) {
         dismissedEvent: 'wirekit:modal-dismissed',
         // False for an overlay inside a page region, such as a preview: the page keeps scrolling.
         lockScroll: config.lockScroll !== false,
-        // Start on the first CONTROL, not on the scrolling body — utils/first-control.js.
+        // Start on the first control, not on the scrolling body — utils/first-control.js.
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-modal-body'),
         // Asked before the reader closes a dialog whose fields they changed; null asks nothing.
         discardQuestion: typeof config.discardQuestion === 'string' && config.discardQuestion !== '' ? config.discardQuestion : null,

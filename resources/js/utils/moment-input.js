@@ -1,3 +1,4 @@
+import { inlineStep } from './inline-direction.js';
 import { dayClosed, readLimits } from './date-limits.js';
 import { emptyMoment, momentOfSegments, momentRange, momentSegmentText, momentShape, readPasted, segmentsOfMoment, typeYearDigit } from './moment-segments.js';
 import { digitOf, periodOf, stepSegment, timeFormatter, typeDigit } from './time-segments.js';
@@ -241,7 +242,9 @@ export function momentInputState(config = {}) {
 
             if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
                 event.preventDefault();
-                const next = this._momentNext(type, event.key === 'ArrowRight' ? 1 : -1);
+                // The segments follow the direction their frame lays out in: on a right-to-left page
+                // Left Arrow moves to the segment that stands to the left, the next one there.
+                const next = this._momentNext(type, inlineStep(event, event.target ?? null));
 
                 if (next) {
                     this._momentFocusSegment(next);

@@ -3,7 +3,7 @@
      shown early. --}}
 @props([
     // The same shape `x-wirekit::message` takes: ['name' => …, 'avatar' => …, 'role' => …].
-    // The group prints it ONCE and the messages inside stop repeating it — that is the
+    // The group prints it once and the messages inside stop repeating it — that is the
     // whole component. Each message keeps its own timestamp: a run shares a sender, not
     // a moment.
     //
@@ -25,9 +25,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('message-group', $attributes->getAttributes());
 
-    $sideValue = match ($side) {
-        'left', 'right' => $side,
-        default => WireKit::validateProp('message-group', 'side', $side, ['left', 'right']),
+    // `start` and `end` name the side by the direction of the page. `left` and `right` are the same
+    // two sides under their first names: the row is a flexbox, so a message on the left stands at the
+    // start of a conversation that reads from the right as well.
+    // The subject is validated first, so a refused value renders what the fallback `left` renders.
+    $sideValue = match (WireKit::validateProp('message-group', 'side', $side, ['left', 'right', 'start', 'end'])) {
+        'right', 'end' => 'right',
+        default => 'left',
     };
 
     // Read exactly as `message` reads it, including the string shorthand, so the two can be
@@ -81,7 +85,7 @@
         </div>
     @endif
 
-    {{-- Tighter than the gap BETWEEN senders (`--space-wk-sm`), which is the visual half of
+    {{-- Tighter than the gap between senders (`--space-wk-sm`), which is the visual half of
          grouping: the run reads as one block, and the next sender starts a new one. --}}
     <div class="flex flex-col {{ $textAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0">
         {{-- The sender's name, once, above the run, in the type a message header uses: it takes

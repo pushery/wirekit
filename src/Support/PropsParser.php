@@ -13,7 +13,7 @@ namespace Pushery\WireKit\Support;
  *
  *  1. **Look-ahead boundary break.** A prop default containing a comma
  *     inside a function-call argument list — `'variant' => config('x.y', null)`
- *     — got split at the inner comma. The prop became truncated AND a
+ *     — got split at the inner comma. The prop became truncated and a
  *     phantom "next prop" appeared.
  *  2. **Inline-comment leakage.** A trailing `// comment` block bled into
  *     the captured default value: `'name' => null, // doc` became
@@ -23,10 +23,10 @@ namespace Pushery\WireKit\Support;
  * understands string literals, function-call argument lists, nested
  * arrays / objects, heredoc / nowdoc, single-line and block comments —
  * every shape a `@props` block can legitimately contain. The narrow
- * extraction regex below ONLY captures the outer `@props(...)` wrapper;
+ * extraction regex below only captures the outer `@props(...)` wrapper;
  * everything inside the array body is handed off to the tokenizer.
  *
- * This class is THE source of truth for prop extraction: CLI commands, drift
+ * This class is the source of truth for prop extraction: CLI commands, drift
  * audits and schema exports read props through here, and nothing in `src/`
  * parses `@props` with a regex of its own.
  *
@@ -73,7 +73,7 @@ final class PropsParser
     /**
      * Parse Blade-source text and extract its `@props([…])` block.
      *
-     * Only the FIRST `@props(...)` directive is parsed. Blade itself
+     * Only the first `@props(...)` directive is parsed. Blade itself
      * accepts a single `@props` per component; multiple directives are
      * a developer error rather than a supported pattern. If a future
      * use case demands multi-block parsing, extend the regex below to
@@ -131,10 +131,10 @@ final class PropsParser
      */
     private static function parseDirectiveSource(string $source, string $directive): array
     {
-        // Step 1 — locate the directive block with a narrow regex that ONLY
+        // Step 1 — locate the directive block with a narrow regex that only
         // captures the outer wrapper. Multi-line + nested-bracket-aware
         // matching is left to the tokenizer, where it works correctly.
-        // The regex requires balanced brackets at the OUTER level only;
+        // The regex requires balanced brackets at the outer level only;
         // anything inside is opaque to the regex. An `@` right after another is Blade's escape:
         // `@@props([` writes text and declares nothing.
         if (! preg_match('/(?<!@)@'.preg_quote($directive, '/').'\s*\(\s*\[/s', $source, $startMatch, PREG_OFFSET_CAPTURE)) {
@@ -159,7 +159,7 @@ final class PropsParser
     }
 
     /**
-     * Fold what the template ENFORCES about a prop into its record: the allow-list
+     * Fold what the template enforces about a prop into its record: the allow-list
      * `validateProp()` checks it against, and the type the file proves it takes.
      *
      * Both live in the same file as the `@props` block and nowhere else, and until now nothing
@@ -184,7 +184,7 @@ final class PropsParser
     }
 
     /**
-     * What the file PROVES about a prop's value, or null when it proves nothing.
+     * What the file proves about a prop's value, or null when it proves nothing.
      *
      * Three pieces of evidence, strongest first:
      *
@@ -208,7 +208,7 @@ final class PropsParser
             return strtolower(ltrim($typeHint, '?'));
         }
 
-        // The allow-list first, because it describes what a CALLER may write, and the default
+        // The allow-list first, because it describes what a caller may write, and the default
         // only what the component starts from. `grid` defaults its columns to the number 1 and
         // accepts `sm:2 md:3` as well — reading the default alone types it as a number, and a
         // reader that offers a number input has been told something false.
@@ -226,7 +226,7 @@ final class PropsParser
 
         // `config('wirekit.components.alert.dismissible', false)` — the second argument is the
         // value the component uses when the application configures nothing, so it is the
-        // evidence. Matched to the LAST paren on purpose: a fallback may be an array or a call.
+        // evidence. Matched to the last paren on purpose: a fallback may be an array or a call.
         if ($default !== null && preg_match('/^config\s*\(\s*\x27[^\x27]*\x27\s*,\s*(.+)\)$/s', $default, $match) === 1) {
             $default = trim($match[1]);
         }
@@ -255,10 +255,10 @@ final class PropsParser
      * argument: it was hardened three times, each time after a real defect.
      *
      *   - Strings first, because a `]` inside `'a]b'` is not a bracket.
-     *   - Then comments, after an ODD apostrophe in a trailing comment — the one
+     *   - Then comments, after an odd apostrophe in a trailing comment — the one
      *     in `// each item's group` — flipped quote parity for the real code
      *     below it. The closing `]` was swallowed by a string that did not
-     *     exist, the walk ran to EOF, and the component reported NO props at
+     *     exist, the walk ran to EOF, and the component reported no props at
      *     all. Downstream, its prop variables surfaced as required slots.
      *   - Then heredocs, whose bodies could leak every one of those states at
      *     once: a `/*` chasing a phantom `*​/` past the array, a stray `]`
@@ -279,7 +279,7 @@ final class PropsParser
             return null;
         }
 
-        // Lexed from the OPENING BRACKET, not from the top of the file, and
+        // Lexed from the opening bracket, not from the top of the file, and
         // that is a correctness requirement rather than a saving.
         //
         // A Blade file is prose and markup before it is code. Handed the whole
@@ -291,7 +291,7 @@ final class PropsParser
         // misjudged, which is the one property the hand-rolled walk had for
         // free.
         //
-        // Lexed PERMISSIVELY, without `TOKEN_PARSE`: what follows the array is
+        // Lexed permissively, without `TOKEN_PARSE`: what follows the array is
         // still Blade and will never parse, so demanding that it does would reject
         // nearly every real input. The lexer
         // groups strings, comments and heredocs correctly regardless, and that
@@ -365,7 +365,7 @@ final class PropsParser
 
         $entries = [];
         $current = self::freshEntry();
-        $depth = 0;  // tracks nesting INSIDE the array body
+        $depth = 0;  // tracks nesting inside the array body
         $i = $arrayStart + 1;
         /** @var list<string> $pendingBlock the run of standalone `//` lines above the next prop */
         $pendingBlock = [];
@@ -435,7 +435,7 @@ final class PropsParser
                         $i = $newIndex;
                     }
 
-                    // The trailing form WINS where both exist. A prop that has a same-line
+                    // The trailing form wins where both exist. A prop that has a same-line
                     // comment is documented in the shape this parser has always read, and a
                     // block above it in that case is more likely to belong to the group than
                     // to this one key.
@@ -452,14 +452,14 @@ final class PropsParser
                 continue;
             }
 
-            // Skip whitespace + standalone comments BETWEEN entries
+            // Skip whitespace + standalone comments between entries
             // (state = expect-key). Inside a value, whitespace is part
             // of the default expression and is preserved.
             if (is_array($token) && $token[0] === T_WHITESPACE) {
                 if ($current['state'] === 'expect-value') {
                     $current['default_tokens'][] = $token;
                 } elseif (substr_count($token[1], "\n") > 1) {
-                    // A BLANK line ends the run. A comment separated from the prop by an empty
+                    // A blank line ends the run. A comment separated from the prop by an empty
                     // line is a section heading for what follows, not documentation of the
                     // next key — and attaching it would put a paragraph about grouping into
                     // one arbitrary prop's schema entry.
@@ -622,7 +622,7 @@ final class PropsParser
      *
      * Each line loses its `//` and its own indentation; the lines are then joined with single
      * spaces, because the reader of this field is a JSON schema and an editor tooltip, and
-     * neither renders a newline usefully. What is preserved is the ORDER and every word.
+     * neither renders a newline usefully. What is preserved is the order and every word.
      *
      * @param  list<string>  $lines
      */
@@ -664,7 +664,7 @@ final class PropsParser
         }
         // Match every `@example "..."` with non-greedy capture + backslash-
         // escape support. The `(?:\\.|[^"\\])*` pattern accepts any
-        // character except an unescaped quote OR any backslash-escaped
+        // character except an unescaped quote or any backslash-escaped
         // character (including escaped quotes).
         if (! preg_match_all('/@example\s+"((?:\\\\.|[^"\\\\])*)"/', $comment, $matches)) {
             return [];

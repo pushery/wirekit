@@ -43,7 +43,7 @@
         <x-wirekit::tooltip :text="$decrementName" :focusable-trigger="false" :describes="false">
             <x-wirekit::button
                 intent="neutral"
-                surface="outline"
+                :surface="$stepperSurfaceValue"
                 :size="$size"
                 icon-only
                 touch-floor
@@ -71,7 +71,7 @@
         <x-wirekit::tooltip :text="$incrementName" :focusable-trigger="false" :describes="false">
             <x-wirekit::button
                 intent="neutral"
-                surface="outline"
+                :surface="$stepperSurfaceValue"
                 :size="$size"
                 icon-only
                 touch-floor

@@ -24,7 +24,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -33,7 +33,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $iconOnly = BooleanProp::from($iconOnly, false, 'clipboard-button', 'iconOnly');
@@ -123,9 +123,9 @@
 
     {{--
         Stable-width label: stack the default slot and the "Copied" label
-        in the same grid cell. The grid cell auto-sizes to the WIDER of its
-        two children — but ONLY if both children stay in the layout. We
-        therefore toggle visibility (NOT display) so each label keeps its
+        in the same grid cell. The grid cell auto-sizes to the wider of its
+        two children — but only if both children stay in the layout. We
+        therefore toggle visibility (not display) so each label keeps its
         layout slot regardless of which one is currently visible. Using
         x-show / display:none would collapse the cell to whichever child
         is rendered, defeating the stable-width goal.
@@ -163,7 +163,7 @@
          region that appears together with its text is a new node, and a screen reader
          announces nothing for it. --}}
     <span class="sr-only" role="status" aria-live="polite" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : ''"></span>
-    {{-- The deviation announcement. The success above is OPTIMISTIC — it fires before the
+    {{-- The deviation announcement. The success above is optimistic — it fires before the
          write is attempted, on purpose, because a promise that never settles would leave the
          reader with no feedback at all. That bargain only holds if a refusal takes it back:
          without this, "Copied to clipboard" would stand for a write the browser declined,

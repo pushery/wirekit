@@ -1,7 +1,7 @@
 /**
  * The element that actually scrolls a node into view, or null when the window does.
  *
- * Scrolling the WINDOW unconditionally works only for a page that scrolls as a whole. An
+ * Scrolling the window unconditionally works only for a page that scrolls as a whole. An
  * application that owns its scroll region — and WireKit's own `<x-wirekit::main>` is one, it
  * carries `overflow-y-auto` — would get nothing: the window has nowhere to go, so a jump would do
  * nothing at all and there would be no error to see.

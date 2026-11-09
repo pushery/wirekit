@@ -16,7 +16,7 @@ import { watchModelEvents } from '../utils/model-events.js';
  * WAI-ARIA radio pattern.
  *
  * Navigation is written against the segments themselves rather than sibling
- * traversal. A sibling walk from the FIRST segment would reach backwards into
+ * traversal. A sibling walk from the first segment would reach backwards into
  * the hidden input that carries the form value — not focusable, so the key
  * would simply die there.
  *
@@ -182,7 +182,7 @@ export default function wirekitSegmentedControl(config = {}) {
          * see a change, which is the whole reason the input exists.
          */
         select(value) {
-            // A disabled group stays FOCUSABLE — a natively disabled radiogroup vanishes
+            // A disabled group stays focusable — a natively disabled radiogroup vanishes
             // from the tab order and a reader never learns the setting exists — so the
             // refusal has to happen here instead of at the browser level.
             if (this.disabled) {
@@ -197,7 +197,7 @@ export default function wirekitSegmentedControl(config = {}) {
          * Tell the form what `selected` now holds.
          *
          * Split out of select() because the optimistic layer writes `selected`
-         * itself — on the flip AND on the rollback — and has to be able to run
+         * itself — on the flip and on the rollback — and has to be able to run
          * the same sync afterwards. Without it a rolled-back control would show
          * the old segment while the form still submits the new one.
          */
@@ -214,7 +214,7 @@ export default function wirekitSegmentedControl(config = {}) {
         },
 
         /**
-         * Move focus AND selection, wrapping at both ends.
+         * Move focus and selection, wrapping at both ends.
          *
          * Selection follows focus here because that is the radio pattern: an
          * arrow key on a radio group checks as it moves. `.click()` is used
@@ -241,7 +241,7 @@ export default function wirekitSegmentedControl(config = {}) {
          * The segments, in document order. Never the hidden input.
          *
          * `$root`, not `$el`. Every caller is reached from a keydown handler on
-         * a BUTTON, and Alpine binds `$el` to the element the handler sits on —
+         * a button, and Alpine binds `$el` to the element the handler sits on —
          * so `$el` here is one segment, which contains no segments, and the
          * lookup would come back empty with the navigation silently dead.
          * `$root` is the x-data element regardless of which child dispatched.

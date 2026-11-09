@@ -4,7 +4,7 @@
 {{-- The first paint of a remembered column, and it is the one thing Blade cannot do alone.
 
      A column with `persist` and the `local` driver stores its state in the reader's browser,
-     and no server can read localStorage — so the markup carries the SEED width, the browser
+     and no server can read localStorage — so the markup carries the seed width, the browser
      paints it, and Alpine applies the remembered one a frame later: the navigation would show
      briefly collapsed and then snap open, shifting the content column and counting against the
      page's layout-shift budget.
@@ -15,11 +15,12 @@
      and cannot collide with a second column on the same page.
 
      Every value arrives as a data attribute on this tag, and the body is a constant.
-     That is not a style choice. `AlpinePayload` is the encoder for a directive attribute; in a
-     script body HTML escaping does not apply, so a payload carrying the closing-tag sequence
-     would end the block and everything after it would parse as markup. Attributes go through
-     Blade's ordinary escaping, `dataset` hands them back as plain strings, and the body then
-     has no interpolation left to get wrong.
+     That is not a style choice: in a script body HTML escaping does not apply, so a value
+     carrying the closing-tag sequence would end the block and everything after it would parse
+     as markup. Attributes go through Blade's ordinary escaping, `dataset` hands them back as
+     plain strings, and the body then has no interpolation left to get wrong. The two maps of
+     markers are JSON the body parses, so they are written with `AlpinePayload::json()`, the
+     encoder for a value a script reads back.
 
      It is a correction and never a requirement. Blocked by a policy, thrown by a browser
      with storage switched off, or simply never reached, it leaves the column as the column is
@@ -28,13 +29,22 @@
      the seed.
 
      The nonce answers the objection that an inline script is what a strict
-     `script-src 'self'` policy blocks: that is true of an UNNONCED one, and `fonts.blade.php`
+     `script-src 'self'` policy blocks: that is true of an unnonced one, and `fonts.blade.php`
      answers it the same way for its inline <style>, through the identical helper.
 
+     The width is half of the state. The other half is the markers the column's own rules read,
+     such as a rail's `data-expanded` and `data-labels` or a sidebar's `data-collapsed`: swapping
+     the width alone painted the remembered width with the contents laid out for the other state,
+     until Alpine set the markers a frame later. So the markers of each state come along as a map
+     of attribute names to values, where `null` removes the attribute.
+
      Params: $seedKey, $seedOn (the boolean the server rendered), $seedClassOn, $seedClassOff,
-     and $seedMinWidth (a width the state is gated on, or null). --}}
+     $seedMinWidth (a width the state is gated on, or null), and $seedAttrsOn and $seedAttrsOff
+     (the markers of each state, or null). --}}
 @php
     $seedNonce = \Pushery\WireKit\WireKit::cspNonce();
+    $seedAttrsOn = $seedAttrsOn ?? null;
+    $seedAttrsOff = $seedAttrsOff ?? null;
 @endphp
 <script
     @if($seedNonce)nonce="{{ $seedNonce }}"@endif
@@ -43,6 +53,8 @@
     data-wk-seed-class-on="{{ $seedClassOn }}"
     data-wk-seed-class-off="{{ $seedClassOff }}"
     @if($seedMinWidth) data-wk-seed-min="{{ $seedMinWidth }}" @endif
+    @if($seedAttrsOn !== null) data-wk-seed-attrs-on="{{ \Pushery\WireKit\Support\AlpinePayload::json($seedAttrsOn) }}" @endif
+    @if($seedAttrsOff !== null) data-wk-seed-attrs-off="{{ \Pushery\WireKit\Support\AlpinePayload::json($seedAttrsOff) }}" @endif
 >
 (function () {
     var self = document.currentScript;
@@ -72,5 +84,15 @@
     // active foreground, and the reason the Alpine binding beside this uses object syntax.
     el.classList.remove(cfg.wkSeedClassOn, cfg.wkSeedClassOff);
     el.classList.add(on ? cfg.wkSeedClassOn : cfg.wkSeedClassOff);
+
+    // And the markers of the same state, so the contents are laid out for the width they get.
+    var markers = on ? cfg.wkSeedAttrsOn : cfg.wkSeedAttrsOff;
+    if (!markers) { return; }
+    try { markers = JSON.parse(markers); }
+    catch (e) { return; }
+    Object.keys(markers).forEach(function (name) {
+        if (markers[name] === null) { el.removeAttribute(name); }
+        else { el.setAttribute(name, markers[name]); }
+    });
 })();
 </script>

@@ -33,7 +33,7 @@
     $paddingClasses = match (WireKit::validateProp('band', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg'])) {
         'none' => '',
         // No literal fallbacks. A fallback fires only when the token did not resolve, so one
-        // carrying a different number than its token turns a missing value into a WRONG one,
+        // carrying a different number than its token turns a missing value into a wrong one,
         // and the band would render at a padding scale nothing in the theme uses. These are
         // core tokens declared unconditionally, so a fallback would never fire, and a copy of
         // each value written here would drift from its token unseen.
@@ -51,7 +51,7 @@
 
     // `$as` is interpolated into the tag name below, so an unvalidated value is written
     // straight into the opening tag — `as="div onmouseover=alert(1)"` would arrive as an
-    // attribute. `tagName()` checks the SHAPE rather than an allowlist: an enum has to guess
+    // attribute. `tagName()` checks the shape rather than an allowlist: an enum has to guess
     // which elements a caller might legitimately want, and `article` is exactly the kind a
     // guess omits.
     $as = \Pushery\WireKit\WireKit::tagName('band', (string) $as);
@@ -73,7 +73,7 @@
     and `card.footer` bring exactly this shape and only at the two ends of a card; a window with
     seven bands has two of them.
 
-    So this renders a div with no role. The form is chrome, not semantics. Where a band DOES
+    So this renders a div with no role. The form is chrome, not semantics. Where a band does
     carry meaning, the caller says so — `as="header"`, `as="footer"`, or an aria-label of their
     own through the attribute bag.
 --}}

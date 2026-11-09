@@ -13,7 +13,7 @@
     'kindLabel' => null,
     // Optional actor name, rendered bold at the start of the line.
     'actor' => null,
-    // Optional relative timestamp ("2 hours ago"), right-aligned + muted.
+    // Optional relative timestamp ("2 hours ago"), aligned to the end, muted.
     'timestamp' => null,
     'scope' => null,
 ])
@@ -60,7 +60,7 @@
         // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
         // alone, so a table or a flex row in the content keeps the layout it had.
         '[overflow-wrap:break-word]',
-        'flex items-start gap-3',
+        'flex items-start gap-[var(--gap-wk-md)]',
         'py-[var(--padding-wk-y-sm)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-sm)]',
@@ -91,11 +91,11 @@
     ></span>
 
     <div class="min-w-0 flex-1">
-        <div class="flex items-baseline justify-between gap-2">
+        <div class="flex items-baseline justify-between gap-[var(--gap-wk-sm)]">
             <span class="min-w-0 text-[color:var(--color-wk-text)]">
                 @if($actor)<span class="font-[number:var(--font-wk-heading-weight)]">{{ $actor }}</span> @endif{{ $slot }}
             </span>
-            @if($timestamp)
+            @wirekitLast($timestamp)
                 @if($timestampMachine !== null)
                     <time datetime="{{ $timestampMachine }}" class="shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
                         {{ $timestamp }}
@@ -105,12 +105,12 @@
                         {{ $timestamp }}
                     </span>
                 @endif
-            @endif
+            @endwirekitLast
         </div>
 
         @php($badgeText = isset($badge) ? \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) : null)
         @if($badgeText !== null)
-            <div data-wk-activity-row-badges class="mt-1 flex flex-wrap items-center gap-1">
+            <div data-wk-activity-row-badges class="mt-[var(--space-wk-xs)] flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
                 {{ $badgeText }}
             </div>
         @endif
@@ -121,10 +121,10 @@
         {{-- Block content under the line: a list of changed fields, a quoted comment. The default
              slot sits in an inline <span> beside the actor and cannot hold a block, so this is a
              <div> in the content column, flush with the text above it. --}}
-        @if(\Pushery\WireKit\Support\SlotContent::given($detail ?? null))
-            <div class="mt-1 min-w-0">
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($detail ?? null))
+            <div class="mt-[var(--space-wk-xs)] min-w-0">
                 {{ $detail }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 </div>

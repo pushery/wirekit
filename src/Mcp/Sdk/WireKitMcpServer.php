@@ -13,8 +13,8 @@ use Pushery\WireKit\Support\VersionResolver;
  * WireKit's MCP server on `laravel/mcp`, which `wirekit:mcp-serve` runs where the SDK is installed.
  *
  * The SDK speaks the protocol revisions it maintains, the newer handshake included, which the
- * package's own loop (McpServer) does not follow: that loop serves only where the SDK is absent,
- * and goes with the next major version. The tools and resources are the definitions both servers
+ * package's own loop (McpServer) does not follow: that loop serves only where the SDK is absent.
+ * The tools and resources are the definitions both servers
  * read, so the two answer alike. Tools and resources are the capabilities announced; there are no
  * prompts, and a capability with nothing behind it is not offered.
  */

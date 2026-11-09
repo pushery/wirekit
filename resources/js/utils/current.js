@@ -7,9 +7,9 @@
  * `aria-current="page"`. Livewire's own `wire:current` moves classes and `data-current` but no
  * `aria-current`, so a screen reader went on naming the old page.
  *
- * Put it on the navigation; the kit's navigation components do it with `track-current`. On every
- * `livewire:navigated`, and once when it starts, the scope compares the link of each entry with
- * the address. The entry whose link is the longest path that is the page's own or a parent of it,
+ * Put it on the navigation; the kit's navigation components do it with `track-current`. Once when
+ * it starts, after every `livewire:navigated` and whenever the address moves without a visit, the
+ * scope compares the link of each entry with the address. The entry whose link is the longest path that is the page's own or a parent of it,
  * by whole segments, is the current one, so "/orders" is current on "/orders/42" and "/" only
  * where nothing longer matches. Where entries share that path and differ by their query, the one
  * whose query the page carries is current. A link to another host, or to an anchor on the page,
@@ -21,9 +21,16 @@
  * The kit's entries render both class lists under `track-current`: the classes a current entry
  * has and an idle one has not, and the other way round, so nothing else on the entry moves.
  *
- * Lifecycle: the scope carries `data-wk-current-scope`, and one listener per page refreshes every
- * scope in the document after a visit. A scope inside `@persist` is never initialized again, so
- * the listener finds it by its attribute rather than through anything its first initialization
+ * The address moves without a visit when Livewire writes a `#[Url]` property into it, and when Back
+ * or Forward returns to an address written that way. Livewire tells the page neither: it writes a
+ * `replaceState` in a microtask after the response that changed the property, a `pushState` at
+ * once, and dispatches nothing for either. So every scope is marked again after each Livewire
+ * response, once those writes have run, and on `popstate`. A script that writes the address itself
+ * dispatches `wirekit:address-changed` on the window afterwards.
+ *
+ * Lifecycle: the scope carries `data-wk-current-scope`, and one set of listeners per page refreshes
+ * every scope in the document. A scope inside `@persist` is never initialized again, so the
+ * listeners find it by its attribute rather than through anything its first initialization
  * registered.
  */
 
@@ -31,6 +38,9 @@ export const WK_CURRENT_SCOPE_ATTRIBUTE = 'data-wk-current-scope';
 export const WK_CURRENT_CLASSES_ATTRIBUTE = 'data-wk-current-classes';
 export const WK_IDLE_CLASSES_ATTRIBUTE = 'data-wk-idle-classes';
 export const WK_CURRENT_ARIA_ATTRIBUTE = 'data-wk-current-aria';
+
+/** Dispatched on the window by a script that wrote the address itself, to mark the scopes again. */
+export const WK_ADDRESS_CHANGED_EVENT = 'wirekit:address-changed';
 
 /** Remembered on `window`, the one scope a second copy of this module on the page shares. */
 const INSTALLED_FLAG = '__wirekitCurrentInstalled';
@@ -109,23 +119,41 @@ function linkOf(el, page) {
     }
 }
 
-/** Move one entry to current or idle. */
+/**
+ * Move one entry to current or idle, writing only what changes.
+ *
+ * Every Livewire response marks the scopes again, and `classList.add()` and `classList.remove()`
+ * write the class attribute even when no class changes: an unchanged entry would still be a
+ * mutation on every response.
+ */
 function mark(el, current) {
     const on = words(el.getAttribute(WK_CURRENT_CLASSES_ATTRIBUTE));
     const off = words(el.getAttribute(WK_IDLE_CLASSES_ATTRIBUTE));
+    const leaving = (current ? off : on).filter((name) => el.classList.contains(name));
+    const arriving = (current ? on : off).filter((name) => ! el.classList.contains(name));
 
-    if (current) {
-        el.setAttribute('aria-current', el.getAttribute(WK_CURRENT_ARIA_ATTRIBUTE) || 'page');
-        el.classList.remove(...off);
-        el.classList.add(...on);
-    } else {
-        el.removeAttribute('aria-current');
-        el.classList.remove(...on);
-        el.classList.add(...off);
+    if (leaving.length > 0) {
+        el.classList.remove(...leaving);
     }
 
-    if (el.hasAttribute('data-active')) {
-        el.setAttribute('data-active', current ? 'true' : 'false');
+    if (arriving.length > 0) {
+        el.classList.add(...arriving);
+    }
+
+    const aria = current ? (el.getAttribute(WK_CURRENT_ARIA_ATTRIBUTE) || 'page') : null;
+
+    if (aria === null) {
+        if (el.hasAttribute('aria-current')) {
+            el.removeAttribute('aria-current');
+        }
+    } else if (el.getAttribute('aria-current') !== aria) {
+        el.setAttribute('aria-current', aria);
+    }
+
+    const active = current ? 'true' : 'false';
+
+    if (el.hasAttribute('data-active') && el.getAttribute('data-active') !== active) {
+        el.setAttribute('data-active', active);
     }
 }
 
@@ -170,13 +198,45 @@ export function markCurrent(scope, page) {
     return current;
 }
 
-/** Every scope in the document, marked against the address the visit arrived at. */
+/** Every scope in the document, marked against the address the page is at. */
 function refreshAll() {
     const page = new URL(window.location.href);
 
     for (const scope of Array.from(document.querySelectorAll(`[${WK_CURRENT_SCOPE_ATTRIBUTE}]`))) {
         markCurrent(scope, page);
     }
+}
+
+/**
+ * After each Livewire response, once the address it led to is written. Livewire writes a `#[Url]`
+ * property from an effect that runs after the response, and its `replaceState` waits for a further
+ * microtask; a timer runs after both.
+ *
+ * @param {{hook: Function}} livewire
+ */
+function hookLivewire(livewire) {
+    livewire.hook('commit', ({ succeed }) => {
+        succeed(() => setTimeout(refreshAll, 0));
+    });
+}
+
+/** The listeners that mark every scope again, once per page. */
+function installRefresh() {
+    document.addEventListener('livewire:navigated', refreshAll);
+    window.addEventListener('popstate', refreshAll);
+    window.addEventListener(WK_ADDRESS_CHANGED_EVENT, refreshAll);
+
+    if (window.Livewire?.hook) {
+        hookLivewire(window.Livewire);
+
+        return;
+    }
+
+    document.addEventListener('livewire:init', () => {
+        if (window.Livewire?.hook) {
+            hookLivewire(window.Livewire);
+        }
+    }, { once: true });
 }
 
 /**
@@ -194,7 +254,7 @@ export function registerCurrentDirective(Alpine) {
 
         if (typeof window !== 'undefined' && typeof document !== 'undefined' && ! window[INSTALLED_FLAG]) {
             window[INSTALLED_FLAG] = true;
-            document.addEventListener('livewire:navigated', refreshAll);
+            installRefresh();
         }
 
         markCurrent(el, new URL(window.location.href));

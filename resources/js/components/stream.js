@@ -7,9 +7,9 @@
  *
  *  1. Accessibility. A growing `aria-live="polite"` field is unusable — a screen
  *     reader re-reads the whole thing on every token. Instead the visible output is
- *     NOT a live region; a single visually-hidden `role="status"` region announces
- *     that a response is GENERATING (once), then the RESULT (once) when it settles.
- *  2. Reduced motion. A token-by-token build IS motion. Under
+ *     not a live region; a single visually-hidden `role="status"` region announces
+ *     that a response is generating (once), then the result (once) when it settles.
+ *  2. Reduced motion. A token-by-token build is motion. Under
  *     `prefers-reduced-motion: reduce` the tokens are buffered and revealed as one
  *     block when the stream finishes — no incremental growth.
  *  3. Abort + error. A half-streamed response whose connection dies has a defined
@@ -39,7 +39,7 @@
  * @param {Object} [config.headers]     - Request headers with source 'fetch'.
  * @param {string} [config.name]        - Name a wirekit-stream-* event may address.
  * @param {string} [config.eventName]   - SSE event to listen for (default 'message').
- * @param {string} [config.doneSignal]  - Payload that ends the stream (default '[DONE]').
+ * @param {string} [config.doneSignal]  - Payload that ends the stream (default '[done]').
  * @param {string} [config.announce]    - 'result' (announce final text once), 'status'
  *                                         (announce only "ready") or 'none' (the caller
  *                                         announces; no live region). Default 'result'.
@@ -73,7 +73,7 @@ export default function wirekitStream(config = {}) {
         _url: config.url || '',
         // Transport. 'sse' (default) is the EventSource path. 'fetch' POSTs and
         // reads the response body — the shape LLM APIs actually use, because the
-        // request IS the payload and EventSource is GET-only and body-less.
+        // request is the payload and EventSource is GET-only and body-less.
         // 'manual' opens no transport at all: the developer drives the component
         // through push()/finish()/fail() or the wirekit-stream-* events, which is
         // what a Reverb/Echo (WebSocket) app needs.
@@ -85,7 +85,7 @@ export default function wirekitStream(config = {}) {
         _onHostEvent: null,
         _name: config.name || '',
         _eventName: config.eventName || 'message',
-        // Whether the developer NAMED the event, as opposed to inheriting the
+        // Whether the developer named the event, as opposed to inheriting the
         // default. The fetch reader keys on this rather than on `_eventName`
         // itself, because the two states are not distinguishable afterwards and
         // they have to mean different things — see _readFramedStream().
@@ -129,7 +129,7 @@ export default function wirekitStream(config = {}) {
         _announceText: '', // bound to the sr-only role="status" region
 
         init() {
-            // A token-by-token build IS motion — honor prefers-reduced-motion by
+            // A token-by-token build is motion — honor prefers-reduced-motion by
             // buffering and revealing the whole response at the end.
             this._reduce = typeof window !== 'undefined'
                 && typeof window.matchMedia === 'function'
@@ -191,7 +191,7 @@ export default function wirekitStream(config = {}) {
          *
          * A body read once, at mount, would let a fetch stream send only the payload
          * it was born with. That is fine for a fixed endpoint and impossible for the case
-         * this transport exists for: a request whose body IS the input, rebuilt
+         * this transport exists for: a request whose body is the input, rebuilt
          * every run (the prompt, the language pair, the model, the options).
          */
         setBody(body) {
@@ -201,7 +201,7 @@ export default function wirekitStream(config = {}) {
         /**
          * Begin (or restart) streaming. No-op while already streaming.
          *
-         * The optional payload sets the body for THIS run, so one call starts a run
+         * The optional payload sets the body for this run, so one call starts a run
          * with the body it needs: `start(payload)` from markup in the stream's scope,
          * or the `wirekit-stream-start` event with `detail.body` from anywhere else.
          * Omit it and the body stays whatever it was.
@@ -304,11 +304,11 @@ export default function wirekitStream(config = {}) {
          * body — none of which belongs in a URL (length, encoding, and the fact
          * that user text has no business in logs, referrers or history).
          *
-         * The server still speaks SSE FRAMING (`data:` lines, blank-line
+         * The server still speaks SSE framing (`data:` lines, blank-line
          * separated); it just does so over a POST response. That is the shape
          * OpenAI-, Anthropic- and compatible APIs use, and any proxy in front.
          *
-         * Deliberately NOT auto-reconnecting. EventSource retries by itself, and
+         * Deliberately not auto-reconnecting. EventSource retries by itself, and
          * `_open()` above works around it; here the question does not arise, and
          * it must not: a token stream is billed and not idempotent, so a dropped
          * connection is a terminal state the reader is told about, never a silent
@@ -418,7 +418,7 @@ export default function wirekitStream(config = {}) {
 
                     // A named frame is announced on the host whatever it is, so an
                     // application can act on the ones that are not text — a refusal,
-                    // a token count, a model id. Emitted BEFORE the routing below, so
+                    // a token count, a model id. Emitted before the routing below, so
                     // a listener sees the terminal frame too.
                     if (eventName !== '') {
                         this._emitFrame(eventName, data);
@@ -434,7 +434,7 @@ export default function wirekitStream(config = {}) {
 
                     // Which frames become text.
                     //
-                    // Only when the developer NAMED the event does the name select —
+                    // Only when the developer named the event does the name select —
                     // and this asymmetry is deliberate. Filtering on the default
                     // ('message') would make a stream that sends named frames stop
                     // rendering entirely: without a name it gets all of them
@@ -470,7 +470,7 @@ export default function wirekitStream(config = {}) {
         /**
          * Replace everything streamed so far, instead of adding to it.
          *
-         * `push()` cannot express a rendering that is DERIVED from the whole stream
+         * `push()` cannot express a rendering that is derived from the whole stream
          * rather than accumulated from its parts, and several are: masked text, where
          * a sentinel can break across a chunk boundary and only the full string can be
          * unmasked; incremental Markdown, where a closing fence changes what came
@@ -482,7 +482,7 @@ export default function wirekitStream(config = {}) {
          * would silently lose it. This routes through the same `_reduce` path as a
          * push, so the two are indistinguishable to a reader who asked for less motion.
          *
-         * Deliberately NOT a setter on `text`: a caller reading `text` mid-stream under
+         * Deliberately not a setter on `text`: a caller reading `text` mid-stream under
          * reduced motion sees the last flushed value, not the pending one, and a
          * property that reads back differently from what was assigned is a worse trap
          * than a named method.
@@ -495,7 +495,7 @@ export default function wirekitStream(config = {}) {
         },
 
         /**
-         * The ONE place `_announceText` is written.
+         * The one place `_announceText` is written.
          *
          * Under `announce="none"` the markup renders no live region, so anything
          * written here would be composed for an element that is not on the page. Four
@@ -596,7 +596,7 @@ export default function wirekitStream(config = {}) {
             // _finish() do.
             //
             // This was the one terminal transition that did not flush, so under
-            // reduced motion a stream that died at 90% showed the reader NOTHING —
+            // reduced motion a stream that died at 90% showed the reader nothing —
             // the buffer held the whole partial answer and was dropped with it.
             // Three terminal states, two of them flushing, and the missing one was
             // the failure: the case where a partial answer is worth most, for the
@@ -613,7 +613,7 @@ export default function wirekitStream(config = {}) {
         },
 
         // Type the simulate text out token-by-token. Under reduced motion (a token
-        // build IS motion) the whole text is revealed at once with no timer. The
+        // build is motion) the whole text is revealed at once with no timer. The
         // timer is null-guarded + cleared in _close(), the same cleanup discipline
         // as the EventSource.
         _runSimulation() {

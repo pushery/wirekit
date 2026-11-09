@@ -1,8 +1,9 @@
 /**
- * A boolean that survives a reload, when storage allows it.
+ * A boolean, or a short text, that survives a reload, when storage allows it.
  *
- * Kept by `app-rail` and `sidebar-rail` for their folded state, and by
- * `sidebar-disclosure` for the open state of each of its two shapes. One module
+ * Kept by `app-rail` and `sidebar-rail` for their folded state, by
+ * `sidebar-disclosure` for the open state of each of its two shapes, and by
+ * `sidebar-width` for the width a reader dragged a sidebar to. One module
  * rather than JavaScript source emitted from PHP: an implementation living in a
  * string is one Alpine's CSP build cannot parse, and one nobody can read or test.
  *
@@ -11,7 +12,7 @@
  * browser refuses storage gets a component that simply forgets between visits,
  * which is the right failure — never a broken page.
  *
- * TWO DRIVERS, and the second one exists for a reason localStorage cannot solve.
+ * Two drivers, and the second one exists for a reason localStorage cannot solve.
  * No server can read localStorage, so a component that remembers a layout choice
  * renders its seed state first and corrects itself after the first paint, which moves
  * the content column and counts against the page's layout-shift budget. The usual
@@ -105,5 +106,47 @@ export function writePersistedFlag(key, value, driver = 'local') {
     } catch {
         // Nothing to report: the state is still correct for this visit, it just
         // will not be remembered for the next one.
+    }
+}
+
+/**
+ * Read a stored text, such as a sidebar's width, or `null` when there is nothing to read.
+ *
+ * The same two drivers and the same guards as the flag above; the caller decides what the text
+ * means and what a value it cannot use falls back to.
+ */
+export function readPersistedText(key, driver = 'local') {
+    if (! key) {
+        return null;
+    }
+
+    try {
+        if (driver === 'cookie') {
+            const raw = readCookie(key);
+
+            // Written encoded below, so read decoded; a malformed value throws and reads as none.
+            return raw === null ? null : decodeURIComponent(raw);
+        }
+
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+/** Store a text under a key, or do nothing at all when there is no key or no storage. */
+export function writePersistedText(key, value, driver = 'local') {
+    if (! key) {
+        return;
+    }
+
+    try {
+        if (driver === 'cookie') {
+            writeCookie(key, encodeURIComponent(String(value)));
+        } else {
+            window.localStorage.setItem(key, String(value));
+        }
+    } catch {
+        // The value is still right for this visit; it is only not remembered for the next.
     }
 }

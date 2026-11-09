@@ -110,7 +110,7 @@ export function resolveThemeColors(style, element = null, options = {}) {
     // input into a definitive `rgb()` / `rgba()` representation regardless
     // of the source format (`oklch()`, `color(srgb ...)`, `hsl()`, `#rrggbb`,
     // bare color names, etc.). Just setting `ctx.fillStyle = colorStr` and
-    // reading it back is NOT enough on Chrome 111+ baselines: when the input
+    // reading it back is not enough on Chrome 111+ baselines: when the input
     // is `oklch(...)`, the browser preserves the OKLCH literal in fillStyle,
     // and downstream code (isGrayscale, withOpacity, ApexCharts series.color)
     // either fails to parse it (silent black fallback) or paints it directly
@@ -224,8 +224,8 @@ export function resolveThemeColors(style, element = null, options = {}) {
     // background: WCAG 1.4.11 asks 3:1 of graphics a reader needs to understand the content, and a
     // series is exactly that. Two cases hand a series to the chart's own shade of the hue:
     //
-    //   * A GRAY token. The WireKit Default theme's accent is `oklch(20.5% 0 0)`, near-black for UI
-    //     chrome, which would render a chart polygon as a black blob. Themes that DO want neutral
+    //   * A gray token. The WireKit Default theme's accent is `oklch(20.5% 0 0)`, near-black for UI
+    //     chrome, which would render a chart polygon as a black blob. Themes that do want neutral
     //     charts can use a chroma > 0 oklch (e.g. `oklch(50% 0.01 250)`) or a hex/rgb declaration.
     //   * A token under 3:1 against the background. The default warning token is shared with every
     //     warning surface in the library and falls under 3:1 on white; the substitute keeps the
@@ -249,7 +249,7 @@ export function resolveThemeColors(style, element = null, options = {}) {
         // Sky-blue replaces flat blue for a friendlier accent default;
         // rose replaces red for a less-alarming negative signal that still
         // reads as semantic. The light/dark pair is deliberate — a chart
-        // toggling between modes MUST visibly recolor to signal the theme
+        // toggling between modes must visibly recolor to signal the theme
         // change, otherwise dark-mode regression tests fail and developers
         // perceive the chart as not theme-aware.
         accent:      resolveChartColor('--color-wk-accent', '#0284c7', '#bae6fd'),
@@ -392,7 +392,7 @@ export function withOpacity(color, opacity) {
  * Why this exists: ApexCharts (and Chart.js) consume color strings via
  * SVG `fill="…"` attributes / Canvas `fillStyle`. Neither path accepts
  * `var(--name)` — SVG attribute values aren't parsed for CSS vars, and
- * Canvas ignores them silently. The adapter resolves the OUTER palette
+ * Canvas ignores them silently. The adapter resolves the outer palette
  * via `resolveThemeColors()`, and this walk resolves the per-dataset,
  * per-range and per-annotation colors: without it,
  * `color: 'var(--color-wk-success)'` in a series object would reach
@@ -425,7 +425,7 @@ export function resolveCssVarsDeep(node, style, cache = new Map(), scratch = {})
         // closure) so we can resolve multiple var()s in one string —
         // e.g. ApexCharts gradient stops carrying two var() colors.
         return node.replace(/var\((--[a-zA-Z0-9-]+)\)/g, (_match, varName) => {
-            // Resolved ONCE per variable per walk. A themed ApexCharts config repeats the
+            // Resolved once per variable per walk. A themed ApexCharts config repeats the
             // same handful of tokens across series, annotations, gradient stops and the
             // heatmap color scale, and resolving every occurrence would build a DOM probe, force
             // a layout read through getComputedStyle, and allocate a fresh Canvas 2D context.
@@ -460,7 +460,7 @@ export function resolveCssVarsDeep(node, style, cache = new Map(), scratch = {})
 
             // Canvas-paint-and-read to force a definitive rgb()/rgba() value (oklch literals
             // would survive the var() resolution but break Canvas 2D / older ApexCharts
-            // release paths). ONE canvas for the whole walk, kept on the scratch object —
+            // release paths). One canvas for the whole walk, kept on the scratch object —
             // a 1x1 context is cheap to draw on and not cheap to create.
             scratch.ctx ??= (() => {
                 const canvas = document.createElement('canvas');

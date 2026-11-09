@@ -4,12 +4,18 @@
 @props([
     'label' => null,
     'value' => null,
+    // How the row reads among the others, for the rows of a totals block. `strong` sets label and
+    // value in the size of the value and the weight of a heading, the label in the color of the
+    // text. `total` does the same and draws the rule above the row that sets a sum apart from its
+    // parts. `sub` sets a breakdown of the row above, "of which VAT", one size smaller and muted.
+    // `null` is the ordinary row.
+    'emphasis' => null,
     'scope' => null,
 ])
 
 {{-- Read the parent data-list's `layout`, because the `summary` layout is the
-     one arrangement whose grid tracks live on the CONTAINER while the elements
-     that occupy them (<dt> and <dd>) are emitted HERE. @aware is Laravel's
+     one arrangement whose grid tracks live on the container while the elements
+     that occupy them (<dt> and <dd>) are emitted here. @aware is Laravel's
      canonical parent→child prop bridge.
 
      The fallback is this component's own default and mirrors the same config
@@ -34,7 +40,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('data-list.item', $attributes->getAttributes());
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is
+    // it does not remove that key from the attribute bag. So when the key is
     // also written as an attribute on the tag, it survives into
     // `{{ $attributes }}` and renders as a stray HTML attribute on the element.
     $attributes = $attributes->except(['layout']);
@@ -47,7 +53,7 @@
     // (preview iframes, SSR without a Tailwind build step, embeds).
     // `wk-data-list-item` carries the inter-row separator via a shipped
     // dist/wirekit.css rule (`.wk-data-list-item:not(:last-child)`) rather
-    // than an inline border-bottom — so the LAST row omits the rule and does
+    // than an inline border-bottom — so the last row omits the rule and does
     // not double against the container's own bottom border. The rest of the
     // layout stays inline for preview-iframe / SSR robustness.
     // `inline` lays its entries as lines of text, so an entry carries neither the padding nor the
@@ -60,21 +66,21 @@
     ]), $scope);
 
     // In `summary` the grid tracks are declared on the <dl>,
-    // so the <dt> and <dd> have to BE the grid items. This wrapper drops its own
+    // so the <dt> and <dd> have to be the grid items. This wrapper drops its own
     // box to let them through. That is also why the summary layout carries no row
     // separator and no item padding: both hang off this box, and a totals block
     // wants neither — its rhythm is the container's row gap, and its one rule
     // belongs above the grand total, not between every line.
     $isSummary = $layout === 'summary';
 
-    // `detail` shares the grid mechanics and NOT the alignment. Both drop this box to
+    // `detail` shares the grid mechanics and not the alignment. Both drop this box to
     // `display: contents` so the <dt>/<dd> become the container's own grid items — that is
-    // what makes the value column ONE track sized across every row rather than a
+    // what makes the value column one track sized across every row rather than a
     // per-row size.
     //
     // What does not carry over is the totals treatment. A summary value is an amount: flush
-    // right, tabular figures, so the digits line up under one another. A detail value is
-    // prose — "Credit card", "Standard shipping" — and right-aligning it would strand it
+    // to the end of the row, tabular figures, so the digits line up under one another. A detail
+    // value is prose — "Credit card", "Standard shipping" — and aligning it to the end would strand it
     // against the far edge with a gap in the middle of every row. The columns are the summary's,
     // swapped, and the alignment has to swap with them.
     $isGridPair = $isSummary || $layout === 'detail';
@@ -85,6 +91,41 @@
     // beside a label wrapping in its third.
     $isStacked = $layout === 'stacked';
 
+    // No emphasis is the ordinary row and skips the check. An unknown value is reported and renders
+    // the ordinary row too, rather than the first form on the list.
+    $emphasis = $emphasis === null || $emphasis === ''
+        ? ''
+        : \Pushery\WireKit\Support\StrictnessGate::enforce('data-list.item', 'emphasis', \Pushery\WireKit\Support\NumericProp::text($emphasis), ['strong', 'total', 'sub'], '');
+
+    // Label and value are set together, so a sum reads as one line. `strong` and `total` give the
+    // label the size the value inherits from the list and the color of the text, and both of them
+    // the weight of a heading: two channels besides color. `sub` is one rung below the ordinary
+    // row, in `inline` below the small text that layout sets.
+    $labelClasses = match (true) {
+        $emphasis === 'strong', $emphasis === 'total' => 'font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]',
+        $emphasis === 'sub' && $isInline => 'text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]',
+        $emphasis === 'sub' => 'text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]',
+        $isInline => 'text-[color:var(--color-wk-text-muted)]',
+        default => 'text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]',
+    };
+
+    $valueClasses = match (true) {
+        $emphasis === 'strong', $emphasis === 'total' => 'font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]',
+        $emphasis === 'sub' && $isInline => 'text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]',
+        $emphasis === 'sub' => 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]',
+        default => 'text-[color:var(--color-wk-text)]',
+    };
+
+    // The rule above a `total`, in the layouts that draw no rules between their rows. In `summary`
+    // and `detail` this box is `display: contents`, so it has no edge to draw on, and a border on
+    // the label and the value would break at the gap between the columns and sit at two heights
+    // where their baselines differ. Its `::before` is still generated, as a grid item of the list
+    // that spans both columns, a row of its own. In `inline` it is a block above the entry. The
+    // other layouts rule the line between every two rows already, so a `total` there adds none.
+    $ruleClasses = $emphasis === 'total' && ($isGridPair || $isInline)
+        ? "before:content-[''] before:block before:col-span-full before:my-[var(--space-wk-xs,0.25rem)] before:border-t before:border-[color:var(--color-wk-border)]"
+        : '';
+
     $wrapperStyle = match (true) {
         $isInline => 'display: block; overflow-wrap: anywhere;',
         $isGridPair => 'display: contents;',
@@ -94,7 +135,7 @@
 
     // The column is named explicitly rather than left to auto-placement. A row
     // whose <dt> is omitted (no `label`) would otherwise put its <dd> into the
-    // FIRST track and shunt every following row one cell out of alignment —
+    // first track and shunt every following row one cell out of alignment —
     // silent, and visible only once a real list happens to contain one.
     $labelStyle = match (true) {
         $isInline => 'display: inline;',
@@ -118,11 +159,11 @@
 
     $valueStyle = match (true) {
         $isInline => 'display: inline; margin: 0; '.($inlineKeepsBreaks ? 'white-space: pre-line; ' : '').'overflow-wrap: anywhere;',
-        $isSummary => 'grid-column: 2; min-width: 0; text-align: right; overflow-wrap: anywhere; '
+        $isSummary => 'grid-column: 2; min-width: 0; text-align: end; overflow-wrap: anywhere; '
             .'font-variant-numeric: tabular-nums;',
         $layout === 'detail' => 'grid-column: 2; min-width: 0; overflow-wrap: anywhere;',
         $isStacked => 'min-width: 0; overflow-wrap: anywhere;',
-        default => 'flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;',
+        default => 'flex: 1; min-width: 0; text-align: end; overflow-wrap: anywhere;',
     };
 
     // An inline display wins over every class of the caller's, `hidden` included: where the
@@ -130,7 +171,7 @@
     [$wrapperStyle, $wrapperStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, $wrapperStyle);
 @endphp
 
-<div {{ $attributes->merge($wrapperStyle !== '' ? ['style' => $wrapperStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$itemClasses, $wrapperStyleClasses => $wrapperStyleClasses !== ''])) }}>
+<div {{ $attributes->merge($wrapperStyle !== '' ? ['style' => $wrapperStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$itemClasses, $wrapperStyleClasses => $wrapperStyleClasses !== '', $ruleClasses => $ruleClasses !== ''])) }}>
     {{-- Label: the "key" in the key-value pair. min-width: 0 +
          overflow-wrap: anywhere let long single-word labels (e.g.
          "Berufsunfähigkeitsversicherung", "Mietpreisbremse" — German
@@ -141,9 +182,9 @@
     @if($label && $isInline)
         {{-- On one line with its value, and without the weight of a heading: the colon reads as part
              of the label, the way a line of text says it. --}}
-        <dt style="{{ $labelStyle }}" class="text-[color:var(--color-wk-text-muted)]">{{ $label }}:</dt>
+        <dt style="{{ $labelStyle }}" class="{{ $labelClasses }}">{{ $label }}:</dt>
     @elseif($label)
-        <dt style="{{ $labelStyle }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
+        <dt style="{{ $labelStyle }}" class="{{ $labelClasses }}">
             {{ $label }}
         </dt>
     @endif
@@ -155,15 +196,15 @@
          <div> a `value` attribute means nothing, so without the prop the value
          would render as a dead attribute beside an empty cell. The slot wins
          when both are given, because it can carry markup and the prop cannot.
-         overflow-wrap: anywhere covers the symmetric case where the VALUE is a
+         overflow-wrap: anywhere covers the symmetric case where the value is a
          long single token (URL, compound German noun, file path). --}}
-    @if($isInline)
+    @wirekitLast($isInline)
         {{-- Written against both tags and trimmed: under `white-space: pre-line` the line breaks of
              the template and of the slot's own indentation would show as empty lines. --}}
-        <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">{{ $inlineValue !== null ? new \Illuminate\Support\HtmlString($inlineValue) : $value }}</dd>
+        <dd style="{{ $valueStyle }}" class="{{ $valueClasses }}">{{ $inlineValue !== null ? new \Illuminate\Support\HtmlString($inlineValue) : $value }}</dd>
     @else
-        <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">
+        <dd style="{{ $valueStyle }}" class="{{ $valueClasses }}">
             {{ $slot->hasActualContent() ? $slot : $value }}
         </dd>
-    @endif
+    @endwirekitLast
 </div>

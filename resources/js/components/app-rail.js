@@ -5,7 +5,7 @@ import { timerDelay } from '../utils/timer-delay.js';
 /**
  * App rail — the expanded/collapsed state of the module rail.
  *
- * Deliberately a SEPARATE factory from `wirekitSidebarRail` rather than a shared
+ * Deliberately a separate factory from `wirekitSidebarRail` rather than a shared
  * one with a configurable property name, and the reason is the same one recorded
  * there: Alpine resolves a binding by the name it finds in scope, and these two
  * templates bind different names on purpose. A sidebar is `collapsed`; a rail is
@@ -24,7 +24,7 @@ import { timerDelay } from '../utils/timer-delay.js';
  * @param {boolean}      [config.pinned]    true when the page set `expanded`; storage then does not answer it
  * @param {string|null}  [config.persist]   storage key; null keeps it ephemeral
  * @param {string}       [config.persistDriver] 'local' (default) or 'cookie'. The cookie
- *   driver exists so the SERVER can seed the first render — see persisted-flag.js.
+ *   driver exists so the server can seed the first render — see persisted-flag.js.
  * @param {boolean}      [config.expandable] whether a reader can widen it; absent means true
  */
 export default function wirekitAppRail(config = {}) {
@@ -36,7 +36,7 @@ export default function wirekitAppRail(config = {}) {
         expanded: config.expanded === true,
 
         /**
-         * Whether the NAMES are laid out. Deliberately not the same thing as `expanded`.
+         * Whether the names are laid out. Deliberately not the same thing as `expanded`.
          *
          * A label leaving is invisible; a label arriving is not. A name laid out while the
          * column is still widening is set at a width that is not yet the final one, wraps
@@ -53,11 +53,11 @@ export default function wirekitAppRail(config = {}) {
         wide: false,
 
         /**
-         * Whether this column may ANIMATE its width yet. False for the first frame.
+         * Whether this column may animate its width yet. False for the first frame.
          *
          * The transition is declared on the element, so on a cold load — no cache, stylesheet
          * still in flight — the column lays out at its unstyled width, and the moment the CSS
-         * lands the browser animates the ARRIVAL of the styled width. The reader sees a column
+         * lands the browser animates the arrival of the styled width. The reader sees a column
          * unfold on a page where nothing was toggled. With a warm cache the styles are there
          * before first paint and nothing shows, which is why this only ever surfaced on
          * cmd+shift+R.
@@ -97,7 +97,7 @@ export default function wirekitAppRail(config = {}) {
          * column edge would be off the device with no way to reach them.
          *
          * The preference is stored, is not tied to a breakpoint, and the control that sets
-         * it lives INSIDE the drawer. So a phone can reach that state without a desktop ever
+         * it lives inside the drawer. So a phone can reach that state without a desktop ever
          * having been involved.
          *
          * Forced collapsed below the breakpoint, and the stored value left untouched, so a
@@ -219,11 +219,11 @@ export default function wirekitAppRail(config = {}) {
                 window.addEventListener('wirekit:rail:toggle', this._onExternalToggle);
             }
 
-            // Announce the state on arrival so a trigger rendered OUTSIDE the rail can
+            // Announce the state on arrival so a trigger rendered outside the rail can
             // paint the right aria-expanded before its first click instead of guessing.
             //
             // Deferred, for the reason sidebar-rail.js records at length: Alpine
-            // initializes in document order, and the rail is the FIRST column of the
+            // initializes in document order, and the rail is the first column of the
             // shell, so every plausible external trigger — a topbar button, a mobile
             // menu control — registers its listener after this component. Announcing
             // synchronously lands on nobody, and a persisted expanded state then shows
@@ -315,7 +315,7 @@ export default function wirekitAppRail(config = {}) {
 
             window.dispatchEvent(
                 new CustomEvent('wirekit:rail:toggled', {
-                    // Optional chaining because the id is optional AND because `$el` is an
+                    // Optional chaining because the id is optional and because `$el` is an
                     // Alpine magic a plain unit harness does not provide — reading it
                     // unguarded made the sibling component untestable outside a browser,
                     // which is a mistake worth not repeating.

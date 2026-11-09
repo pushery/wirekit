@@ -23,7 +23,7 @@ final class PublishedAssetsCheck extends VerifyCheck
     /**
      * Check that wirekit.min.css and wirekit.js are published to public/vendor/wirekit/.
      *
-     * The CSS checked here is the MINIFIED twin, because that is the file `@wirekitStyles`
+     * The CSS checked here is the minified twin, because that is the file `@wirekitStyles`
      * links. The readable `wirekit.css` is published too — it is the source of truth and
      * what a developer reads — but its presence says nothing about whether the page will
      * be styled. Checking the readable one and reporting PASS while the linked one was

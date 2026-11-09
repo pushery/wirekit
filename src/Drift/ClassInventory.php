@@ -55,7 +55,7 @@ final class ClassInventory
      * `Support\TablistStyles` is that file. It became "the one place a tab bar's
      * appearance is decided" and moved twelve class literals out of three Blade
      * views into PHP. Six of them exist nowhere else, so with `src/Support/`
-     * skipped AND the safelist skipped, the compiled CSS carried five selectors
+     * skipped and the safelist skipped, the compiled CSS carried five selectors
      * the reverse-diff could trace to nothing — a build-diff failure whose cause
      * was the scanner's blind spot, not drift.
      *
@@ -70,7 +70,7 @@ final class ClassInventory
     ];
 
     /**
-     * Path prefixes skipped for CLASS extraction. Matched via
+     * Path prefixes skipped for class extraction. Matched via
      * str_starts_with() — a value ending in `/` matches every file under
      * that directory; a non-slash value matches the literal path only.
      *
@@ -116,7 +116,7 @@ final class ClassInventory
      *   src/Support/                        → version metadata + utilities
      *   src/WireKit.php                     → animation / icon registrations
      *   src/Theming/                        → preset registry + token maps. It carries
-     *                                         COLOR VALUES and preset keys, never class
+     *                                         color values and preset keys, never class
      *                                         strings — and it was the one prefix in the
      *                                         constant that this list did not name, so a
      *                                         reader counting sixteen against seventeen
@@ -131,7 +131,7 @@ final class ClassInventory
      *                                         Tailwind arbitrary-value
      *                                         classes. If a future
      *                                         factory does emit them,
-     *                                         REMOVE the prefix here in the
+     *                                         remove the prefix here in the
      *                                         same commit + add a regression
      *                                         test that fails without it.
      */
@@ -157,10 +157,10 @@ final class ClassInventory
 
     /**
      * Files skipped for token-reference scanning. Use when a file
-     * contains illustrative `var(--…)` examples in prose that DO NOT
+     * contains illustrative `var(--…)` examples in prose that do not
      * correspond to real runtime references.
      *
-     *   _safelist.blade.php → the safelist's PROSE portion (lines
+     *   _safelist.blade.php → the safelist's prose portion (lines
      *                         after the documentation header) describes
      *                         token chains in plain English with example
      *                         shapes like `var(--color-wk-X)`. The
@@ -194,7 +194,7 @@ final class ClassInventory
 
     /**
      * Project-relative roots that house additional Laravel-style source trees
-     * to scan ON TOP of the package's own resources/views, src/, and
+     * to scan on top of the package's own resources/views, src/, and
      * resources/js/. The driving use case is the in-repo `sample/` Laravel app
      * whose Blade templates and Livewire page classes feed Tailwind v4's
      * automatic source scan during the sample's Vite build — meaning sample-
@@ -207,14 +207,14 @@ final class ClassInventory
      *   {root}/resources/views/**\/*.blade.php  → bladeClasses()
      *   {root}/resources/js/**\/*.js            → jsEmittedClasses()
      *
-     * PHP files under `{root}/app` or `{root}/src` are intentionally NOT
+     * PHP files under `{root}/app` or `{root}/src` are intentionally not
      * scanned — developer Laravel apps store domain identifiers, route
      * names, and seeder strings in those files, not Tailwind class
      * literals. The strict class-shape filter cannot tell `'support-team'`
      * (a team-slug seeder string) apart from `'support-team-50'` (a
      * hypothetical Tailwind utility), so scanning developer PHP would
      * round-trip every hyphenated identifier back as a forward-drift
-     * false positive. Developer apps that DO emit Tailwind classes from
+     * false positive. Developer apps that do emit Tailwind classes from
      * PHP (via `match` arms or `implode(' ', [...])`) carry that emission
      * in the Blade layer for WireKit's Livewire-page convention; they
      * already get scanned via {root}/resources/views.
@@ -256,7 +256,7 @@ final class ClassInventory
      *   1. Static `class="…"` and `class='…'` attributes
      *   2. `@class([…])` directive arrays
      *
-     * Alpine `:class="…"` bindings are intentionally NOT scanned —
+     * Alpine `:class="…"` bindings are intentionally not scanned —
      * their JS expressions can construct class names dynamically,
      * which the static scanner cannot predict. Such cases must be
      * opt-in safelisted via the `data-drift-skip` attribute.
@@ -476,7 +476,7 @@ final class ClassInventory
 
             $relativePath = $this->relativePath($file->getPathname());
 
-            // Checked BEFORE the skip, because the skip list holds directory
+            // Checked before the skip, because the skip list holds directory
             // prefixes while the exceptions are single files inside them.
             // Without the override, teaching the scanner about one class-emitting
             // file would mean opening its entire directory — and the skip
@@ -524,11 +524,11 @@ final class ClassInventory
      */
     private function harvestAttributeClasses(string $contents, string $file, array &$inventory): void
     {
-        // Match the value up to the SAME quote it opened with — `(?:(?!\1)[\s\S])*`
-        // rather than `[^"\']*`, which stops at EITHER quote: a single quote inside a
+        // Match the value up to the same quote it opened with — `(?:(?!\1)[\s\S])*`
+        // rather than `[^"\']*`, which stops at either quote: a single quote inside a
         // double-quoted attribute (Tailwind's `before:content-['']` empty-content
         // utility) would truncate the match, `\1` would then fail to close, and the
-        // WHOLE class attribute would be skipped, orphaning every unique class in it
+        // whole class attribute would be skipped, orphaning every unique class in it
         // as reverse-dead. `[\s\S]` keeps newlines matching.
         $pattern = '/(?<![:\w])class\s*=\s*(["\'])(?P<value>(?:(?!\1)[\s\S])*)\1/u';
 
@@ -598,7 +598,7 @@ final class ClassInventory
             $line = $this->offsetToLine($contents, $offset);
 
             /*
-             * Drop the two NAME arguments of a nested `resolveClasses(…)` call.
+             * Drop the two name arguments of a nested `resolveClasses(…)` call.
              *
              * `->class([resolveClasses('date-separator', 'base', implode(' ', [...]))])` puts
              * a component name and a slot name inside a class array, and both are shaped
@@ -617,29 +617,29 @@ final class ClassInventory
             );
 
             /*
-             * Capture string literals AND remember whether each is followed
+             * Capture string literals and remember whether each is followed
              * by a `=>` arrow — those are array keys, not class values.
              *
              *   @class([
              *     'flex items-center',          // value (numeric key)
-             *     'sm' => 'rounded-md h-8',     // 'sm' is KEY, 'rounded-md h-8' is VALUE
-             *     'opacity-50' => $disabled,    // 'opacity-50' is BOTH a key AND a class
+             *     'sm' => 'rounded-md h-8',     // 'sm' is key, 'rounded-md h-8' is value
+             *     'opacity-50' => $disabled,    // 'opacity-50' is both a key and a class
              *                                   // (its presence is conditional on $disabled)
              *   ])
              *
              * The third shape is real Tailwind — when the condition is true,
-             * the key string IS the emitted class. So we keep keys IF their
+             * the key string is the emitted class. So we keep keys if their
              * value (after =>) is a PHP variable / method call (not a string
-             * literal). When the value IS a string literal, the key is a
+             * literal). When the value is a string literal, the key is a
              * dispatcher index and skipped.
              */
             /*
              * Capture string literals + a non-consuming lookahead that
-             * detects whether the string is the KEY of an `=>` mapping
-             * to ANOTHER string literal (in which case it's a dispatcher
+             * detects whether the string is the key of an `=>` mapping
+             * to another string literal (in which case it's a dispatcher
              * key, not an emitted class). Using a lookahead instead of
              * a capturing group keeps the match position right after
-             * the closing quote, so the NEXT string in the array still
+             * the closing quote, so the next string in the array still
              * matches cleanly.
              */
             $stringPattern = '/(["\'])(?P<value>(?:\\\\.|(?!\1).)*)\1(?P<keyArrow>(?=\s*=>\s*["\']))?/u';
@@ -652,7 +652,7 @@ final class ClassInventory
                  * Skip dispatcher keys whose value is a string literal —
                  * they're size/intent indices like `'sm' => 'rounded-md'`.
                  * Keep keys whose value is a variable (`'opacity-50' =>
-                 * $disabled`) — those ARE emitted classes when the
+                 * $disabled`) — those are emitted classes when the
                  * condition is true.
                  */
                 if ($isMappingKey) {
@@ -687,7 +687,7 @@ final class ClassInventory
      *
      * Restricted to the `' '` (single-space) joiner. Other joiners
      * (`', '`, `','`) are used for sentence enumeration / ARIA labels and
-     * NOT class concatenation; including them would round-trip ARIA
+     * not class concatenation; including them would round-trip ARIA
      * fragments back through the class-shape filter and produce false
      * positives.
      *
@@ -701,7 +701,7 @@ final class ClassInventory
     private function harvestImplodeArrayClassStrings(string $contents, string $file, array &$inventory): void
     {
         /*
-         * Find every `implode(' ', [` opening. Single OR double quotes
+         * Find every `implode(' ', [` opening. Single or double quotes
          * around the joiner are accepted because PHP allows both.
          * After the opening bracket we walk char-by-char tracking
          * `[` / `(` depth so the closing `]` is matched correctly
@@ -732,9 +732,9 @@ final class ClassInventory
 
             /*
              * Inside the body, every quoted string is a class-string
-             * candidate. We do NOT distinguish between numeric-keyed
+             * candidate. We do not distinguish between numeric-keyed
              * positional entries and `'class' => $bool` conditional
-             * entries — the LEFT side of `=>` (which is the class
+             * entries — the left side of `=>` (which is the class
              * string) is the one we want regardless. Variable-on-left
              * shapes (`$dynamic => 'foo'`) are skipped because the
              * left side isn't a string literal.
@@ -768,7 +768,7 @@ final class ClassInventory
      * `harvestMatchArmClassStrings`, `harvestImplodeArrayClassStrings`)
      * each cover one specific PHP authoring pattern. They miss the
      * fourth canonical pattern: a plain associative-array literal whose
-     * VALUES are class strings — the `$colsMap = ['1' => 'grid-cols-1', …]`
+     * values are class strings — the `$colsMap = ['1' => 'grid-cols-1', …]`
      * lookup table in `resources/views/components/grid.blade.php`, the
      * nested `'sm' => ['translate' => 'peer-checked:translate-x-4']`
      * shape inside a match arm in `toggle.blade.php`, and any future
@@ -784,8 +784,8 @@ final class ClassInventory
      *
      * The strict filter (same one used by `phpEmittedClasses()`) rejects
      * identifier-style strings (`'sm'`, `'compact'`, `'auto'`) so the
-     * dispatcher KEYS of these arrays stay out of the inventory; only
-     * the Tailwind-shaped VALUES survive.
+     * dispatcher keys of these arrays stay out of the inventory; only
+     * the Tailwind-shaped values survive.
      *
      * @param  Inventory  $inventory
      */
@@ -826,7 +826,7 @@ final class ClassInventory
                      * Whitespace-splitting an SVG path data attribute
                      * surfaces fragments like `0h-5.25M21` and `0zm-7-4a1`
                      * that pass the digit-leading Tailwind shape filter
-                     * but are NOT real class candidates. Any class= attr
+                     * but are not real class candidates. Any class= attr
                      * inside the markup is independently caught by the
                      * file-wide harvestAttributeClasses() scan, so this
                      * skip costs no real coverage.
@@ -868,9 +868,9 @@ final class ClassInventory
                          * strings (`reading-progress`, `tree-view`,
                          * `aria-label`, `data-wk-striped`, `lower-roman`,
                          * `top-left`) that live inside @php blocks for
-                         * runtime dispatch but are NOT Tailwind utilities.
+                         * runtime dispatch but are not Tailwind utilities.
                          *
-                         * The dispatcher KEYS of class lookup tables —
+                         * The dispatcher keys of class lookup tables —
                          * `'sm'`, `'compact'`, `'auto'` — are already
                          * dropped by the strict class-shape filter above
                          * (no hyphen, no bracket); this extra pass catches
@@ -908,7 +908,7 @@ final class ClassInventory
     /**
      * Every `match (…) { … }` body in a source, with the offset it starts at.
      *
-     * The subject is read up to its BALANCED closing parenthesis: a subject that calls a
+     * The subject is read up to its balanced closing parenthesis: a subject that calls a
      * function, `match (WireKit::validateProp('list', 'type', $type, [...])) {`, carries
      * parentheses of its own, and a pattern that stops at the first `)` never reaches the
      * brace. The body runs to its balanced closing brace. Quoted strings are skipped while
@@ -1003,7 +1003,7 @@ final class ClassInventory
      *     'top'  => 'inset-x-0 top-0',
      *   };
      *
-     * Captures ONLY the right-hand-side string-literal values (keys
+     * Captures only the right-hand-side string-literal values (keys
      * and any non-string values like variable references are skipped).
      * Each captured value is whitespace-split and run through the
      * strict class-shape filter; non-Tailwind hyphenated identifiers
@@ -1029,22 +1029,22 @@ final class ClassInventory
          *      the body, so `match (WireKit::validateProp(…, [...])) {` is
          *      read like `match ($type) {`.
          *   2. Inside each body, capture every `=> 'STRING'` arm
-         *      (single OR double quoted). Skip arms whose right-hand-
+         *      (single or double quoted). Skip arms whose right-hand-
          *      side is a variable / method call / non-string-literal.
          */
         foreach ($this->matchBodies($contents) as $bodyMatch) {
             [$body, $bodyOffset] = $bodyMatch;
 
             /*
-             * Only capture arrows at the TOP level of the match body
-             * — i.e. NOT inside nested arrays / function calls. A
+             * Only capture arrows at the top level of the match body
+             * — i.e. Not inside nested arrays / function calls. A
              * shape like
              *
              *   'compact' => [
              *     'spineExpand' => 'always-md',  // inner arrow, skip
              *   ],
              *
-             * has TWO arrows; only the outer one points at the arm
+             * has two arrows; only the outer one points at the arm
              * value. The inner arrow's right-side ('always-md') is a
              * config-preset name, not a class string.
              *
@@ -1117,7 +1117,7 @@ final class ClassInventory
                  * alert.blade.php). Whitespace-splitting an SVG `d="…"`
                  * attribute extracts fragments like `0v-3.5A.75.75` that
                  * pass the digit-leading Tailwind shape filter but are
-                 * NOT classes. The classes inside any class= attribute of
+                 * not classes. The classes inside any class= attribute of
                  * the markup are caught by harvestAttributeClasses().
                  */
                 if (preg_match('/<[a-z]/i', $value) === 1) {
@@ -1247,7 +1247,7 @@ final class ClassInventory
      * closing bracket and leave a stray `]` behind — which then fails the shape check
      * for a reason that has nothing to do with the class.
      *
-     * An UNBALANCED span (more opens than closes) is left as-is on purpose: that is not
+     * An unbalanced span (more opens than closes) is left as-is on purpose: that is not
      * a Tailwind class, and the shape check downstream should be the one to say so.
      */
     private function maskBracketedSpans(string $candidate): string
@@ -1294,7 +1294,7 @@ final class ClassInventory
      * are rejected.
      *
      * Strict mode (used for PHP/JS source) additionally requires the
-     * candidate to either contain a `[…]` arbitrary-value bracket OR be
+     * candidate to either contain a `[…]` arbitrary-value bracket or be
      * a hyphenated multi-segment class. This rejects identifier-style
      * strings like 'primary', 'neutral', 'success' which would otherwise
      * be flagged as drift on every PR.
@@ -1310,12 +1310,12 @@ final class ClassInventory
         }
 
         /*
-         * Template interpolation, rejected on the RAW candidate and before the masking
+         * Template interpolation, rejected on the raw candidate and before the masking
          * below — order matters here, and getting it wrong is what this check is for.
          *
          * `text-[color:var({$textColor})]` in a PHP string is a template, not a class:
          * what reaches the browser depends on a variable. The shape regex admits neither
-         * `{` nor `$`, but those characters sit INSIDE the brackets, and the shape check
+         * `{` nor `$`, but those characters sit inside the brackets, and the shape check
          * reads a masked form where they are no longer there to reject. Left to it,
          * VariantResolver's templates would report as classes Tailwind had failed to
          * compile, which is true and not a defect: nothing emits them literally.
@@ -1325,7 +1325,7 @@ final class ClassInventory
         }
 
         /*
-         * The two SHAPE checks below run against a form with every bracketed span
+         * The two shape checks below run against a form with every bracketed span
          * replaced by a placeholder, not against the raw candidate.
          *
          * Tailwind's brackets hold CSS, and CSS uses characters that also spell a PHP
@@ -1352,15 +1352,15 @@ final class ClassInventory
          * Reject Alpine / Blade expression strings (operators in template-
          * binding shapes like `disabled && readonly` or `state === 'open'`).
          *
-         * Single `&` is INTENTIONALLY excluded from the rejection set —
+         * Single `&` is intentionally excluded from the rejection set —
          * Tailwind v4 uses `&` as the parent-selector marker inside
          * arbitrary-variant brackets like `[&_h1]:mt-0` or `[&::-webkit-…]`.
-         * The compound `&&` (logical AND) is still rejected via the
+         * The compound `&&` (logical and) is still rejected via the
          * trailing alternation. Same logic applies to `|` vs `||`: bitwise
          * `|` doesn't appear in Tailwind syntax in practice, but the
          * single-char form is a real false-positive risk on a class-string
          * that ends up containing `pipe-separated-options` data — keep it
-         * on the strict reject list and rely on `||` for the OR case.
+         * on the strict reject list and rely on `||` for the or case.
          *
          * The `[&...]:..." silent-failure was the root cause of all the
          * `[&_h1]:mt-0`, `[&_blockquote]:`, `[&_th]:text-left` strings in
@@ -1373,13 +1373,13 @@ final class ClassInventory
 
         /*
          * Tailwind v4 class shape: starts with a lowercase letter (utility
-         * prefix like `text-`, `bg-`) OR with `[` (raw arbitrary property
+         * prefix like `text-`, `bg-`) or with `[` (raw arbitrary property
          * like `[appearance:textfield]` or nested-selector variant like
          * `[&_a]:text-foo`, `[&::-webkit-outer-spin-button]:appearance-none`)
-         * OR with a single digit IMMEDIATELY followed by a lowercase letter
+         * or with a single digit immediately followed by a lowercase letter
          * (the `2xl:` breakpoint variant is the canonical case — every
          * `2xl:grid-cols-N` and `2xl:flex` shape begins with `2`)
-         * OR with a leading `-` (Tailwind negative-utility shape — `-top-8`,
+         * or with a leading `-` (Tailwind negative-utility shape — `-top-8`,
          * `-mt-1`, `-translate-x-1/2`, `-rotate-90`; the negative sign is
          * a first-class part of the class name and the next char follows
          * the same shape constraints as a positive-utility start).
@@ -1392,12 +1392,12 @@ final class ClassInventory
          */
         /*
          * Container-query variants start with `@`, which the shape check below rejects on its
-         * FIRST CHARACTER — and it has to keep rejecting a bare `@`, because a Blade directive
+         * first character — and it has to keep rejecting a bare `@`, because a Blade directive
          * is spelled that way too (`@if`, `@props`, `@class`). Admitting `@` outright would make
          * every directive look like a utility.
          *
          * A container variant is distinguishable without loosening anything else: it is exactly
-         * `@container`, or it carries a `/` (a NAMED container, `@container/wk-table`) or a `:`
+         * `@container`, or it carries a `/` (a named container, `@container/wk-table`) or a `:`
          * (a variant, `@max-3xl/wk-table:hidden`, `@2xl/bento:col-span-2`). No Blade directive
          * carries either.
          *
@@ -1408,7 +1408,7 @@ final class ClassInventory
         $isContainerVariant = preg_match('/(?:^|:)@(?:container$|[a-z0-9-]*[\/:])/', $masked) === 1;
 
         /*
-         * The utility form drops the `@` AND the `/name`, because neither is part of the SHAPE
+         * The utility form drops the `@` and the `/name`, because neither is part of the shape
          * question the checks below ask. `@container/wk-table` is the `container` utility scoped
          * to a name; `@2xl/bento:col-span-2` is `2xl:col-span-2` scoped to one. Keeping the name
          * would make every check answer "no known utility here", which is a statement about the
@@ -1433,7 +1433,7 @@ final class ClassInventory
         /*
          * Reject WireKit's own custom-CSS class prefixes — these are
          * defined in dist/wirekit.css (e.g. `.wk-reading-progress__fill`,
-         * `.wk-scrollbar`) and shipped as static class strings, NOT as
+         * `.wk-scrollbar`) and shipped as static class strings, not as
          * Tailwind utilities. The compiled-CSS-diff would correctly note
          * they're not in the developer's Tailwind output, but that's
          * because they live in dist/wirekit.css, not because they drifted.
@@ -1446,7 +1446,7 @@ final class ClassInventory
          * A named group or peer marker — `group/wk-sidebar`, `peer/label`.
          *
          * Tailwind emits no rule for these and never has: the marker exists so a
-         * `group-data-[…]/wk-sidebar:` variant elsewhere can address THIS ancestor rather
+         * `group-data-[…]/wk-sidebar:` variant elsewhere can address this ancestor rather
          * than the nearest one. It is consumed by the variant's selector, not compiled into
          * one of its own.
          *
@@ -1506,7 +1506,7 @@ final class ClassInventory
          * `container` itself is on the list two lines up.
          */
         /*
-         * An ATTRIBUTE NAME, not a class: `aria-describedby`, `data-wk-ready`. Tailwind's aria
+         * An attribute name, not a class: `aria-describedby`, `data-wk-ready`. Tailwind's aria
          * and data variants always carry a colon and a utility after it (`aria-selected:…`,
          * `data-[state=open]:…`), so a bare one is never a utility. It reaches a class list
          * as the argument of an attribute read inside an id list, `implode(' ', array_filter([
@@ -1517,7 +1517,7 @@ final class ClassInventory
         }
 
         /*
-         * An Alpine or Livewire ATTRIBUTE NAME, not a class: `x-on:change`, `x-bind:disabled`,
+         * An Alpine or Livewire attribute name, not a class: `x-on:change`, `x-bind:disabled`,
          * `wire:model.live`. They carry a colon, so they have the shape of a variant, and a
          * component that builds its attribute bag in PHP writes them as array keys, which the
          * @php harvester reads. No Tailwind variant is called `x-on`, `x-bind` or `wire`.
@@ -1559,7 +1559,7 @@ final class ClassInventory
              * `lg:block`, `@3xl/wk-table:hidden`. The hyphen test below cannot accept any of
              * them, because there is no hyphen to find.
              *
-             * Split on the LAST colon: the variant chain sits in front, and bracketed spans are
+             * Split on the last colon: the variant chain sits in front, and bracketed spans are
              * already masked at this point, so a `:` inside an arbitrary value cannot be the one
              * this finds.
              */
@@ -1590,7 +1590,7 @@ final class ClassInventory
     }
 
     /**
-     * The body of the array literal that opens just before `$bodyStart`, up to its MATCHING `]`.
+     * The body of the array literal that opens just before `$bodyStart`, up to its matching `]`.
      *
      * Brackets and parentheses are counted and string literals skipped, since a Tailwind class
      * holds both kinds of bracket in its own text. Null when the array never closes.

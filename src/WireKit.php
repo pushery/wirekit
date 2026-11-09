@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Closure;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -86,8 +87,8 @@ class WireKit
      * `button` migrated to `intent` + `surface` and `input` never had a `variant`
      * at all.
      *
-     * `variant` is NOT retired in general — it is a live, declared prop across a large
-     * part of the catalog, and it is retired on `button` and `badge` ONLY. A blanket
+     * `variant` is not retired in general — it is a live, declared prop across a large
+     * part of the catalog, and it is retired on `button` and `badge` only. A blanket
      * search-and-replace across `variant=` therefore breaks every component that is
      * correct.
      *
@@ -114,7 +115,7 @@ class WireKit
          * This method stored its values and nothing ever asked for them: no template called
          * `defaultsFor()`, so a documented feature did precisely nothing. The obvious repair
          * was to teach every template to consult it — and that would have been the wrong one,
-         * because they ALREADY resolve a default this way:
+         * because they already resolve a default this way:
          *
          *     @props(['intent' => config('wirekit.components.button.intent', 'primary')])
          *
@@ -135,7 +136,7 @@ class WireKit
             }
 
             foreach ($props as $prop => $value) {
-                // A sub-component's PROP is read by its template through the dotted path,
+                // A sub-component's prop is read by its template through the dotted path,
                 // `config('wirekit.components.dropdown.panel.width')`, and config() walks that
                 // one segment at a time: 'dropdown', then 'panel'. So the value is written
                 // there, nested under the parent. Under the literal key 'dropdown.panel' it
@@ -285,17 +286,21 @@ class WireKit
 
         // 3. Config-based class overrides (wirekit.components.{name}.classes.{block}).
         // A sub-component name carries a dot ('sidebar.item', 'card.header', 'table.th'),
-        // and the shipped config declares these as LITERAL dotted keys. config()/Arr::get()
+        // and the shipped config declares these as literal dotted keys. config()/Arr::get()
         // splits the key on '.', so config("wirekit.components.sidebar.item.classes.{block}")
         // walks components -> 'sidebar' -> 'item' and never reaches the literal 'sidebar.item'
         // key: through config() alone the override would silently no-op for every dotted
         // sub-component, the larger part of the catalog. So the components map is read once and
-        // the literal component key indexed directly, with the dotted config() path as the
-        // fallback, so a developer who writes the nested-array form resolves too. Both forms
-        // work, and a bare config() here would break the dotted one.
+        // the literal component key indexed directly, with the dotted path walked on the same map
+        // as the fallback, so a developer who writes the nested-array form resolves too. Both
+        // forms work, and a bare config() here would break the dotted one. The fallback runs on
+        // most renders, since most entries of the shipped map name no classes, so it walks the
+        // map it has rather than asking the container and the configuration's root again.
         $components = config('wirekit.components', []);
-        $configClasses = $components[$component]['classes'][$block]
-            ?? config("wirekit.components.{$component}.classes.{$block}");
+        $key = "wirekit.components.{$component}.classes.{$block}";
+        $configClasses = is_array($components)
+            ? $components[$component]['classes'][$block] ?? Arr::get($components, Str::after($key, 'wirekit.components.'))
+            : null;
         if ($configClasses !== null) {
             return $configClasses;
         }
@@ -307,7 +312,7 @@ class WireKit
     /**
      * Resolve one personalized block value against the vendor default.
      *
-     * A block value is normally the finished class string, and that REPLACES the
+     * A block value is normally the finished class string, and that replaces the
      * shipped block outright. Replacement is a reasonable default and a poor only
      * option: changing one color or one measurement means restating the whole
      * block, and from that moment the application owns it — every later
@@ -315,7 +320,7 @@ class WireKit
      * because nothing is wrong; the personalization simply looks like a decision
      * somebody made, for as long as it stands.
      *
-     * So a block value may instead be a closure, and it RECEIVES the vendor
+     * So a block value may instead be a closure, and it receives the vendor
      * default:
      *
      *     WireKit::personalize('sidebar.item', [
@@ -330,12 +335,12 @@ class WireKit
      * could not have been passed before this shape existed (it is not a `string`),
      * so nothing that worked can change meaning here.
      *
-     * Deliberately NOT extended to the config layer (#3 in the chain): a closure
+     * Deliberately not extended to the config layer (#3 in the chain): a closure
      * in a config file cannot survive `config:cache`, so offering it there would
      * hand developers a personalization that works until the first cached deploy.
      */
-    // `self::`, not `static::`. Late static binding on a PRIVATE method is unsafe —
-    // `static::` resolves to the called class, where a private member of THIS one is
+    // `self::`, not `static::`. Late static binding on a private method is unsafe —
+    // `static::` resolves to the called class, where a private member of this one is
     // not visible. PHPStan calls it out (staticClassAccess.privateMethod) and it is
     // right: the surrounding calls use `static::` because those methods are public.
     private static function applyBlock(mixed $value, string $vendorClasses): string
@@ -344,7 +349,7 @@ class WireKit
             return (string) $value($vendorClasses);
         }
 
-        // Returned as-is, NOT cast. The file is strict_types, so this method's
+        // Returned as-is, not cast. The file is strict_types, so this method's
         // `string` return rejects a block value of the wrong type: a number or an
         // array raises a TypeError. Casting here would quietly turn those into "5"
         // and "Array".
@@ -372,7 +377,7 @@ class WireKit
      * panel. The user sorts, clicks anything that talks to the server, and the sort is
      * gone. Nothing errors; the widget simply forgets.
      *
-     * A caller-supplied `id` solves it. What this fixes is the DEFAULT, by seeding it from the component's own stable identity — its `name` — which
+     * A caller-supplied `id` solves it. What this fixes is the default, by seeding it from the component's own stable identity — its `name` — which
      * is precisely what a widget embedded in a Livewire component is given anyway.
      *
      * Without a seed there is still something stable: the order the widgets render in.
@@ -415,7 +420,7 @@ class WireKit
      *
      * A component that accepts `as` interpolates it straight into its opening tag — either
      * as `<{{ $as }} …>` or as `<{{ $tag }} …>`, where a default was resolved first. Blade
-     * escapes that echo, and `e()` escapes NEITHER A SPACE NOR AN `=`, so
+     * escapes that echo, and `e()` escapes neither A space nor an `=`, so
      * `as="div onmouseover=alert(1)"` renders `<div onmouseover=alert(1) class="…">`: a
      * working event handler, in every component that interpolates the tag that way.
      *
@@ -427,7 +432,7 @@ class WireKit
      * rather than a live exploit — but a value derived from data (a CMS block type, a
      * per-tenant layout setting) reaches it the same way, and nothing said it must not.
      *
-     * The SHAPE is checked rather than an allowlist of tags, deliberately. An enum would
+     * The shape is checked rather than an allowlist of tags, deliberately. An enum would
      * have to guess which elements a developer legitimately wants — `article`, `aside`,
      * `figure`, a custom element — and break the ones it did not think of. A tag name has
      * exactly one shape, and nothing that satisfies it can carry an attribute.
@@ -637,7 +642,7 @@ class WireKit
      * Deterministic avatar color pair for a key (initials / name).
      *
      * Exposes {@see AvatarPalette::for()} so a
-     * developer can color a custom inline avatar/chip with the SAME palette
+     * developer can color a custom inline avatar/chip with the same palette
      * `<x-wirekit::avatar from-initials>` uses, without rendering the
      * component. Returns `['bg' => 'oklch(...)', 'fg' => '#fff']`.
      *
@@ -682,7 +687,7 @@ class WireKit
             'xl' => 'px-[var(--padding-wk-x-xl)]',
             // Unreachable through the gate above, which returns a member of $allowed or the
             // lenient fallback. Present because PHPStan cannot see that, and written as the
-            // SAME fallback rather than a throw: the gate deliberately does not let one
+            // same fallback rather than a throw: the gate deliberately does not let one
             // mistyped prop take down a whole Blade view, and a throw here would undo that
             // decision from a place nobody would think to look.
             default => 'px-[var(--padding-wk-x-md)]',
@@ -692,7 +697,7 @@ class WireKit
     /**
      * Reset all personalizations — used in tests only.
      *
-     * MUST be called in setUp() of every test to prevent state leakage.
+     * Must be called in setUp() of every test to prevent state leakage.
      */
     public static function flush(): void
     {
@@ -726,6 +731,36 @@ class WireKit
     }
 
     /**
+     * Text as the searches of the kit compare it, for a search the application runs itself: accents
+     * folded away and lower-cased, so `munchen` finds `München`.
+     *
+     * It folds the way the browser folds a query, so the rows a `table.search` with `server` asks
+     * the application to filter match what the same field finds in the browser:
+     *
+     *   $needle = WireKit::foldForSearch(trim($this->search));
+     *   $rows = $rows->filter(fn ($row) => str_contains(WireKit::foldForSearch($row->name), $needle));
+     */
+    public static function foldForSearch(string|\Stringable|null $text): string
+    {
+        return Support\SearchFold::text($text);
+    }
+
+    /**
+     * A class list under the names the kit writes into the page: with `wirekit.styles.compact` on,
+     * each utility that has a short name under that name, otherwise the list as it came.
+     *
+     * For a test of the application that compares the classes of a kit element with a list of
+     * utilities, and for code that writes the kit's classes into a page itself. A class the table
+     * does not know keeps its name, and the whitespace stays as it was. Pass `$field` for an
+     * input, a select or a textarea: a class the stylesheet reads by name on a form field keeps
+     * that name there.
+     */
+    public static function compactClasses(string $classes, bool $field = false): string
+    {
+        return Support\CompactClasses::map($classes, $field);
+    }
+
+    /**
      * Resolves the `animateIn` prop on marketing components into an x-data
      * attribute string for the wirekitAnimate Alpine helper, or null when
      * the prop is unset: the default, with no animation and no attribute in the markup.
@@ -751,7 +786,7 @@ class WireKit
         $bases = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right',
             'scale', 'zoom', 'flip', 'rotate', 'bounce', 'spring'];
 
-        // `fade-*` shorthand naming-convention aliases. Resolved BEFORE auto-suffix
+        // `fade-*` shorthand naming-convention aliases. Resolved before auto-suffix
         // so `fade-up` resolves to `slide-up-in`, not the non-existent
         // `fade-up-in`. The same map as resources/views/components/reveal.blade.php.
         $aliases = [

@@ -15,7 +15,7 @@
     // First-class id prop — pairs with the wirekit::skip-link helper.
     // When set, the main element also becomes programmatically focusable
     // (tabindex="-1") so the skip-link's fragment navigation moves
-    // keyboard focus INTO the landmark (browser default would only scroll).
+    // keyboard focus into the landmark (browser default would only scroll).
     'id' => null,
 ])
 
@@ -23,7 +23,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $container = BooleanProp::from($container, false, 'main', 'container');
@@ -35,7 +35,10 @@
     // `wk-main` marker — load-bearing against developer prose
     // `max-width: 75ch` clamps (see footer.blade.php for the full
     // rationale).
-    $classes = 'wk-scrollbar '.WireKit::resolveClasses('main', 'base', implode(' ', [
+    // The area scrolls, and Chromium stops a keyboard on a scroller that holds nothing focusable:
+    // `wk-focus-ring-inset` draws the kit's ring there, inside the edge the area reaches, and it
+    // stands outside the personalized list so a block cannot take the ring away.
+    $classes = 'wk-scrollbar wk-focus-ring-inset '.WireKit::resolveClasses('main', 'base', implode(' ', [
         'wk-main',
         'flex-1',
         'relative overflow-y-auto',
@@ -78,11 +81,11 @@
     @if($id !== null) id="{{ $id }}" tabindex="-1" @endif
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $paddingClasses])) }}
 >
-    @if($container || $maxClass !== null)
+    @wirekitLast($container || $maxClass !== null)
         <div class="{{ $maxClass ?? 'max-w-[var(--size-wk-container-2xl,96rem)]' }} mx-auto w-full">
             {{ $slot }}
         </div>
     @else
         {{ $slot }}
-    @endif
+    @endwirekitLast
 </main>

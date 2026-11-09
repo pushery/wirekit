@@ -8,12 +8,12 @@ namespace Pushery\WireKit\Support;
  * The append-only record `wirekit:install` leaves behind so `--rollback` can undo it.
  *
  * It is append-only within a window, and the window is the point. A session records the
- * PRIOR CONTENT of every file the install touched — which on a reinstall means the published
+ * prior content of every file the install touched — which on a reinstall means the published
  * asset bundles, roughly ten megabytes, written into the developer's project root. Without a
  * cap nothing would shorten it and nothing would warn, because an append is not an error.
  *
  * The reader is where that becomes expensive rather than merely untidy. `--rollback` replays
- * the LAST line, and `lastSessionLine()` below reads it without loading the file: loading a
+ * the last line, and `lastSessionLine()` below reads it without loading the file: loading a
  * grown log whole to use one line would make the command that undoes a bad install the one
  * that runs out of memory, a safety net failing exactly when it is reached for.
  *
@@ -36,7 +36,7 @@ final class InstallLog
     public static function append(string $path, string $session): void
     {
         /*
-         * Checked, because THIS file is what `--rollback` reads. A silent append failure —
+         * Checked, because this file is what `--rollback` reads. A silent append failure —
          * a read-only project root, a full disk — leaves the safety net empty, and the
          * developer finds out at the moment they reach for it. `FILE_APPEND` needs its own
          * call rather than `FileWrite::put()`, which replaces.
@@ -56,7 +56,7 @@ final class InstallLog
     }
 
     /**
-     * The newest session line, read WITHOUT loading the log.
+     * The newest session line, read without loading the log.
      *
      * Reading the whole file to use its last line would hold the log about twice over in
      * memory, and a log of five retained sessions of published binaries is large enough for
@@ -77,7 +77,7 @@ final class InstallLog
 
         $last = null;
 
-        // One line held at a time. `fgets` is what makes this bounded by the longest LINE
+        // One line held at a time. `fgets` is what makes this bounded by the longest line
         // rather than by the file — and the longest line is the one the caller wanted anyway.
         while (($line = fgets($handle)) !== false) {
             $line = rtrim($line, "\r\n");
@@ -150,7 +150,7 @@ final class InstallLog
 
         fclose($out);
 
-        // The rename IS the commit of the trim — unchecked, a failure leaves the shortened
+        // The rename is the commit of the trim — unchecked, a failure leaves the shortened
         // log in a temp file and the oversized one in place, which is the state this whole
         // method exists to leave behind.
         if (! @rename($temp, $path)) {

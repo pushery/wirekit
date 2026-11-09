@@ -285,7 +285,7 @@ final class ComponentTokens
             $body .= "\n".self::methodSource($owner->getName(), $call, $seen);
         }
 
-        // A constant is read through its VALUE, so an array of class strings counts however it is
+        // A constant is read through its value, so an array of class strings counts however it is
         // laid out across lines.
         preg_match_all('/(?:self|static)::([A-Z][A-Z0-9_]*)\b(?!\s*\()/', $body, $constants);
 

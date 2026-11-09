@@ -2,7 +2,7 @@
      Renders no interactive element, so there is no action whose result could be
      shown early. --}}
 @props([
-    // 'horizontal' (default) joins children left-to-right; 'vertical' stacks them.
+    // 'horizontal' (default) joins children along the line; 'vertical' stacks them.
     // Literal default (a sub-component, so it does not dotted-read its own config
     // — mirrors avatar.group / accordion.item).
     'orientation' => 'horizontal',
@@ -45,15 +45,17 @@
         $stackBelow = null;
     }
 
-    // Joining (squared inner radii + collapsed 1px seam + z-index lift on the
-    // active child) lives in the .wk-button-group CSS class (dist/wirekit.css),
-    // driven by the data-orientation attribute. RTL-safe (logical properties).
+    // The weld (squared inner corners, one seam, the hovered or focused child lifted) is the rule
+    // set of `[data-wk-button-group]` in dist/wirekit.css, which `button-group` writes as well, driven
+    // by `data-orientation` and `data-stack-below`. The class lays the group out; a personalized base
+    // class keeps the weld, since the attribute carries it.
     $classes = WireKit::resolveClasses('button.group', 'base', 'wk-button-group', $scope);
 @endphp
 
 <div
     @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="group" @endunless
     @if($label && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
+    data-wk-button-group
     data-orientation="{{ $orientation }}"
     @if($stackBelow) data-stack-below="{{ $stackBelow }}" @endif
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}

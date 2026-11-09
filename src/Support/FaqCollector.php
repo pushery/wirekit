@@ -18,7 +18,7 @@ namespace Pushery\WireKit\Support;
  * question can be reworded, added, or deleted and the schema simply follows. It
  * cannot describe an invisible answer, because it is made out of the visible one.
  *
- * How the timing works: Blade renders a component's children BEFORE the parent
+ * How the timing works: Blade renders a component's children before the parent
  * component's own view body runs (verified, not assumed). So every faq-item has
  * already pushed itself by the time the surrounding faq drains — which is what
  * makes a plain collector sufficient here, with no compile-time magic.
@@ -37,17 +37,17 @@ final class FaqCollector
      * The container this buffer belongs to, so a stale one is never read.
      *
      * The buffer is process-global, and the class's own docblock explains why that is
-     * enough WITHIN one render: children push before their parent drains. Across renders it
+     * enough within one render: children push before their parent drains. Across renders it
      * is not enough, and nothing reset it between them. An orphaned `faq-item` — rendered
      * without a surrounding `faq`, which is a template mistake nothing reports — leaves its
      * question in the buffer, and on a long-running server (Octane, a queue worker
-     * rendering views) the NEXT request's faq drains it and emits it as its own FAQPage
+     * rendering views) the next request's faq drains it and emits it as its own FAQPage
      * schema. That is structured data describing an answer on somebody else's page, which
      * is the exact policy violation this class exists to prevent.
      *
      * Under Octane the container instance is the identity that changes between requests and
      * cannot be recycled underneath us the way an object hash can. When it differs, the buffer
-     * belonged to a render that is over. A queue worker keeps ONE container across its jobs,
+     * belonged to a render that is over. A queue worker keeps one container across its jobs,
      * so there the comparison never fires; the service provider covers that case by calling
      * `reset()` before each queued job and after each request.
      */
@@ -97,7 +97,7 @@ final class FaqCollector
      *
      * Used when a faq is told not to emit schema: its items still rendered and
      * still pushed, so the buffer must be cleared or their questions would
-     * surface in the NEXT faq's JSON-LD — schema describing answers that live
+     * surface in the next faq's JSON-LD — schema describing answers that live
      * somewhere else on the page.
      *
      * Also called between renders: by the service provider after each request and
@@ -112,7 +112,7 @@ final class FaqCollector
     /**
      * Drop a buffer that belongs to an earlier request.
      *
-     * Deliberately checked on READ and WRITE rather than cleared by a lifecycle hook. A
+     * Deliberately checked on read and write rather than cleared by a lifecycle hook. A
      * `terminating` callback is registered once and, under Octane, is not re-registered on
      * the next request — so the reset would work for one request and silently stop. Asking
      * "does this buffer belong to me?" at the two places that touch it cannot go stale.

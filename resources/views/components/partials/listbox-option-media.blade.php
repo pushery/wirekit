@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — sub-component
      Not a component but an @include shared by `combobox` and `multi-select`. It draws an
      option's decorative medium and accepts nothing a server could refuse. --}}
-{{-- ONE OPTION'S MEDIUM: an icon, an image, an avatar or a flag, drawn by Alpine from the option object.
+{{-- one OPTION'S medium: an icon, an image, an avatar or a flag, drawn by Alpine from the option object.
 
      The whole box is `aria-hidden`. The option's label already names it, and a photo's alt text
      or an avatar's initials would read the same name twice, or read letters nobody wrote.
@@ -11,7 +11,7 @@
      initials from then on, or from the start when it has no photo at all.
 
      Every <img> here is `loading="lazy"`, and the reason is the list rather than the image. An
-     option list is a SCROLL region: every row exists in the DOM the moment the panel opens, while
+     option list is a scroll region: every row exists in the DOM the moment the panel opens, while
      roughly eight of them are on screen.
 
      A `phone` picker offering every country puts a flag URL into every option: an eager image is

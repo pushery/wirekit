@@ -46,7 +46,7 @@
         ? $variant
         : WireKit::validateProp('table.head', 'variant', (string) $variant, ['filled', 'flush']);
 
-    // The fill is the ONLY thing `flush` removes. The divider and the sticky rules stay,
+    // The fill is the only thing `flush` removes. The divider and the sticky rules stay,
     // because they are what makes a head readable while the body scrolls under it — and
     // conflating them is exactly what forced the all-or-nothing override this replaces.
     $classes = WireKit::resolveClasses('table.head', 'base', implode(' ', array_filter([

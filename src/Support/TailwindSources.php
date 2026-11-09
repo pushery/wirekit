@@ -20,7 +20,9 @@ use Pushery\WireKit\ComponentRegistry;
  *
  * The content is every whitespace-separated token of those templates, deduplicated and sorted.
  * A Tailwind candidate never contains whitespace, so splitting there loses none, and comments stay
- * in because Tailwind reads comments too (the runtime class list is written in one).
+ * in because Tailwind reads comments too (the runtime class list is written in one). The file the
+ * package ships holds the candidates Tailwind's own scanner reads from these tokens, one per line:
+ * the scanner reads the same set back from it, so a build compiles the same stylesheet from it.
  */
 final class TailwindSources
 {
@@ -150,7 +152,7 @@ final class TailwindSources
 
             $seen[$template] = true;
 
-            // Read for what it RENDERS, so without its comments: a note that mentions another
+            // Read for what it renders, so without its comments: a note that mentions another
             // component is not a use of it. The tokens keep the comments (see contentsFor()).
             $source = self::withoutComments((string) file_get_contents($template));
 

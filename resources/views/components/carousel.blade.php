@@ -10,7 +10,7 @@
     // rest show neighbors, which is what a product row or a logo rail wants.
     // Only meaningful horizontally — a vertical carousel is one slide tall.
     'perView' => 1,
-    // What this carousel is FOR. A carousel of testimonials is not an image
+    // What this carousel is for. A carousel of testimonials is not an image
     // carousel, and the name is the first thing a screen reader reads.
     'label' => __('wirekit::Carousel'),
     'scope' => null,
@@ -29,7 +29,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave', 'x-on:focusin', 'x-on:focusout']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $autoplay = BooleanProp::from($autoplay, false, 'carousel', 'autoplay');
@@ -48,7 +48,7 @@
         : WireKit::validateProp('carousel', 'perView', \Pushery\WireKit\Support\NumericProp::text($perView), ['1', '2', '3', '4']);
 
     // How many slides share the view is the PARENT's business, but the width lands
-    // on each SLIDE. The bridge is the data attribute below plus a rule in
+    // on each slide. The bridge is the data attribute below plus a rule in
     // dist/wirekit.css — deliberately not @aware, which cannot see a parent's
     // @props default and would silently give every default carousel the wrong
     // basis. It also keeps the responsive ladder in CSS, where media queries live.
@@ -57,14 +57,14 @@
         'relative',
         'rounded-[var(--radius-wk-lg)]',
         'font-[family-name:var(--font-wk-sans)]',
-        // A vertical carousel needs a fixed height, and it lives on the ROOT so an
+        // A vertical carousel needs a fixed height, and it lives on the root so an
         // inline `style="height: …"` override actually takes effect (inline beats
         // this class). The viewport then fills it with h-full, so overriding the
         // root's height resizes the viewport with it.
         $isVertical ? 'h-[20rem]' : '',
     ])), $scope);
 
-    // The viewport IS the scroller now. The browser owns snapping and momentum;
+    // The viewport is the scroller now. The browser owns snapping and momentum;
     // Alpine only watches where it landed.
     //
     // wk-carousel-viewport carries the scrollbar-hiding rules that have no Tailwind
@@ -95,31 +95,34 @@
         'aria-disabled:opacity-[var(--opacity-wk-disabled)] aria-disabled:cursor-default',
         $isVertical ? 'left-1/2 -translate-x-1/2' : 'top-1/2 -translate-y-1/2',
     ]);
-    // Horizontal arrows sit at the root's inline edges (left-0 / right-0), which
-    // land in the reserved gutter OUTSIDE the scroller (see --wk-carousel-gutter
-    // in dist/wirekit.css) — never overlapping the slides. Vertical arrows stay
-    // centered at the top / bottom edge of the fixed-height track.
-    $prevPosClass = $isVertical ? 'top-[var(--padding-wk-y-sm)]' : 'left-0';
-    $nextPosClass = $isVertical ? 'bottom-[var(--padding-wk-y-sm)]' : 'right-0';
+    // Horizontal arrows sit at the root's inline edges (start-0 / end-0), which
+    // land in the reserved gutter outside the scroller (see --wk-carousel-gutter
+    // in dist/wirekit.css) — never overlapping the slides. On a page that reads from
+    // the right the slides run from there, so the arrow back stands on that side and
+    // the arrow forward across from it, each with its chevron mirrored to point there.
+    // Vertical arrows stay centered at the top / bottom edge of the fixed-height track.
+    $prevPosClass = $isVertical ? 'top-[var(--padding-wk-y-sm)]' : 'start-0';
+    $nextPosClass = $isVertical ? 'bottom-[var(--padding-wk-y-sm)]' : 'end-0';
+    $arrowMirror = $isVertical ? '' : ' rtl:-scale-x-100';
 
     $prevPath = $isVertical ? 'm4.5 15.75 7.5-7.5 7.5 7.5' : 'M15.75 19.5 8.25 12l7.5-7.5';
     $nextPath = $isVertical ? 'm19.5 8.25-7.5 7.5-7.5-7.5' : 'm8.25 4.5 7.5 7.5-7.5 7.5';
 
     // items-center so the dots and the play/pause button (last child, bigger than a
     // dot) share one baseline — they are one control cluster. Horizontal: a centered
-    // row BELOW the slide stage, so the dots sit UNDER the slides instead of
-    // overlapping them. Vertical: the right-edge column, absolutely placed.
+    // row below the slide stage, so the dots sit under the slides instead of
+    // overlapping them. Vertical: the column at the end of the line, absolutely placed.
     $indicatorClasses = $isVertical
-        ? 'absolute right-[var(--padding-wk-x-sm)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-4'
-        : 'mt-[var(--padding-wk-y-sm)] flex items-center justify-center gap-4';
+        ? 'absolute end-[var(--padding-wk-x-sm)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-[var(--gap-wk-lg)]'
+        : 'mt-[var(--padding-wk-y-sm)] flex items-center justify-center gap-[var(--gap-wk-lg)]';
 
     // The live-region sentence, resolved here for the same reason the play/pause label
-    // below is: a literal inside the Alpine factory would be untranslatable AND invisible
+    // below is: a literal inside the Alpine factory would be untranslatable and invisible
     // to every __() extractor. Every other name this component speaks already came from
-    // the catalog; the slide position — the one string a screen reader hears on EVERY
+    // the catalog; the slide position — the one string a screen reader hears on every
     // change — was the one that did not, so a German page announced English positions.
     //
-    // It travels as a TEMPLATE rather than a finished sentence because the numbers are
+    // It travels as a template rather than a finished sentence because the numbers are
     // only known in the browser, and a sentence assembled from fragments there cannot be
     // translated: ":current of :total" is not the word order every language uses.
     $announcementTemplate = __('wirekit::Slide :current of :total');
@@ -130,7 +133,7 @@
 
 {{-- The APG carousel shape, without the tabs.
 
-     The slides are not tab panels and the dots are not tabs: a tablist means ONE
+     The slides are not tab panels and the dots are not tabs: a tablist means one
      selected panel, while perView shows three at once. So the slides are labeled
      groups inside a scroll region, which is APG's non-tabbed carousel and the
      only model that is honest about several slides being visible together. --}}
@@ -159,8 +162,8 @@
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- Slide stage: the scroll region plus the prev/next arrows. It is `relative`
-         so the arrows center on the SLIDES, not on the whole component — the dots
-         now sit in a row BELOW this stage (horizontal), so centering the arrows on
+         so the arrows center on the slides, not on the whole component — the dots
+         now sit in a row below this stage (horizontal), so centering the arrows on
          the root would drop them below the slide midline. --}}
     <div class="relative {{ $isVertical ? 'h-full' : '' }}">
     {{-- Previous comes before the slides and Next after them, the order they stand in on
@@ -180,7 +183,7 @@
         aria-label="{{ __('wirekit::Previous slide') }}"
         data-wk-carousel-prev
     >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <svg class="w-5 h-5{{ $arrowMirror }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $prevPath }}" />
         </svg>
     </button>
@@ -212,7 +215,7 @@
         aria-label="{{ __('wirekit::Next slide') }}"
         data-wk-carousel-next
     >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <svg class="w-5 h-5{{ $arrowMirror }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $nextPath }}" />
         </svg>
     </button>
@@ -230,7 +233,7 @@
                 :aria-current="current === i ? 'true' : 'false'"
                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Go to slide :number')) }}.replace(':number', i + 1)"
                 data-wk-carousel-dot
-                {{-- SPACING, not an expander. A 44px `wk-touch-target` ::before would be
+                {{-- Spacing, not an expander. A 44px `wk-touch-target` ::before would be
                      worse than the problem: at a 14px pitch the expanders overlap, so a
                      tap in the middle of one dot lands on its neighbor.
                      WCAG 2.5.8's own spacing exception is the exit here — `gap-4` puts the
@@ -250,15 +253,15 @@
             ></button>
         </template>
 
-        @if($autoplay)
+        @wirekitLast($autoplay)
             {{-- WCAG 2.2.2: anything that moves on its own for more than five seconds
                  needs a way to stop it. Pausing on hover is not that way — a touch
                  user cannot hover, and neither can a keyboard user reading with a
-                 screen reader. This button is the mechanism. It sits WITH the dots
+                 screen reader. This button is the mechanism. It sits with the dots
                  (last child of the picker) rather than floating in a corner — one
                  coherent control cluster.
 
-                 aria-pressed reflects `playing`, which hover deliberately does NOT
+                 aria-pressed reflects `playing`, which hover deliberately does not
                  touch: a mouse passing over the carousel must not make the button
                  claim the reader paused it. --}}
             <button
@@ -269,26 +272,26 @@
                      nameless, stateless "button" — and to a server-side accessibility
                      check it stays one.
 
-                     The static pair says NOT PLAYING, which is what the markup actually
+                     The static pair says not playing, which is what the markup actually
                      represents: the factory seeds `playing: false` and only calls play()
-                     from init(). It is also the state that SURVIVES for a reader who asked
+                     from init(). It is also the state that survives for a reader who asked
                      for less motion — autoplay never starts for them, so "Play" is not a
                      transient value there but the final one. --}}
-                {{-- No `aria-pressed`. The accessible NAME already carries the state — it
+                {{-- No `aria-pressed`. The accessible name already carries the state — it
                      swaps between "Play carousel" and "Pause carousel" — and a toggle that
                      reports its state twice reports it ambiguously: "Pause carousel,
                      pressed" leaves a reader to work out whether pressed means it is
                      playing or that they have pressed pause. The two signals here also ran
-                     in OPPOSITE directions (`playing` gave `aria-pressed="false"`), so the
+                     in opposite directions (`playing` gave `aria-pressed="false"`), so the
                      name said one thing and the state said its inverse.
 
                      Naming the action rather than the state is the media-button convention,
                      and it is the one this button already followed. --}}
                 aria-label="{{ __('wirekit::Play carousel') }}"
-                {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
+                {{-- Resolved server-side: a literal here would be untranslatable and invisible to every __() extractor. --}}
                 :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Play carousel')) }}"
                 data-wk-carousel-playpause
-                class="wk-touch-target ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-touch-target ms-[var(--space-wk-xs)] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg x-show="playing" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
@@ -297,7 +300,7 @@
                     <path d="M8 5v14l11-7z" />
                 </svg>
             </button>
-        @endif
+        @endwirekitLast
     </div>
 
     {{-- The slide position, announced politely on every change. It lives in its own

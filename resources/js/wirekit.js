@@ -7,8 +7,10 @@
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
+import { registerInlineStepMagic } from './utils/inline-direction.js';
 import { registerPagerFocusMagics } from './utils/pager-focus.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerGroupedDigitsDirective } from './utils/grouped-digits.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerCallerModelDirective } from './utils/caller-model.js';
 import { registerImeDirective } from './utils/ime.js';
@@ -29,6 +31,7 @@ import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerFocusUnitDirective } from './utils/focus-unit.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { registerFieldValidity } from './utils/field-validity.js';
 import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
@@ -59,6 +62,7 @@ import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
 import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
+import wirekitSidebarWidth from './components/sidebar-width.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
@@ -159,7 +163,7 @@ import wirekitStream from './components/stream.js';
  * (fallback for late-loading scripts or non-Livewire setups).
  */
 function registerComponents() {
-    // The overlay root BEFORE anything else: every teleported panel targets it, and
+    // The overlay root before anything else: every teleported panel targets it, and
     // `x-teleport` treats a selector that matches nothing as fatal — so it has to exist
     // before Alpine walks the DOM, not merely before the first panel opens.
     installOverlayRoot();
@@ -171,7 +175,7 @@ function registerComponents() {
     // and the directive does nothing, so a region appears and vanishes at once
     // instead of animating.
     //
-    // In a LIVEWIRE app the directive is there anyway: Livewire bundles the same
+    // In a Livewire app the directive is there anyway: Livewire bundles the same
     // plugin and registers it (`Alpine.directive("collapse", …)` in its own dist).
     // Without Livewire, on `wirekit-alpine.js` in an Alpine-only app or `wirekit.js`
     // beside a bare Alpine, this registration is the only one. The components must
@@ -179,12 +183,12 @@ function registerComponents() {
     // part of every bundle's size in `dist/README.md`, paid by every developer
     // including those who render no disclosure.
     //
-    // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is
+    // `collapse(Alpine)`, not `Alpine.plugin(collapse)`, and the difference is
     // not style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
-    // callback its OWN module singleton, ignoring the receiver. In the ESM
+    // callback its own module singleton, ignoring the receiver. In the ESM
     // bundle, which is itself an installer a developer calls as
     // `Alpine.plugin(WireKit)` with an Alpine imported from their build, that
-    // registers the directive on a DIFFERENT Alpine than the one running their
+    // registers the directive on a different Alpine than the one running their
     // page. Calling the installer directly registers it on whichever Alpine is
     // actually in hand, which is the only one that can be right.
     collapse(Alpine);
@@ -192,12 +196,16 @@ function registerComponents() {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
     registerScrollToMagic(Alpine);
+    registerInlineStepMagic(Alpine);
     // A page turned under Livewire keeps the focus in its pager. See utils/pager-focus.js.
     registerPagerFocusMagics(Alpine);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
-    // apply it after EVERY render — not only the first. See utils/indeterminate.js.
+    // apply it after every render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(Alpine);
+    // An amount field that groups its digits while it is typed, and whose value stays the
+    // plain number. See utils/grouped-digits.js.
+    registerGroupedDigitsDirective(Alpine);
     // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
     // root the component renders. See utils/caller-ref.js.
     registerCallerRefDirective(Alpine);
@@ -242,6 +250,8 @@ function registerComponents() {
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // A field the browser holds invalid says why under the red it turns. See utils/field-validity.js.
+    registerFieldValidity();
     // An alert a Livewire render adds is announced. See utils/alert-arrival.js.
     installAlertArrival();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
@@ -281,6 +291,7 @@ function registerComponents() {
     Alpine.data('wirekitAppRail', wirekitAppRail);
     Alpine.data('wirekitAppShell', wirekitAppShell);
     Alpine.data('wirekitSidebarRail', wirekitSidebarRail);
+    Alpine.data('wirekitSidebarWidth', wirekitSidebarWidth);
     Alpine.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     Alpine.data('wirekitNavbarScroll', wirekitNavbarScroll);
     Alpine.data('wirekitOverflowNav', wirekitOverflowNav);
@@ -383,7 +394,7 @@ document.addEventListener('alpine:init', () => {
 });
 
 // Fallback: Alpine may already be on the page (non-Livewire setups, late script
-// loading). Registering now still reaches DOM Alpine has not walked YET — a Livewire
+// loading). Registering now still reaches DOM Alpine has not walked yet — a Livewire
 // morph, anything appended later — and Alpine.data() is idempotent, so this stays.
 // What it cannot do is repair markup Alpine already walked: those elements are dead
 // and a re-walk does not revive them. reportLateRegistration says so once, and only
@@ -393,7 +404,7 @@ if (window.Alpine?.version) {
     reportLateRegistration('wirekit.js', () => reachedByInitEvent, names);
 }
 
-// Positioning helper, exposed globally so a component can ask for it WITHOUT depending on
+// Positioning helper, exposed globally so a component can ask for it without depending on
 // it. `combobox` and `data-table-column-menu` both guard with
 // `typeof window.wirekitPosition !== 'function'` and skip the anchoring when it is absent —
 // which is what happens on the core bundle, where Floating UI is deliberately not shipped.

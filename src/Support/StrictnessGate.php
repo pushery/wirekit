@@ -26,7 +26,7 @@ use Pushery\WireKit\WireKit;
  *      (env `WIREKIT_STRICT_VALIDATION`) — true/false.
  *   2. Default: APP_DEBUG=true → strict, APP_DEBUG=false → lenient.
  *
- * Throwing is a SECOND decision, and it only matters while the gate is strict:
+ * Throwing is a second decision, and it only matters while the gate is strict:
  *   1. Explicit override via `wirekit.validation.throw_on_invalid` config
  *      (env `WIREKIT_THROW_ON_INVALID`) — true throws even in an HTTP request,
  *      false never throws, not even in console / artisan / Pest.
@@ -63,7 +63,7 @@ final class StrictnessGate
     private const SCOPE_DIRECTIVES = ['x-data', 'x-init', 'x-effect', 'x-model', 'x-modelable'];
 
     /**
-     * Global attributes — valid on ANY element, so they can never be a prop typo.
+     * Global attributes — valid on any element, so they can never be a prop typo.
      *
      * The HTML set is the WHATWG living standard's, taken from its index of attributes: every
      * row whose element column reads "HTML elements". That is 31 names, the microdata family,
@@ -195,12 +195,12 @@ final class StrictnessGate
         'filter-builder', 'image-compare', 'image-editor', 'image-hotspots-editor', 'input', 'modal', 'multi-select', 'notification-center',
         'number-input', 'otp-input', 'pagination', 'password-input', 'phone', 'pricing-table', 'radio',
         'range-slider', 'rating', 'segmented-control', 'select', 'slider', 'status-matrix',
-        'strength-meter', 'swatch-group', 'tags-input', 'textarea', 'time-picker', 'toggle',
+        'strength-meter', 'swatch-group', 'table.search', 'tags-input', 'textarea', 'time-picker', 'toggle',
         'toggle-button', 'translatable-input',
     ];
 
     /**
-     * Ecosystem tooling attributes that are written on a component ON PURPOSE so
+     * Ecosystem tooling attributes that are written on a component on purpose so
      * that they reach the rendered HTML.
      *
      * A third set rather than an entry in either list above, because neither is
@@ -208,10 +208,10 @@ final class StrictnessGate
      * auditable against their spec sections.
      *
      * The line is sharp and needs no heuristic. An unknown prop is an
-     * instruction that DISAPPEARS -- `variant` on a button lands in the
+     * instruction that disappears -- `variant` on a button lands in the
      * attribute bag, renders as a dead HTML attribute, and the styling the
      * developer meant never happens. A test selector is an instruction that
-     * ARRIVES: a browser suite selects on it, which is the entire reason it was
+     * arrives: a browser suite selects on it, which is the entire reason it was
      * written.
      *
      * The prefix list below already covers framework wiring of the same kind --
@@ -232,7 +232,7 @@ final class StrictnessGate
      * `:attributes="$bag"` hands a whole attribute bag on to a component, and it is the form
      * `{{ $attributes }}` inside a tag compiles to. Blade merges that bag into the attributes
      * and drops the key, so at render time no attribute called `attributes` ever exists. A
-     * reader of the TEMPLATE sees the name in the tag, though, and without this entry it
+     * reader of the template sees the name in the tag, though, and without this entry it
      * would report correct Blade as an unknown prop.
      *
      * @var list<string>
@@ -253,11 +253,11 @@ final class StrictnessGate
      *
      * A prefix rather than an enumeration: the handler list is long, it grows
      * with the platform, and every name in it starts this way. It is the one
-     * prefix that is NOT a family on its own, because three props begin with the
+     * prefix that is not a family on its own, because three props begin with the
      * same two letters: `toggle-button`'s `onIcon` and `onLabel`, and `reveal`'s
      * `once`. {@see self::isPassthroughName()} tells the two apart.
      *
-     * A CONSTANT, and that is a fix rather than tidying. This list existed
+     * A constant, and that is a fix rather than tidying. This list existed
      * twice: once in `unknownPropNames()`, where it decides, and once inside
      * `warnUnknownProps()` under all of the rationale above -- where it had been
      * dead since the verdict was split into its own method. Both copies read as
@@ -286,23 +286,23 @@ final class StrictnessGate
     private static array $logged = [];
 
     /**
-     * Whether an invalid value should THROW rather than degrade to a fallback.
+     * Whether an invalid value should throw rather than degrade to a fallback.
      *
      * Defaults to console / artisan / test (fail-fast — a typo should break the
      * build or the command loudly); an HTTP request degrades so a single bad
      * value cannot 500 a whole view. An explicit `wirekit.validation.throw_on_invalid`
      * config overrides both directions.
      *
-     * Exposed so callers that throw their OWN exception (e.g. IconResolver on an
+     * Exposed so callers that throw their own exception (e.g. IconResolver on an
      * unknown alias, which must degrade to a placeholder in an HTTP request
      * instead of taking down every page that renders an icon) can share the same
      * decision without re-implementing it. This is a pure decision helper — it
-     * does NOT run enforce()'s validation, so routing IconResolver through it
+     * does not run enforce()'s validation, so routing IconResolver through it
      * has zero blast radius on the prop-validation path.
      */
     public static function shouldThrowOnInvalid(): bool
     {
-        // An explicit config wins in BOTH directions: `true` forces fail-fast
+        // An explicit config wins in both directions: `true` forces fail-fast
         // even in an HTTP request, `false` forces degradation even in console.
         // Unset (null) falls back to the console/HTTP default.
         // Read as a switch: from the environment, `off` arrives as the string 'off'.
@@ -329,7 +329,7 @@ final class StrictnessGate
 
     /**
      * Validate a value against an allowed list. Throws (strict + CLI/throw-
-     * override) or logs+returns the fallback (lenient OR strict-HTTP).
+     * override) or logs+returns the fallback (lenient or strict-HTTP).
      *
      * An allowed value is read as its text. A list built with `array_keys()` from a map whose keys
      * are digits, `'1'` to `'12'`, holds integers, and the fallback taken from it has to come back
@@ -445,7 +445,7 @@ final class StrictnessGate
     }
 
     /**
-     * Warns on unknown prop KEYS in dev.
+     * Warns on unknown prop keys in dev.
      *
      * Value validation covers declared props only. An unknown key (e.g.
      * `<x-wirekit::button variant="ghost">` when the prop is `surface`)
@@ -460,7 +460,7 @@ final class StrictnessGate
      * `slot`).
      *
      * Unknown keys → log at warning level with a Levenshtein-ranked
-     * Did-you-mean hint pointing at the closest declared prop. NEVER
+     * Did-you-mean hint pointing at the closest declared prop. Never
      * throws — silent in prod, visible in dev logs.
      *
      * @param  string  $context  Component name (e.g. `button`, `alert`).
@@ -485,7 +485,7 @@ final class StrictnessGate
             static $declaredCache = [];
             if (! array_key_exists($context, $declaredCache)) {
                 try {
-                    // `acceptedPropNames()` is `@props` AND `@aware`, because Blade
+                    // `acceptedPropNames()` is `@props` and `@aware`, because Blade
                     // accepts either name on the tag and the question here is only
                     // "does this component know it?". `@aware` does not strip its
                     // key from the attribute bag, so a key written directly on the
@@ -504,7 +504,7 @@ final class StrictnessGate
                 }
             }
             $declared = $declaredCache[$context];
-            // An unresolvable component (cached null) OR one with no declared
+            // An unresolvable component (cached null) or one with no declared
             // @props (cached []) has nothing to validate against — skip rather
             // than flag every attribute as unknown.
             if (empty($declared)) {
@@ -651,8 +651,8 @@ final class StrictnessGate
     /**
      * Warn when a caller passes an Alpine scope directive the component already sets.
      *
-     * HTML keeps the FIRST of two identical attributes and discards the rest, so a
-     * component that renders `x-data="…"` and `{{ $attributes }}` on the SAME element
+     * HTML keeps the first of two identical attributes and discards the rest, so a
+     * component that renders `x-data="…"` and `{{ $attributes }}` on the same element
      * silently throws away the caller's `x-data`. The caller's scope never comes into
      * existence, and everything they wrote against it — an `x-init` beside it, a
      * `@click` inside it — resolves against the COMPONENT's data instead.
@@ -675,10 +675,10 @@ final class StrictnessGate
      * `x-modelable`. The tally itself is deliberately not written down: a count in a docblock
      * goes stale without anything noticing, and then it is a wrong promise.
      *
-     * What DOES matter is a distinction the tally hid: a large minority of them set the
+     * What does matter is a distinction the tally hid: a large minority of them set the
      * attribute only inside a condition, and for those the sentence this method logs — "your
      * scope never exists" — is simply false. `scopeDirectivesSetBy()` therefore asks whether
-     * the component sets it UNCONDITIONALLY, which is the claim actually being made.
+     * the component sets it unconditionally, which is the claim actually being made.
      *
      * @param  array<string, mixed>  $actual  attribute name => value
      */
@@ -698,7 +698,7 @@ final class StrictnessGate
     }
 
     /**
-     * The scope directives in `$actual` that this component will DISCARD. The VERDICT, with
+     * The scope directives in `$actual` that this component will discard. The verdict, with
      * no logging and no environment gate.
      *
      * Kept apart from `warnScopeDirectiveCollisions()` for the same reason `unknownPropNames()`
@@ -767,13 +767,13 @@ final class StrictnessGate
 
         $source = (string) file_get_contents($path);
 
-        // UNCONDITIONALLY, not merely somewhere in the file. The warning built on this answer
+        // Unconditionally, not merely somewhere in the file. The warning built on this answer
         // tells a developer their scope "never exists" — an absolute claim, so the test behind
         // it has to be absolute too. A regex over raw Blade sees no conditions, and reported a
         // collision for every component whose `x-data` sits inside an `@if`.
         //
         // `card` is the case that surfaced it: its `x-data` is a debug warning that renders
-        // only when a card is composed WRONGLY, so on a correctly composed card the attribute
+        // only when a card is composed wrongly, so on a correctly composed card the attribute
         // never exists and collides with nothing. A developer whose countdown was demonstrably
         // running got told three times a day to wrap the component in their own element.
         //
@@ -828,7 +828,7 @@ final class StrictnessGate
 
     /**
      * The attribute names in `$actual` that are neither declared props nor legitimate
-     * passthrough. The VERDICT, with no logging and no environment gate.
+     * passthrough. The verdict, with no logging and no environment gate.
      *
      * Kept apart from `warnUnknownProps()` because a second caller needs the same answer for
      * a different purpose: a guard over the Blade snippets in the README and in PHP
@@ -836,7 +836,7 @@ final class StrictnessGate
      * teaching `variant` on `button` — a prop the component does not declare — has Blade
      * fold it into the attribute bag, where it renders as a literal HTML attribute nothing
      * reads. The page looks finished, no test fails, and the `Delete` button renders in the
-     * ACCENT color: a destructive action styled as the primary call to action.
+     * accent color: a destructive action styled as the primary call to action.
      *
      * `warnUnknownProps()` cannot catch that. It only logs, so nothing can fail on it, and
      * it returns early outside `app.debug` — so in production the signal does not exist at
@@ -852,7 +852,7 @@ final class StrictnessGate
         // Nothing to validate against — say so here rather than in every caller.
         //
         // A component with no resolvable `@props` (`glass`) yields an empty declared
-        // list, and against an empty list EVERY attribute is unknown. `warnUnknownProps()`
+        // list, and against an empty list every attribute is unknown. `warnUnknownProps()`
         // has always returned early on exactly this case; the predicate did not, so each
         // caller carried its own `if ($declared === []) continue;` and one that forgot got a
         // wave of phantom findings rather than a quiet pass.
@@ -865,7 +865,7 @@ final class StrictnessGate
 
         // A valid HTML attribute is passthrough by definition, not by whether it
         // was remembered in an ad-hoc list -- hence the spec-derived sets. The
-        // tooling set carries the attributes whose purpose IS to reach the HTML.
+        // tooling set carries the attributes whose purpose is to reach the HTML.
         $reserved = [
             ...self::HTML_GLOBAL_ATTRIBUTES,
             ...self::HTML_ELEMENT_ATTRIBUTES,
@@ -891,9 +891,9 @@ final class StrictnessGate
             // declares `showValue` is correctly addressed either way.
             //
             // This is inert at runtime and load-bearing for the static callers. At runtime
-            // the conversion has ALREADY happened by the time an attribute reaches the bag,
+            // the conversion has already happened by the time an attribute reaches the bag,
             // so a declared prop never arrives here in kebab form and this branch cannot
-            // fire. A guard reading a Blade SNIPPET sees the author's spelling, so without
+            // fire. A guard reading a Blade snippet sees the author's spelling, so without
             // this it reports `show-value` as undeclared — a false positive on correct
             // documentation, which is the failure mode that costs the most trust.
             //
@@ -904,7 +904,7 @@ final class StrictnessGate
             // rule at once, and every correct `aria-*`, `x-*` and `data-*` attribute becomes a
             // finding.
             //
-            // Doing the conversion HERE rather than at the call site is what makes that
+            // Doing the conversion here rather than at the call site is what makes that
             // mistake unavailable — there is nothing left for a caller to normalize.
             if (in_array(lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $key)))), $declared, true)) {
                 continue;

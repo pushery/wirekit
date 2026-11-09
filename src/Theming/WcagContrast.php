@@ -22,7 +22,7 @@ use InvalidArgumentException;
  * ratio is taken; a translucent background has no ratio of its own. Anything
  * else — named colors, `currentColor`, `color-mix` in a non-sRGB space, a
  * `color()` in another space — returns `null`, which means "unmeasurable, skip
- * this pairing" and MUST be treated as such (assert on `null`; do not cast to
+ * this pairing" and must be treated as such (assert on `null`; do not cast to
  * float — `(float) null` reads as a false 0.00:1), never as a contrast failure.
  * unmeasurableReason() says which of the two it was.
  *
@@ -38,7 +38,7 @@ final class WcagContrast
      * Substitute CSS custom-property `var()` references embedded anywhere in a
      * value string with their declared values, so a color such as
      * `oklch(0.55 0.22 var(--theme-hue))` becomes parseable. Per the CSS spec,
-     * `var()` is substituted BEFORE a value is parsed, so a static contrast
+     * `var()` is substituted before a value is parsed, so a static contrast
      * auditor must do the same — otherwise the raw `var(--theme-hue)` token is
      * an unparseable hue and the whole hue-driven (single-source-hue) palette
      * reports "unsupported color format".
@@ -56,11 +56,11 @@ final class WcagContrast
     {
         for ($depth = 0; $depth < $maxDepth && str_contains($value, 'var('); $depth++) {
             $next = preg_replace_callback(
-                // The fallback capture allows ONE level of balanced parens so a
+                // The fallback capture allows one level of balanced parens so a
                 // function fallback — `var(--x, oklch(…))` / `rgb(…)` / `calc(…)`,
                 // a common token shape — is matched (a bare `[^()]*` stops at the
                 // inner `(`, leaves the whole var() unmatched, and the caller then
-                // SKIPs the token as unsupported). A fallback nesting TWO+ paren
+                // SKIPs the token as unsupported). A fallback nesting two+ paren
                 // levels (e.g. `color-mix(in srgb, oklch(…), …)`) still falls
                 // through unresolved → SKIP — the safe pre-existing degrade, not a crash.
                 '/var\(\s*(--[\w-]+)\s*(?:,\s*((?:[^()]|\([^()]*\))*))?\)/',
@@ -362,7 +362,7 @@ final class WcagContrast
     /**
      * WCAG 2.1 contrast ratio between two color strings.
      * Returns a float >= 1.0 (1:1 = identical, 21:1 = max), or null if either input is in an
-     * unsupported format, or if the BACKGROUND is translucent.
+     * unsupported format, or if the background is translucent.
      *
      * A translucent foreground is laid over the background first, source-over in encoded sRGB,
      * the way a browser composites it. Computed as if it were opaque, 50% black on white would
@@ -479,7 +479,7 @@ final class WcagContrast
         return $ratio >= $aa ? 'AA' : 'fail';
     }
 
-    /** Convert oklch L-component (0..1 decimal OR "NN%" percentage) to 0..1 float. */
+    /** Convert oklch L-component (0..1 decimal or "NN%" percentage) to 0..1 float. */
     private static function parseOklchL(string $raw): float
     {
         if (str_ends_with($raw, '%')) {
@@ -491,7 +491,7 @@ final class WcagContrast
 
     /**
      * Convert oklch C-component to a 0..~0.4 float. CSS Color 4 allows chroma
-     * as a number (0..0.4 typical) OR a percentage where 100% maps to 0.4 — a
+     * as a number (0..0.4 typical) or a percentage where 100% maps to 0.4 — a
      * developer's app.css override can legitimately use either form, so the
      * doctor's per-token audit must parse both. Without this, a percentage
      * chroma would be read as a huge raw number and silently skew the ratio.

@@ -12,9 +12,9 @@
  * `grep -rl 'devWarn' resources/` answers it in a second.
  *
  * It lives here rather than inline in the templates because `console.warn(…)` as
- * a directive expression PARSES under Alpine's CSP build but does not RUN there:
+ * a directive expression parses under Alpine's CSP build but does not run there:
  * the evaluator resolves an identifier against the Alpine scope alone, with no
- * window fallback, so naming `console` throws while BUILDING the component. That
+ * window fallback, so naming `console` throws while building the component. That
  * takes the whole element's scope down with it: under a strict
  * Content-Security-Policy an inline warning would not merely vanish, it would
  * break the component it warns about.

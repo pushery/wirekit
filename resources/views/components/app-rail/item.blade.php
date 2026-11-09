@@ -3,7 +3,7 @@
 @props([
     'href' => '#',
     // `a` or `button`. A rail module is a destination, so a link is the default and stays
-    // the default — this exists for the OTHER thing a rail entry legitimately is: the
+    // the default — this exists for the other thing a rail entry legitimately is: the
     // trigger of a dropdown, which our own console-shell blueprint builds out of one.
     //
     // As a link that trigger is subtly broken: a link activates on Enter and not on Space,
@@ -25,8 +25,8 @@
     // icon system; a <x-slot:icon> or inline markup renders verbatim. Consistent with
     // sidebar.item / dropdown.item / command-palette.item.
     'icon' => null,
-    // The module's name. REQUIRED, and not merely by convention: in the rail's default
-    // mode nothing of it is drawn, so this string is the link's ONLY accessible name.
+    // The module's name. Required, and not merely by convention: in the rail's default
+    // mode nothing of it is drawn, so this string is the link's only accessible name.
     // Leave it out and a screen reader announces "link" — the failure that makes icon
     // rails inaccessible in practice, and the reason this is a prop rather than the
     // default slot (a slot cannot also be a tooltip's text without rendering twice).
@@ -49,7 +49,7 @@
     'truncate' => false,
     // A trailing counter. Digits where a label is visible, a dot where it is not — the
     // digits have no room in a 3.5rem rail, but an unread signal must not simply vanish
-    // where it matters most. The count stays in the accessible name in BOTH states.
+    // where it matters most. The count stays in the accessible name in both states.
     'badge' => null,
     // What the counter counts, as a sentence: "3 vouchers wait for review". A dot says only that
     // something waits, and digits beside a visible name say how many but never of what. With it
@@ -62,9 +62,15 @@
     // names every one.
     'badgeLabel' => null,
     'badgeLabelLimit' => 5,
-    // Where the tooltip opens. `right` is correct for a rail on the inline-start edge;
-    // a right-hand rail wants `left`.
-    'placement' => 'right',
+    // A counter that changes in the page: an Alpine expression read in the scope around the entry,
+    // a property name such as `unreadCount`. The counter shows while it is above zero and draws its
+    // value, `99+` beyond 99. `badge` still gives the count the server knows, for the first paint.
+    // A notification center drawn as an entry of the rail keeps its unread count here.
+    'liveBadge' => null,
+    // Where the tooltip opens: toward the content, the end of the line for a rail at its start,
+    // which is the right of a page that reads from the left and the left of one that reads from
+    // the right. A rail at the end of the line wants `start`; a side word fixes the side.
+    'placement' => 'end',
     // The keyboard shortcut the module's tooltip draws after its name, ⌘ S on a Mac and Ctrl S
     // elsewhere. Unset, the tooltip draws the one the module binds with `x-wk-shortcut`; this is
     // for a shortcut registered another way, and `false` draws none.
@@ -117,7 +123,7 @@
     // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
     $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -130,9 +136,9 @@
     $truncate = BooleanProp::from($truncate, false, 'app-rail.item', 'truncate');
     // Checked here, under this component's name, so a word the tooltip cannot place is reported
     // where it was written (Support\FloatingPlacement); the tooltip gets the word it can place.
-    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('app-rail.item', 'placement', (string) ($placement ?: 'right'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'right');
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('app-rail.item', 'placement', (string) ($placement ?: 'end'), [...\Pushery\WireKit\Support\FloatingPlacement::ALL, ...\Pushery\WireKit\Support\FloatingPlacement::LOGICAL], 'end');
 
-    // `@aware` hands back the value the PARENT was called with, before that component's
+    // `@aware` hands back the value the parent was called with, before that component's
     // own normalization ran — so `expandable` arrives raw here and gets the same
     // treatment it got there. And, unlike `@props`, `@aware` does not remove its keys
     // from the attribute bag, so a key also written on this tag would render as a stray
@@ -157,6 +163,7 @@
     // The counter's sentences, only beside a counter: without one they describe nothing. A string
     // is one sentence, as it always was; a list is one sentence per waiting item.
     $badgeLabel = \Pushery\WireKit\Support\ListProp::renumbered($badgeLabel);
+    $liveBadge = is_string($liveBadge) && trim($liveBadge) !== '' ? trim($liveBadge) : null;
     $badgeSentences = match (true) {
         \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) === null => [],
         is_array($badgeLabel) => array_values(array_filter(
@@ -189,7 +196,7 @@
     $linkDescribedBy = trim(implode(' ', array_filter([(string) $attributes->get('aria-describedby', ''), (string) $badgeSentenceId])));
     $attributes = $attributes->except('aria-describedby');
 
-    // A NAME tooltip is rendered ONLY where the label is not drawn. Beside a visible caption
+    // A name tooltip is rendered only where the label is not drawn. Beside a visible caption
     // it is not merely redundant: it gives the link a second source of the same name,
     // which a screen-reader user pays for twice. The counter's sentence is another matter: no
     // mode draws it, so it has a tooltip wherever it is given.
@@ -203,15 +210,15 @@
         // Derived from the container rather than fixed: a rounded column re-points this for
         // its own subtree so the two arcs stay concentric. See dist/wirekit.css.
         'rounded-[var(--radius-wk-nav-item)]',
-        // The inline padding reads a token so the BRAND can read the same one. Beside an
+        // The inline padding reads a token so the brand can read the same one. Beside an
         // inset panel `--size-wk-rail`'s inset-and-border budget is underspent and the
         // leftover lands inside this module, so the column re-points this token there and the
         // glyph ends up on the column's axis instead of 2.5px beside it. Everywhere else the
         // fallback, the `sm` padding tier, applies. See the `[data-wk-nav-gutter]` block in
         // dist/wirekit.css for the derivation.
         'px-[var(--wk-rail-item-pad,var(--padding-wk-x-sm))] py-[var(--padding-wk-y-sm)]',
-        'gap-[var(--padding-wk-x-sm)]',
-        // Leading-aligned, NOT centered — and in the icon-only mode that looks identical,
+        'gap-[var(--space-wk-nav-icon-gap)]',
+        // Leading-aligned, not centered — and in the icon-only mode that looks identical,
         // because `--size-wk-rail` is derived from exactly this content: the icon plus these
         // paddings plus the border. Centering there had nothing left to center.
         //
@@ -230,7 +237,7 @@
         // even four-sided inset, or the module's symmetric visible chrome. Three requirements,
         // satisfiable in pairs and not together, which makes it a decision rather than a defect.
         'justify-start',
-        // …except with a caption UNDER the icon, where the row is `flex-col` and the main
+        // …except with a caption under the icon, where the row is `flex-col` and the main
         // axis is vertical. There `justify-center` centers the pair in the row's height,
         // which is a different question and still the right answer. Horizontal centering in
         // that mode comes from `items-center` above, on the cross axis.
@@ -280,7 +287,7 @@
         // the row in every labeling mode — a fixed height is wrong the moment a caption
         // makes the row taller.
         //
-        // It sits INSIDE the row. Pulled out into the column's gutter by a negative inset,
+        // It sits inside the row. Pulled out into the column's gutter by a negative inset,
         // it would need clearance on the row's end side that the start side does not have,
         // so a column whose rows look symmetrical would not be, and the marker would ride
         // on the outside of a rounded box, where a shape meant to say "this row" stops
@@ -306,13 +313,13 @@
         ...($labelsBelow ? ['group-data-[labels=below]/wk-rail:size-[var(--size-wk-rail-icon-labeled)]'] : []),
     ]), $scope);
 
-    // `sr-only` is the RESTING state, never `hidden` — the string is the link's
+    // `sr-only` is the resting state, never `hidden` — the string is the link's
     // accessible name and has to survive every mode.
     //
     // And it is never truncated by default. A navigation entry whose name is clipped does not name
     // anything: "Insig…" is not a destination, and the reader cannot tell it from
     // "Insights" or "Insight reports" without hovering. The rule is absolute — so a name
-    // that does not fit WRAPS. An item two lines tall beside items one line tall is a small
+    // that does not fit wraps. An item two lines tall beside items one line tall is a small
     // untidiness; a module nobody can identify is a defect.
     //
     // The one way out is `truncate`, opt-in and argued at the prop: it exists for an entry
@@ -324,10 +331,10 @@
         'sr-only',
         // The words wait for `data-wk-names`; the mode does not. Held together on one marker,
         // the icon would ride the widening column out to its middle and snap back at the end.
-        // The mode still decides HOW a
-        // name is laid out (below, inline); this decides only WHETHER it is in the layout yet.
+        // The mode still decides how a
+        // name is laid out (below, inline); this decides only whether it is in the layout yet.
         'group-data-[wk-names]/wk-rail:not-sr-only',
-        // `max-w-full`, NOT a full width, and the difference is the whole point. The reset of
+        // `max-w-full`, not a full width, and the difference is the whole point. The reset of
         // `sr-only` on the line above sets `width: auto`, and it is emitted after the width
         // utility at the same specificity, so with a full width the name would be as wide as
         // its text: no wrapping could apply, and "Benachrichtigungen" would run out of the
@@ -366,7 +373,7 @@
     ]), $scope);
 
     // Auto-inject rel="noopener noreferrer" when target="_blank". `$attributes->merge`
-    // would treat rel as a DEFAULT, so a caller's own rel (even rel="prev") would win
+    // would treat rel as a default, so a caller's own rel (even rel="prev") would win
     // and silently defeat the tabnabbing guard — hence the remove-and-render form.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = str_contains($targetAttr, '_blank');
@@ -376,7 +383,7 @@
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
-    // Resolved HERE rather than inside the partial, and that is not tidiness. Inside a
+    // Resolved here rather than inside the partial, and that is not tidiness. Inside a
     // component's slot `$attributes` is the WRAPPER's bag, not this component's — so a
     // partial that reached for it would silently render the tooltip's attributes onto
     // the link in the tooltip branch and this component's in the other, which is a
@@ -385,9 +392,16 @@
 
     // A `<button>` arrives with a border, a background, its own font and centered text, and
     // none of that is in the rail's class list because an anchor needs none of it. The reset
-    // lives in the SHIPPED stylesheet, not as utilities here — otherwise `as="button"` would
+    // lives in the shipped stylesheet, not as utilities here — otherwise `as="button"` would
     // work only where the developer's build scanned this package.
     $buttonReset = $railTag === 'button' ? 'wk-rail-item-button' : '';
+
+    // The two pieces of a button's own look that the entry's classes set only in some state:
+    // the fill, which the hover and the current pill paint, and the weight, which the current
+    // entry sets. At rest they are put back here as utilities, so every state above them still
+    // wins. In the reset rule they beat the hover as well, and an entry rendered as a button
+    // never answered the pointer.
+    $buttonRest = $railTag === 'button' && ! $active ? 'bg-transparent [font-weight:inherit]' : '';
 
     // The pointer rides the same condition but stays a utility rather than joining
     // that reset rule. Tailwind v4's preflight no longer sets `cursor: pointer` on
@@ -416,14 +430,14 @@
         $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
     }
 
-    $linkAttributes = $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button'])));
+    $linkAttributes = $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonRest => $buttonRest !== '', $buttonCursor => $railTag === 'button'])));
 @endphp
 
-{{-- THREE literal branches, and the shape is forced rather than chosen.
+{{-- Three literal branches, and the shape is forced rather than chosen.
 
-     Blade compiles component tags in a pass that runs BEFORE statements and echoes, with
+     Blade compiles component tags in a pass that runs before statements and echoes, with
      its own attribute scanner — so neither `@if(…) x-bind:… @endif` nor a spread
-     `{{ $bag }}` inside the tag is understood. Both leave the OPENING tag uncompiled
+     `{{ $bag }}` inside the tag is understood. Both leave the opening tag uncompiled
      while the closing tag compiles normally, and the view then dies on an `endif` with
      nothing to open it, at a line number that names the wrong thing entirely.
 
@@ -474,7 +488,7 @@
         <span id="{{ $badgeSentenceId }}" hidden>{{ $badgeSentence }}</span>
     </x-wirekit::tooltip>
 @elseif($needsTooltip)
-    {{-- The tooltip must go quiet the moment the label becomes visible, so `disabled` is BOUND
+    {{-- The tooltip must go quiet the moment the label becomes visible, so `disabled` is bound
          to live state rather than decided at render: the tooltip reads the attribute at trigger
          time. Every rail can show its names at runtime, an expandable one on its toggle and any
          rail in a drawer it has to itself, and `expanded` is in scope because the rail's Alpine

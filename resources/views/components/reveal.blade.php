@@ -85,7 +85,7 @@
     //
     // AlpinePayload rather than a hand-picked flag set. Every value here is a validated
     // enum, a bool or a float, so no byte above ASCII can reach it today — but the flags
-    // are chosen for the CONTEXT, not for the payload that happens to be in it, and
+    // are chosen for the context, not for the payload that happens to be in it, and
     // JSON_HEX_TAG is the wrong choice for a directive attribute: it escapes `<` to
     // `<`, and Alpine's CSP tokenizer drops that backslash and keeps the letters, so
     // the value would arrive as `u003C`. Blade's `{{ }}` already escapes `<` on the way
@@ -107,9 +107,12 @@
     // browser composes it with the wk-animate-{preset} class the moment
     // the Alpine helper adds the class. No JS plugin change needed.
     $delay ??= config('wirekit.components.reveal.delay', null);
+    // A number written as text is that number, as a bound one is: `delay="125"` holds no token.
+    $delayNumber = is_string($delay) && is_numeric(trim($delay)) ? \Pushery\WireKit\Support\NumericProp::intOrNull($delay, 'reveal', 'delay') : null;
     $delayValue = match (true) {
         $delay === null => null,
         is_int($delay) && $delay >= 0 => $delay.'ms',
+        $delayNumber !== null && $delayNumber >= 0 => $delayNumber.'ms',
         in_array($delay, ['none', 'sm', 'md', 'lg', 'xl'], true) => "var(--motion-wk-delay-{$delay})",
         // An unknown value is reported, and then delayed like the first allowed token rather
         // than written into the style as its bare name.
@@ -117,11 +120,11 @@
     };
 
     // Compose caller's `style=…` with our internal `animation-delay` into
-    // a SINGLE style attribute. Without this, the template emitted two
+    // a single style attribute. Without this, the template emitted two
     // style attributes on the same <div> — caller-passed (e.g.
     // `style="--wk-stagger-step: 0ms"`) plus our @if-rendered
     // `style="animation-delay: 1000ms"`. Per HTML5 parsing, duplicate
-    // attributes resolve to the FIRST and silently drop the second, so
+    // attributes resolve to the first and silently drop the second, so
     // the animation-delay was never applied whenever a caller passed
     // any inline style — and every gallery preview in animations.md
     // does, so the delay was universally dropped on the gallery (and

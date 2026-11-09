@@ -13,9 +13,9 @@
     'stickyHeader' => false,
     // How tall the scroll-confined body may get before it scrolls. `stickyHeader` needs a
     // bounded height to mean anything at all — the wrapper already carries `overflow-x: auto`,
-    // which makes it a scroll container on BOTH axes, so a `sticky` heading measures itself
+    // which makes it a scroll container on both axes, so a `sticky` heading measures itself
     // against a box that never scrolls vertically and therefore never sticks. The height is
-    // the CONDITION, not the decoration.
+    // the condition, not the decoration.
     //
     // The default is `24rem`. A viewport-relative value like `70vh` is what a table of unknown
     // length wants, because the limit then follows the screen and simply never applies to the
@@ -27,22 +27,22 @@
     // browser cannot parse is dropped like any other bad declaration, so an unusable value
     // leaves no max-height rather than a wrong one. The reasoning is with the code below.
     'stickyHeaderMax' => config('wirekit.components.table.sticky-header-max', '24rem'),
-    'stickyColumn' => false, // freeze the FIRST column while the rest scroll horizontally
+    'stickyColumn' => false, // freeze the first column while the rest scroll horizontally
     'stickyColumnBelow' => null, // sm | md | lg | xl | 2xl — freeze it only below that breakpoint
     // sm | md | lg | xl | 2xl — below that breakpoint every body row stands as a card and every
     // cell as a line that names its column, so a wide table does not scroll sideways on a phone.
     'stackBelow' => null,
-    // sm | md | lg | xl | 2xl | 3xl | 4xl | 5xl — the same, below a width of the TABLE rather than of
+    // sm | md | lg | xl | 2xl | 3xl | 4xl | 5xl — the same, below a width of the table rather than of
     // the window, on the container scale of a column's `hideBelowContainer`: beside a sidebar or in
     // one column of a page the window is the wrong thing to measure. A responsive table only, since
     // its frame is what is measured.
     'stackBelowContainer' => null,
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // Accessible name for the responsive scroll wrapper, and the switch that makes it a
-    // LANDMARK. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
+    // landmark. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
     // unconditional); the role only joins it once there is a name worth navigating to. A
     // fallback such as "Scrollable table" would make every table on a page answer to the same
-    // rotor entry — axe reports that as `landmark-unique`. Name it after the DATA
+    // rotor entry — axe reports that as `landmark-unique`. Name it after the data
     // ("Customer list"), never after the widget.
     'tableLabel' => null,
     'scope' => null,
@@ -57,12 +57,12 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('table', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $stickyHeader = BooleanProp::from($stickyHeader, false, 'table', 'stickyHeader');
     // Same contract for the four whose default is spelled as a `config()` fallback rather
-    // than a literal. `responsive` is the sharp one: it defaults ON, so `responsive="false"`
+    // than a literal. `responsive` is the sharp one: it defaults on, so `responsive="false"`
     // is a switch a developer reaches for deliberately, and without the cast the wrapper it
     // is meant to remove would stay.
     $responsive = BooleanProp::from($responsive, true, 'table', 'responsive');
@@ -75,7 +75,7 @@
     // and that is the whole design of this prop rather than a shortcut. Two reasons, and
     // neither of them is a preference.
     //
-    // Tailwind can only generate a utility for a value it has SEEN, and it sees source text.
+    // Tailwind can only generate a utility for a value it has seen, and it sees source text.
     // A caller-supplied length exists in the caller's own Blade, so their build would generate
     // it — but this package's build cannot, and a class this package emits with no rule behind
     // it is a silently absent max-height. Worse, a utility written with a variable inside its
@@ -159,10 +159,28 @@
         default => '',
     };
 
+    // The frame is a size container only while something reads its width. A size container
+    // takes no width from what it holds, so as one the frame would collapse in a parent that
+    // sizes itself to its content, such as a flex item without a width of its own; without
+    // containment the table takes its width from its columns there. What reads the width:
+    // `stackBelowContainer`; a column, a details row or a stand-in on the container scale, each
+    // marked `data-wk-table-measures`, since their own classes may reach the page compacted; the
+    // caption and a frozen column, which cap themselves at `100cqi`; and container units written
+    // into the slot, as the recipe that holds a control in view while the table scrolls sideways.
+    // Read once and shared with the plain-markup check below. It only looks for markers, and a
+    // morph comment Livewire writes around a control structure is no marker.
+    $rawSlot = (string) $slot;
+    $measured = $stackBelowContainer !== null
+        || $stickyColumn
+        || str_contains($rawSlot, 'data-wk-table-measures')
+        || str_contains($rawSlot, '<caption')
+        || preg_match('/\dcq(?:i|w|b|h|min|max)\b/', $rawSlot) === 1;
+    $frameContainer = $measured ? '@container/wk-table ' : '';
+
     // Base table classes — full width, collapse borders, use design tokens for typography
     $classes = WireKit::resolveClasses('table', 'base', implode(' ', [
         'wk-table',
-        // A sticky-column table MUST be able to exceed its scroll container so the
+        // A sticky-column table must be able to exceed its scroll container so the
         // frozen column has something to scroll past — `w-full` caps it at 100% and
         // the columns just compress (no horizontal scroll, sticky-column inert). Use
         // the natural content width (min 100%) so a wide table overflows + scrolls.
@@ -175,7 +193,7 @@
         // the non-responsive branch.
         $responsive ? 'shrink-0' : '',
         'border-collapse',
-        'text-left',
+        'text-start',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
@@ -198,7 +216,7 @@
         $tableAttrs[] = 'data-wk-sticky-header';
     }
     if ($stickyColumn) {
-        // NOTE: this marker is a cross-surface CONTRACT, not just internal CSS
+        // Note: this marker is a cross-surface contract, not just internal CSS
         // plumbing — docs.wirekit.app keys a preview-frame width rule (pin the
         // preview to the content column so the wide table scrolls instead of
         // growing the frame) and a scroll-demo regression check off
@@ -210,7 +228,7 @@
     // styles the outer <table>; padding / dividers / stripe / hover live
     // on sub-components (.head, .body, .row, .th, .td). A slot that
     // renders raw <thead> / <tbody> / <tr> / <td> elements produces a
-    // visually-broken table with NO error — same gotcha as the card
+    // visually-broken table with no error — same gotcha as the card
     // composition pattern.
     //
     // Detection: scan the slot's rendered HTML for plain-HTML table
@@ -227,7 +245,7 @@
     // (See resources/views/components/table/*.blade.php for emission.)
     //
     // Plain-HTML descendant detection: render the slot to string and read
-    // every opening `<thead`, `<tbody`, `<tr`, `<th` or `<td` up to its OWN
+    // every opening `<thead`, `<tbody`, `<tr`, `<th` or `<td` up to its own
     // `>`. One without a data-wk-table-* marker in that span is raw. The
     // sub-components write their marker before any attribute of the
     // caller's, so it always sits inside it. The span ends at the tag: a
@@ -238,8 +256,7 @@
     // A table nested in a cell has rows of its own, and they are not this
     // table's, so the markup of every nested table is taken out first,
     // innermost first. Should that replacement fail, the markup is read as it
-    // stands.
-    $rawSlot = (string) $slot;
+    // stands. `$rawSlot` is the slot's markup, read above.
     $hasPlainHtmlDescendants = false;
     if (config('app.debug') && $rawSlot !== '') {
         $ownMarkup = $rawSlot;
@@ -285,9 +302,9 @@
 
 {{-- Wrap in responsive container for horizontal scroll on narrow screens.
      WCAG 2.1.1 (Keyboard): an `overflow-x-auto` region that actually scrolls
-     MUST be keyboard-reachable, otherwise a keyboard / switch user cannot pan
+     must be keyboard-reachable, otherwise a keyboard / switch user cannot pan
      to the off-screen columns. The focusable region + accessible name therefore
-     apply to EVERY responsive wrapper, not only the sticky-header variant — a
+     apply to every responsive wrapper, not only the sticky-header variant — a
      wide data table with no focusable cells would otherwise be unreachable. `min-w-0`
      lets the wrapper shrink below the table's intrinsic width inside a flex
      parent so the scroll engages instead of the table forcing document
@@ -303,10 +320,10 @@
      explicit minimum resolves `min-width: auto` to that content width, so a wide
      table would push this whole wrapper past a phone-width column. --}}
 {{-- `@container/wk-table` makes this frame the thing a column's `hide-below-container`
-     measures against. NAMED on purpose: an anonymous container would also become the
+     measures against. Named on purpose: an anonymous container would also become the
      measuring context for every `@`-variant a caller nests inside the table, and
      retarget it without anybody asking. --}}
-{{-- The scroller's focus ring is drawn by THIS frame, on an `::after` laid over the table while
+{{-- The scroller's focus ring is drawn by this frame, on an `::after` laid over the table while
      the scroller has the keyboard focus. A ring the scroller drew itself, as an inset shadow,
      would be painted beneath its own cells: a header cell with a background would cover its top
      edge, a striped or footer row its bottom, a frozen first column its left, and a sticky head
@@ -319,20 +336,20 @@
      `fit`, and the frame inside it, with the shadows and the focus ring, only as wide as the table.
      A caller's `wire:key`, `x-show` and transitions belong to the outermost element, here. --}}
 @if($fit)
-<div class="@container/wk-table w-full min-w-0" {{ $outerAttributes }}>
+<div class="{{ $frameContainer }}w-full min-w-0" {{ $outerAttributes }}>
 @endif
-<div data-wk-ref-scope class="{{ $fit ? $fitFrameWidth : '@container/wk-table w-full' }} relative min-w-0 has-[>[data-wk-table-scroller]:focus-visible]:after:pointer-events-none has-[>[data-wk-table-scroller]:focus-visible]:after:absolute has-[>[data-wk-table-scroller]:focus-visible]:after:inset-0 has-[>[data-wk-table-scroller]:focus-visible]:after:z-20 has-[>[data-wk-table-scroller]:focus-visible]:after:rounded-[inherit] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[length:var(--ring-wk-width)] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-inset has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[var(--color-wk-ring)]" x-data="wirekitStickyPanelShadows()" @unless($fit) {{ $outerAttributes }} @endunless>
+<div data-wk-ref-scope class="{{ $fit ? $fitFrameWidth : $frameContainer.'w-full' }} relative min-w-0 has-[>[data-wk-table-scroller]:focus-visible]:after:pointer-events-none has-[>[data-wk-table-scroller]:focus-visible]:after:absolute has-[>[data-wk-table-scroller]:focus-visible]:after:inset-0 has-[>[data-wk-table-scroller]:focus-visible]:after:z-20 has-[>[data-wk-table-scroller]:focus-visible]:after:rounded-[inherit] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[length:var(--ring-wk-width)] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-inset has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[var(--color-wk-ring)]" x-data="wirekitStickyPanelShadows()" @unless($fit) {{ $outerAttributes }} @endunless>
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in
-         a block scroller they would stack ABOVE and BELOW the table instead of sitting
+         a block scroller they would stack above and below the table instead of sitting
          at its inline edges — an IntersectionObserver watching them would answer a
          vertical question, and the trailing-edge hint would appear only once something
          had already scrolled, after the moment it exists for. --}}
-    {{-- The scroller is a tab stop, so it needs a focus state a keyboard user can SEE —
+    {{-- The scroller is a tab stop, so it needs a focus state a keyboard user can see —
          it is the only handle for panning to columns that are off screen, and without a
          ring the caret lands on it with nothing to show for it. The frame above draws that
-         ring, INSIDE the box: an outset ring on an element that is itself a min-width-zero
+         ring, inside the box: an outset ring on an element that is itself a min-width-zero
          flex child adds width outside the border box, which is the one thing this wrapper
          spends its own comment above avoiding. `data-wk-table-scroller` is what the frame
          asks about. --}}
@@ -370,8 +387,8 @@
      its pixel and the reader none.
 
      The margin is logical, not physical. It has to land on the side facing the table
-     so the pixel sits INSIDE the scroll content instead of protruding past its edge,
-     and in a right-to-left table that side is the other one — which `-me-` / `-ms-`
+     so the pixel sits inside the scroll content instead of protruding past its edge,
+     and in a table that reads from the right that side is the other one — which `-me-` / `-ms-`
      follow and `-mr-` / `-ml-` would not. --}}
 <div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></div>
 @endif
@@ -380,10 +397,10 @@
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @if(! $responsive) data-wk-ref-scope @endif @endif
         @foreach($tableAttrs as $attr) {{ $attr }} @endforeach
         {{-- Debug-only composition warning. It cannot be an inline console.warn:
-             under Alpine's CSP build naming `console` throws while BUILDING the
+             under Alpine's CSP build naming `console` throws while building the
              component, which takes down the very element being warned about.
 
-             An element carries ONE Alpine component, so where the table is
+             An element carries one Alpine component, so where the table is
              already sorting, the message rides along in that factory's config
              rather than claiming a second x-data. --}}
         @php
@@ -410,7 +427,7 @@
     </table>
 @if($responsive)
 {{-- `-ms-px` mirrors the start sentinel: the canceling margin faces the table, so
-     this pixel is the LAST pixel of the scroll content rather than one past it, and
+     this pixel is the last pixel of the scroll content rather than one past it, and
      a scroller at maximum scroll therefore has it fully in view. --}}
 <div x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -ms-px"></div>
 </div>

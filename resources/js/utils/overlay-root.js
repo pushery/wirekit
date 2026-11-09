@@ -4,7 +4,7 @@
  * The overlay family teleports its panel out of the document flow — dropdowns, tooltips,
  * popovers, comboboxes, menus, the command palette. That is correct positioning: a panel
  * inside an `overflow: hidden` ancestor is clipped by it. Before this file they went to
- * `<body>`, which also put every panel OUTSIDE every landmark on the page — not in
+ * `<body>`, which also put every panel outside every landmark on the page — not in
  * `<main>`, not in `<nav>`, not in anything. axe reported `region` for each one, and a
  * developer auditing their own app could not fix it, because the markup belongs to us.
  *
@@ -18,7 +18,7 @@
  * No count here, deliberately, for the reason `dev-warning.js` gives: the set is greppable in
  * one command, and a number in a shipped comment is a second copy that nothing keeps honest.
  *
- * CREATED FROM JAVASCRIPT rather than emitted by a Blade directive, and that is deliberate.
+ * Created from javascript rather than emitted by a Blade directive, and that is deliberate.
  * `x-teleport` throws when its selector matches nothing, so a container that depended on a
  * directive would take the page down for anyone who loads the bundle another way — a
  * developer bundling it through Vite, a docs site embedding it, anyone not using
@@ -91,14 +91,14 @@ export function overlayRoot() {
     if (root) {
         // An adopted container is finished the same way a created one is, and this
         // is not symmetry for its own sake. Writing the container yourself is the
-        // MORE robust route, not a workaround: it sits in the markup Livewire
+        // more robust route, not a workaround: it sits in the markup Livewire
         // morphs, so it is never briefly absent and no navigation timing has to be
         // right. The reader who takes that route was getting a region a screen
         // reader announces as "region" and nothing else — precisely the state the
         // localization work was done to remove, reaching precisely the readers it
         // was meant to reach.
         //
-        // Only what is MISSING is filled in. A developer who wrote their own label
+        // Only what is missing is filled in. A developer who wrote their own label
         // has translated it in their own catalog, and overwriting it would take
         // their translation away in the name of localization. `aria-labelledby`
         // counts as a label too — a container pointed at a heading is named, and
@@ -112,7 +112,7 @@ export function overlayRoot() {
             root.setAttribute('aria-label', overlayRootLabel());
         }
 
-        // The check belongs on BOTH paths. An application that ships the root in its
+        // The check belongs on both paths. An application that ships the root in its
         // own layout markup — a perfectly reasonable thing to do — would otherwise
         // never reach it, and that is precisely the kind of setup most likely to have
         // the stylesheet wrong too.
@@ -373,7 +373,7 @@ let stylesheetCheckDeferred = false;
  * Say so when this package's stylesheet is not loaded.
  *
  * Every overlay here positions itself with `position: fixed` — from the shipped
- * stylesheet, and from Tailwind utilities on the same elements. When NEITHER is
+ * stylesheet, and from Tailwind utilities on the same elements. When neither is
  * present the overlay still renders: the markup is correct, the text is there, the
  * buttons are visible and enabled. It simply sits in normal document flow at the end
  * of the page, and whether any of it lands inside the viewport depends on how long
@@ -479,7 +479,7 @@ const NAVIGATION_LISTENERS_FLAG = '__wirekitOverlayNavigation';
  *     nowInitializeAlpineOnTheNewPage(Alpine);           // <- the walk that throws
  *     fireEventForOtherLibrariesToHookInto('alpine:navigated');
  *
- * Rebuilding on `alpine:navigated` restores the container for the NEXT overlay and leaves
+ * Rebuilding on `alpine:navigated` restores the container for the next overlay and leaves
  * the error that already happened exactly where it was: the container is back afterwards and
  * the page is dead anyway.
  *
@@ -519,7 +519,7 @@ function bindNavigationListeners() {
  * Ensure the root exists before Alpine processes any `x-teleport`.
  *
  * `alpine:init` fires before the DOM walk, so a panel that teleports during that walk finds
- * the container already there. Without this the FIRST overlay on a page would teleport into
+ * the container already there. Without this the first overlay on a page would teleport into
  * a selector that does not resolve yet — and `x-teleport` treats that as fatal.
  */
 export function installOverlayRoot() {

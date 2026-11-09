@@ -173,7 +173,7 @@
     <p data-wk-prose-skip data-wk-video-unsupported class="{{ $noticeClasses }} m-0" x-show="state === 'unsupported'" x-cloak>{{ __('wirekit::This video cannot play in this browser.') }}</p>
     @endif
 
-    @if(! $background)
+    @wirekitLast(! $background)
     <button
         type="button"
         data-wk-video-play
@@ -199,7 +199,7 @@
         <svg x-show="looping" x-cloak class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
         <svg x-show="! looping" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
     </button>
-    @endif
+    @endwirekitLast
 </div>
 @elseif($src === null)
 {{-- A player without an address has nothing to play. --}}

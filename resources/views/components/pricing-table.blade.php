@@ -17,7 +17,7 @@
     // Name of the hidden input the interval is written to, so the choice reaches
     // a surrounding <form>. Only rendered when intervals are given.
     'name' => 'interval',
-    // The interval as the SERVER sees it. Distinct from the first key of
+    // The interval as the server sees it. Distinct from the first key of
     // `intervals`, which is only the opening position: this one keeps arriving,
     // so a checkout decided on the server can both read the choice and correct it.
     'interval' => null,
@@ -114,7 +114,7 @@
      UA bullets in a page whose stylesheet did not. The tokens resolve from
      dist/wirekit.css either way. --}}
 @if($intervalMap !== null)
-{{-- The toggle owns `interval` for the whole table. It sits OUTSIDE the <ul>
+{{-- The toggle owns `interval` for the whole table. It sits outside the <ul>
      because a list may only contain list items, and the tiers read the value
      through the Alpine scope rather than a prop — Blade cannot pass anything
      into slot content that was already rendered in the caller's scope. --}}
@@ -123,14 +123,14 @@
      and Livewire would quietly observe nothing. This is the same passthrough
      nine other components already do; see segmented-control. --}}
 <div
-        {{-- The observed value is NOT interpolated into the seed, and that is
+        {{-- The observed value is not interpolated into the seed, and that is
              deliberate: a Livewire morph rewrites `x-data`, Alpine re-initializes
              on the change, and an effect queued against the pre-morph scope then
              writes the pre-morph value last. Keeping this attribute
              byte-identical across renders leaves the scope alone, so
              `data-wk-server-value` + observeServerValue is the one update path.
              The factory reads that same attribute at init. --}}
-    {{-- `default` is a PROP, so it renders identically on every morph and the
+    {{-- `default` is a prop, so it renders identically on every morph and the
          attribute stays byte-stable. Only the observed value had to leave. --}}
     x-data="wirekitPricingTable({ default: {{ \Pushery\WireKit\Support\AlpinePayload::from($defaultInterval) }} })"
     @if($interval !== null) data-wk-server-value="{{ $serverInterval }}" @endif
@@ -138,7 +138,7 @@
     data-wk-pricing-intervals
     {{ $outerAttributes }}
 >
-    {{-- Inside the wrapper and BEFORE the <ul>, because a list may only hold list
+    {{-- Inside the wrapper and before the <ul>, because a list may only hold list
          items — the same reason the toggle sits here. --}}
     <input
         type="hidden"
@@ -161,7 +161,7 @@
             <button
                 type="button"
                 x-on:click="interval = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
-                {{-- A STATIC value as well as the bound one. Until Alpine evaluates the
+                {{-- A static value as well as the bound one. Until Alpine evaluates the
                      binding the button carries no `aria-pressed` at all, so the
                      server-rendered document — which is what a screen reader meets first, and
                      the only document at all under a strict CSP that blocks the bundle — says

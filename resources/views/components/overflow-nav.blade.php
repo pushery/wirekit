@@ -56,9 +56,10 @@
             // script leaves the entry without an href, so it navigates nowhere. Handed over as it
             // is: the rule takes a string, a Stringable and a backed enum, as Blade's echo does.
             'href' => \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? '#'),
-            'current' => (bool) ($item['current'] ?? false),
-            'pinned' => (bool) ($item['pinned'] ?? false),
-            'divider' => (bool) ($item['divider'] ?? false),
+            // Switches, read as a switch prop is: the text `false`, `no` and `off` are off.
+            'current' => \Pushery\WireKit\Support\BooleanProp::from($item['current'] ?? false),
+            'pinned' => \Pushery\WireKit\Support\BooleanProp::from($item['pinned'] ?? false),
+            'divider' => \Pushery\WireKit\Support\BooleanProp::from($item['divider'] ?? false),
             // The developer's own attributes for the anchor, as written. An `href` among them is
             // left out: it would reach the link past the rule above, and would be the only target
             // of an entry whose own was refused.
@@ -258,16 +259,16 @@
                      The label is a cut text with a tooltip: while it is cut, the whole name shows on
                      hover and on the link's keyboard focus, and it takes the link's type and color,
                      states included, through `inherit`. In the menu a long name wraps instead. --}}
-                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class(['wk-overflow-nav-link', $linkClasses, 'wk-touch-row', 'min-w-0 max-w-full']) }}>@if($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" aria-hidden="true" />@endif<x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="min-w-0">{{ $entry['label'] }}</x-wirekit::text>@if(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endif</span>@else<x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="min-w-0">{{ $entry['label'] }}</x-wirekit::text>@endif</a>
+                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class(['wk-overflow-nav-link', $linkClasses, 'wk-touch-row', 'min-w-0 max-w-full']) }}>@wirekitLast($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" aria-hidden="true" />@endif<x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="min-w-0">{{ $entry['label'] }}</x-wirekit::text>@wirekitLast(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endwirekitLast</span>@else<x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="min-w-0">{{ $entry['label'] }}</x-wirekit::text>@endwirekitLast</a>
                 @if($entry['action'])
                     @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
                 @endif
                 {{-- Inside the entry, so the width the row measures for the entry includes it and the
                      line goes with the entry when the entry goes into the menu. A border rather than a
                      fill, which forced colors would drop. --}}
-                @if($entry['divider'])
+                @wirekitLast($entry['divider'])
                     <span data-wk-overflow-divider aria-hidden="true" class="ms-[var(--space-wk-xs)] self-stretch my-[var(--space-wk-xs)] border-s border-[color:var(--color-wk-border)]"></span>
-                @endif
+                @endwirekitLast
             </li>
         @endforeach
         {{-- Hidden until the row has measured itself, so a page without script shows every link
@@ -287,10 +288,10 @@
                     @foreach($menuEntries as $entry)
                         <li data-wk-prose-skip @if($entry['action']) class="flex items-center gap-[var(--gap-wk-xs)]" @endif x-show="menuHere({{ (int) $entry['index'] }})" style="display: none;">
                             @php($menuAfter = $afterFor($entry, 'menu'))
-                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class(['wk-touch-row', $menuLinkClasses, 'min-w-0 flex-1' => $entry['action'] !== null]) }}><span class="min-w-0 flex-1">@if($entry['icon'] !== null || filled($menuAfter))<span class="{{ $partsInMenu }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($menuAfter))<span class="inline-flex shrink-0 items-center">{{ $menuAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</span></a>
-                            @if($entry['action'])
+                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class(['wk-touch-row', $menuLinkClasses, 'min-w-0 flex-1' => $entry['action'] !== null]) }}><span class="min-w-0 flex-1">@wirekitLast($entry['icon'] !== null || filled($menuAfter))<span class="{{ $partsInMenu }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@wirekitLast(filled($menuAfter))<span class="inline-flex shrink-0 items-center">{{ $menuAfter }}</span>@endwirekitLast</span>@else{{ $entry['label'] }}@endwirekitLast</span></a>
+                            @wirekitLast($entry['action'])
                                 @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
-                            @endif
+                            @endwirekitLast
                         </li>
                     @endforeach
                 </ul>

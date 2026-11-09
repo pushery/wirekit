@@ -25,7 +25,7 @@
  * set of keyframes. A table row is painted by its cells, and a cell with a background of its own
  * (a frozen column, a striped row) would cover the row's tint, so for a `<tr>` the cells flash.
  *
- * REDUCED MOTION keeps the signal and drops the movement: the tint appears at once, stays for the
+ * Reduced motion keeps the signal and drops the movement: the tint appears at once, stays for the
  * same time and is gone at once, with no fade. The change is still there to see.
  *
  * Lifecycle: one MutationObserver per element, disconnected in the directive's cleanup.

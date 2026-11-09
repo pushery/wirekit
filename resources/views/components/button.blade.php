@@ -5,7 +5,7 @@
     'surface' => config('wirekit.components.button.surface', 'filled'),
     'size' => config('wirekit.components.button.size', 'md'),
     'type' => 'button',
-    // Let a label that a USER typed take a second line. Default false: a label the application
+    // Let a label that a user typed take a second line. Default false: a label the application
     // wrote belongs on one line, and a button that wraps mid-word is the defect there.
     'wrapLabel' => false,
     // On a touch screen, lift the label to the text floor the form fields lift to. Default false:
@@ -20,7 +20,7 @@
     // Show the icon alone and keep the label as the accessible name.
     //
     // The icon itself goes into `<x-slot:iconLeft>` or `<x-slot:iconRight>`. What this adds: a
-    // button carrying only an icon would otherwise take the HORIZONTAL padding of a text button
+    // button carrying only an icon would otherwise take the horizontal padding of a text button
     // and render as a wide box with a small glyph floating in the middle, and nothing would hold
     // the label in the accessibility tree once it is hidden.
     //
@@ -32,10 +32,10 @@
     // dropped, so the button keeps a real accessible name that is translated by the same
     // `__()` the visible one went through and is reachable by voice control — which an
     // `aria-label` on a control with no visible text is not, reliably. A caller who prefers
-    // `aria-label` can still use it; this only means they do not HAVE to.
+    // `aria-label` can still use it; this only means they do not have to.
     'iconOnly' => false,
     // The same idea on an axis: show the label where there is room for it and the glyph
-    // alone where there is not. Takes a breakpoint NAME and measures the VIEWPORT.
+    // alone where there is not. Takes a breakpoint name and measures the viewport.
     //
     // Viewport names only, and the difference is not cosmetic. `table.th hideBelowContainer`
     // takes names from Tailwind's container scale, which runs from `3xs` to `7xl`; the viewport
@@ -46,7 +46,7 @@
     // button simply keeps its label.
     //
     // The viewport, said out loud, because the sibling prop measures something else.
-    // `table.th hideBelowContainer` measures a container the kit NAMES (`@container/wk-table`)
+    // `table.th hideBelowContainer` measures a container the kit names (`@container/wk-table`)
     // precisely so an `@`-variant cannot be silently retargeted by whatever a caller nested it
     // in. A button has no container of its own and sits anywhere, so a container-relative
     // variant here would have to measure "the nearest one, whichever that is" — which is the
@@ -61,17 +61,17 @@
     'disabled' => false,
     'loading' => false,
     'forceLoading' => false,
-    // Scope the loading spinner + disable to THIS button's own Livewire action,
+    // Scope the loading spinner + disable to this button's own Livewire action,
     // e.g. loading-target="redeliver". The spinner is a child <svg wire:loading>
     // with no target of its own, so Livewire falls back to hasActionForComponent()
-    // and flashes it on EVERY commit — including wire:poll refreshes and unrelated
+    // and flashes it on every commit — including wire:poll refreshes and unrelated
     // sibling actions. Setting loadingTarget emits wire:target so the spinner only
-    // reacts to that action. NOTE: this is `loadingTarget`, NOT `target` — a
+    // reacts to that action. Note: this is `loadingTarget`, not `target` — a
     // `target` prop would collide with the HTML target attribute (target="_blank"
     // + the rel tabnabbing auto-inject). Null = the untargeted behavior; scoping
     // is strictly opt-in.
     'loadingTarget' => null,
-    // Whether the busy state DISABLES the control, or only marks it busy.
+    // Whether the busy state disables the control, or only marks it busy.
     //
     // `disabled`, the default, costs the focus: the browser blurs a control the
     // moment it becomes disabled, so the element the reader
@@ -94,14 +94,14 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'button', 'disabled');
     $loading = BooleanProp::from($loading, false, 'button', 'loading');
     $disableOnLoading = BooleanProp::from($disableOnLoading, true, 'button', 'disableOnLoading');
 
-    // Blade compiles an UNBOUND attribute to a string, and the string 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and the string 'false' is truthy — so
     // `wrap-label="false"` would mean the opposite of what the call site reads as, with the
     // page rendering either way and nothing to say so. Normalized against this prop's own
     // default, like every other boolean on this component.
@@ -144,7 +144,7 @@
 
     // `loadingTarget` implies `loading`, because there is no other reason to set it.
     //
-    // Both branches below hang on `$loading`; `loadingTarget` only SCOPES a spinner that
+    // Both branches below hang on `$loading`; `loadingTarget` only scopes a spinner that
     // `loading` switches on. Without this, `loading-target="submit"` without `loading` would
     // render a button byte-identical to one without the attribute — no spinner, no disable,
     // nothing — while reading at the call site exactly like a working busy state.
@@ -160,7 +160,7 @@
     // Dev-only — silent in prod. See WireKit::warnUnknownProps() docs.
     WireKit::warnUnknownProps('button', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -173,9 +173,9 @@
         // `whitespace-nowrap` keeps the button's text on a single line
         // alongside the loading-spinner / icon slots. Without it, a
         // narrow button width (or a long label like "Saving…") flexes
-        // the text into a second line BELOW the spinner — visually the
+        // the text into a second line below the spinner — visually the
         // spinner stacks above the text. `inline-flex` alone does not
-        // prevent the inner TEXT NODE from soft-wrapping at its own
+        // prevent the inner text node from soft-wrapping at its own
         // whitespace; `whitespace-nowrap` clamps the text to one line.
         // `wrapLabel` flips only the clamp, and the default is one line. The reasoning above
         // is right for a label the application wrote — "Save", "Send test". It is the wrong
@@ -183,9 +183,9 @@
         // long as somebody made them, and a row of those would run off the edge of a card rather
         // than take a second line.
         //
-        // `flex-nowrap` comes WITH the wrap, and it is what keeps the reasoning above true:
-        // the concern there is the spinner ending up ABOVE the text, which is the flex
-        // LINE breaking rather than the text soft-wrapping. Holding the line together lets the
+        // `flex-nowrap` comes with the wrap, and it is what keeps the reasoning above true:
+        // the concern there is the spinner ending up above the text, which is the flex
+        // line breaking rather than the text soft-wrapping. Holding the line together lets the
         // label take a second row while the spinner stays beside it.
         //
         // `whitespace-normal` is emitted explicitly rather than by omission: a developer's own
@@ -201,14 +201,14 @@
         // and a space still wins wherever there is one. Spelled as an arbitrary property, the same
         // spelling text and heading use for their break values.
         $wrapLabel
-            ? 'inline-flex items-center justify-center gap-x-2 whitespace-normal flex-nowrap [overflow-wrap:anywhere]'
-            : 'inline-flex items-center justify-center gap-x-2 whitespace-nowrap',
+            ? 'inline-flex items-center justify-center gap-x-[var(--gap-wk-sm)] whitespace-normal flex-nowrap [overflow-wrap:anywhere]'
+            : 'inline-flex items-center justify-center gap-x-[var(--gap-wk-sm)] whitespace-nowrap',
         // Marker for the coarse-pointer touch-target floor in dist/wirekit.css —
         // the same hook `wk-field` gives the form controls. It carries no styling
         // of its own; it exists so a stylesheet rule can reach this element with
         // enough specificity to beat the size utility.
         //
-        // The touch TEXT floor's marker rides in the same entry when the prop asks for it: a
+        // The touch text floor's marker rides in the same entry when the prop asks for it: a
         // button on its own is right at its designed size, and one that shares a row with a field
         // takes the size the field lifts to instead of reading smaller beside it.
         //
@@ -291,7 +291,7 @@
     /*
      * An icon-only button with nothing to be named by is a button a screen reader announces as
      * "button" and nothing else — and it is invisible to the person who built it, because the
-     * glyph tells THEM everything.
+     * glyph tells them everything.
      *
      * No fallback name is invented, and that is the difference from `clipboard-button`, which
      * can fall back to "Copy to clipboard" because it does exactly one thing. This button does
@@ -315,7 +315,7 @@
     }
 
     /*
-     * Icon-only REPLACES that table rather than editing its string, and it runs after it rather
+     * Icon-only replaces that table rather than editing its string, and it runs after it rather
      * than instead of it — so the size is still validated on this path, by the one call that
      * publishes the allow-list.
      *
@@ -340,7 +340,7 @@
         };
     }
 
-    // The height, and why it is TWO tables rather than one class.
+    // The height, and why it is two tables rather than one class.
     //
     // A clamped label is exactly one line tall, so a fixed height is the right
     // answer and it keeps a row of buttons aligned to the same baseline. A label
@@ -358,7 +358,7 @@
     // `$size` is already validated by the match above, so `default` here only has
     // to be a sane value rather than a second error path.
     /*
-     * A THIRD table, and it is a square: the width is the same token as the height, so the
+     * A third table, and it is a square: the width is the same token as the height, so the
      * button is as wide as it is tall at every size instead of as wide as its padding.
      *
      * It ignores `wrapLabel`, and that is not an oversight. There is no visible label to
@@ -386,7 +386,7 @@
      * The square travels as a custom property rather than as a class, and that is not a
      * stylistic preference. Tailwind reads a literal class name, so an assembled one yields a
      * utility nothing generates — the rule the two tables above already state twice. Spelling
-     * the width out per breakpoint AND per size would multiply the breakpoints by the sizes in
+     * the width out per breakpoint and per size would multiply the breakpoints by the sizes in
      * literals for one prop. The prefix is the only part that has to be literal; the token
      * behind it is a value, so it travels inline and one class per breakpoint covers every size.
      *
@@ -538,12 +538,12 @@
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
-    // When `loading=true` is set without ANY `wire:*` action attribute
+    // When `loading=true` is set without any `wire:*` action attribute
     // (wire:click / wire:submit / wire:click.prevent / wire:keydown / etc.),
-    // the developer wants the DECLARATIVE loading state — the button stays
+    // the developer wants the declarative loading state — the button stays
     // in its loading look until they manually flip it. `wire:loading` on the
     // spinner and `wire:loading.attr` on the button are both no-ops outside a
-    // Livewire request — the spinner would never show AND the button would
+    // Livewire request — the spinner would never show and the button would
     // never disable. So the two are told apart:
     //   - $loading + wire:*  → wire:loading.attr (implicit while a Livewire
     //                          request is in flight)
@@ -586,7 +586,7 @@
     //
     // Two boundaries below are deliberate rather than oversights:
     //
-    //   `forceLoading` keeps disabling. Its own contract is a PREVIEW of the disabled
+    //   `forceLoading` keeps disabling. Its own contract is a preview of the disabled
     //   busy state for static demos and non-Livewire contexts — "disables the button
     //   regardless" — so honoring the opt-out there would break a different promise.
     //
@@ -612,7 +612,7 @@
     // `disabled` would therefore stay fully styled, Tab-reachable and navigable,
     // and announce to a screen reader as an ordinary link.
     //
-    // A link cannot be disabled natively, so the href is WITHHELD instead: without
+    // A link cannot be disabled natively, so the href is withheld instead: without
     // it the element is neither focusable nor navigable, and `role="link"` +
     // `aria-disabled="true"` keep it announced as the disabled link it is rather
     // than as anonymous text. The muted look is applied as plain utilities here
@@ -629,6 +629,27 @@
     $linkDisabled = $tag === 'a' && $isDisabled;
     $linkDisabledClasses = $linkDisabled
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
+        : '';
+
+    /*
+     * The parts from the label on are written as echoes rather than blocks, so Livewire writes no
+     * morph markers around them. A part that comes or goes there moves only the parts after it,
+     * the right icon and the new-tab hint, which hold neither focus nor state. The spinner and the
+     * left icon stand before the label and keep their blocks: a part that came in there without
+     * markers would pair the label with the node before it, and the morph would build the label
+     * anew, with whatever an element in it holds. Each class goes through CompactClasses, as a
+     * class attribute in the markup does.
+     */
+    $labelPart = $iconOnly
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e($slot).'</span>')
+        : ($iconOnlyBelow !== null
+            ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map($iconOnlyBelowLabelClass)).'">'.e($slot).'</span>')
+            : $slot);
+    $iconRightPart = \Pushery\WireKit\Support\SlotContent::given($iconRight ?? null)
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('shrink-0')).'">'.e($iconRight).'</span>')
+        : '';
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'"> '.e(__('wirekit::(opens in new tab)')).'</span>')
         : '';
 @endphp
 
@@ -652,44 +673,26 @@
         @if($tag === 'button') wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif
         @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif
     @endif
->
-    {{-- Loading spinner: declarative path renders always; wire:loading
-         path renders only while a Livewire request is in flight. --}}
-    @if($declarativeLoading)
-        <svg data-wk-busy-spinner class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-    @elseif($loading)
-        <svg wire:loading @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif data-wk-busy-spinner class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-    @endif
+>{{--
+    The parts of the button touch: no text of this template stands between them. A `<button>`
+    keeps a run of white space as a flex item in Blink and WebKit, where another flex container
+    drops it, and the gap then stands beside an empty item: after a label that ends in a visually
+    hidden addition, or before the spinner. PHP drops the line break after a directive; an echo
+    keeps its own, so every echo here is followed by the next directive or tag on its line. The
+    space between the label and the new-tab hint stands inside the hint, which is absolutely
+    positioned and takes no place in the row, so the name still reads as separate words.
 
-    {{-- Icon slots: use <x-slot:iconLeft> / <x-slot:iconRight> for HTML icons (SVG etc.) --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($iconLeft ?? null))
-        <span class="shrink-0">{{ $iconLeft }}</span>
-    @endif
-
-    {{-- Hidden, never dropped. An icon-only button whose label was simply not rendered is a
-         control a screen reader announces as "button" and nothing else — and it looks finished,
-         because the glyph says everything a sighted reader needs. Kept visually hidden, the same
-         translated string is still the accessible name (WCAG 4.1.2) and still the phrase voice
-         control matches on. --}}
-    @if($iconOnly)
-        <span class="sr-only">{{ $slot }}</span>
-    @elseif($iconOnlyBelow !== null)
-        <span class="{{ $iconOnlyBelowLabelClass }}">{{ $slot }}</span>
-    @else
-        {{ $slot }}
-    @endif
-
-    @if(\Pushery\WireKit\Support\SlotContent::given($iconRight ?? null))
-        <span class="shrink-0">{{ $iconRight }}</span>
-    @endif
-
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    Loading spinner: the declarative path renders always, the wire:loading path only while a
+    Livewire request is in flight. Drawn whole, or a pointer into the page's glyphs while
+    `wirekit.icons.sprite` is on; the Livewire attributes stay on the instance.
+--}}@if($declarativeLoading)
+{{ \Pushery\WireKit\Support\KitIcons::svg('spinner', 'animate-spin -ms-1 h-4 w-4', 'data-wk-busy-spinner aria-hidden="true"') }}@elseif($loading)
+{{ \Pushery\WireKit\Support\KitIcons::svg('spinner', 'animate-spin -ms-1 h-4 w-4', 'wire:loading'.($loadingTarget ? ' wire:target="'.e($loadingTarget).'"' : '').' data-wk-busy-spinner aria-hidden="true"') }}@endif
+{{-- Icon slots: use <x-slot:iconLeft> / <x-slot:iconRight> for HTML icons (SVG etc.) --}}@if(\Pushery\WireKit\Support\SlotContent::given($iconLeft ?? null))
+<span class="shrink-0">{{ $iconLeft }}</span>@endif
+{{-- Hidden, never dropped. An icon-only button whose label was simply not rendered is a
+     control a screen reader announces as "button" and nothing else — and it looks finished,
+     because the glyph says everything a sighted reader needs. Kept visually hidden, the same
+     translated string is still the accessible name (WCAG 4.1.2) and still the phrase voice
+     control matches on. The label, the right icon and the new-tab hint are echoes, built in the
+     php block above. --}}{{ $labelPart }}{{ $iconRightPart }}{{ $newTabHint }}</{{ $tag }}>

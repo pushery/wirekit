@@ -19,17 +19,24 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('container', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $center = BooleanProp::from($center, true, 'container', 'center');
 
+    // The tier is the width of the content, and the padding stands outside it: the box may grow to
+    // the tier plus the padding on both sides. That is how the navbar, the hero, the brand bar and
+    // the footer lay out the same tier, so in a window wider than the box all of them start their
+    // content at one line; below that width each stands at its padding. A box of the tier alone
+    // put this one's content a padding further in. The padding is the container's own, read from
+    // the variable the padding classes below set, so `padding="none"` adds nothing.
+    // Tailwind arbitrary values take no spaces, hence `calc(a+2*b)` unspaced.
     $maxClasses = match (WireKit::validateProp('container', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
-        'sm' => 'max-w-[var(--size-wk-container-sm,40rem)]',
-        'md' => 'max-w-[var(--size-wk-container-md,48rem)]',
-        'lg' => 'max-w-[var(--size-wk-container-lg,64rem)]',
-        'xl' => 'max-w-[var(--size-wk-container-xl,80rem)]',
-        '2xl' => 'max-w-[var(--size-wk-container-2xl,96rem)]',
+        'sm' => 'max-w-[calc(var(--size-wk-container-sm,40rem)+2*var(--wk-container-pad,0px))]',
+        'md' => 'max-w-[calc(var(--size-wk-container-md,48rem)+2*var(--wk-container-pad,0px))]',
+        'lg' => 'max-w-[calc(var(--size-wk-container-lg,64rem)+2*var(--wk-container-pad,0px))]',
+        'xl' => 'max-w-[calc(var(--size-wk-container-xl,80rem)+2*var(--wk-container-pad,0px))]',
+        '2xl' => 'max-w-[calc(var(--size-wk-container-2xl,96rem)+2*var(--wk-container-pad,0px))]',
         'full' => 'max-w-full',
     };
 
@@ -40,12 +47,16 @@
     // sits exactly where main's would. Vertical section padding still
     // reads from `--space-wk-*` (developers apply `py-*` themselves on
     // the container when they want a section rhythm).
+    //
+    // Each tier also names its padding in `--wk-container-pad`, for the width above. `none` names
+    // zero rather than nothing, because a custom property is inherited: a container without padding
+    // inside one with it would otherwise add its parent's.
     $paddingClasses = match (WireKit::validateProp('container', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl'])) {
-        'none' => '',
-        'sm' => 'px-[var(--padding-wk-x-sm,0.625rem)]',
-        'md' => 'px-[var(--padding-wk-x-md,0.75rem)]',
-        'lg' => 'px-[var(--padding-wk-x-lg,1rem)]',
-        'xl' => 'px-[var(--padding-wk-x-xl,1.5rem)]',
+        'none' => '[--wk-container-pad:0px]',
+        'sm' => '[--wk-container-pad:var(--padding-wk-x-sm,0.625rem)] px-[var(--padding-wk-x-sm,0.625rem)]',
+        'md' => '[--wk-container-pad:var(--padding-wk-x-md,0.75rem)] px-[var(--padding-wk-x-md,0.75rem)]',
+        'lg' => '[--wk-container-pad:var(--padding-wk-x-lg,1rem)] px-[var(--padding-wk-x-lg,1rem)]',
+        'xl' => '[--wk-container-pad:var(--padding-wk-x-xl,1.5rem)] px-[var(--padding-wk-x-xl,1.5rem)]',
     };
 
     $classes = WireKit::resolveClasses('container', 'base', implode(' ', array_filter([

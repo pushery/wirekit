@@ -23,7 +23,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('command-palette.item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -33,7 +33,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'command-palette.item', 'disabled');
@@ -44,7 +44,7 @@
 
     // Command item — selectable option in the command palette.
     //
-    // The id is DERIVED, in this order: an explicit `id`, then the href (the
+    // The id is derived, in this order: an explicit `id`, then the href (the
     // natural key for a link item), then the item's own text. Only when none of
     // those exist is there nothing to derive from at all. An entry that opens a
     // page is no link, so its href takes no part.
@@ -64,14 +64,14 @@
         $wkCmdDerivedId = $label !== '' ? 'wk-cmd-item-'.$label : null;
     }
 
-    // The derivation above is stable but NOT unique, and a palette is the one
+    // The derivation above is stable but not unique, and a palette is the one
     // place that shape hurts. The same verb under two groups — "Settings" under
-    // Docs and under Admin, "Open" under Files and Projects — derives ONE id for
+    // Docs and under Admin, "Open" under Files and Projects — derives one id for
     // two rows, and `document.getElementById` answers with the first: arrowing
     // onto the second row publishes an `aria-activedescendant` that resolves to
     // the first, so the reader is told about a row it is not standing on, and
     // because the string does not change between the two some readers announce
-    // nothing at all. DomId::unique hands the FIRST sight back verbatim — a lone
+    // nothing at all. DomId::unique hands the first sight back verbatim — a lone
     // item keeps the clean, readable id the paragraph above argues for — and
     // counts only the collisions, so both properties hold instead of one being
     // traded for the other. It also covers the item that has neither href nor
@@ -98,7 +98,7 @@
         // it — the highlight is written by `_paintActive()`. So a `focus:` background here
         // would be inert, and there is none.
         //
-        // The RING is the mark, for the reason dropdown/item.blade.php records. The
+        // The ring is the mark, for the reason dropdown/item.blade.php records. The
         // background is the hover's shade, --color-wk-bg-hover, about 1.1:1 against the
         // palette panel: it shows which row the pointer is on and is too faint to mark
         // the highlighted one alone. The ring measures 17.2:1 dark and 19.8:1 light.
@@ -133,6 +133,13 @@
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $tag === 'a' && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -177,7 +184,7 @@
     </span>
 
     @if($shortcut)
-        <span class="ml-auto flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
+        <span class="ms-auto flex items-center gap-[var(--gap-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
             @foreach((array) $shortcut as $key)
                 {{-- The component, not a copy of it. The hand-rolled chip reproduced most of
                      kbd's classes and dropped two: `border-b-2`, which is the keycap edge that
@@ -196,7 +203,4 @@
         </span>
     @endif
 
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    {{ $newTabHint }}</{{ $tag }}>

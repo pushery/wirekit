@@ -29,7 +29,7 @@ use RecursiveIteratorIterator;
 final class IconSourceLocator
 {
     /**
-     * The directory under the package holding the MOST `.svg` files.
+     * The directory under the package holding the most `.svg` files.
      *
      * Not the deepest one: several of these packages ship a secondary set beside the main
      * one — Lucide's `lab` folder — and depth does not tell them apart, which is the whole
@@ -68,7 +68,7 @@ final class IconSourceLocator
             return null;
         }
 
-        // The directory holding the MOST SVGs, not the first one found. Several of these
+        // The directory holding the most SVGs, not the first one found. Several of these
         // packages ship a secondary set beside the main one — Lucide's `lab` folder is the
         // example — and a walk that stopped at its first hit would publish the sideshow.
         arsort($counts);

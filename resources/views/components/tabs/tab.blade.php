@@ -2,23 +2,23 @@
      A tab is one item of `tabs.list` and carries no state of its own; `selected` arrives
      from the server on every render. Whatever the tab triggers belongs to the developer's
      own action, not to this element. --}}
-{{-- One tab inside `<x-wirekit::tabs.list>`, selected by the SERVER.
+{{-- One tab inside `<x-wirekit::tabs.list>`, selected by the server.
 
      `selected` is a plain server-side boolean rather than an Alpine binding, and that is
      the whole point of this pair: the page came back from the server already knowing
      which tab is current, so re-deriving it in the browser would be a second answer to a
      settled question — and the two would disagree for one frame after every round trip.
 
-     It drives BOTH `aria-selected` and `tabindex`, because a tablist has exactly one tab
+     It drives both `aria-selected` and `tabindex`, because a tablist has exactly one tab
      in the page's tab order. Setting only the first leaves a bar a keyboard reader can
      enter but not read correctly; setting only the second leaves one it can read but has
      to Tab through item by item.
 
      There is deliberately no `aria-controls`. It names a panel, this arrangement has
-     none, and an IDREF pointing at nothing is not a smaller version of pointing at
+     none, and an idref pointing at nothing is not a smaller version of pointing at
      something — assistive technology follows it and arrives nowhere. --}}
 @props([
-    // Whether the SERVER considers this tab current. Not a default and not initial
+    // Whether the server considers this tab current. Not a default and not initial
     // state: it arrives on every render and is the only thing that decides.
     'selected' => false,
     'disabled' => false,
@@ -28,6 +28,9 @@
     // which in the neutral default reads like a counter. Null keeps the badge's default.
     'badgeIntent' => null,
     'scope' => null,
+    // The address of the view this tab stands for. The tab is then a link, which a reader can
+    // also open in a new window, and `wire:navigate` on the tag makes it a Livewire visit.
+    'href' => null,
 ])
 
 @aware(['variant' => 'underline', 'orientation' => 'horizontal'])
@@ -42,7 +45,7 @@
     $variant = \Pushery\WireKit\Support\AwareProp::read('variant', ['tabs.list', 'tabs'], 'underline');
     $orientation = \Pushery\WireKit\Support\AwareProp::read('orientation', ['tabs.list', 'tabs'], 'horizontal');
 
-    // `@aware` reads a value from the parent but — unlike `@props` — does NOT remove
+    // `@aware` reads a value from the parent but — unlike `@props` — does not remove
     // that key from the attribute bag. Written on the tag as well, it would survive into
     // `{{ $attributes }}` and render as a stray HTML attribute. Blade accepts both
     // spellings, so both are dropped.
@@ -60,9 +63,9 @@
 
     // A disabled tab stays discoverable, and that costs the component the suppression.
     //
-    // Native `disabled` on a `role="tab"` removes it from the page's tab order AND from the
+    // Native `disabled` on a `role="tab"` removes it from the page's tab order and from the
     // arrow cycle, so a keyboard reader never learns the tab exists — the WAI-ARIA APG names
-    // "Tab elements in a Tablist" explicitly among the controls that should REMAIN focusable
+    // "Tab elements in a Tablist" explicitly among the controls that should remain focusable
     // while disabled, precisely so the reader can find out that it is there and unavailable.
     //
     // But `aria-disabled` suppresses nothing. Native `disabled` means the browser dispatches
@@ -79,6 +82,16 @@
             || preg_match('/^(?:wire:|x-on:|@|on)(?:click|mousedown|mouseup|keydown|keyup|keypress)\b/i', $key) !== 1)
         : $attributes;
 
+    // A tab with an address is a link. A link cannot be disabled natively either, so a disabled
+    // one gives up its address and its `wire:navigate`, which follows nothing without one, and
+    // keeps its tabindex: it stays in the arrow cycle like a disabled button tab.
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+    $tag = $href !== null ? 'a' : 'button';
+
+    if ($tag === 'a' && $disabled) {
+        $tabAttributes = $tabAttributes->filter(fn ($value, $key): bool => ! is_string($key) || ! str_starts_with($key, 'wire:navigate'));
+    }
+
     WireKit::warnUnknownProps('tabs.tab', $attributes->getAttributes());
 
     $isVertical = $orientation === 'vertical';
@@ -87,8 +100,11 @@
     $stateClasses = $selected ? TablistStyles::tabActive($variant) : TablistStyles::tabInactive();
 @endphp
 
-<button
-    type="button"
+{{-- First, so prose's rules never reach the tab: as a link it would take their underline and
+     their color. --}}
+<{{ $tag }} data-wk-prose-skip
+    @if($tag === 'a' && ! $disabled) href="{{ $href }}" @endif
+    @if($tag === 'button') type="button" @endif
     role="tab"
     aria-selected="{{ $selected ? 'true' : 'false' }}"
     {{-- Roving tabindex: the selected tab is the bar's single stop in the page's tab
@@ -107,4 +123,4 @@
     @if($badgeText !== null)
         <x-wirekit::badge size="sm" :intent="$badgeIntent">{{ $badgeText }}</x-wirekit::badge>
     @endif
-</button>
+</{{ $tag }}>

@@ -8,7 +8,7 @@ namespace Pushery\WireKit\Support;
  * Finds the files that close a page's `<head>` and `<body>`, starting from the layout it names.
  *
  * A layout is not always the document. The Livewire starter kit's `layouts/app.blade.php` is
- * five lines that render `<x-layouts::app.sidebar>`, and it is THAT file which carries the
+ * five lines that render `<x-layouts::app.sidebar>`, and it is that file which carries the
  * `<html>`, the `<head>` and the `</body>`. An installer that edits the layout finds nowhere to
  * put a stylesheet; a check that reads it answers for a file no page's head lives in.
  *
@@ -83,7 +83,7 @@ final class LayoutShells
      * A layout that closes both is its own answer, and nothing inside it is followed. Otherwise
      * the walk follows what it renders until it reaches the files that do.
      *
-     * With `$alternatives`, a shell the walk had to FOLLOW to also brings the other shells in
+     * With `$alternatives`, a shell the walk had to follow to also brings the other shells in
      * its directory. The starter kit keeps `sidebar` and `header` side by side and switches
      * between them with a one-word edit — wire only the current one, and the other is broken
      * the day somebody switches. Only inside a `layouts` directory, because next to
@@ -107,7 +107,7 @@ final class LayoutShells
                 $found['body'][] = $file;
             }
 
-            // A file that closes both IS the document: what it renders inside is page content.
+            // A file that closes both is the document: what it renders inside is page content.
             return ! ($closesHead && $closesBody);
         });
 
@@ -137,7 +137,7 @@ final class LayoutShells
      * Does `$file` — or anything it renders or includes — use `@$directive`?
      *
      * The starter kit's shells hand their whole `<head>` to `partials/head`, so a stylesheet a
-     * developer put there IS in every head, and a check of the shell alone would add a second.
+     * developer put there is in every head, and a check of the shell alone would add a second.
      */
     public function carries(string $file, string $directive): bool
     {
@@ -151,6 +151,113 @@ final class LayoutShells
         });
 
         return $carries;
+    }
+
+    /**
+     * The first `@vite(` the head of `$file` reaches — in the head itself or in a view that head
+     * includes — and the file it is written in. A stylesheet of WireKit's goes in front of that
+     * line, so the package's sheets load before the application's: the compact sheet declares
+     * its classes in `@layer utilities`, the layer the application's Tailwind utilities share,
+     * and within one layer the later stylesheet wins a tie.
+     *
+     * @return array{file: string, line: string}|null null when the head reaches no `@vite(`
+     */
+    public function applicationStylesheet(string $file): ?array
+    {
+        $head = $this->headOf($file);
+
+        return $head === null ? null : $this->firstViteLine($file, $head, 0);
+    }
+
+    /**
+     * Whether the head of `$file` loads the application's stylesheet (`@vite(`) before WireKit's
+     * (`@wirekitStyles` or `@wirekitCompactStyles`), reading the views it includes where they
+     * stand. False when the head lacks either: then there is no order to get wrong.
+     */
+    public function loadsApplicationStylesheetFirst(string $file): bool
+    {
+        $head = $this->headOf($file);
+
+        if ($head === null) {
+            return false;
+        }
+
+        $order = $this->headOrder($head, 0);
+        $vite = array_search('vite', $order, true);
+        $kit = array_search('kit', $order, true);
+
+        return $vite !== false && $kit !== false && $vite < $kit;
+    }
+
+    /**
+     * The part of the view in `$file` before its `</head>`, where the stylesheets are linked, or
+     * null for a view without one. The tag is read in any case and with space before its `>`.
+     */
+    private function headOf(string $file): ?string
+    {
+        $source = is_file($file) ? (string) file_get_contents($file) : '';
+
+        return preg_match('~^(.*?)</head\s*>~is', $source, $head) === 1 ? $head[1] : null;
+    }
+
+    /**
+     * The stylesheets a head loads, in the order it loads them: `vite` for the application's,
+     * `kit` for WireKit's, with an included view's own read in its place.
+     *
+     * @return list<'vite'|'kit'>
+     */
+    private function headOrder(string $scope, int $depth): array
+    {
+        $order = [];
+        $pattern = '/(?<!@)@(vite\s*\(|wirekitStyles\b|wirekitCompactStyles\b|include(?:If)?\s*\(\s*[\'"]([^\'"]+)[\'"])/';
+
+        foreach (preg_split('/\R/', BladeParser::liveText($scope)) ?: [] as $line) {
+            preg_match_all($pattern, $line, $hits, PREG_SET_ORDER);
+
+            foreach ($hits as $hit) {
+                if (str_starts_with($hit[1], 'vite')) {
+                    $order[] = 'vite';
+                } elseif (str_starts_with($hit[1], 'wirekit')) {
+                    $order[] = 'kit';
+                } elseif ($depth < self::MAX_DEPTH && ($included = $this->resolve($hit[2] ?? '', asComponent: false)) !== null) {
+                    array_push($order, ...$this->headOrder((string) file_get_contents($included), $depth + 1));
+                }
+            }
+        }
+
+        return $order;
+    }
+
+    /**
+     * The first live line in `$scope` that calls `@vite(`, following the views it includes. The
+     * line comes back trimmed, as the text a caller anchors on; a commented-out copy of it is not
+     * live text, so it is never the one returned.
+     *
+     * @return array{file: string, line: string}|null
+     */
+    private function firstViteLine(string $file, string $scope, int $depth): ?array
+    {
+        foreach (preg_split('/\R/', BladeParser::liveText($scope)) ?: [] as $line) {
+            if (preg_match('/(?<!@)@vite\s*\(/', $line) === 1) {
+                return ['file' => $file, 'line' => trim($line)];
+            }
+
+            if ($depth >= self::MAX_DEPTH
+                || preg_match('/(?<!@)@include(?:If)?\s*\(\s*[\'"]([^\'"]+)[\'"]/', $line, $view) !== 1) {
+                continue;
+            }
+
+            $included = $this->resolve($view[1], asComponent: false);
+            $found = $included === null
+                ? null
+                : $this->firstViteLine($included, (string) file_get_contents($included), $depth + 1);
+
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
     }
 
     /**

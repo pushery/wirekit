@@ -1,2 +1,0 @@
-/*! WireKit per page v2.72.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
-var n=null;function l(t){let e=String(t??"");return n===null&&typeof Intl<"u"&&typeof Intl.Segmenter=="function"&&(n=new Intl.Segmenter(void 0,{granularity:"grapheme"})),n?Array.from(n.segment(e),r=>r.segment):Array.from(e)}function f(t,e,r=""){let o=l(t);return o.length>e?o.slice(0,e).join("")+r:o.join("")}export{l as a,f as b};

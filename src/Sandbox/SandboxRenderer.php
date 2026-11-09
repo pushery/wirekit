@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Blade;
  *   3. Render via Blade with the validated payload as data.
  *   4. Audit-log the outcome.
  *
- * The renderer NEVER receives raw user input directly — every value
+ * The renderer never receives raw user input directly — every value
  * funnels through the validator first, which hands back two views of the
  * same payload. The slot is echoed raw, so it takes the escaped view. A
  * prop takes the value as given, because the component escapes it on
@@ -26,8 +26,8 @@ use Illuminate\Support\Facades\Blade;
  * parameter called `amp;b`. No component in the sandbox echoes a string
  * prop raw, which is what makes the single escape safe.
  *
- * SSTI defense: developer values are bound as runtime DATA and referenced
- * from the assembled template through Blade expressions — they are NEVER
+ * SSTI defense: developer values are bound as runtime data and referenced
+ * from the assembled template through Blade expressions — they are never
  * concatenated into the template source `Blade::render()` compiles. HTML
  * escaping alone does not neutralize Blade's compile tokens (`{{ }}`, `@…`),
  * so concatenating a value into the source would let `{{ 7*7 }}` execute.
@@ -50,7 +50,7 @@ final class SandboxRenderer
      * surface multi-slot composition, so this map auto-wraps the
      * `body` payload in the listed sub-component before rendering.
      *
-     * Entries here MUST refer to a real `<x-wirekit::{tag}>` sub-component;
+     * Entries here must refer to a real `<x-wirekit::{tag}>` sub-component;
      * the wrap is unconditional once the body is non-empty.
      */
     private const BODY_WRAPPERS = [
@@ -116,10 +116,10 @@ final class SandboxRenderer
     {
         // Build: <x-wirekit::{component} :prop="$__wk_pN" …>{!! $__wk_body !!}</…>
         //
-        // SECURITY (SSTI/RCE): every developer-controlled value is bound as
-        // runtime DATA (the `$data` map below) and referenced from the template
-        // through a Blade expression — NEVER concatenated into the template
-        // source. This is the load-bearing defense: HTML escaping does NOT
+        // Security (SSTI/RCE): every developer-controlled value is bound as
+        // runtime data (the `$data` map below) and referenced from the template
+        // through a Blade expression — never concatenated into the template
+        // source. This is the load-bearing defense: HTML escaping does not
         // neutralize Blade's own compile tokens (`{{ … }}`, `{!! … !!}`,
         // `@directive`). Concatenated into the Blade source, a prop value of
         // `{{ 7*7 }}` (or `{{ system(chr(105).chr(100)) }}` for a no-quote RCE)
@@ -136,7 +136,7 @@ final class SandboxRenderer
         foreach ($props as $key => $value) {
             if ($key === 'body') {
                 // Convention: 'body' prop becomes the slot content. The slot is echoed raw
-                // below, so it takes the ESCAPED view — never the value a bound prop receives.
+                // below, so it takes the escaped view — never the value a bound prop receives.
                 $body = is_string($escaped['body'] ?? null) ? $escaped['body'] : '';
 
                 continue;
@@ -166,7 +166,7 @@ final class SandboxRenderer
                 $data[$var] = $value;
                 $attrs .= ' :'.$key.'="$'.$var.'"';
                 // The same attribute with the literal value, for the snippet the
-                // caller shows. The bound form ABOVE is how the value reaches
+                // caller shows. The bound form above is how the value reaches
                 // Blade without being compiled as template source; it is not
                 // something anyone can paste into an application.
                 //
@@ -186,9 +186,9 @@ final class SandboxRenderer
             // anything else is intentionally dropped).
         }
 
-        // Body slot: a RAW echo of the body data variable. Its content is
+        // Body slot: a raw echo of the body data variable. Its content is
         // already HTML-escaped by the validator (so it can only emit inert
-        // entities, never live markup), and a raw echo of a DATA variable is
+        // entities, never live markup), and a raw echo of a data variable is
         // never re-parsed as Blade — so a `{{ … }}` / `@…` in the body stays
         // literal, and the slot text reaches the page escaped exactly once.
         $data['__wk_body'] = $body;
@@ -212,7 +212,7 @@ final class SandboxRenderer
         // carries literal values and the literal body instead.
         //
         // This is the whole point of returning it at all: a sandbox preview is
-        // interactive, so the code to show is whatever the CURRENT props amount
+        // interactive, so the code to show is whatever the current props amount
         // to, and only this function knows that.
         $sourceBody = $body === '' ? '' : self::snippetSlotText($body);
 
@@ -275,7 +275,7 @@ final class SandboxRenderer
 
     /**
      * Slot text a developer can paste. It arrives HTML-escaped, which is right for a slot; what
-     * is left is Blade's own syntax, which COMPILES in the template it is pasted into. A `{`
+     * is left is Blade's own syntax, which compiles in the template it is pasted into. A `{`
      * that starts an echo and an `@` that Blade would read as a directive are spelled as
      * entities, which render as the character and which Blade does not read.
      */

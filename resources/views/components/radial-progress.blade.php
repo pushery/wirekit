@@ -6,7 +6,7 @@
     // has nothing to draw; use the spinner for unknown-duration work.
     'value' => 0,
     'max' => 100,
-    // Accessible name. REQUIRED: a progressbar with no name announces a number
+    // Accessible name. Required: a progressbar with no name announces a number
     // and never says what the number is about.
     'label' => null,
     // What assistive tech should read instead of the bare percentage. Use it when
@@ -37,7 +37,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('radial-progress', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $animate = BooleanProp::from($animate, false, 'radial-progress', 'animate');
@@ -115,22 +115,23 @@
      custom property. That keeps the whole thing declarative: no canvas, no SVG
      arc math, and a value change is a single style write.
 
-     role="progressbar" carries the meaning; the number in the middle is a visual
-     convenience. Assistive tech reads aria-valuetext, so the two can never
-     disagree — they are the same string. --}}
+     role="progressbar" carries the meaning; the center is for the eye. The children of a
+     progressbar are presentational, so assistive tech reads aria-valuetext, not the
+     center, and a center that says something other than the percentage needs
+     `valueText` with the same words. --}}
 <div
     @unless($attributes->has('role')) role="progressbar" @endunless
     aria-valuenow="{{ round($numericValue, 2) }}"
     aria-valuemin="0"
     aria-valuemax="{{ round($numericMax, 2) }}"
     aria-valuetext="{{ $announced }}"
-    {{-- A progressbar MUST have an accessible name; aria-valuetext is the VALUE,
+    {{-- A progressbar must have an accessible name; aria-valuetext is the value,
          not the name. `label` is the intended source, but it defaults to null, so
          without a fallback a developer who omits it would ship a nameless
          progressbar. Fall back to
          a translatable generic name so the role is never anonymous. --}}
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\BlankName::first($label, __('wirekit::Progress')) }}" @endunless
-    {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep
+    {{-- Opt the animated ring into the docs.wirekit.app replay button so the sweep
          can be re-watched — a re-mount restarts the animation. No-op in a
          developer app (no such button); it only adds the attribute. --}}
     @if($animate) data-replayable="true" @endif
@@ -138,7 +139,7 @@
     data-intent="{{ $effectiveIntent }}"
     {{ $attributes->merge(['style' => '--wk-radial-value: '.(round($percent, 2)).'; --wk-radial-fill: '.($fillToken).';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    {{-- The center. Empty by default: a bare percentage repeated inside every ring
-         is noise the aria-valuetext already carries. --}}
+    {{-- The center. Empty by default, so a ring shows a number only where the caller
+         puts one. --}}
     <span class="relative z-10 text-center leading-none">{{ $slot }}</span>
 </div>

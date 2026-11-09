@@ -6,7 +6,7 @@
  * Uses Floating UI for positioning at cursor / touch-point coordinates.
  * Follows WAI-ARIA menu pattern with arrow key navigation.
  *
- * A `role="menu"` is a composite widget, not a dialog, so Tab is an EXIT rather than
+ * A `role="menu"` is a composite widget, not a dialog, so Tab is an exit rather than
  * something to trap: it closes the menu and hands focus onward. That is the same answer
  * dropdown and menubar give, and it has to be spelled out here for the reason the panel is
  * teleported at all — see `_tabStopBesideTrigger()`.
@@ -28,7 +28,7 @@ const LONG_PRESS_MS = 500;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
 
 /**
- * What the browser would consider a tab stop OUTSIDE this menu.
+ * What the browser would consider a tab stop outside this menu.
  *
  * Same selector menubar, navigation-menu and hover-card use for their teleported panels —
  * same question, so the same answer rather than a fourth list that drifts from the other
@@ -89,8 +89,8 @@ export default function wirekitContextMenu() {
             // `init()`, and still has to close on every page change after the first.
             document.addEventListener('livewire:navigating', this._navCleanup);
 
-            // Auto-close cooperation: when ANY context menu broadcasts that it's
-            // about to open, every OTHER instance closes itself. This prevents the
+            // Auto-close cooperation: when any context menu broadcasts that it's
+            // about to open, every other instance closes itself. This prevents the
             // "two menus open at once" bug when multiple <x-wirekit::context-menu>
             // siblings live in the same page (e.g. one per table row). The event
             // carries the opening instance's Symbol as `detail.source` so each
@@ -153,7 +153,7 @@ export default function wirekitContextMenu() {
          * @param {number} clientY
          */
         async _openAtCoords(clientX, clientY) {
-            // Announced BEFORE flipping `open`, so a sibling is already closing
+            // Announced before flipping `open`, so a sibling is already closing
             // while this one renders. The helper carries the identity that keeps
             // this instance from closing itself on its own announcement.
             this._coordination?.announce();
@@ -193,16 +193,16 @@ export default function wirekitContextMenu() {
                 offset: 2,
 
                 // Put the placement back when a page update takes it away, and note that
-                // `autoReposition` would NOT do this job here for two separate reasons.
+                // `autoReposition` would not do this job here for two separate reasons.
                 //
                 // Everything this call writes is inline style, and a framework update patches the
                 // panel against its own template, whose `style` attribute carries none of it — so
                 // the whole attribute is replaced and the placement is gone, while the state that
                 // opened the menu never changed and nothing asks for a new one. This panel is
-                // teleported to the overlay root, so with no `top` it sits at the END of the
+                // teleported to the overlay root, so with no `top` it sits at the end of the
                 // document rather than a few pixels off the cursor.
                 //
-                // `autoReposition` watches the two elements' BOXES. Here the reference is VIRTUAL
+                // `autoReposition` watches the two elements' boxes. Here the reference is virtual
                 // — a cursor position that answers `getBoundingClientRect()` and nothing else, so
                 // there is no element to observe — and the panel is sized by its content, so an
                 // erasure need not change its box at all. Both halves of what that option needs
@@ -230,7 +230,7 @@ export default function wirekitContextMenu() {
                 }
             }
 
-            // Focus the first item — AFTER positioning, so the panel is already at its
+            // Focus the first item — after positioning, so the panel is already at its
             // final coordinates and nothing has to be re-measured.
             //
             // This is what makes the menu operable at all, and it is not merely polish.
@@ -325,7 +325,7 @@ export default function wirekitContextMenu() {
             if (!this.isOpen) return;
 
             // Was the reader inside the panel when it closed? The answer has to be taken
-            // BEFORE anything hides, and it decides whether focus is ours to move.
+            // before anything hides, and it decides whether focus is ours to move.
             //
             // Escape, and activating an item, both close with focus on a menu item — and
             // that item is about to be hidden, which drops focus on <body> and restarts a
@@ -353,7 +353,7 @@ export default function wirekitContextMenu() {
                 stop?.focus({ preventScroll: true });
             }
 
-            // BEFORE the hide, not after. The panel leaves through an `x-transition`, so
+            // Before the hide, not after. The panel leaves through an `x-transition`, so
             // `display: none` is applied when that transition ends — after any focus call
             // made on this tick, which would therefore accomplish nothing and leave focus
             // on <body> anyway. Moving focus out of the panel first means there is never a
@@ -388,12 +388,12 @@ export default function wirekitContextMenu() {
         },
 
         /**
-         * Get all menuitem elements at THIS level of the panel.
+         * Get all menuitem elements at this level of the panel.
          *
          * Items nested inside a submenu's child panel (`[data-wk-submenu-panel]`)
          * are excluded so top-level roving focus stays flat — the submenu owns
-         * its own level via wirekitSubmenu. The submenu PARENT item is itself a
-         * `[role="menuitem"]` NOT inside a submenu panel, so it stays included.
+         * its own level via wirekitSubmenu. The submenu parent item is itself a
+         * `[role="menuitem"]` not inside a submenu panel, so it stays included.
          */
         _getItems() {
             const panel = this.$refs.panel;
@@ -410,11 +410,11 @@ export default function wirekitContextMenu() {
          * Anchored on the trigger, not on the panel, and that is the whole point.
          * `teleport` defaults to true, so the panel is moved to the end of `<body>` while
          * being drawn at the pointer — and sequential focus order follows the DOM, not the
-         * paint. Continuing from where the panel SITS lands off the end of the document
+         * paint. Continuing from where the panel sits lands off the end of the document
          * going forward, and on whatever precedes the overlay root going back. The place
          * the reader actually is, is the thing they right-clicked.
          *
-         * The trigger's OWN focusable descendants count as following it (a descendant
+         * The trigger's own focusable descendants count as following it (a descendant
          * carries `DOCUMENT_POSITION_FOLLOWING` alongside `CONTAINED_BY`), so a forward Tab
          * out of a menu opened on a table row lands at the start of that row rather than
          * skipping past it — nothing in the trigger becomes unreachable. Going back they
@@ -468,7 +468,7 @@ export default function wirekitContextMenu() {
             const items = this._getItems();
             if (!items.length) return;
 
-            // Where the reader IS, asked of the document, rather than where this component
+            // Where the reader is, asked of the document, rather than where this component
             // last put them. The list on the line above was just read from the DOM; taking
             // the position from anywhere else lets the two describe different pages.
             //
@@ -518,7 +518,7 @@ export default function wirekitContextMenu() {
                     // painted over the page, with focus somewhere else, and nothing would
                     // report it.
                     //
-                    // Tab is a CLOSE that hands focus onward, not a trap. A `role="menu"` is a
+                    // Tab is a close that hands focus onward, not a trap. A `role="menu"` is a
                     // composite widget (WAI-ARIA menu pattern), so leaving it is a normal exit
                     // — the opposite call from a `role="dialog"`, which contains focus instead.
                     // The destination has to be placed explicitly for the same reason the
@@ -528,14 +528,14 @@ export default function wirekitContextMenu() {
                     event.preventDefault();
 
                     if (beside) {
-                        // Focus BEFORE the hide, the same ordering and the same reason as
+                        // Focus before the hide, the same ordering and the same reason as
                         // close(): the panel leaves through an `x-transition`, so
                         // `display: none` lands when that transition ends — after any focus
                         // call made on this tick, which would then have moved focus out of a
                         // subtree the browser is about to drop onto `<body>` anyway.
                         beside.focus({ preventScroll: true });
 
-                        // NOT close(): focus has already been placed, and close() would take
+                        // Not close(): focus has already been placed, and close() would take
                         // it straight back off the destination onto the trigger.
                         this.isOpen = false;
                         break;

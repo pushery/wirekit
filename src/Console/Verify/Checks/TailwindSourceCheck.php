@@ -44,14 +44,14 @@ final class TailwindSourceCheck extends VerifyCheck
             // `@` plus an explicit false check. Under strict_types a `false` here is a
             // fatal TypeError in str_contains(), and the unsuppressed warning is promoted
             // to an ErrorException before that — so this command, the one a developer runs
-            // BECAUSE the install is broken, died on the broken install.
+            // because the install is broken, died on the broken install.
             $content = @file_get_contents($file);
 
             if ($content === false) {
                 continue;
             }
 
-            // The DIRECTIVE, not two words that happen to share a file.
+            // The directive, not two words that happen to share a file.
             //
             // Two words tested independently anywhere in the file are satisfied by ordinary
             // shapes that configure nothing: a comment mentioning WireKit beside an unrelated
@@ -75,19 +75,19 @@ final class TailwindSourceCheck extends VerifyCheck
             // longer literal, so requiring it would tell a correctly configured developer
             // their integration is missing.
             //
-            // The two halves are checked inside ONE directive rather than across the file,
+            // The two halves are checked inside one directive rather than across the file,
             // and in either order: the published-views form says the same thing backwards.
             //
             // And the comment strip is string-aware, because a Tailwind glob is comment
             // syntax. `preg_replace('~/\*.*?\*/~s', …)` over this file is not a comment
             // strip, it is a hazard: `views/**/*.blade.php` contains a complete empty
-            // comment pair, and `views/*.blade.php` contains an UNPAIRED opener. Put an
+            // comment pair, and `views/*.blade.php` contains an unpaired opener. Put an
             // ordinary Laravel pagination `@source` above the WireKit one and everything
             // between them is swallowed, including the WireKit path.
             //
             // That is the very sentence this comment warns about two paragraphs up, pointed
             // the other way, and it shipped anyway — because the hardening was written
-            // against CSS-as-text and the argument of a `@source` is a QUOTED STRING.
+            // against CSS-as-text and the argument of a `@source` is a quoted string.
             // Skipping comment openers inside quotes is the whole fix, and it keeps what
             // the strip was for: a directive commented out during a migration is still text.
             foreach (AppCss::sourceArguments($content) as $argument) {

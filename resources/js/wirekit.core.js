@@ -3,7 +3,7 @@
  *
  * Contains the chart and image-compare Alpine components, the scopes of a toggle-button that
  * flips itself, of the native-color readout beside a color field and of the date-range fields of
- * a date picker, the `x-wk-indeterminate`,
+ * a date picker, the `x-wk-indeterminate`, `x-wk-grouped-digits`,
  * `x-wk-findable`, `x-wk-focus-first` and `x-wk-focus-unit` directives the zero-JS form and
  * disclosure primitives need,
  * the `x-wk-ref` directive that files the ref a caller writes on a component under the caller's
@@ -15,7 +15,7 @@
  * projects that only use the core form components, charts and the before/after
  * slider.
  *
- * No overlay COMPONENTS, but it does install the overlay ROOT — see the call in
+ * No overlay components, but it does install the overlay root — see the call in
  * registerCoreComponents(). A missing teleport target throws and takes the page
  * down, where an unregistered component is merely inert, so the empty container
  * is here to make the wrong bundle choice survivable.
@@ -32,12 +32,14 @@ import wirekitDateRange from './components/date-range.js';
 import wirekitNativeColor from './components/native-color.js';
 import wirekitToggleButton from './components/toggle-button.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerGroupedDigitsDirective } from './utils/grouped-digits.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerFocusUnitDirective } from './utils/focus-unit.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { registerFieldValidity } from './utils/field-validity.js';
 import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
@@ -51,10 +53,10 @@ import { installOverlayRoot } from './utils/overlay-root.js';
 // on the core bundle shouldn't have to upgrade to the full bundle for.
 function registerCoreComponents() {
     // `indeterminate` is a DOM property with no HTML attribute, so something has
-    // to apply it after EVERY render — not only the first. See
+    // to apply it after every render — not only the first. See
     // utils/indeterminate.js.
     //
-    // It belongs in THIS bundle and not only the full one. Checkbox is a form
+    // It belongs in this bundle and not only the full one. Checkbox is a form
     // primitive with no overlay dependency, and the docblock above sells this
     // bundle to projects that use the form components; without the directive a
     // checkbox rendered with `indeterminate` reads as "none selected" while
@@ -62,6 +64,9 @@ function registerCoreComponents() {
     // and says nothing, so the failure is silent on exactly the bundle chosen
     // for being small. It costs one directive and no dependency.
     registerIndeterminateDirective(Alpine);
+    // An amount field that groups its digits while it is typed, and whose value stays the
+    // plain number. See utils/grouped-digits.js.
+    registerGroupedDigitsDirective(Alpine);
     // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
     // root the component renders. See utils/caller-ref.js.
     registerCallerRefDirective(Alpine);
@@ -78,6 +83,8 @@ function registerCoreComponents() {
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // A field the browser holds invalid says why under the red it turns. See utils/field-validity.js.
+    registerFieldValidity();
     // An alert a Livewire render adds is announced. See utils/alert-arrival.js.
     installAlertArrival();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
@@ -105,7 +112,7 @@ function registerCoreComponents() {
     /*
      * The teleport target, on the bundle that teleports nothing.
      *
-     * Nothing core registers uses it, and that is exactly the failure. `x-teleport` THROWS
+     * Nothing core registers uses it, and that is exactly the failure. `x-teleport` throws
      * when its selector matches nothing, and a throw during Alpine's walk takes the whole
      * page down — not the one component. So a developer who picks "the smallest bundle" and
      * then writes a `<x-wirekit::dropdown>` got a blank page rather than a dropdown that

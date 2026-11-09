@@ -13,13 +13,13 @@
     // only mark on screen would be the focus ring the menu puts on its first item when it
     // opens, which reads as a selection to everyone who did not put it there.
     //
-    // Deliberately NOT painted as a background. Hover and focus already use the subtle
+    // Deliberately not painted as a background. Hover and focus already use the subtle
     // surface, and a third thing that looks like those two would not tell them apart. The
     // current entry is marked by weight and text color, which survives beside either.
     'active' => false,
     // The ARIA role, `menuitem` unless a caller asks for something else.
     //
-    // A group of MUTUALLY EXCLUSIVE menu options is `menuitemradio` + `aria-checked` under the
+    // A group of mutually exclusive menu options is `menuitemradio` + `aria-checked` under the
     // APG menu pattern, and no amount of `aria-current` substitutes: `aria-current` says which
     // item is the current one within a set of related items and carries no group membership at
     // all. A reader hears "System, current" instead of "System, radio button, checked, 1 of 3"
@@ -37,7 +37,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.item', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -47,7 +47,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $danger = BooleanProp::from($danger, false, 'dropdown.item', 'danger');
@@ -71,7 +71,7 @@
         // navigation columns use.
         'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
-        // `focus-visible`, not `focus`, and a RING rather than only a surface.
+        // `focus-visible`, not `focus`, and a ring rather than only a surface.
         //
         // The menu focuses its first item on open so keyboard users land inside it. With a
         // plain `focus:` background every mouse-opened menu would paint its first entry the
@@ -102,7 +102,7 @@
 
     // The current entry. Weight and color only: hover and focus own the surface, and a third
     // background would be indistinguishable from them at exactly the moment it matters. This
-    // stays legible while an item is hovered AND while it holds focus, which a surface cannot.
+    // stays legible while an item is hovered and while it holds focus, which a surface cannot.
     // `danger` keeps its own color — an active destructive item is still destructive.
     $activeClasses = $active && ! $danger
         ? 'font-medium text-[color:var(--color-wk-accent-text)]'
@@ -112,7 +112,7 @@
     $tag = $href !== null ? 'a' : 'button';
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
-    // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
+    // Careful: $attributes->merge(['rel' => ...]) treats rel as a default —
     // if caller passed rel="prev", theirs wins and our auto-injection is lost,
     // silently leaving the page open to tabnabbing. Hence except('rel')
     // + explicit rel attribute render.
@@ -127,6 +127,33 @@
     // The keys of the shortcut hint, one text or a list (Support\KeyShortcuts::hintKeys()),
     // drawn as one line, a space between the keys.
     $shortcutText = implode(' ', \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut));
+
+    /*
+     * The parts after the label are written as echoes rather than blocks, so Livewire writes no
+     * morph markers around them. A part that comes or goes there moves only the parts after it,
+     * which hold neither focus nor state. The icon stands before the label and keeps its block: a
+     * part that came in there without markers would pair the label with the node before it, and
+     * the morph would build the label anew. Each class goes through CompactClasses, as a class
+     * attribute in the markup does.
+     *
+     * The counter is pushed to the inline-end and read with the entry: it is text in the item, not
+     * a hint beside it. The space that parts it from the entry's last word stands in a visually
+     * hidden box of its own, which takes no place in the row, as the space before the new-tab hint
+     * stands inside that hint. The keyboard-shortcut hint is decorative. Behind a counter it keeps
+     * its place after it: a second auto margin in the row would split the free space with the
+     * counter's and stand the counter in the middle.
+     */
+    $badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge);
+    $badgePart = $badgeText === null ? '' : new \Illuminate\Support\HtmlString(
+        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'"> </span>'
+        .'<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] tabular-nums bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]')).'" data-wk-dropdown-item-badge>'.e($badgeText).'</span>'
+    );
+    $shortcutPart = $shortcutText === '' ? '' : new \Illuminate\Support\HtmlString(
+        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map(\Illuminate\Support\Arr::toCssClasses(['ms-auto' => $badgeText === null, 'ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums']))).'" aria-hidden="true">'.e($shortcutText).'</span>'
+    );
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'"> '.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
@@ -146,31 +173,16 @@
     @if($active && ! $attributes->has('aria-current')) aria-current="{{ $href !== null ? 'page' : 'true' }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except(['rel', 'type', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses, $activeClasses, $disabledClasses])) }}
->
-    {{-- Optional icon (resolved via WireKit icon system) --}}
-    @if($icon)
-        <span class="shrink-0 w-5 h-5" aria-hidden="true">
-            {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
-        </span>
-    @endif
+>{{--
+    The parts of the item touch: no text of this template stands between them. A `<button>` keeps
+    a run of white space as a flex item in Blink and WebKit, where another flex container drops
+    it, and the gap then stands beside an empty item: before a label that opens with an element,
+    or after one that ends in a visually hidden addition. PHP drops the line break after a
+    directive; an echo keeps its own, so every echo here is followed by the next directive or tag
+    on its line.
 
-    {{ $slot }}
-
-    {{-- The counter, pushed to the inline-end, and read with the entry: it is text in the item,
-         not a hint beside it. --}}
-    @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
-    @if($badgeText !== null)
-        <span class="shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] tabular-nums bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]" data-wk-dropdown-item-badge>{{ $badgeText }}</span>
-    @endif
-
-    {{-- Keyboard-shortcut hint, pushed to the inline-end. Decorative. Behind a counter it keeps
-         its place after it: a second auto margin in the row would split the free space with the
-         counter's and stand the counter in the middle. --}}
-    @if($shortcutText !== '')
-        <span @class(['ms-auto' => $badgeText === null, 'ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums']) aria-hidden="true">{{ $shortcutText }}</span>
-    @endif
-
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    Optional icon (resolved via WireKit icon system).
+--}}@if($icon)
+<span class="shrink-0 w-5 h-5" aria-hidden="true">{{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}</span>@endif
+{{ $slot }}{{-- The counter, the shortcut hint and the new-tab hint, built in the php block
+     above. --}}{{ $badgePart }}{{ $shortcutPart }}{{ $newTabHint }}</{{ $tag }}>

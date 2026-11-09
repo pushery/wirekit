@@ -90,4 +90,4 @@
 {{-- The span draws nothing of its own, so its class block starts empty and a personalization
      adds to it. The visibility stays outside the block: a personalization that replaced it would
      otherwise show the value twice or not at all. --}}
-<span data-wk-table-stand-in {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [WireKit::resolveClasses('table.stand-in', 'base', '', $scope), $classes])) }}>{{ $slot }}</span>
+<span data-wk-table-stand-in @if($belowContainer !== null) data-wk-table-measures @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [WireKit::resolveClasses('table.stand-in', 'base', '', $scope), $classes])) }}>{{ $slot }}</span>

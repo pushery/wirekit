@@ -11,9 +11,9 @@ use InvalidArgumentException;
  * Public-rendering status oracle for the docs pages backing exported
  * surfaces (components.json / api-map.json / blocks.json).
  *
- * THE shared visibility check for every export command — one parser,
+ * The shared visibility check for every export command — one parser,
  * one contract, no per-command frontmatter drift. The docs site renders
- * a page publicly ONLY when its frontmatter does not restrict it AND it
+ * a page publicly only when its frontmatter does not restrict it and it
  * is not a draft. A page that names no audience, or has no frontmatter,
  * takes the default of its section, which the docs site derives from the
  * first path segment: public for most of `docs/`, not public under
@@ -22,12 +22,12 @@ use InvalidArgumentException;
  *
  * Three statuses, deliberately distinct:
  *
- *   - PUBLIC:  page exists and renders publicly → full advertising
+ *   - public:  page exists and renders publicly → full advertising
  *     surface (docs_url emitted, entry kept everywhere).
- *   - STAGED:  page exists but is NOT publicly rendered → public
- *     manifests must drop the entry ENTIRELY (not merely
+ *   - staged:  page exists but is not publicly rendered → public
+ *     manifests must drop the entry entirely (not merely
  *     docs_url=null).
- *   - MISSING: no dedicated page on disk. NOT the same as a STAGED
+ *   - missing: no dedicated page on disk. Not the same as a staged
  *     page —
  *     this is the sub-component pattern (toast-region, glass,
  *     reading-*, kanban-column) documented on a parent page. The
@@ -66,9 +66,9 @@ final class DocsVisibility
      * Status of a component's dedicated docs page
      * (docs/components/{name}.md).
      *
-     * `docs/` is export-ignored, so it is simply ABSENT from an installed
+     * `docs/` is export-ignored, so it is simply absent from an installed
      * package — and a status read against a directory that is not there
-     * answers MISSING for every component. That answer is right in a
+     * answers missing for every component. That answer is right in a
      * checkout and wrong everywhere the package actually runs: the
      * project-root `.wirekit-schema.json` and every `wirekit:export-json`
      * run in a real installation carried a null documentation URL for all
@@ -79,14 +79,14 @@ final class DocsVisibility
      * because there the tree is right here.
      *
      * So the tree stays authoritative wherever it exists, and the baked
-     * stem lists answer where it does not. They are extracted FROM that
+     * stem lists answer where it does not. They are extracted from that
      * tree with contentStatus(), the reader this class applies to the tree,
      * so an installation and a checkout cannot disagree about a page, and a
      * test holds the committed lists against a fresh extraction.
      *
      * A component with no page of its own is as public as the page that
      * documents it. One taught only on a page that is not publicly rendered
-     * answers STAGED, from the baked `staged-components.json`, in the
+     * answers staged, from the baked `staged-components.json`, in the
      * checkout and in an installation alike: a public manifest drops it with
      * its parent instead of publishing its whole API while the parent is
      * unannounced.
@@ -111,7 +111,7 @@ final class DocsVisibility
      * The installed-package answer: the baked stem lists in
      * `resources/mcp/`, which ship because `docs/` does not.
      *
-     * BOTH lists are consulted, and they are not the same question. A
+     * Both lists are consulted, and they are not the same question. A
      * stem on the public list has a page to advertise. A stem on the
      * non-public one has a page that is not publicly rendered, and a
      * public manifest drops it entirely — the name alone would announce
@@ -261,8 +261,8 @@ final class DocsVisibility
 
         $frontmatter = substr($content, 3, $closing - 3);
 
-        // `visibility:` value on its own line. Strict about the KEY, so a prose mention of
-        // the field name is not mistaken for a declaration; tolerant about the VALUE,
+        // `visibility:` value on its own line. Strict about the key, so a prose mention of
+        // the field name is not mistaken for a declaration; tolerant about the value,
         // because the failure directions are not symmetric — see readFrontmatterValue().
         $visibility = self::readFrontmatterValue($frontmatter, 'visibility');
 
@@ -302,7 +302,7 @@ final class DocsVisibility
      *
      * The two directions cost differently, which is why the tolerance goes here rather than
      * being argued about case by case. Reading a restriction that is not there hides a page
-     * from a manifest — a missing entry somebody notices. MISSING a restriction that IS
+     * from a manifest — a missing entry somebody notices. Missing a restriction that is
      * there publishes a restricted page in a public artifact, which the artifact rules call
      * an absolute ground rule. So the key stays strict and the value gets read properly.
      */

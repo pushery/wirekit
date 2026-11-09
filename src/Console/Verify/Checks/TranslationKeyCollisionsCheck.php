@@ -25,10 +25,10 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
     /**
      * Shared translation keys whose meaning diverges between the app and WireKit.
      *
-     * The catalog is one FLAT JSON namespace and the loader puts the app on top, deliberately —
+     * The catalog is one flat JSON namespace and the loader puts the app on top, deliberately —
      * a translation someone wrote on purpose should win. That rule cannot resolve one case: an
      * ordinary English word with more than one meaning. An app using "Map" as a verb and WireKit
-     * using it as a noun collide, the app wins, and it wins INSIDE a WireKit component — which
+     * using it as a noun collide, the app wins, and it wins inside a WireKit component — which
      * then shows a word that is wrong in its own context. Nothing errors; only the text is wrong.
      *
      * A collision on a component that renders on many pages shows the wrong word on all of them,
@@ -51,7 +51,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
         /** @var array<string, list<string>> $collisions namespaced key => locales it diverges in */
         $collisions = [];
 
-        /** @var array<string, array<string, bool>> $ambiguous namespaced key => locale => the two spellings hold the SAME string */
+        /** @var array<string, array<string, bool>> $ambiguous namespaced key => locale => the two spellings hold the same string */
         $ambiguous = [];
 
         foreach ((array) glob($packageLang.'/*.json') as $ours) {
@@ -85,7 +85,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                 $hasPlain = array_key_exists($plain, $app);
                 $hasNamespaced = $plain !== $key && array_key_exists($key, $app);
 
-                // BOTH spellings in one catalog. Not a collision — a fork. The namespaced entry
+                // Both spellings in one catalog. Not a collision — a fork. The namespaced entry
                 // is the one the bridge steps aside for, so the plain one has quietly stopped
                 // reaching WireKit while still looking like it governs the component. Whoever
                 // adopted the new key almost certainly meant to retire the old one, and nothing
@@ -94,7 +94,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                     // Whether the two spellings hold the same string decides how this reads. Two
                     // copies of one wording is a fork waiting to drift, which is the case worth a
                     // warning. Two different wordings is the state the divergence message a few
-                    // lines down asks for ("translate THAT key ... and keep 'Home' for your own
+                    // lines down asks for ("translate that key ... and keep 'Home' for your own
                     // use"), so reporting it at the same severity would make the two checks
                     // contradict each other: follow the first one's advice and the second one
                     // fails your gate.
@@ -134,7 +134,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
             return;
         }
 
-        // A divergence only bites where a COMPONENT renders the key — that is the difference
+        // A divergence only bites where a component renders the key — that is the difference
         // between "you translated a word differently" (fine, and the whole point of app-wins)
         // and "a WireKit component now shows your wording in its context" (the defect).
         $rendered = $this->componentsRenderingTranslationKeys(array_keys($collisions));
@@ -150,7 +150,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
             return;
         }
 
-        // Which of these the application renders ITSELF decides what to advise. Leading with
+        // Which of these the application renders itself decides what to advise. Leading with
         // "write the `wirekit::` twin and keep your own key" would copy a string this package
         // already ships into a second file that then drifts from the first — and the fork
         // reporter above names that copy as a finding of its own, so following that advice
@@ -207,24 +207,24 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
     }
 
     /**
-     * Report a catalog that carries BOTH spellings of the same string.
+     * Report a catalog that carries both spellings of the same string.
      *
      * Its own reporter rather than a branch inside the collision report, because it is a
-     * different finding with a different remedy — and it is NOT gated on whether a component
+     * different finding with a different remedy — and it is not gated on whether a component
      * renders the key. A fork is worth naming wherever it sits: the plain entry has stopped
      * governing WireKit, so the next reader who edits it to change a component's wording
      * changes nothing, and nothing tells them why.
      *
      * Both spellings of one key in a catalog — and only one of the two shapes is a defect.
      *
-     * Holding `Home` and `wirekit::Home` with DIFFERENT wordings is the state the divergence
+     * Holding `Home` and `wirekit::Home` with different wordings is the state the divergence
      * message a few methods up explicitly asks for: translate the namespaced key to give the
      * component its wording back, keep the plain one for your own pages. Reporting that at
      * warning severity would make the two checks contradict each other — follow the first
      * one's advice and the second one would fail your gate, with no third state that
      * satisfies both.
      *
-     * Holding both with the SAME wording is the case worth a warning: somebody copied the
+     * Holding both with the same wording is the case worth a warning: somebody copied the
      * string across and now maintains two of it.
      * Nothing else in the system will ever mention the day they drift apart.
      *
@@ -268,7 +268,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
     /**
      * Which shipped component renders each of the given translation keys.
      *
-     * The keys arrive NAMESPACED (`wirekit::Dismiss`), because that is what the call sites
+     * The keys arrive namespaced (`wirekit::Dismiss`), because that is what the call sites
      * contain — the prefix is part of the literal a component passes to `__()`, not a
      * decoration on top of it. Handing this the plain key would match nothing and report
      * that no component renders any of them, which reads as the good news.
@@ -310,7 +310,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                 // for: written inline, the needle would read to such a scanner as this
                 // command emitting a key of its own.
                 //
-                // EVERY call form a view uses, because a key reachable by only one of the others
+                // Every call form a view uses, because a key reachable by only one of the others
                 // would be reported as rendered by nothing — and this check's quiet answer is
                 // the one that reads as good news. `Plural::choice()`, `trans_choice()` and
                 // `PluralPhrases::from()` carry the plural strings, which are ordinary catalog
@@ -327,7 +327,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
     }
 
     /**
-     * Which of these keys the APPLICATION renders itself.
+     * Which of these keys the application renders itself.
      *
      * The sibling above asks which WireKit component renders a key. This asks the other
      * half, and without it the advice cannot tell an orphan from a word the application
@@ -395,7 +395,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
     }
 
     /**
-     * A key as PHP SOURCE spells it, in either quoting, as one regex fragment.
+     * A key as PHP source spells it, in either quoting, as one regex fragment.
      *
      * `preg_quote()` escapes a key for the regular expression and says nothing about how PHP
      * writes it. Between single quotes an apostrophe is spelled `\'`, and single quotes are what a

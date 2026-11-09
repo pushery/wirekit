@@ -4,7 +4,7 @@
  * The problem this removes is not the number of callbacks — it is the shape a
  * pointer or scroll handler falls into when it does its work inline. Reading a
  * layout property (`getBoundingClientRect`, `offsetTop`, `scrollTop`) after a
- * style has been written forces the browser to recompute layout SYNCHRONOUSLY,
+ * style has been written forces the browser to recompute layout synchronously,
  * before the read can answer. A handler that writes on event N and reads on
  * event N+1 pays that on every single event, and `pointermove` alone can fire
  * faster than the display refreshes.
@@ -15,7 +15,7 @@
  * the same one. The intervening events collapse into that single run.
  *
  * The last event wins, which is the point and also the constraint. This is
- * for work that is IDEMPOTENT over a burst — "put the panel where the cursor
+ * for work that is idempotent over a burst — "put the panel where the cursor
  * is", "measure where we are scrolled to". It is the wrong tool for work that
  * must observe every event, such as accumulating a delta or recording a
  * gesture path; those need the events themselves.
@@ -68,7 +68,7 @@ export function frameCoalesce(work, options = {}) {
     let handle = null;
 
     const run = () => {
-        // Cleared BEFORE the work runs, not after. Work that schedules itself
+        // Cleared before the work runs, not after. Work that schedules itself
         // again — a drag that re-measures — would otherwise be dropped, because
         // its `schedule()` would see a handle that this frame is about to
         // discard anyway.

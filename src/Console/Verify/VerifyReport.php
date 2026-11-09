@@ -52,7 +52,7 @@ final class VerifyReport
     }
 
     /**
-     * INFO tier — informational, expected on bare installs, NOT a problem.
+     * INFO tier — informational, expected on bare installs, not a problem.
      * Distinct from PASS (everything's fine) and WARN (something the
      * developer should look at). INFO is "this is the natural state of a
      * fresh install; here's the next step if you want to act on it."

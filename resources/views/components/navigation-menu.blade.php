@@ -31,7 +31,7 @@
     // Navigation Menu — top-level nav with rich flyout panels (mega menu).
     // Uses disclosure pattern: hover or click to reveal content panels.
     $classes = WireKit::resolveClasses('navigation-menu', 'base', implode(' ', [
-        'relative flex items-center gap-1',
+        'relative flex items-center gap-[var(--gap-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
@@ -57,7 +57,7 @@
          and close it before an in-panel click registered. --}}
     {{-- One keydown listener for the whole bar rather than one per item: a
          key pressed on a plain link item bubbles here just as one pressed on a
-         flyout trigger does, so Arrow Left/Right and Home/End move across BOTH
+         flyout trigger does, so Arrow Left/Right and Home/End move across both
          kinds of top-level item. The handler resolves the trigger (and with it
          the panel name) from the event target. The panels are teleported to the
          overlay root, so their own keys never bubble here — they carry a

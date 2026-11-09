@@ -26,8 +26,8 @@ final class ReplacingPersonalizationsCheck extends VerifyCheck
      * `WireKit::personalize()` takes two value shapes for a block, and they differ
      * in one consequence nobody is told about:
      *
-     *   'base' => 'inline-flex …'                        REPLACES the shipped block
-     *   'base' => fn (string $vendor) => $vendor.' …'    EXTENDS it
+     *   'base' => 'inline-flex …'                        replaces the shipped block
+     *   'base' => fn (string $vendor) => $vendor.' …'    extends it
      *
      * A replacement is a legitimate choice and often the right one. What it also
      * does is end the flow of later improvements to that block — permanently, and

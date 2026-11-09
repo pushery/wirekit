@@ -415,7 +415,7 @@ export function createFocusTrap(container, {
         // Whether clicking outside deactivates the trap entirely
         clickOutsideDeactivates,
         // Whether clicks outside are allowed to pass through (without deactivating).
-        // CRITICAL for modals/drawers — lets backdrop click handlers fire.
+        // Critical for modals/drawers — lets backdrop click handlers fire.
         allowOutsideClick,
         // ESC handling — controlled by dismissible prop, and never for a press an element
         // inside the trap has already handled
@@ -471,7 +471,7 @@ export function createFocusTrap(container, {
         // Lazy on purpose. The library only resolves this option once its tabbable
         // set comes up empty (`state.tabbableGroups.length <= 0 && !getNodeForOption(…)`
         // short-circuits), so a panel with real controls is never touched — and
-        // `-1` is focusable but NOT tabbable, so the fallback stays the fallback
+        // `-1` is focusable but not tabbable, so the fallback stays the fallback
         // instead of becoming the first tab stop.
         fallbackFocus: () => {
             if (container
@@ -522,7 +522,7 @@ export function createFocusTrap(container, {
 
     // Optional return-focus override. `returnFocusOnDeactivate` above sends focus
     // back to whatever was focused before the trap opened — but that element may
-    // no longer BE in the document: a destructive confirmation typically removes
+    // no longer be in the document: a destructive confirmation typically removes
     // the very row that held its own trigger, and a detached node cannot take
     // focus, so the browser drops it on <body>. A `setReturnFocus` function gets
     // the previously-focused element and can name a survivor instead.

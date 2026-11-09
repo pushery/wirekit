@@ -29,7 +29,7 @@
     // class is read as the instant it holds and is not itself changed; a string that names no zone
     // of its own is read in this one.
     // A zone PHP does not know is reported and the application's is used: Carbon refuses it while
-    // READING a date, before `Moment::in()` could report it. A string that names no date is
+    // reading a date, before `Moment::in()` could report it. A string that names no date is
     // reported and read as a missing one.
     $tz = Moment::zoneOr($timezone, (string) (config('app.timezone') ?: 'UTC'), 'date-separator');
     $carbonDate = Moment::in(Moment::of($date, $tz, 'date-separator', 'date') ?? CarbonImmutable::now($tz), $tz, 'date-separator');
@@ -46,7 +46,7 @@
         $label = $carbonDate->translatedFormat('l');
     } else {
         // Skeleton, not a format string: `translatedFormat('M j')` translated the month
-        // NAME and kept the English arrangement, so German rendered "Sep. 7" where German
+        // name and kept the English arrangement, so German rendered "Sep. 7" where German
         // writes "7. Sep.". ICU derives the order from the locale instead.
         $label = \Pushery\WireKit\Support\LocalizedDate::bySkeleton($carbonDate, 'MMMd', 'M j');
     }
@@ -62,7 +62,7 @@
         // context where the token did not resolve dropped this separator four layers below
         // where every other sticky surface sits — silently, and only in that context. A
         // fallback that disagrees with the value it stands in for is worse than none: it
-        // turns a missing token into a WRONG one, which nothing reports.
+        // turns a missing token into a wrong one, which nothing reports.
         ? 'sticky top-0 z-[var(--z-wk-sticky)] py-[var(--space-wk-xs,0.25rem)]'
         : 'py-[var(--space-wk-xs,0.25rem)]';
 @endphp
@@ -72,7 +72,7 @@
     {{-- A sticky separator tells the scroller it stands in how much of the top it covers, so a
          message that takes the focus on the way up rests below it (WCAG 2.4.11). --}}
     @if($variantValue === 'sticky') data-wk-scroll-inset="top" @endif
-    {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
+    {{-- Only when the caller did not name it. HTML keeps the first of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded. The full date is the better default and stays one. --}}
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))

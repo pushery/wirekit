@@ -29,7 +29,7 @@
 
     // Inner-container max-width resolution — reads the same
     // `--size-wk-container-*` token family as `<x-wirekit::container>`.
-    // No hardcoded fallback values: the token IS the source of truth.
+    // No hardcoded fallback values: the token is the source of truth.
     $innerMaxClass = match (WireKit::validateProp('footer', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
         'sm' => 'max-w-[var(--size-wk-container-sm)]',
         'md' => 'max-w-[var(--size-wk-container-md)]',
@@ -79,14 +79,14 @@
 
 <footer {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="{{ $innerMaxClass }} mx-auto">
-        @if(\Pushery\WireKit\Support\SlotContent::given($columns ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($columns ?? null))
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[var(--space-wk-xl)] mb-[var(--space-wk-xl)]">
                 {{ $columns }}
             </div>
-        @endif
+        @endwirekitLast
     </div>
 
-    {{-- Bottom-strip divider sits OUTSIDE the constrained container so it
+    {{-- Bottom-strip divider sits outside the constrained container so it
          spans the full footer-content-area width (footer's px-lg padding,
          not the max-w-container-xl content boundary). Real-world footer
          pattern: legal/brand row separated from columns by a line that
@@ -100,18 +100,18 @@
                     <div>{{ $brand }}</div>
                 @endif
 
-                @if(\Pushery\WireKit\Support\SlotContent::given($legal ?? null))
+                @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($legal ?? null))
                     <div class="flex flex-wrap gap-[var(--gap-wk-md)] text-[length:var(--text-wk-xs)]">
                         {{ $legal }}
                     </div>
-                @endif
+                @endwirekitLast
             </div>
         </div>
     @endif
 
-    @if($slot->hasActualContent())
+    @wirekitLast($slot->hasActualContent())
         <div class="{{ $innerMaxClass }} mx-auto">
             {{ $slot }}
         </div>
-    @endif
+    @endwirekitLast
 </footer>

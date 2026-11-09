@@ -174,7 +174,7 @@ export default function wirekitCombobox(config = {}) {
         /**
          * The filtered options bucketed by group, in first-seen order.
          *
-         * Each option keeps `_idx`, its position in the FLAT filtered list, so
+         * Each option keeps `_idx`, its position in the flat filtered list, so
          * grouping changes nothing about the keyboard model or
          * aria-activedescendant. A group whose options all filtered out is
          * absent rather than empty, because it is built from `filtered`.
@@ -443,7 +443,7 @@ export default function wirekitCombobox(config = {}) {
         // Panel ids, handed in by the Blade so `_place()` can find the panels
         // wherever they end up. See the note in _place(): the refs land in a
         // nested scope this component cannot read, and an id is indifferent to
-        // scope AND to the teleport.
+        // scope and to the teleport.
         _listId: config.listId || null,
         _emptyId: config.emptyId || null,
         _inputId: config.inputId || null,
@@ -514,7 +514,7 @@ export default function wirekitCombobox(config = {}) {
                     // Keep following the field — a single placement does not survive a
                     // Livewire update, and the panel does not recover on its own.
                     //
-                    // Everything the positioner computes is written as INLINE STYLE: `top`,
+                    // Everything the positioner computes is written as inline style: `top`,
                     // `left`, and the width and `max-height` the `size` middleware applies. A
                     // morph patches this node against its template — the teleport does not put
                     // it out of reach, which is exactly why it carries a `wire:key` — and the
@@ -537,11 +537,11 @@ export default function wirekitCombobox(config = {}) {
                     // by accident here — it works, and it works for a reason this component does
                     // not control.
                     //
-                    // `autoUpdate` recomputes on a BOX change, never on an attribute change. What
+                    // `autoUpdate` recomputes on a box change, never on an attribute change. What
                     // makes it notice an erasure at all is that the erasure takes a width with it
                     // and the panel collapses. That width comes from the sizing options above, so
                     // whether the repair happens depends on whether the width being removed was
-                    // BINDING on that panel, on that page.
+                    // binding on that panel, on that page.
                     //
                     // A `panelWidth` other than `trigger` writes `minWidth`/`maxWidth` rather
                     // than a width, and that does not change the case: on a wide field the
@@ -553,12 +553,12 @@ export default function wirekitCombobox(config = {}) {
                     // unrelated things — how a panel is sized, and whether a placement survives.
                     // `repairErasure` watches the attribute that is actually removed, so the
                     // question stops depending on geometry. A sibling component in this same
-                    // catalog has the erasure and does NOT collapse, and nothing about this one
+                    // catalog has the erasure and does not collapse, and nothing about this one
                     // guarantees it stays on the lucky side of that line.
                     repairErasure: true,
                 });
 
-                // The global is documented as something a component asks for WITHOUT depending
+                // The global is documented as something a component asks for without depending
                 // on it, so it may be absent — and by the same reasoning it may be something other
                 // than this package's own helper. A stub that returns a non-thenable makes `.then`
                 // throw, which is a worse failure than the missing placement it replaces.
@@ -670,7 +670,7 @@ export default function wirekitCombobox(config = {}) {
         // ── Opening ─────────────────────────────────────────────────────────
 
         /**
-         * Typing opens the list and restarts the highlight at the first ENABLED option.
+         * Typing opens the list and restarts the highlight at the first enabled option.
          *
          * Not `highlight = 0`: that is the first row, not the top. When row 0 is disabled —
          * which typing makes ordinary, because the filter decides what lands there —
@@ -822,10 +822,10 @@ export default function wirekitCombobox(config = {}) {
          * Make the text field agree with `selected`.
          *
          * Split out of selectOption() because the optimistic layer writes
-         * `selected` itself, on the flip AND on the rollback, and the field has
+         * `selected` itself, on the flip and on the rollback, and the field has
          * to follow both. Deriving the label from the value rather than taking
          * it from the clicked option is what makes the rollback correct: after
-         * an undo the field must read the label of the PREVIOUS selection, and
+         * an undo the field must read the label of the previous selection, and
          * that option is not the one anybody clicked.
          *
          * A selection the option list does not contain clears the field rather
@@ -848,7 +848,7 @@ export default function wirekitCombobox(config = {}) {
         },
 
         /**
-         * Walk in `delta` direction to the next ENABLED option.
+         * Walk in `delta` direction to the next enabled option.
          *
          * Stops at either end rather than wrapping, and gives up after a full
          * pass so a list of only-disabled options cannot spin.
@@ -881,7 +881,7 @@ export default function wirekitCombobox(config = {}) {
             }
         },
 
-        /** Home — the first ENABLED option. */
+        /** Home — the first enabled option. */
         highlightFirst() {
             const max = this.filtered.length - 1;
 
@@ -894,7 +894,7 @@ export default function wirekitCombobox(config = {}) {
             }
         },
 
-        /** End — the last ENABLED option. */
+        /** End — the last enabled option. */
         highlightLast() {
             const max = this.filtered.length - 1;
 
@@ -1086,7 +1086,7 @@ export default function wirekitCombobox(config = {}) {
         /**
          * The keyboard of a select-only trigger, after the WAI-ARIA APG select-only combobox.
          *
-         * Returns the value to CHOOSE when a key picks the active option (Enter, Space, Tab or
+         * Returns the value to choose when a key picks the active option (Enter, Space, Tab or
          * Alt+ArrowUp on an open list) and `undefined` for every other key. The template does the
          * choosing, because with `optimistic` the choice goes through the optimistic layer's
          * `runIf()`, which lives in a nested scope this factory cannot call.

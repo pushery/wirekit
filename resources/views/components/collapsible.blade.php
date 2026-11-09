@@ -23,7 +23,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('collapsible', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.collapsible.open', false)), 'collapsible', 'open');
@@ -34,13 +34,13 @@
     // the bare WAI-ARIA Disclosure pattern (button[aria-expanded] controls a region).
     // For smooth height animation we lean on Alpine's x-collapse plugin, which every
     // full-catalog WireKit bundle registers.
-    // A per-render random id makes Livewire's morph treat the content region as a NEW
+    // A per-render random id makes Livewire's morph treat the content region as a new
     // node on every round trip: it keys by `el.id`, finds no match, and replaces the live
     // node with a clone of the server-rendered one. Three things follow from that single
     // event — focus inside the developer's slot moves to <body>, anything typed into an
     // input they did not bind with wire:model is gone, `x-collapse` replays its height
     // transition instead of holding the open height, and the clone still carries the
-    // literal `x-cloak` (Alpine strips it only after init), so an OPEN panel flashes
+    // literal `x-cloak` (Alpine strips it only after init), so an open panel flashes
     // hidden for a few frames.
     //
     // A caller-supplied id avoids it, and the default is seeded from the trigger label,
@@ -48,16 +48,16 @@
     // change between renders.
     // Stable across renders, and unique on the page — two properties one hash cannot give.
     //
-    // `stableId()` derives the id from the TRIGGER TEXT, which is what makes it survive a
+    // `stableId()` derives the id from the trigger text, which is what makes it survive a
     // Livewire morph. It also makes two disclosures with the same trigger — "Details" twice
     // on one page, which is the ordinary case in a list — share an id, so without the
-    // deduper the second trigger's `aria-controls` would resolve to the FIRST one's panel,
+    // deduper the second trigger's `aria-controls` would resolve to the first one's panel,
     // and expanding one would announce that the other had opened.
     //
     // The deduper takes the stable value as its base and appends `-2` to a repeat, so the
     // first keeps the readable id and the second stops pointing at it.
     $uid = \Pushery\WireKit\Support\DomId::unique(
-        // A caller id NAMES THE COMPONENT and stays on the root, through the attribute bag. The panel
+        // A caller id names the component and stays on the root, through the attribute bag. The panel
         // takes an id derived from it: taking the same id put two elements under one name, and
         // aria-controls pointed at whichever a lookup found first, which was the root.
         $attributes->get('id') ? $attributes->get('id').'-panel' : \Pushery\WireKit\WireKit::stableId(
@@ -72,7 +72,7 @@
     $rootClasses = WireKit::resolveClasses('collapsible', 'base', 'font-[family-name:var(--font-wk-sans)]', $scope);
 
     $triggerClasses = WireKit::resolveClasses('collapsible', 'trigger', implode(' ', [
-        'flex items-center justify-between gap-[var(--padding-wk-x-sm)] w-full text-left',
+        'flex items-center justify-between gap-[var(--padding-wk-x-sm)] w-full text-start',
         'text-[length:var(--text-wk-md)] font-[number:var(--font-wk-body-weight)]',
         'text-[color:var(--color-wk-text)]',
         'cursor-pointer',
@@ -83,7 +83,7 @@
     ]), $scope);
 
     // pt-[var(--padding-wk-y-lg)] (0.75rem): the trigger→content gap must read
-    // at least as large as the VISUAL inter-item gap inside the content. A
+    // at least as large as the visual inter-item gap inside the content. A
     // `stack gap="sm"` is a nominal 0.5rem, but block content items (checkbox
     // rows, cards) inflate the perceived gap to ~0.9rem once their own box
     // heights are included — so a bare 0.5rem top padding left the first item
@@ -138,7 +138,7 @@
     {{-- Collapsible region — smooth height transition via x-collapse. x-cloak hides a closed
          one until Alpine initializes, so it never flashes open on load; an open one paints
          with the page, as its trigger says. --}}
-    @if($findable)
+    @wirekitLast($findable)
         {{-- Findable: `hidden="until-found"` while closed where the engine supports it, with the
              height animated by `x-wk-findable.collapse` in place of `x-collapse`, which only works
              with `x-show`. The padding moved to the element inside, since a closed until-found
@@ -157,5 +157,5 @@
         <div id="{{ $uid }}" x-show="isOpen" x-collapse @unless($openBool) x-cloak @endunless class="{{ $contentClasses }}">
             {{ $slot }}
         </div>
-    @endif
+    @endwirekitLast
 </div>

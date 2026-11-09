@@ -1,0 +1,2 @@
+/*! WireKit per page v2.73.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+import{a as c}from"./chunk-TL5XOW5W.js";import{a as o}from"./chunk-K7Q4LMTK.js";var i=2,r=4;function m(n){if(typeof document>"u"||!n||typeof n.compareDocumentPosition!="function")return null;let e=[...document.querySelectorAll(c)].filter(t=>!n.contains(t)&&!o(t)&&t.tabIndex>=0&&t.getClientRects().length>0&&!t.closest("[inert]"));return e.find(t=>n.compareDocumentPosition(t)&r)??e.filter(t=>n.compareDocumentPosition(t)&i).pop()??null}export{m as a};

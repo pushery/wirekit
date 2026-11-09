@@ -24,7 +24,7 @@ use Pushery\WireKit\Theming\WcagContrast;
  *      role="dialog" without aria-labelledby, role="img" without
  *      alt-text. Always runs.
  *
- *   2. Theme-contrast audit (opt-in via `--theme-contrast` flag OR
+ *   2. Theme-contrast audit (opt-in via `--theme-contrast` flag or
  *      `WIREKIT_DOCTOR_THEME_CONTRAST=1` env). Parses the developer's
  *      `resources/css/app.css` for `--color-wk-*` token overrides
  *      under `:root` and `.dark` blocks, then computes WCAG 2.1
@@ -35,18 +35,18 @@ use Pushery\WireKit\Theming\WcagContrast;
  *      verifying the new value still clears 4.5:1 against
  *      `--color-wk-accent-fg`.
  *
- *      Border handling follows WCAG 1.4.11. The COMMUNICATING borders
- *      (focus ring, stateful error / success borders, AND the
+ *      Border handling follows WCAG 1.4.11. The communicating borders
+ *      (focus ring, stateful error / success borders, and the
  *      `border-strong` / `border-strong-hover` form-control edge — the
  *      2.16.0/2.17.0 token whose whole purpose is 1.4.11 compliance) are
  *      hard-checked at 3:1, `border-strong` against the field fill
- *      (`--color-wk-bg-input`) it actually sits on. Only the RESTING
- *      DECORATIVE border (`--color-wk-border`, the card / divider edge)
+ *      (`--color-wk-bg-input`) it actually sits on. Only the resting
+ *      decorative border (`--color-wk-border`, the card / divider edge)
  *      is exempt — printed as advisory INFO with its ratio but never
  *      counted toward the verdict or exit code. This matches
  *      docs/theming.md "Intentional trade-offs" and keeps WireKit's own
  *      decorative border (intentionally ~1.3-2.5:1) auditing clean while
- *      a sub-3:1 CONTROL border never passes silently. The line of an
+ *      a sub-3:1 control border never passes silently. The line of an
  *      unsaved field (`--color-wk-border-unsaved`) is advisory too, for
  *      another reason: it is a hint beside the words at the field's label,
  *      which carry the state (WCAG 1.4.1), so its light default sits under
@@ -78,7 +78,7 @@ class DoctorA11yCommand extends Command
     {
         // The positional replaces, `--path` adds, and the difference is the whole ask.
         //
-        // A package component mounted BY NAME renders its Blade from `vendor/`, outside the
+        // A package component mounted by name renders its Blade from `vendor/`, outside the
         // application's own view paths — so a page that mounts four package panels is
         // reported clean because the audit never opens their files. `--path` extends the
         // ground set, so one run covers the application and the packages it mounts; the
@@ -139,7 +139,7 @@ class DoctorA11yCommand extends Command
         // non-empty walk always has something in scope.
         //
         // The refusal is conditioned on the theme-contrast stage, and that is the
-        // substance rather than a special case: this command has TWO stages, and
+        // substance rather than a special case: this command has two stages, and
         // the rule is "a run that measured nothing must not report a pass", not
         // "a stage that measured nothing". A `--theme-contrast` run reads the
         // token table and answers a real question with no Blade file involved.
@@ -162,7 +162,7 @@ class DoctorA11yCommand extends Command
                 continue;
             }
 
-            // A comment is where somebody QUOTED the markup these rules look for, usually to
+            // A comment is where somebody quoted the markup these rules look for, usually to
             // explain why the real thing is correct — so it is the likeliest place to find a
             // finding that is not one. Blanked rather than removed, so every line number below
             // still points at the line it did.
@@ -177,7 +177,7 @@ class DoctorA11yCommand extends Command
             }
         }
 
-        // Group by severity for readable output. Computed BEFORE the
+        // Group by severity for readable output. Computed before the
         // early-return path so the theme-contrast stage below sees a
         // consistent local-variable shape regardless of the blade-scan
         // outcome.
@@ -238,7 +238,7 @@ class DoctorA11yCommand extends Command
     }
 
     /**
-     * Opt-in theme-contrast stage. Runs AFTER the blade scan so the
+     * Opt-in theme-contrast stage. Runs after the blade scan so the
      * static findings always surface first; if either stage fails,
      * the overall command exits non-zero.
      *
@@ -300,7 +300,7 @@ class DoctorA11yCommand extends Command
             ['name' => 'accent-content as text on bg', 'fg' => '--color-wk-accent-content', 'bg' => '--color-wk-bg', 'threshold' => 'text'],
             ['name' => 'accent-fg on accent (primary button)', 'fg' => '--color-wk-accent-fg', 'bg' => '--color-wk-accent', 'threshold' => 'text'],
             ['name' => 'accent-fg on accent-hover', 'fg' => '--color-wk-accent-fg', 'bg' => '--color-wk-accent-hover', 'threshold' => 'text'],
-            // Every semantic filled button, at rest AND under the pointer. The
+            // Every semantic filled button, at rest and under the pointer. The
             // hover rows are here because the list carried `accent-fg on
             // accent-hover` and none of its three semantic siblings, and the
             // derived scan cannot make up the difference: it reads a literal
@@ -315,7 +315,7 @@ class DoctorA11yCommand extends Command
             ['name' => 'warning-fg on warning', 'fg' => '--color-wk-warning-fg', 'bg' => '--color-wk-warning', 'threshold' => 'text'],
             ['name' => 'warning-fg on warning-hover', 'fg' => '--color-wk-warning-fg', 'bg' => '--color-wk-warning-hover', 'threshold' => 'text'],
 
-            // Communicating borders — WCAG 1.4.11 DOES require >= 3:1 for these:
+            // Communicating borders — WCAG 1.4.11 does require >= 3:1 for these:
             // a focus ring and the stateful (error / success) borders convey
             // state or mark an active boundary, so they are hard-checked.
             ['name' => 'focus ring on ring-offset', 'fg' => '--color-wk-ring', 'bg' => '--color-wk-ring-offset', 'threshold' => 'ui'],
@@ -327,20 +327,20 @@ class DoctorA11yCommand extends Command
             // never counted. A theme that wants a line at 3:1 sets the token to the warning text
             // color, and the ratio here shows that it did.
             ['name' => 'border-unsaved on bg-input', 'fg' => '--color-wk-border-unsaved', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui', 'advisory' => true, 'note' => 'a hint beside words, WCAG 1.4.1'],
-            // border-strong is the COMMUNICATING form-control border, and WCAG 1.4.11
+            // border-strong is the communicating form-control border, and WCAG 1.4.11
             // requires >= 3:1 for it.
-            // It is NOT decorative — it is the resting + hover edge of input / select
+            // It is not decorative — it is the resting + hover edge of input / select
             // / textarea / checkbox, so it is hard-checked, and against the field
-            // FILL (--color-wk-bg-input) it actually sits on, not the page bg.
+            // fill (--color-wk-bg-input) it actually sits on, not the page bg.
             ['name' => 'border-strong on bg-input', 'fg' => '--color-wk-border-strong', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
             ['name' => 'border-strong-hover on bg-input', 'fg' => '--color-wk-border-strong-hover', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
 
-            // Decorative resting borders — WCAG 1.4.11 EXEMPTS pure dividers that
+            // Decorative resting borders — WCAG 1.4.11 exempts pure dividers that
             // neither convey state nor identify an active boundary. Only
             // --color-wk-border qualifies: it is the card / divider edge WireKit
             // ships intentionally low-contrast (~1.3-2.5:1), matching every major
             // design system; see docs/theming.md "Intentional trade-offs". It is
-            // audited for INFORMATION ONLY ('advisory'): the ratio is printed, but
+            // audited for information only ('advisory'): the ratio is printed, but
             // never counts toward PASS/WARN/FAIL totals and never affects the exit
             // code. border-strong is not decorative and is hard-checked above.
             ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
@@ -351,7 +351,7 @@ class DoctorA11yCommand extends Command
         // The canonical list is a list. It covers the pairings this package's own components
         // use, and a component that puts a different foreground on a different background —
         // its own, or one from a package the application mounts — appears in none of its
-        // rows. The contrast is then unchecked, and unchecked SILENTLY: the run reports PASS
+        // rows. The contrast is then unchecked, and unchecked silently: the run reports PASS
         // over the pairings it knows and says nothing about the one on the page.
         //
         // Both nets have their hole in the same place. This one is not in the Blade rules
@@ -460,7 +460,7 @@ class DoctorA11yCommand extends Command
             // An unrecognized --fail-on. Without this arm PHP raises UnhandledMatchError,
             // which reaches the developer as a stack trace rather than as a command telling
             // them what they mistyped. Exit 1 like every other failure here: this repo uses
-            // FAILURE for invalid input too, never Symfony's INVALID (2).
+            // failure for invalid input too, never Symfony's invalid (2).
             default => $this->reportUnknownFailOn($failOn),
         };
     }
@@ -491,7 +491,7 @@ class DoctorA11yCommand extends Command
 
     /**
      * Rule: every <x-wirekit::button> whose only child is an
-     * <x-wirekit::icon> (no slot text, no body) MUST carry an
+     * <x-wirekit::icon> (no slot text, no body) must carry an
      * aria-label attribute.
      *
      * Severity: ERROR (WCAG 2.1 "Buttons must have discernible text").
@@ -502,8 +502,8 @@ class DoctorA11yCommand extends Command
     {
         $findings = [];
         // Match <x-wirekit::button ...><x-wirekit::icon ... /></x-wirekit::button>
-        // OR <x-wirekit::button ...><svg ...></svg></x-wirekit::button>
-        // where the OUTER button tag does NOT contain aria-label.
+        // or <x-wirekit::button ...><svg ...></svg></x-wirekit::button>
+        // where the outer button tag does not contain aria-label.
         //
         // A tag's attributes run to the first `>` outside a quoted value or a Blade echo: a value
         // may hold a `>` of its own, as `['row' => $id]` and `$bag->except('x')` do.
@@ -532,7 +532,7 @@ class DoctorA11yCommand extends Command
 
     /**
      * Rule: every element with role="dialog" or role="alertdialog"
-     * MUST carry aria-label OR aria-labelledby.
+     * must carry aria-label or aria-labelledby.
      *
      * Severity: ERROR (WCAG 4.1.2 + ARIA APG dialog pattern).
      *
@@ -565,8 +565,8 @@ class DoctorA11yCommand extends Command
     }
 
     /**
-     * Rule: every element with role="img" MUST carry aria-label
-     * OR aria-labelledby (or an alt-equivalent on the underlying
+     * Rule: every element with role="img" must carry aria-label
+     * or aria-labelledby (or an alt-equivalent on the underlying
      * element).
      *
      * Severity: ERROR (WCAG 1.1.1 non-text content).
@@ -634,7 +634,7 @@ class DoctorA11yCommand extends Command
 
             // A literal `class` only — never `:class`, `x-bind:class` or `@class`.
             //
-            // A bound class list is where the BRANCHES live, and two classes in different
+            // A bound class list is where the branches live, and two classes in different
             // branches never render together. Matching them would report pairings that
             // cannot occur: an event-calendar ternary whose true branch sets the accent
             // background with inverse text and whose false branch sets ordinary text on

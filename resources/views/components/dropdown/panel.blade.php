@@ -12,14 +12,14 @@
 
      Not derived from the trigger, which would be better and is not reachable. The three
      submenus point `aria-labelledby` at their own trigger because trigger and panel live in
-     ONE file. Here the caller composes `<x-wirekit::dropdown.trigger>` and
+     one file. Here the caller composes `<x-wirekit::dropdown.trigger>` and
      `<x-wirekit::dropdown.panel>` as separate siblings, and this repository's parent-to-child
-     channel reads the parent's PROPS rather than a value its view computed — so the panel
+     channel reads the parent's props rather than a value its view computed — so the panel
      cannot see the trigger's id at render time. Binding one at runtime is what the note
      further down warns about.
 
      No generic fallback, and the sibling `context-menu` has one on purpose. "Context menu"
-     says what KIND of menu opened, so it earns its place. A dropdown falling back to "Menu" is
+     says what kind of menu opened, so it earns its place. A dropdown falling back to "Menu" is
      announced as "Menu, menu" — the name repeats the role, and the reader is left exactly
      where they were, one word later. --}}
 @props([
@@ -83,13 +83,13 @@
 
 {{-- Dropdown panel — positioned by Floating UI, shown/hidden via Alpine.
      The id is bound dynamically from the parent's data-wk-panel-id for aria-controls.
-     Only the ENTER transition is animated — the panel disappears instantly on close.
+     Only the enter transition is animated — the panel disappears instantly on close.
      That is the prevailing convention — a menu opens with a little motion and dismisses
      the instant it is asked to — and it avoids a race where Alpine's ~150ms leave
      transition leaves the panel visible long enough to break synchronous browser test
      assertions like `assertDontSee`. --}}
 {{-- Teleported to the overlay root at the end of <body>: `position: fixed` escapes a clipping ancestor but not a
-     STACKING context. A host with `contain: layout`, a transform or a filter scopes
+     stacking context. A host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after it covers the
      menu however high the z-index goes: a menu open inside a preview renders under
      the code block below it. --}}
@@ -101,30 +101,30 @@
          matches zero elements throws nothing and looks identical to one that
          works. See docs/theming.md "Theme markers". --}}
     data-wk-dropdown-panel
-    {{-- THE MORPH KEY, and it is what makes writing the id safe again.
+    {{-- The morph key, and it is what makes writing the id safe again.
          Livewire resolves a node's morph identity as `wire:id`, then `wire:key`,
-         then `el.id`. With none of the first two present the id WAS the key — so
+         then `el.id`. With none of the first two present the id was the key — so
          the moment JavaScript wrote one, the live node's key stopped matching the
          incoming template's empty one, and a key mismatch does not patch, it
-         SWAPS: `swapElements` inserts a native `cloneNode(true)`, which copies
+         swaps: `swapElements` inserts a native `cloneNode(true)`, which copies
          attributes and children and no Alpine expandos. The replacement arrived
          with no `_x_dataStack`, so `x-show="open"` resolved `open` on the global
          object — where it is `window.open`, a function, and therefore truthy.
          The panel showed itself, and applying a native function with the scope
          proxy as `this` raised `Illegal invocation`.
-         A STATIC value on purpose. The key only has to be the same on both sides
+         A static value on purpose. The key only has to be the same on both sides
          of one comparison — the morph patches a teleported node against its own
-         counterpart, one to one — so it must NOT carry the per-render id, which
+         counterpart, one to one — so it must not carry the per-render id, which
          is exactly the value that cannot agree across two renders. --}}
     wire:key="wk-dropdown-panel"
     x-ref="panel"
-    {{-- The menu keyboard model is bound HERE, on the panel, and not only on the wrapper.
+    {{-- The menu keyboard model is bound here, on the panel, and not only on the wrapper.
 
-         `x-teleport` MOVES this element to `#wk-overlay-root`; it does not re-route the
+         `x-teleport` moves this element to `#wk-overlay-root`; it does not re-route the
          events it fires. So once focus is on a menu item, a keydown bubbles from here to
          the overlay root and on to the document, and never passes through the dropdown
          wrapper at all — where `x-on:keydown="handleKeydown"` was the only binding. Arrow
-         keys, Home and End did nothing, in EVERY dropdown, for as long as the panel has
+         keys, Home and End did nothing, in every dropdown, for as long as the panel has
          teleported. The wrapper binding is kept because it is what serves a keypress made
          while focus is still on the trigger.
 
@@ -137,7 +137,7 @@
     x-show="isOpen"
     {{-- The id is set from the factory (`_applyPanelId`), not bound here.
          `x-bind:id="panelId"` would read the value out of the Alpine scope, which is
-         right across the TELEPORT and wrong across a Livewire MORPH: on every morph the
+         right across the teleport and wrong across a Livewire morph: on every morph the
          binding would be re-evaluated in a scope that no longer has `panelId`, and
          throw. And a JavaScript error during a morph ends the pass, so whatever comes
          after it silently does not run. --}}

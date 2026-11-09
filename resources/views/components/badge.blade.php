@@ -23,6 +23,11 @@
     // Optional trailing glyph — mirror of leadingIcon, rendered after the label
     // (e.g. an external-link arrow on a link badge). Also decorative.
     'trailingIcon' => null,
+    // An address makes the badge the link itself: an `<a>` that carries the fill, the pointer, a
+    // dim on hover and the kit's focus ring, so a status that leads somewhere needs no underline
+    // and no frame around it. `wire:navigate` and `target` go on the link with the other
+    // attributes.
+    'href' => null,
     // When true, renders a trailing close button that removes the badge (Alpine
     // x-show) and dispatches a `wirekit:badge-dismissed` event. Keyboard- and
     // screen-reader-operable; label set via dismissLabel. A dismissible badge
@@ -38,7 +43,7 @@
     'dismissLabel' => null,
     // Multi-line mode. A badge is a fixed-height single-line pill by default. Set
     // `wrap` for a long label that must break across lines: the fixed height is
-    // swapped for `min-h-*` + vertical padding so the pill GROWS with the text
+    // swapped for `min-h-*` + vertical padding so the pill grows with the text
     // instead of the second line spilling below the surface.
     'wrap' => false,
     // Keeps the pill on one line and cuts a long label at `--size-wk-badge-max` with an ellipsis.
@@ -52,7 +57,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $dot = BooleanProp::from($dot, false, 'badge', 'dot');
@@ -66,6 +71,41 @@
         \Pushery\WireKit\Support\StrictnessGate::reject('badge', 'wrap', 'true', 'no wrap on a badge that truncate cuts', 'false');
         $wrap = false;
     }
+
+    // The URL as written, Blade's escape undone; a blank one is no link (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+
+    // A link holds no button, so a badge that links has no close button: given both, the badge
+    // stays the link and `dismissible` is reported.
+    if ($href !== null && $dismissible) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('badge', 'dismissible', 'true', 'a badge without href', 'false');
+        $dismissible = false;
+    }
+
+    $tag = $href !== null ? 'a' : 'span';
+
+    // A badge that opens a new tab says so, and keeps the page that opened it out of reach, as a
+    // card does. The rel is written out rather than merged: a caller's rel would replace it.
+    $opensNewTab = $href !== null && str_contains((string) $attributes->get('target', ''), '_blank');
+    $relAttr = (string) $attributes->get('rel', '');
+    $computedRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : ($relAttr !== '' ? $relAttr : null);
+
+    // The hint stands last in the badge, after the label, so it is an echo rather than a block and
+    // Livewire writes no morph markers around it: it comes or goes after everything else and moves
+    // nothing. Its class goes through CompactClasses, as a class attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
+    // The `after` slot: markup after the label that stays whole, a count beside a name. It stands
+    // outside the words `truncate` cuts and never shrinks, so the ellipsis takes the name and never
+    // the number. Built as one string rather than a conditional in the markup, so a badge without
+    // it carries none of the comments Livewire puts around every control structure.
+    $afterMarkup = isset($after) && $after instanceof \Illuminate\View\ComponentSlot && $after->hasActualContent()
+        ? new \Illuminate\Support\HtmlString('<span data-wk-badge-after class="shrink-0">'.trim($after->toHtml()).'</span>')
+        : '';
 
     // The dismiss button's accessible name is the one string this component renders
     // on the developer's behalf, so it comes from the catalog rather than from a
@@ -100,7 +140,7 @@
         ? $surface
         : WireKit::validateProp('badge', 'surface', $surface, ['soft', 'solid', 'outline']);
 
-    // Base classes: layout, typography, transitions. Border WIDTH is applied
+    // Base classes: layout, typography, transitions. Border width is applied
     // per-surface below: 'soft' uses the themeable --border-wk-badge-width (so a
     // theme like Aurora can flatten the chip to width 0); 'outline' forces the
     // global --border-wk-width so the outline stays visible even under a theme
@@ -111,7 +151,7 @@
     $wrap = filter_var($wrap, FILTER_VALIDATE_BOOLEAN);
 
     $baseClasses = WireKit::resolveClasses('badge', 'base', implode(' ', array_filter([
-        'inline-flex items-center gap-x-1',
+        'inline-flex items-center gap-x-[var(--gap-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-heading-weight)]',
         // Single-line by default; wrap mode lets long labels break across lines.
@@ -125,7 +165,7 @@
         ? 'border-[length:var(--border-wk-width)]'
         : 'border-[length:var(--border-wk-badge-width,var(--border-wk-width))]';
 
-    // SOFT (default): tinted backgrounds via color-mix for a subtle look.
+    // Soft (default): tinted backgrounds via color-mix for a subtle look.
     // Border and text colors from same token family for cohesion.
     $softClasses = match ($intent) {
         'primary' => implode(' ', [
@@ -176,7 +216,7 @@
         default => WireKit::validateProp('badge', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
-    // SOLID: filled intent background + on-color foreground. `info` fills with
+    // Solid: filled intent background + on-color foreground. `info` fills with
     // --color-wk-info-tone and writes in --color-wk-info-fg, which alias the accent pair until an
     // application gives info a hue of its own; `neutral` becomes a dark filled chip (text-bg
     // pair). Literal class strings (not interpolated) so the Tailwind text scanner / drift audit
@@ -191,7 +231,7 @@
         default => '',
     };
 
-    // OUTLINE: transparent background + intent ring + intent text. Border color
+    // Outline: transparent background + intent ring + intent text. Border color
     // is the intent base; text uses the soft-tone text token (AA on the page bg).
     $outlineClasses = match ($intent) {
         'primary', 'accent' => 'bg-transparent text-[color:var(--color-wk-accent-content)] border-[color:var(--color-wk-accent)]',
@@ -219,24 +259,24 @@
     $pillRadius = $wrap ? 'rounded-[var(--radius-wk-md)]' : 'rounded-[var(--radius-wk-full)]';
     $sizeClasses = match ($size) {
         'sm' => implode(' ', [
-            $wrap ? 'min-h-5 py-1 px-2' : 'h-5 px-2',
+            $wrap ? 'min-h-5 py-[var(--padding-wk-y-xs)] px-2' : 'h-5 px-2',
             'text-[length:var(--text-wk-sm)]',
             $pillRadius,
         ]),
         'md' => implode(' ', [
-            $wrap ? 'min-h-6 py-1 px-2.5' : 'h-6 px-2.5',
+            $wrap ? 'min-h-6 py-[var(--padding-wk-y-xs)] px-[var(--padding-wk-x-sm)]' : 'h-6 px-[var(--padding-wk-x-sm)]',
             'text-[length:var(--text-wk-sm)]',
             $pillRadius,
         ]),
         'lg' => implode(' ', [
-            $wrap ? 'min-h-7 py-1.5 px-3' : 'h-7 px-3',
+            $wrap ? 'min-h-7 py-[var(--padding-wk-y-sm)] px-[var(--padding-wk-x-md)]' : 'h-7 px-[var(--padding-wk-x-md)]',
             'text-[length:var(--text-wk-md)]',
             $pillRadius,
         ]),
         default => WireKit::validateProp('badge', 'size', $size, ['sm', 'md', 'lg']),
     };
 
-    // Dot indicator color matches intent text color for cohesion. On a SOLID
+    // Dot indicator color matches intent text color for cohesion. On a solid
     // fill the dot reads on a colored field, so it switches to the on-fill
     // foreground (matches how the always-filled 'accent' intent already works).
     $dotColorClass = $surface === 'solid'
@@ -261,10 +301,10 @@
             default => 'bg-[var(--color-wk-text-muted)]',
         };
 
-    // Depth (SOFT surface only): a subtle inset currentColor ring (adapts per
+    // Depth (soft surface only): a subtle inset currentColor ring (adapts per
     // intent) + a faint 1px drop shadow lift the chip off the surface. Driven by
     // the --shadow-wk-badge token so a theme can flatten it (set it to `none`).
-    // SOLID carries its own fill and OUTLINE its own ring, so neither needs the
+    // Solid carries its own fill and outline its own ring, so neither needs the
     // soft-chip depth — applying it would double the edge.
     $depthStyle = $surface === 'soft'
         ? 'box-shadow: var(--shadow-wk-badge, inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent), 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent));'
@@ -286,23 +326,40 @@
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
     ]);
+
+    // A badge that links answers the pointer and the keyboard as the link component does: the
+    // pointer, the dim on hover and the kit's focus ring. The ring is an outline rather than a
+    // ring utility, since a soft badge draws its depth as an inline box-shadow, which would cover
+    // a ring drawn as one, and an outline also shows in forced colors.
+    $linkClasses = $tag === 'a' ? implode(' ', [
+        'cursor-pointer',
+        'transition-opacity duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
+        'hover:opacity-[var(--opacity-wk-hover)]',
+        'focus-visible:outline-[length:var(--ring-wk-width)] focus-visible:outline-[color:var(--color-wk-ring)] focus-visible:outline-offset-[var(--ring-wk-offset)]',
+    ]) : '';
 @endphp
 
 {{-- The badge body. When a tooltip is requested it is wrapped in the
      WireKit tooltip component so the explanation surfaces through WireKit's
      own accessible tooltip (hover / focus / touch / keyboard,
      aria-describedby) rather than the browser's native title attribute. The
-     wrap is conditional so a badge WITHOUT a tooltip stays a bare span with
+     wrap is conditional so a badge without a tooltip stays a bare span with
      zero Alpine overhead. The if/else duplicates the span deliberately —
      Blade pairs anonymous component tags at compile time, so the wrapper
      cannot be split across a runtime conditional. The tooltip roots in a
      span, so a badge that carries one still stands in a sentence: a block
-     element there would close the paragraph around it. --}}
+     element there would close the paragraph around it.
+     `data-wk-sr-host`: a badge often holds visually hidden text of its caller's
+     ("Priority " before "P1"), and the stylesheet positions the root while it
+     does, so that text stays inside the badge rather than widening a page that
+     scrolls the badge sideways. --}}
 @if($tooltip)
     <x-wirekit::tooltip :text="$tooltip" :scope="$scope" as="span">
-        <span
+        <{{ $tag }} data-wk-prose-skip data-wk-sr-host
+            @if($href !== null) href="{{ $href }}" @endif
+            @if($computedRel !== null) rel="{{ $computedRel }}" @endif
             @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
-            {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses])) }}
+            {{ $attributes->except(['rel'])->merge($depthStyle ? ['style' => $depthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses, $linkClasses])) }}
         >
             @if($dot)
                 <span aria-hidden="true" class="inline-block h-1.5 w-1.5 shrink-0 rounded-full {{ $dotColorClass }}"></span>
@@ -317,6 +374,7 @@
             @else
                 {{ $slot }}
             @endif
+            {{ $afterMarkup }}
             @if($trailingIcon)
                 <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
             @endif
@@ -325,12 +383,15 @@
                     <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
                 </button>
             @endif
-        </span>
+            {{ $newTabHint }}
+        </{{ $tag }}>
     </x-wirekit::tooltip>
 @else
-    <span
+    <{{ $tag }} data-wk-prose-skip data-wk-sr-host
+        @if($href !== null) href="{{ $href }}" @endif
+        @if($computedRel !== null) rel="{{ $computedRel }}" @endif
         @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
-        {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses])) }}
+        {{ $attributes->except(['rel'])->merge($depthStyle ? ['style' => $depthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses, $linkClasses])) }}
     >
         @if($dot)
             <span aria-hidden="true" class="inline-block h-1.5 w-1.5 shrink-0 rounded-full {{ $dotColorClass }}"></span>
@@ -345,6 +406,7 @@
         @else
             {{ $slot }}
         @endif
+        {{ $afterMarkup }}
         @if($trailingIcon)
             <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
         @endif
@@ -353,4 +415,5 @@
                 <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
             </button>
         @endif
-    </span>@endif
+        {{ $newTabHint }}
+    </{{ $tag }}>@endif

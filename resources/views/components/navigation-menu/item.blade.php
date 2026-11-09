@@ -32,7 +32,7 @@
     // $name is this item's identity twice over: the Alpine state key the whole
     // open/close model compares against (activeItem === $name), and the base the
     // panel's DOM id below is built from. With no trigger label to slug it is
-    // COUNTED, not randomized: a uniqid() would move both halves on every render,
+    // counted, not randomized: a uniqid() would move both halves on every render,
     // so `activeItem === $name` could not match an item after a morph, and the
     // panel — which teleports out of the morphed subtree — would keep the previous
     // id while the trigger's aria-controls named a new one. DomId's counter is per
@@ -52,7 +52,7 @@
     $panelId = \Pushery\WireKit\Support\DomId::unique($name.'-panel', 'wk-nav-panel-');
 
     $triggerClasses = WireKit::resolveClasses('navigation-menu.item', 'trigger', implode(' ', [
-        'inline-flex items-center gap-1',
+        'inline-flex items-center gap-[var(--gap-wk-xs)]',
         'px-[var(--padding-wk-x-sm)]',
         'py-[var(--padding-wk-y-sm)]',
         'cursor-pointer',
@@ -81,7 +81,7 @@
         'rounded-[var(--radius-wk-lg)]',
         'shadow-[var(--shadow-wk-lg)]',
         'p-[var(--padding-wk-x-lg)]',
-        "before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2",
+        "before:content-[''] before:absolute before:-top-2 before:start-0 before:end-0 before:h-2",
         // A column, so the scroller inside shrinks to the height the position helper caps the
         // panel to. The panel itself does not scroll: an overflow on it would clip the hover
         // bridge above it, and the pointer would cross a gap between trigger and panel again.
@@ -104,6 +104,13 @@
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -128,7 +135,7 @@
 @if($href !== null)
     {{-- Simple link item (no flyout). The link text comes from the slot
          (the canonical pattern: `<x-wirekit::navigation-menu.item href="/x">Label</x-wirekit::navigation-menu.item>`)
-         OR from the `trigger` prop (legacy / explicit-prop pattern). One
+         or from the `trigger` prop (legacy / explicit-prop pattern). One
          of the two must be non-empty — otherwise the link has no
          accessible name and axe-core's "link-name" rule fails. We fall
          back from $slot to $trigger so authors who pass either form
@@ -147,10 +154,7 @@
         {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $triggerClasses])) }}
     >
         @if($slot->hasActualContent()){{ $slot }}@elseif($triggerLangTag !== null)<span lang="{{ $triggerLangTag }}">{{ $trigger }}</span>@else{{ $trigger }}@endif
-        @if($opensNewTab)
-            <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-        @endif
-    </a>
+        {{ $newTabHint }}</a>
 @else
     {{-- Trigger + flyout panel --}}
     <div
@@ -165,7 +169,7 @@
             x-on:click="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, $el)"
             aria-expanded="false"
             :aria-expanded="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
-            {{-- aria-expanded + aria-controls, and deliberately NO aria-haspopup.
+            {{-- aria-expanded + aria-controls, and deliberately no aria-haspopup.
                  This is a disclosure navigation menu: the button reveals a
                  region of links in place, it does not summon a menu or a dialog.
                  The trigger carried aria-haspopup="dialog" while a role-less div
@@ -201,13 +205,13 @@
              location. --}}
         <template x-teleport="#wk-overlay-root">
             <div
-                {{-- THE MORPH KEY, and writing the id above is what makes it necessary.
+                {{-- The morph key, and writing the id above is what makes it necessary.
                      Livewire resolves a node's identity as `wire:id`, then `wire:key`,
-                     then `el.id`. With neither of the first two present the id IS the
+                     then `el.id`. With neither of the first two present the id is the
                      key — and this id is deduped per request, so a re-render that
                      mounts a different number of menus hands the morph a key that no
                      longer matches the live node's. A key mismatch does not patch, it
-                     SWAPS: the incoming node is inserted as a native `cloneNode(true)`,
+                     swaps: the incoming node is inserted as a native `cloneNode(true)`,
                      which copies attributes and children and no Alpine expandos. The
                      replacement arrives without `_x_dataStack`, so `x-show` resolves
                      `activeItem` on the global object and every handler on it is bound
@@ -215,7 +219,7 @@
                      Derived from $name — the item's own identity, which `x-ref` and
                      `data-wk-nav-panel` already key on and which the @php block above
                      keeps stable across renders — so the key is both steady and
-                     distinct per item in a bar that holds several. Deliberately NOT
+                     distinct per item in a bar that holds several. Deliberately not
                      $panelId: that one is deduped per request, so it is the single
                      value here that cannot be relied on to agree across two renders. --}}
                 wire:key="wk-nav-panel-{{ $name }}"
@@ -235,7 +239,7 @@
                 x-transition:leave-end="opacity-0 translate-y-1"
                 {{-- The panel has teleported out of the nav, so its events bubble
                      to <body> and never reach the bar's own keydown listener.
-                     Escape closes AND returns focus to the trigger (WCAG 2.4.3 —
+                     Escape closes and returns focus to the trigger (WCAG 2.4.3 —
                      otherwise it falls to <body>), and the two Tab edges hand focus
                      back to the bar instead of off the end of the document. --}}
                 x-on:keydown="handlePanelKeydown($event, {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"

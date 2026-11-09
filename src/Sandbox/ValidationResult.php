@@ -14,7 +14,7 @@ namespace Pushery\WireKit\Sandbox;
  * The payload comes in two views, and which one to use depends on where
  * the value is going:
  *
- *   - `clean` — every string HTML-escaped. For a value that is echoed RAW,
+ *   - `clean` — every string HTML-escaped. For a value that is echoed raw,
  *     like the slot the renderer builds: the one escape it gets here is
  *     the one it needs.
  *   - `values` — the same validated, coerced values exactly as given. For a

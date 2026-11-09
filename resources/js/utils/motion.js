@@ -10,10 +10,10 @@
  * the reason the helper exists:
  *
  *   data-reduce-motion="reduce"          reduce, whatever the OS says
- *   data-reduce-motion="no-preference"   do NOT reduce, even though the OS asks
+ *   data-reduce-motion="no-preference"   do not reduce, even though the OS asks
  *   attribute absent                     follow the OS (the default, unchanged)
  *
- * The attribute is read BEFORE the media query, so an explicit choice always
+ * The attribute is read before the media query, so an explicit choice always
  * wins over an inferred one. The CSS half of this reads the same attribute on
  * the same element, which is what keeps a component's JS decision (stop an
  * auto-advance, reveal a buffer at once) and its CSS decision (clamp a
@@ -33,7 +33,7 @@ export function prefersReducedMotion() {
     // contexts where neither document nor matchMedia is guaranteed, and a
     // motion preference is never worth throwing over.
     //
-    // The guard is on `getAttribute` being CALLABLE, not on `document` existing.
+    // The guard is on `getAttribute` being callable, not on `document` existing.
     // `?.` only stops at null or undefined, so a stub that defines
     // `document.documentElement` as a plain object sails past it and throws on the
     // call — which is exactly what the ESM harness hands a factory, deliberately, and
@@ -48,7 +48,7 @@ export function prefersReducedMotion() {
 
     // `typeof window`, not `window.matchMedia?.` — an undeclared identifier throws a
     // ReferenceError before optional chaining ever gets a value to test, so the `?.` here
-    // protected against a missing METHOD and not against a missing window. The comment above
+    // protected against a missing method and not against a missing window. The comment above
     // has promised "neither document nor matchMedia is guaranteed" since the helper was
     // written; this line was the half that did not keep it.
     if (typeof window === 'undefined') {

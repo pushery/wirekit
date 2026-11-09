@@ -17,12 +17,12 @@
 
 @php
     /*
-     * A `<div>` here would be correct for ONE slot shape and mouse-only for every other.
+     * A `<div>` here would be correct for one slot shape and mouse-only for every other.
      *
      * `<x-wirekit::button>` in the slot inside a `<button>` is invalid nested markup, and the
      * inner button does carry the keyboard path. But both docs pages invite arbitrary slot
      * content — an icon, a text span, a `<x-wirekit::icon>` — and for all of those this
-     * element IS the control: as a `<div>` it would have no role, no tabindex and no key
+     * element is the control: as a `<div>` it would have no role, no tabindex and no key
      * handler, closeable by pointer alone.
      *
      * So the wrapper asks what it is wrapping. The slot is already-rendered HTML, so an
@@ -49,14 +49,14 @@
         {{ $slot }}
     </div>
 @else
-    {{-- Nothing in the slot can be activated, so THIS is the control. A native button gets
+    {{-- Nothing in the slot can be activated, so this is the control. A native button gets
          Enter and Space with no key handler and the right role, none of which a `<div>` with a
          click listener has. It draws the kit's focus ring, which follows the ring tokens, rather
          than the browser's, which follows none. --}}
     <button
         type="button"
         x-on:click="{{ $overlayCloseHandler }}"
-        {{-- `cursor-pointer` unconditionally, and only on THIS branch.
+        {{-- `cursor-pointer` unconditionally, and only on this branch.
              Tailwind v4's preflight no longer sets `cursor: pointer` on a button (v3 did),
              and the resolved class list here is empty unless the developer scopes one — so a dismiss
              control holding nothing but an icon rendered with no pointer at all. The

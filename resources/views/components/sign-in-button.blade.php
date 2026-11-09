@@ -38,7 +38,7 @@
     // this component's @props.
     \Pushery\WireKit\WireKit::warnUnknownProps('sign-in-button', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -218,6 +218,13 @@
     // opens one. Rendered here rather than merged: a merge treats a caller's `rel` as the default
     // and would drop the protection.
     $opensNewTab = $href !== null && str_contains((string) $attributes->get('target', ''), '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = (string) $attributes->get('rel', '');
     $computedRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -242,7 +249,4 @@
         @endforeach
         <span>{{ $wkLabel }}</span>
     @endif
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $wkTag }}>
+    {{ $newTabHint }}</{{ $wkTag }}>

@@ -5,6 +5,8 @@ import { awaitPeer } from '../utils/await-peer.js';
 import { followChartServerData } from '../utils/chart-server-data.js';
 import { followPointLink, pointLink, takePointLinks } from '../utils/chart-point-links.js';
 import { takeTooltipExtras, tooltipExtraRows } from '../utils/chart-tooltip-extras.js';
+import { applyTokenColors, tokenColorsOf, tokenColorsSignature } from '../utils/chart-token-colors.js';
+import { ownThemeOptionsOf } from '../utils/chart-own-theme-options.js';
 
 /**
  * How much of a series' fill shows, by chart type, in each palette. The semantic colors are strong,
@@ -26,7 +28,7 @@ const FILL_OPACITY = {
  * without firing Alpine's `destroy()` hook — Chart.js's per-chart RAF loop survives
  * and crashes on the next frame when `chart.ctx` resolves null against the
  * detached canvas). On every fresh init, we sweep the registry and destroy
- * any chart whose canvas is no longer in the document BEFORE the new chart's
+ * any chart whose canvas is no longer in the document before the new chart's
  * animator schedules its first RAF — preventing the "two charts racing on
  * the same global Chart.animator" crash class that the per-instance
  * beforeDraw plugin alone can't catch (the stale chart's animator has
@@ -49,7 +51,7 @@ function getRegistry() {
  * on the rapid-multi-replay path (every fresh `new Chart()` schedules a
  * cascade of RAF callbacks via `animator.start()`; if any of them target
  * a previous-mount chart whose destroy is in-flight, they slip past the
- * plugin guard because plugin hooks run AFTER `draw()` already entered).
+ * plugin guard because plugin hooks run after `draw()` already entered).
  *
  * Wrapping `Chart.prototype.draw` at the prototype level catches every
  * draw entry-point, regardless of how the animator scheduled it. Null-ctx
@@ -134,6 +136,14 @@ export default function wirekitChartJs(config) {
         // Track which datasets had user-provided colors at init time.
         // These datasets are excluded from dark mode re-theming.
         _manualColorIndices: new Set(),
+
+        // The colors the configuration names by a token, with where each stands, so a change of
+        // mode resolves them again. See utils/chart-token-colors.js.
+        _tokenColors: [],
+
+        // The colors and fonts of the axes, the legend and the tooltip the developer set, which a
+        // change of mode leaves as written. See utils/chart-own-theme-options.js.
+        _ownThemeOptions: new Set(),
         // Stops following the data the component renders beside the chart; set once the
         // chart exists. See utils/chart-server-data.js.
         _stopFollowingServerData: null,
@@ -159,7 +169,7 @@ export default function wirekitChartJs(config) {
          * a console nobody has open. The ApexCharts adapter paints the same kind of panel for
          * this case.
          *
-         * The canvas is REPLACED rather than filled: a <canvas> renders no HTML children, so
+         * The canvas is replaced rather than filled: a <canvas> renders no HTML children, so
          * there is nowhere inside it to put a message. It is hidden and the panel takes its
          * place in the flow.
          *
@@ -188,7 +198,7 @@ export default function wirekitChartJs(config) {
                 // the middle of a running sentence, at any viewport width: the width
                 // that decides it is the host's.
                 // An empty mount can measure 0 — the panel is what will give it width —
-                // so a bare `width > 0` test defaults to the FULL panel exactly where the
+                // so a bare `width > 0` test defaults to the full panel exactly where the
                 // compact one is needed. Walk out to the nearest ancestor that has a
                 // resolved width; that is the room the panel will actually get.
                 const roomFor = (el) => {
@@ -229,7 +239,7 @@ export default function wirekitChartJs(config) {
                  * level down: a fixed white is a light surface in both modes, and in dark
                  * mode it would sit under text that has turned light.
                  *
-                 * `--color-wk-border-warning` is deliberately NOT used — it is one of the two
+                 * `--color-wk-border-warning` is deliberately not used — it is one of the two
                  * state-border tokens this library does not ship, and the guard's
                  * $absentByDesign list fails the build on introducing one.
                  */
@@ -340,15 +350,15 @@ Chart.register(...registerables);</pre>
             // One-shot prototype patch — defensive race-condition guard.
             patchChartDrawOnce();
 
-            // Sweep ANY stale chart from a previous mount whose canvas got
-            // detached (replay-button flow). Doing this BEFORE the new
+            // Sweep any stale chart from a previous mount whose canvas got
+            // detached (replay-button flow). Doing this before the new
             // chart's constructor runs is critical: once `new Chart()`
             // schedules its first RAF the global animator is iterating
             // every active chart per frame, so a stale chart's null-ctx
             // crash takes the whole animator down (including the new
             // chart's render). Plus: hand the new canvas to `Chart.getChart`
             // first — if Chart.js already has an instance on this exact
-            // canvas (rare, but possible in HMR / hot-reload contexts),
+            // canvas (rare, but possible in hmr / hot-reload contexts),
             // destroy that one too.
             sweepStaleCharts();
 
@@ -390,6 +400,10 @@ Chart.register(...registerables);</pre>
                 // The palette is the component's, read above; Chart.js has no use for the key.
                 delete rawConfig.wkPalette;
 
+                // What the developer set where the theme writes as well, read before the factory
+                // adds options of its own below.
+                this._ownThemeOptions = ownThemeOptionsOf(rawConfig.options);
+
                 // Where the data points lead: out of the configuration before Chart.js reads it, and
                 // onto a click and the pointer over a point.
                 this._links = takePointLinks(rawConfig);
@@ -399,7 +413,7 @@ Chart.register(...registerables);</pre>
                 this._tooltipExtras = takeTooltipExtras(rawConfig);
                 this._extendTooltip(rawConfig);
 
-                // Record which datasets have user-provided colors BEFORE
+                // Record which datasets have user-provided colors before
                 // we apply theme defaults. These are excluded from dark
                 // mode re-theming to preserve manual color choices.
                 (rawConfig.data?.datasets || []).forEach((dataset, i) => {
@@ -411,9 +425,15 @@ Chart.register(...registerables);</pre>
                 // Apply theme colors to datasets (only if not manually set)
                 this._applyThemeToDatasets(rawConfig, colors);
 
+                // A color named by a token, `'var(--color-wk-accent)'` on a dataset or an
+                // annotation: the Canvas ignores a color it cannot parse, so each is resolved
+                // here, and where it stands is kept for the next change of mode.
+                this._tokenColors = tokenColorsOf(rawConfig);
+                applyTokenColors(rawConfig, this._tokenColors, style, this.$el);
+
                 // Defensive detach-guard plugin. The docs.wirekit.app replay button
                 // replaces the preview frame's HTML in-place (innerHTML
-                // reassignment, NOT Alpine teardown), which severs our
+                // reassignment, not Alpine teardown), which severs our
                 // canvas from the document without firing the Alpine
                 // `destroy()` lifecycle hook. Chart.js's animation loop
                 // keeps running on the detached canvas, and on the next
@@ -422,7 +442,7 @@ Chart.register(...registerables);</pre>
                 // `_drawDataset` — the 2D context returns null once the
                 // canvas leaves the document. A per-draw plugin hook
                 // tests `canvas.isConnected` and tears the chart down
-                // BEFORE the broken save() call is reached.
+                // before the broken save() call is reached.
                 rawConfig.plugins = (rawConfig.plugins || []).concat([{
                     id: 'wirekit-detach-guard',
                     beforeDraw(chart) {
@@ -454,23 +474,24 @@ Chart.register(...registerables);</pre>
                 // `wire:ignore`; follow them and update the chart in place.
                 this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload));
 
-                // Set up dark mode observer AFTER chart is created.
+                // Set up dark mode observer after chart is created.
                 // This avoids the race condition where the observer fires
                 // before $nextTick completes and this.chart is still null.
-                // Seed the theme signature from what the chart was just BUILT with, so
+                // Seed the theme signature from what the chart was just built with, so
                 // the first unrelated class toggle after construction is a no-op rather
                 // than a full re-theme that lands on the identical palette.
                 if (this.$refs.canvas) {
                     const initialStyle = getComputedStyle(this.$refs.canvas);
                     this._themeSignature = (initialStyle.getPropertyValue('--font-wk-sans').trim()
                         || 'ui-sans-serif, system-ui, sans-serif')
-                        + '|' + JSON.stringify(this._resolveThemeColors(initialStyle));
+                        + '|' + JSON.stringify(this._resolveThemeColors(initialStyle))
+                        + '|' + tokenColorsSignature(this._tokenColors, initialStyle);
                 }
 
                 this._setupDarkModeObserver();
             });
 
-            // Reduced motion is a LIVE preference, not a construction-time constant.
+            // Reduced motion is a live preference, not a construction-time constant.
             // It was read once at `new Chart()` and never again, so a reader who turns
             // motion down while the page is open kept every animation — and the OS
             // preference is not even the common case here: WireKit's own site-level
@@ -562,7 +583,16 @@ Chart.register(...registerables);</pre>
             });
 
             if (this.$refs?.canvas) {
-                this._applyThemeToDatasets({ type: chart.config.type, data: { datasets: incoming } }, this._resolveThemeColors(getComputedStyle(this.$refs.canvas)));
+                const style = getComputedStyle(this.$refs.canvas);
+                const update = { type: chart.config.type, data: { datasets: incoming } };
+
+                this._applyThemeToDatasets(update, this._resolveThemeColors(style));
+
+                // The datasets replace the chart's, and so do the tokens they name: rooted where
+                // the chart's own stand, `data.datasets.<index>`, which is where they land below.
+                const tokens = tokenColorsOf({ data: update.data });
+                applyTokenColors({ data: update.data }, tokens, style, this.$el);
+                this._tokenColors = [...this._tokenColors.filter(({ path }) => path[0] !== 'data'), ...tokens];
             }
 
             chart.data.labels = Array.isArray(next.labels) ? next.labels.slice() : [];
@@ -733,7 +763,7 @@ Chart.register(...registerables);</pre>
                         || 'ui-sans-serif, system-ui, sans-serif';
 
                     /*
-                     * Nothing below runs unless the THEME actually changed.
+                     * Nothing below runs unless the theme actually changed.
                      *
                      * The observer's only gate is "was the mutated attribute `class`",
                      * and html/body carry a great many classes that have nothing to do
@@ -744,13 +774,16 @@ Chart.register(...registerables);</pre>
                      * every chart on the page. On a dashboard that is the most
                      * expensive thing a class toggle can cost.
                      *
-                     * Compared on the RESOLVED values rather than on the presence of a
+                     * Compared on the resolved values rather than on the presence of a
                      * `.dark` class: a theme preset can change the palette without
                      * touching that class, and a dark-flag test would call it unchanged
                      * and leave the chart on the old colors. This costs one string
                      * comparison and misses no change a class-based test would see.
                      */
-                    const signature = fontFamily + '|' + JSON.stringify(colors);
+                    // The tokens the configuration names count as well: one outside the palette
+                    // may change with the mode while every palette color stays.
+                    const signature = fontFamily + '|' + JSON.stringify(colors)
+                        + '|' + tokenColorsSignature(this._tokenColors, style);
                     if (signature === this._themeSignature) {
                         return;
                     }
@@ -759,11 +792,11 @@ Chart.register(...registerables);</pre>
                     // Re-apply global defaults with new dark/light colors.
                     // Note: Chart.js v4 caches resolved options per chart
                     // instance at construction time, so changing Chart.defaults
-                    // alone does NOT propagate to existing charts. This call
+                    // alone does not propagate to existing charts. This call
                     // is still useful for any *new* charts created afterwards.
                     this._applyGlobalDefaults(colors, fontFamily);
 
-                    // Mutate THIS chart instance's options directly so the
+                    // Mutate this chart instance's options directly so the
                     // new colors actually show up on the next update(). Without
                     // this, grid / tick / legend / tooltip colors stay frozen
                     // on whatever was resolved at `new Chart(...)` time — the
@@ -772,6 +805,10 @@ Chart.register(...registerables);</pre>
 
                     // Re-apply dataset colors (skip manually colored datasets)
                     this._reapplyThemeToDatasets(chart.config, colors);
+
+                    // A color named by a token follows the mode: resolved again where it stands,
+                    // after the theme above, so a token on a scale or a legend is the one drawn.
+                    applyTokenColors(chart.config, this._tokenColors, style, this.$el);
 
                     // Redraw with new colors. Using update() (not "none") forces
                     // Chart.js v4 to run the full style-resolver pass, which picks
@@ -951,7 +988,7 @@ Chart.register(...registerables);</pre>
          * Apply WireKit theme to a specific chart instance's options.
          *
          * Chart.js v4 resolves option values at construction time and caches
-         * them per-chart — subsequent changes to `Chart.defaults.*` do NOT
+         * them per-chart — subsequent changes to `Chart.defaults.*` do not
          * propagate to existing charts. To make dark-mode switching work
          * without a page refresh, we must mutate `chart.options.*` on the
          * live instance for every property we care about (grid, ticks,
@@ -966,10 +1003,20 @@ Chart.register(...registerables);</pre>
             const options = chart.options;
             const isDark = themeModeOf(this.$refs?.canvas ?? null) === 'dark';
 
+            // A value the developer set at one of these places is theirs, as a color named on a
+            // dataset is: it stays as written, and the theme recolors the rest. A token among them
+            // is resolved again after this pass, by the token colors.
+            const own = this._ownThemeOptions;
+            const put = (target, key, path, value) => {
+                if (! own.has(path)) {
+                    target[key] = value;
+                }
+            };
+
             // Global text color + font family
-            options.color = colors.textMuted;
+            put(options, 'color', 'color', colors.textMuted);
             if (!options.font) options.font = {};
-            options.font.family = fontFamily;
+            put(options.font, 'family', 'font.family', fontFamily);
 
             // Per-scale grid + tick + axis-border colors. Walk chart.scales
             // (runtime instances) rather than options.scales (user config) so
@@ -986,11 +1033,11 @@ Chart.register(...registerables);</pre>
                 if (!options.scales[scaleId]) options.scales[scaleId] = {};
                 const scale = options.scales[scaleId];
                 if (!scale.grid) scale.grid = {};
-                scale.grid.color = colors.border;
+                put(scale.grid, 'color', `scales.${scaleId}.grid.color`, colors.border);
                 if (!scale.ticks) scale.ticks = {};
-                scale.ticks.color = colors.textMuted;
+                put(scale.ticks, 'color', `scales.${scaleId}.ticks.color`, colors.textMuted);
                 if (!scale.border) scale.border = {};
-                scale.border.color = colors.border;
+                put(scale.border, 'color', `scales.${scaleId}.border.color`, colors.border);
 
                 // Radial charts (radar, polarArea) also expose angleLines and
                 // pointLabels. Theme those too so the web lines don't stay
@@ -998,9 +1045,9 @@ Chart.register(...registerables);</pre>
                 if (scale.angleLines !== undefined || scale.pointLabels !== undefined
                     || chart.scales[scaleId]?.type === 'radialLinear') {
                     if (!scale.angleLines) scale.angleLines = {};
-                    scale.angleLines.color = colors.border;
+                    put(scale.angleLines, 'color', `scales.${scaleId}.angleLines.color`, colors.border);
                     if (!scale.pointLabels) scale.pointLabels = {};
-                    scale.pointLabels.color = colors.textMuted;
+                    put(scale.pointLabels, 'color', `scales.${scaleId}.pointLabels.color`, colors.textMuted);
                 }
             });
 
@@ -1009,7 +1056,7 @@ Chart.register(...registerables);</pre>
 
             if (!options.plugins.legend) options.plugins.legend = {};
             if (!options.plugins.legend.labels) options.plugins.legend.labels = {};
-            options.plugins.legend.labels.color = colors.textPrimary;
+            put(options.plugins.legend.labels, 'color', 'plugins.legend.labels.color', colors.textPrimary);
 
             // Tooltip theming — Chart.js defaults use a hard-coded dark bubble
             // (rgba(0,0,0,0.8) background, white text) which looks fine in
@@ -1018,21 +1065,22 @@ Chart.register(...registerables);</pre>
             // theme so the bubble remains a subtle elevated surface in both
             // modes.
             if (!options.plugins.tooltip) options.plugins.tooltip = {};
-            options.plugins.tooltip.backgroundColor = isDark
+            const tooltip = options.plugins.tooltip;
+            put(tooltip, 'backgroundColor', 'plugins.tooltip.backgroundColor', isDark
                 ? 'rgba(244, 244, 245, 0.95)' // near-white bubble in dark mode
-                : 'rgba(24, 24, 27, 0.9)';     // near-black bubble in light mode
-            options.plugins.tooltip.titleColor = isDark ? '#18181b' : '#f4f4f5';
-            options.plugins.tooltip.bodyColor = isDark ? '#27272a' : '#e4e4e7';
-            options.plugins.tooltip.borderColor = colors.border;
-            options.plugins.tooltip.borderWidth = 1;
-            options.plugins.tooltip.titleFont = {
-                ...(options.plugins.tooltip.titleFont || {}),
+                : 'rgba(24, 24, 27, 0.9)');    // near-black bubble in light mode
+            put(tooltip, 'titleColor', 'plugins.tooltip.titleColor', isDark ? '#18181b' : '#f4f4f5');
+            put(tooltip, 'bodyColor', 'plugins.tooltip.bodyColor', isDark ? '#27272a' : '#e4e4e7');
+            put(tooltip, 'borderColor', 'plugins.tooltip.borderColor', colors.border);
+            put(tooltip, 'borderWidth', 'plugins.tooltip.borderWidth', 1);
+            put(tooltip, 'titleFont', 'plugins.tooltip.titleFont.family', {
+                ...(tooltip.titleFont || {}),
                 family: fontFamily,
-            };
-            options.plugins.tooltip.bodyFont = {
-                ...(options.plugins.tooltip.bodyFont || {}),
+            });
+            put(tooltip, 'bodyFont', 'plugins.tooltip.bodyFont.family', {
+                ...(tooltip.bodyFont || {}),
                 family: fontFamily,
-            };
+            });
         },
 
         /**
@@ -1047,7 +1095,7 @@ Chart.register(...registerables);</pre>
          * User-provided options in the config always take priority over
          * these defaults (Chart.js merges user → defaults automatically).
          *
-         * NOTE: This only affects charts constructed AFTER the call —
+         * Note: This only affects charts constructed after the call —
          * existing chart instances use cached options and must be
          * re-themed via _applyThemeToChartOptions() instead.
          *

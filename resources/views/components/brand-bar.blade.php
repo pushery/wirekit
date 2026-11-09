@@ -5,7 +5,7 @@
 @props([
     // `as` — the semantic element. Defaults to `header` for page chrome
     // (the brand-bar sits at the top of a section / page and announces
-    // the brand). Set to `nav` if the bar IS the primary navigation.
+    // the brand). Set to `nav` if the bar is the primary navigation.
     'as' => 'header',
     // `divider` — optional bottom-border treatment. Default `bottom`
     // paints a 1 px line across the bar's bottom edge using
@@ -21,8 +21,8 @@
     // container via `position: sticky; top: 0`. Default false.
     'sticky' => false,
     // `container` — when true, wraps the inner flex-row in a max-width
-    // container so the brand-bar's CHROME (background, border, sticky
-    // behavior) stays edge-to-edge while the CONTENT (brand, tagline,
+    // container so the brand-bar's chrome (background, border, sticky
+    // behavior) stays edge-to-edge while the content (brand, tagline,
     // actions) aligns with the body's container-wrapped column. Default
     // false keeps the content edge to edge as well.
     'container' => false,
@@ -50,7 +50,7 @@
     // `null` or empty string is `bottom` without a word.
     $divider = \Pushery\WireKit\WireKit::validateProp('brand-bar', 'divider', \Pushery\WireKit\Support\NumericProp::text($divider ?: 'bottom'), ['bottom', 'none']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false, 'brand-bar', 'sticky');
@@ -77,7 +77,7 @@
     };
 
     $stickyClass = filter_var($sticky, FILTER_VALIDATE_BOOL)
-        // Page chrome, so it sticks BELOW a strip above the page (`--wk-strip-inset`), not under it.
+        // Page chrome, so it sticks below a strip above the page (`--wk-strip-inset`), not under it.
         ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
 
@@ -93,10 +93,10 @@
         'full' => 'max-w-full',
     };
 
-    // When container-wrapped, the OUTER element keeps the chrome
+    // When container-wrapped, the outer element keeps the chrome
     // (background, border, sticky behavior, padding) but loses the
-    // flex-row layout — the INNER container takes the layout and the
-    // max-width. When edge-to-edge (default), the OUTER element is
+    // flex-row layout — the inner container takes the layout and the
+    // max-width. When edge-to-edge (default), the outer element is
     // the flex parent directly.
     $rootClass = WireKit::resolveClasses('brand-bar', 'base', implode(' ', array_filter([
         'wk-brand-bar',
@@ -121,6 +121,6 @@
     @isset($brand){{ $brand }}@endisset
     @if($tagline instanceof \Illuminate\View\ComponentSlot ? $tagline->hasActualContent() : filled($tagline))<span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $tagline }}</span>@endif
     {{ $slot }}
-    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))<div class="ml-auto flex flex-row items-center gap-[var(--space-wk-sm)]">{{ $actions }}</div>@endif
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))<div class="ms-auto flex flex-row items-center gap-[var(--space-wk-sm)]">{{ $actions }}</div>@endif
     @if($isContainerWrapped)</div>@endif
 </{{ $as }}>

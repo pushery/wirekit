@@ -7,12 +7,12 @@
     // "group" — and it is unreliable on an element that has no name at all, so a track of
     // unnamed slides reads as N identical groups with nothing to tell them apart.
     //
-    // It is a PROP rather than only an `aria-label` passthrough because a prop is what the
+    // It is a prop rather than only an `aria-label` passthrough because a prop is what the
     // props parser, the JSON export and the api-map can see; an attribute that happens to
     // work is not a documented affordance, and the parent's own name for the same idea is
     // `label` too.
     //
-    // Deliberately NOT defaulted. There is no honest built-in name here: an anonymous Blade
+    // Deliberately not defaulted. There is no honest built-in name here: an anonymous Blade
     // slide has no index of its own, so anything this file could invent would name every
     // slide identically — the same reasoning that gates `role="region"` on a caller-supplied
     // name everywhere else in this library, rather than on a name the component made up.

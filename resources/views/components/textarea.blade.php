@@ -2,11 +2,11 @@
      Pass `optimistic="method"` and the text is sent when you leave the field,
      shown as saving while it goes.
 
-     **It uses the `keep` failure exit**: a refusal does NOT put the old text back.
+     **It uses the `keep` failure exit**: a refusal does not put the old text back.
      For a free-text field the previous value is the server's and the new one is
      your work, so an undo would delete what you just wrote because a save
      failed. Instead the text stays, the state becomes `rejected`, and the
-     announcement says both — that it did not save AND that the text is still
+     announcement says both — that it did not save and that the text is still
      there, which is the question a user actually has.
 
      This component is where that exit came from: it was enabled, then taken
@@ -21,7 +21,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -47,8 +47,8 @@
     // shows just the green border. `error` always wins when both are set.
     'success' => null,
     'size' => config('wirekit.components.textarea.size', 'md'),
-    // Number of rows, OR 'auto' to grow with content via CSS field-sizing: content
-    // — a property ABOVE the browser baseline, which this line called safe to
+    // Number of rows, or 'auto' to grow with content via CSS field-sizing: content
+    // — a property above the browser baseline, which this line called safe to
     // assume for thirteen releases. Auto mode falls back to a 2-row minimum where
     // the property is unsupported; the degradation is spelled out at $autosize.
     'rows' => config('wirekit.components.textarea.rows', 3),
@@ -68,18 +68,19 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false, 'textarea', 'hideLabel');
     $reserveMessage = BooleanProp::from($reserveMessage, false, 'textarea', 'reserveMessage');
     $resize = BooleanProp::from($resize, true, 'textarea', 'resize');
-    // `counter`: a string that is a sentence is the format; one that only says yes or no is that.
-    $counterFormat = is_string($counter) && ! in_array(strtolower(trim($counter)), ['', '0', '1', 'false', 'true'], true) ? $counter : null;
+    // `counter`: a string that is a sentence is the format; one that only says yes or no, in any
+    // spelling BooleanProp reads (`off` and `no` as well), is that.
+    $counterFormat = is_string($counter) && trim($counter) !== '' && BooleanProp::orNull($counter) === null ? $counter : null;
     $counter = $counterFormat !== null || BooleanProp::from($counter, false, 'textarea', 'counter');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -100,7 +101,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -132,7 +133,7 @@
     // Without a `name`, the bag files this field's error under the property its `wire:model`
     // binds (FieldError::nameOf).
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
-    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // Strip the caller's `id` and `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
@@ -140,7 +141,7 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Error detection: explicit prop OR Laravel validation bag
+    // Error detection: explicit prop or Laravel validation bag
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
     $hasError = $errorMessage !== null;
 
@@ -171,15 +172,15 @@
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS
-    // `field-sizing: content`, which is ABOVE the WireKit browser baseline —
+    // `field-sizing: content`, which is above the WireKit browser baseline —
     // Chrome 123 and Safari 26.2, against a floor of 111 and 16.4.
     //
     // The field is complete without it: the numeric `rows` is the minimum height,
     // the control scrolls and stays resizable, and we never emit `rows="auto"`
     // (invalid HTML) — auto falls back to a 2-row minimum. What a reader on a
-    // baseline browser does NOT get is the growing, which is the thing the prop is
+    // baseline browser does not get is the growing, which is the thing the prop is
     // named after. The declaration sits behind the `@supports (field-sizing: content)`
-    // rule in dist/wirekit.css that the `wk-autosize` class below opts into — so it IS
+    // rule in dist/wirekit.css that the `wk-autosize` class below opts into — so it is
     // feature-detected, where it lives. This template ships no arbitrary variant for
     // it.
     $autosize = $rows === 'auto' || $rows === true;
@@ -215,13 +216,6 @@
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
-
-    // A width utility in the caller's `class` replaces the field's own `w-full`, as on a number input.
-    // Beside it the stylesheet's order would decide which width wins, not the attribute. A width
-    // under a variant is left alone, because it applies at a width of its own.
-    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
-        $textareaClasses = \Pushery\WireKit\Support\UtilityClasses::without($textareaClasses, '/^w-/');
-    }
 
     // Border and focus-ring color switch between error, success, and normal state — all via
     // tokens. Each state names its own ring color: a second one in the base list would be
@@ -318,8 +312,8 @@
 
 <div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
-        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
-             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+        {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. A visually hidden label draws no
              asterisk: the mark is for the eye, and the field's `required` says it to a screen
@@ -387,11 +381,9 @@
         </div>
     @endif
 
-    @if($optimisticConfig)
-        {{-- Rendered unconditionally and starting empty: a live region that
-             arrives together with its text is a new node, and nothing is
-             announced at all. After the error paragraph, which is the one this
-             layer yields to when both would speak. --}}
-        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
-    @endif
+    {{-- The live region of an optimistic field (partials/optimistic-announcer). It comes after the
+         error paragraph, which is the one the layer yields to when both would speak, and it stands
+         last, so it is included rather than written in a block, and Livewire writes no morph markers
+         around it. --}}
+    @includeWhen($optimisticConfig, 'wirekit::components.partials.optimistic-announcer')
 </div>

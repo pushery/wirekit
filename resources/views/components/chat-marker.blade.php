@@ -8,7 +8,7 @@
     'variant' => 'default',
     // Optional leading glyph (decorative — the row text carries the meaning).
     'icon' => null,
-    // Renders the row as a live region so a text swap inside it is ANNOUNCED.
+    // Renders the row as a live region so a text swap inside it is announced.
     // Use for streaming / progress rows ("Thinking…", "Explored 4 files").
     'status' => false,
     // Shimmers the label — the "work is in flight" affordance. Implies busy.
@@ -27,7 +27,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('chat-marker', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $status = BooleanProp::from($status, false, 'chat-marker', 'status');
@@ -86,7 +86,7 @@
             @unless($attributes->has('role')) role="status" @endunless
             @unless($attributes->has('aria-live')) aria-live="polite" @endunless
         @endif
-        {{-- aria-busy tracks shimmer, and is global — it does NOT depend on the
+        {{-- aria-busy tracks shimmer, and is global — it does not depend on the
              live region. A `status` region carries it either way so the settled
              state reads as an explicit "not busy" that flips to "busy" when work
              starts; `shimmer` on its own also carries it, because shimmer
@@ -100,11 +100,11 @@
         @endif
 
         <span data-wk-chat-marker-content>
-            @if($shimmer)
+            @wirekitLast($shimmer)
                 <x-wirekit::shimmer>{{ $slot }}</x-wirekit::shimmer>
             @else
                 {{ $slot }}
-            @endif
+            @endwirekitLast
         </span>
     </div>
 @endif

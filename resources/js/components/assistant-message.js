@@ -1,15 +1,15 @@
 /**
  * WireKit Assistant Message Alpine Component.
  *
- * Owns ONE job: announcing streamed assistant output to assistive technology
- * WITHOUT flooding it.
+ * Owns one job: announcing streamed assistant output to assistive technology
+ * without flooding it.
  *
  * The naive approach — putting aria-live="polite" on the streaming body — makes
  * a screen reader re-read the growing text on every token. The result is
  * unusable, and it is what most AI chat UIs actually ship.
  *
  * Instead the body itself is silent (aria-live="off"), and this plugin mirrors
- * COMPLETE units into a separate, always-present live region:
+ * complete units into a separate, always-present live region:
  *
  *   - announce="sentence" (default) — flush each finished sentence as it lands.
  *   - announce="all"                — flush everything once streaming stops.
@@ -19,7 +19,7 @@
  *   - _observer (MutationObserver on the body) — disconnected in destroy()
  *   - _changeFrame (frameCoalesce, the observer's frame) — canceled in destroy()
  *   Callbacks null-guard `_body` first: browser-queued observer callbacks can
- *   fire AFTER destroy() has torn the component down.
+ *   fire after destroy() has torn the component down.
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 export default function wirekitAssistantMessage(config = {}) {
@@ -37,11 +37,11 @@ export default function wirekitAssistantMessage(config = {}) {
         _body: null,
         _region: null,
         /**
-         * The body text already announced — the TEXT, deliberately, not its length.
+         * The body text already announced — the text, deliberately, not its length.
          *
          * Text rather than an index, because an index is only meaningful against the
          * string it was taken from. A streamed body grows, so an index would hold for the
-         * append path; but a body can also be REPLACED — a regenerate, an edit, an error
+         * append path; but a body can also be replaced — a regenerate, an edit, an error
          * sentence taking the answer's place — and after a Livewire morph an index would
          * point into a string that no longer exists. Keeping the text makes the question
          * answerable: is what is there now a continuation of what has been said, or
@@ -60,7 +60,7 @@ export default function wirekitAssistantMessage(config = {}) {
             /*
              * Coalesced to one derivation a frame.
              *
-             * `_onBodyChange` calls `_text()`, which reads `textContent` over the WHOLE
+             * `_onBodyChange` calls `_text()`, which reads `textContent` over the whole
              * body and runs a whitespace regex across the result. Wired to every mutation,
              * that re-derives the entire answer once per streamed token — the main-thread
              * cost grows quadratically with the length of the response, and a long answer
@@ -119,21 +119,21 @@ export default function wirekitAssistantMessage(config = {}) {
         /**
          * Forget what has been announced when the body stops being a continuation of it.
          *
-         * Continuity is decided on the TEXT, never on its length. A shorter replacement
+         * Continuity is decided on the text, never on its length. A shorter replacement
          * and a same-length rewrite are the same event, and only one of them is visible
          * to a length test — which is why the cheap form of this check closes half the
          * hole and reads as if it closed all of it.
          *
          * Without this reset there are two failures, they look nothing alike, and the
          * quiet one is the worse:
-         * against a SHORTER body the pending slice would stay '' forever, so the live
+         * against a shorter body the pending slice would stay '' forever, so the live
          * region would go silent for the rest of the component's life while the reader
-         * still held the last sentence of the PREVIOUS answer; against a longer one it
+         * still held the last sentence of the previous answer; against a longer one it
          * would slice mid-string and read out a fragment. In both, the visible body
          * updates exactly as it should, so there is nothing for a sighted developer to
          * notice.
          *
-         * Starting over does NOT re-announce the whole answer token by token, which is
+         * Starting over does not re-announce the whole answer token by token, which is
          * the flooding this component exists to prevent: the reset happens once per
          * replacement, and from the next mutation the new text is its own prefix again.
          *
@@ -148,12 +148,12 @@ export default function wirekitAssistantMessage(config = {}) {
         },
 
         /**
-         * The body text as ONE line: every run of whitespace becomes a single space.
+         * The body text as one line: every run of whitespace becomes a single space.
          *
          * Streamed markup arrives with the line breaks and indentation of whatever
          * rendered it, and none of that is speech. Collapsing here means every reader
          * below works on one shape — which is also why the terminators those readers
-         * look for are followed by a SPACE and never by a newline: after this call
+         * look for are followed by a space and never by a newline: after this call
          * there are no newlines left to find.
          */
         _text() {
@@ -176,7 +176,7 @@ export default function wirekitAssistantMessage(config = {}) {
             this._resync(text);
             const pending = text.slice(this._consumed.length);
 
-            // Announce only through the LAST sentence terminator, so a
+            // Announce only through the last sentence terminator, so a
             // half-written clause is never read out.
             //
             // Every terminator here is one _text() can actually leave behind. A period

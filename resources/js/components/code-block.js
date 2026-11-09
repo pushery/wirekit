@@ -6,9 +6,9 @@
  * none of that, so under a strict Content-Security-Policy the copy button
  * rendered, took focus, and did nothing.
  *
- * This one is NOT the clipboard-button behavior with different chrome, and the
+ * This one is not the clipboard-button behavior with different chrome, and the
  * difference is the reason it has its own factory: here the outcome is
- * ANNOUNCED. `srMessage` feeds a live region, so a failed copy has to say so —
+ * announced. `srMessage` feeds a live region, so a failed copy has to say so —
  * which means this component, unlike the button, must wait for the promise
  * rather than confirm optimistically. Announcing success and then failing would
  * be worse than a moment's delay.

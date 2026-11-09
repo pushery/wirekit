@@ -25,14 +25,14 @@
     // and `collapsible`, the sibling disclosure in this library, calls it too, so a page showing
     // both eases both.
     //
-    // A switch defaulting to OFF would have closed the ticket without changing the screen it
+    // A switch defaulting to off would have closed the ticket without changing the screen it
     // came from. The escape hatch is here for a caller who wants the jump back, which is the
     // half that makes the default safe to move.
     'animate' => config('wirekit.components.accordion.animate', true),
     // Heading level each item's trigger is wrapped in (1–6). Defaults to 3, which
     // is what every accordion shipped before this prop existed. The ARIA authoring
     // practices require the level to be "appropriate for the information
-    // architecture of the page", and that is a property of the PAGE, not of the
+    // architecture of the page", and that is a property of the page, not of the
     // widget: an accordion sitting directly under the page <h1> wants level 2,
     // one inside an <h2> section wants 3, and a fixed <h3> produces a skipped or
     // flattened outline in every other position. Screen-reader heading navigation
@@ -67,7 +67,7 @@
     // `mode` controls whether multiple panels can be open at once:
     //   - 'single'   → opening one closes the others (like radio buttons)
     //   - 'multiple' → any combination of panels can be open (like checkboxes)
-    // The mode reaches the behavior through the `x-data` payload below, and ONLY through it.
+    // The mode reaches the behavior through the `x-data` payload below, and only through it.
     //
     // `data-wk-accordion-mode` does not carry the mode to the behavior: nothing in
     // `resources/js` reads that attribute, in either the literal or the `dataset.wkAccordionMode`
@@ -99,7 +99,7 @@
 
     // `wk-accordion` is a marker, not a styled class, and it is load-bearing.
     //
-    // The library's reduced-motion clamp matches a `wk-` CLASS TOKEN and its
+    // The library's reduced-motion clamp matches a `wk-` class token and its
     // descendants — deliberately a token and not a substring, because matching the
     // attribute as a substring once clamped a whole application's animations
     // through `bg-[var(--color-wk-bg)]` on its <body>. Every class this root emits
@@ -114,7 +114,7 @@
     // component inside the `data-reduce-motion` escape hatch written against the
     // same selector. Same remedy, same reason as `wk-toggle`.
     //
-    // Prepended OUTSIDE the match so it survives every variant: `flush` and
+    // Prepended outside the match so it survives every variant: `flush` and
     // `separated` carry no chrome of their own, and a marker living in one arm of
     // three is a marker two variants do not have.
     // A typed token with no break point, an email address or a URL, breaks rather than being cut
@@ -154,7 +154,7 @@
          by assistive technology, and axe reports aria-prohibited-attr. So the
          name a caller asks for was silently not arriving.
 
-         `role="group"` is added ONLY when a name is actually present. Naming it
+         `role="group"` is added only when a name is actually present. Naming it
          unconditionally would push an empty group into the accessibility tree of
          every plain accordion, which is noise rather than structure. --}}
     @if((\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $attributes->get('aria-labelledby')) !== null)

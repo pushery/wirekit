@@ -59,7 +59,7 @@ final class Field extends Component
     }
 
     /**
-     * Every prop is a parameter, and that is for their VALUES. A class component hands an attribute
+     * Every prop is a parameter, and that is for their values. A class component hands an attribute
      * that is not a constructor parameter to its view through the attribute bag, and Blade escapes
      * a bound string on its way in there: `@props` would read a label `A & B` back escaped and the
      * view's `{{ }}` would escape it again. A parameter is matched in camel case, so

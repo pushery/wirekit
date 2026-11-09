@@ -14,7 +14,7 @@
  * into the live region the template renders, and the empty-input exit is the only one
  * that stays silent: nothing was asked for, so nothing happened.
  *
- * The sentences are TEMPLATES handed in from the Blade side rather than built here.
+ * The sentences are templates handed in from the Blade side rather than built here.
  * A sentence assembled from fragments in JavaScript cannot be translated, and word
  * order is not the same in every language — the same reason the wizard's step
  * announcement is shaped this way.
@@ -63,7 +63,7 @@ export default function wirekitTagsInput(config = {}) {
         ? config.announcements
         : {};
 
-    // The field's root element, resolved ONCE while something is still attached
+    // The field's root element, resolved once while something is still attached
     // to resolve it from.
     //
     // `$root` is resolved when it is read, by walking up from `$el` to the
@@ -189,7 +189,7 @@ export default function wirekitTagsInput(config = {}) {
         /**
          * What a screen reader is told after a change. Empty until one happens.
          *
-         * NOT called `announcement`, and the name is the whole reason: the optimistic
+         * Not called `announcement`, and the name is the whole reason: the optimistic
          * layer nests inside this component and declares a property by that name, so a
          * second one here would be shadowed for everything under the layer's element
          * and readable only outside it — a property whose value depends on where in the
@@ -336,7 +336,7 @@ export default function wirekitTagsInput(config = {}) {
          * Remove a tag by index — the chip's own remove button, and nothing else.
          *
          * The removal takes the focused element away with it. Chips are keyed by
-         * position, so after the splice the LAST chip element is the one the
+         * position, so after the splice the last chip element is the one the
          * template drops and the ones before it are rewritten in place: press the
          * remove button of the last chip and the button holding focus stops
          * existing, which puts focus back on `<body>` and starts the next Tab at
@@ -353,7 +353,7 @@ export default function wirekitTagsInput(config = {}) {
             this.tags.splice(index, 1);
             this._commit();
             this._announceTag(announcements.removed, { name: removed });
-            // Resolved HERE — synchronously, while the button that anchors the
+            // Resolved here — synchronously, while the button that anchors the
             // scope is still in the document. The move itself waits for the tick.
             rootOf(this);
             this._focusAfterRemoval(index);
@@ -372,7 +372,7 @@ export default function wirekitTagsInput(config = {}) {
          * Outside Alpine there is no tick and no DOM — the guards make this a
          * no-op there rather than the throw a bare `this.$nextTick` would be.
          *
-         * The root comes from the cache the caller filled, NOT from `$root` read
+         * The root comes from the cache the caller filled, not from `$root` read
          * here: by then the element that anchored the scope is detached. See the
          * note at the top of this file.
          */
@@ -401,7 +401,7 @@ export default function wirekitTagsInput(config = {}) {
          * Hand the set to the optimistic layer, if one is nested here.
          *
          * Adding or removing a tag is a completed decision the moment it
-         * happens; there is nothing continuous to wait out. The set is ONE value,
+         * happens; there is nothing continuous to wait out. The set is one value,
          * so the whole set travels, exactly as multi-select does.
          *
          * No `mark()`: this component takes `failure: 'keep'`, so a refusal never
@@ -440,7 +440,7 @@ export default function wirekitTagsInput(config = {}) {
         /**
          * Escape drops the tag being typed, without committing it.
          *
-         * The event is only stopped when there WAS text to drop. An Escape in an empty
+         * The event is only stopped when there was text to drop. An Escape in an empty
          * field belongs to whatever surrounds the control — a modal, a drawer, a command
          * palette — and swallowing it there would leave the reader pressing a key that
          * closes everything else and does nothing here.
@@ -466,7 +466,7 @@ export default function wirekitTagsInput(config = {}) {
          *
          * Not called `_announce`, for the reason `tagAnnouncement` is not called
          * `announcement`: the optimistic layer nests inside this component and declares
-         * `_announce(text)`, and Alpine resolves a name to the NEAREST scope that has it.
+         * `_announce(text)`, and Alpine resolves a name to the nearest scope that has it.
          * Every caller here runs from the text field or a chip, inside the layer's
          * element, so under that name `addTag()` would reach the layer's method instead,
          * which ignores the replacements: the raw template "Added :name" would go into the

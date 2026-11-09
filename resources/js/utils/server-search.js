@@ -3,7 +3,7 @@
  *
  * In the browser these controls filter the options they were rendered with. A catalog of
  * thousands of records cannot be rendered into the page, so in server mode the typed text goes
- * to the application instead and the options ARE the application's results:
+ * to the application instead and the options are the application's results:
  *
  *   - the text is sent as a `search-change` event once typing settles (`searchDebounce`), and
  *     only when it is long enough to be worth a query (`searchMinLength`). Shorter text is sent

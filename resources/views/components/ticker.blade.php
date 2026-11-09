@@ -32,11 +32,29 @@
     // PHP 8.5 warns when either is written as text.
     $delta = is_float($delta) && ! is_finite($delta) ? null : $delta;
 
+    // A delta written as text may carry its minus as the minus sign U+2212, which ICU writes in
+    // Swedish, Finnish, Norwegian and other locales, as a dash or as the fullwidth hyphen-minus. In
+    // front of a figure each is read as `-`, so the text compares and is written as the number it is.
+    if (is_string($delta)) {
+        $delta = preg_replace('/^\s*[\-\x{2010}-\x{2015}\x{2212}\x{FE58}\x{FE63}\x{FF0D}]\s*(?=[\d.])/u', '-', $delta) ?? $delta;
+    }
+
+    // The direction of the delta comes from the number it is: a number, or text that begins with
+    // one, sign included ("-5", "+8.4", "12%"). Text that begins with no number ("n/a", "new") has
+    // no direction. Compared with 0 such text would be compared as characters, where "n/a" sorts
+    // above "0" and "+5%" below it.
+    $deltaSign = null;
+    if (is_int($delta) || is_float($delta)) {
+        $deltaSign = $delta <=> 0;
+    } elseif (is_string($delta) && preg_match('/^\s*([+-]?)\s*(\d[\d.,]*|\.\d+)/', $delta, $deltaMatch) === 1) {
+        $deltaSign = (float) str_replace(',', '.', $deltaMatch[2]) === 0.0 ? 0 : ($deltaMatch[1] === '-' ? -1 : 1);
+    }
+
     // Auto-derive intent from delta if not explicitly set
-    $resolvedIntent = $intent ?? match (true) {
-        $delta === null, $delta == 0 => 'neutral',
-        $delta > 0 => 'success',
-        $delta < 0 => 'danger',
+    $resolvedIntent = $intent ?? match ($deltaSign) {
+        1 => 'success',
+        -1 => 'danger',
+        default => 'neutral',
     };
 
     // Format delta display.
@@ -71,7 +89,7 @@
     }
 
     // Delta color classes — use the *-text variants because they are
-    // calibrated for ≥4.5:1 contrast against the surface tokens in BOTH
+    // calibrated for ≥4.5:1 contrast against the surface tokens in both
     // light and dark mode. The bare `--color-wk-success` / `--color-wk-danger`
     // foundation tokens are surface colors (button bg etc.) and fail
     // WCAG 1.4.3 when used as small text on dark backgrounds.
@@ -106,14 +124,14 @@
     // the reader's own language ("8,4 %" → "8,4 Prozent"), so the unit does not need
     // a key of its own and the number matches the one on screen.
 
-    $deltaAriaLabel = match (true) {
-        $delta === null => null,
-        $delta > 0 => __('wirekit::Change: up :value', ['value' => $deltaMagnitude]),
-        $delta < 0 => __('wirekit::Change: down :value', ['value' => $deltaMagnitude]),
+    $deltaAriaLabel = match ($deltaSign) {
+        null => null,
+        1 => __('wirekit::Change: up :value', ['value' => $deltaMagnitude]),
+        -1 => __('wirekit::Change: down :value', ['value' => $deltaMagnitude]),
         default => __('wirekit::Change: unchanged'),
     };
 
-    // Page-unique, and NOT derived from the label. `md5($label)` gave every ticker
+    // Page-unique, and not derived from the label. `md5($label)` gave every ticker
     // with the same heading the same id — two "Revenue" cards on one dashboard, or
     // any two tickers with no label at all, and the second `<article>` was named by
     // the first one's label while axe reported a duplicate id. See Support\DomId.
@@ -142,7 +160,7 @@
                  warning PHP 8.5 raises when one is cast; every other value as Blade writes it. --}}
             {{ is_float($value) ? \Pushery\WireKit\Support\NumericProp::text($value) : $value }}
         </span>
-        @if($formattedDelta !== null)
+        @wirekitLast($formattedDelta !== null)
             {{-- `role="img"` because the name below has to survive: `aria-label` is
                  prohibited on the implicit `generic` role of a bare <span>, so screen
                  readers were free to drop it — and mostly did, leaving "+8.4%" with
@@ -155,7 +173,7 @@
             >
                 {{ $formattedDelta }}
             </span>
-        @endif
+        @endwirekitLast
     </span>
 
     {{-- Optional sparkline via chart component.
@@ -193,9 +211,9 @@
     @endif
 
     {{-- Footer slot --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
         <span class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
             {{ $footer }}
         </span>
-    @endif
+    @endwirekitLast
 </article>

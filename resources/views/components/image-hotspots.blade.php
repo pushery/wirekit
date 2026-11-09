@@ -16,6 +16,14 @@
     'phoneSrcset' => null,
     'phoneWidth' => null,
     'phoneHeight' => null,
+    // The part of the image a phone shows below 48rem, from the same file: `x`, `y`, `w` and `h` in
+    // percent of the image, as `image-editor` gives its value. It needs `width` and `height`, which
+    // give the part its ratio before the file arrives. The markers move into it, and one outside it
+    // stands only in the strip.
+    'phoneCrop' => null,
+    // The width the image's box takes on a phone, for the browser's choice from `srcset` while the
+    // crop is drawn larger than the box: `100vw` without it.
+    'phoneSizes' => null,
     'loading' => 'lazy',
     // `high` for an image at the top of the page, which the browser then fetches first.
     'fetchpriority' => null,
@@ -75,6 +83,29 @@
         default => WireKit::validateProp('image-hotspots', 'fetchpriority', NumericProp::text($fetchpriority), ['auto', 'high', 'low']),
     };
 
+    // The crop for the phone: four percentages that keep inside the image, with a width and a height
+    // above 0, and the image's own size, without which the box would not know its ratio before the
+    // file arrives. A file of its own for the phone wins over it: the phone shows that file.
+    $crop = null;
+    // A Collection or a model reads as the record it holds, as an array does.
+    $phoneCrop = \Pushery\WireKit\Support\ListProp::from($phoneCrop, 'image-hotspots', 'phoneCrop');
+
+    if ($phoneCrop !== null && $phoneCrop !== [] && $phoneCrop !== '') {
+        $part = is_array($phoneCrop) ? \Pushery\WireKit\Support\ImageCrop::from($phoneCrop) : null;
+        $inside = $part !== null && $part['x'] >= 0 && $part['y'] >= 0 && $part['w'] > 0 && $part['h'] > 0
+            && $part['x'] + $part['w'] <= 100.001 && $part['y'] + $part['h'] <= 100.001;
+
+        if ($phoneSrc !== null) {
+            StrictnessGate::reject('image-hotspots', 'phoneCrop', 'a crop beside phone-src', 'either a file for the phone or a crop of this one', 'the file for the phone');
+        } elseif (! $inside) {
+            StrictnessGate::reject('image-hotspots', 'phoneCrop', (string) json_encode($phoneCrop), 'x, y, w and h in percent of the image, the part inside it', 'the whole image');
+        } elseif ($width === null || $height === null) {
+            StrictnessGate::reject('image-hotspots', 'phoneCrop', 'a crop without width and height', 'the width and height of the image, which give the part its ratio', 'the whole image');
+        } else {
+            $crop = $part;
+        }
+    }
+
     // A position in percent of the image, 0 to 100. A value outside would stand the marker off
     // the image, so it is reported and held at the edge.
     $percent = static function (mixed $value, ?float $fallback, string $key): ?float {
@@ -118,6 +149,19 @@
         $target = $marker['target'] ?? null;
         $phoneX = $percent($marker['phoneX'] ?? null, $x, 'phoneX');
         $phoneY = $percent($marker['phoneY'] ?? null, $y, 'phoneY');
+        $onPhone = true;
+
+        // With a crop the phone shows a part of the image, and a marker's place on it is its place
+        // in that part, unless the marker names one of its own. One outside the part has no place
+        // on the phone: it leaves the image there and stands in the strip.
+        $ownPhone = ! in_array($marker['phoneX'] ?? null, [null, ''], true) || ! in_array($marker['phoneY'] ?? null, [null, ''], true);
+
+        if ($crop !== null && ! $ownPhone) {
+            $moved = \Pushery\WireKit\Support\ImageCrop::point($crop, ['x' => $x, 'y' => $y]);
+            $onPhone = $moved !== null;
+            $phoneX = $moved !== null ? (float) $moved['x'] : $x;
+            $phoneY = $moved !== null ? (float) $moved['y'] : $y;
+        }
 
         $items[] = [
             'label' => $name,
@@ -125,6 +169,7 @@
             'y' => $y,
             'phoneX' => $phoneX,
             'phoneY' => $phoneY,
+            'onPhone' => $onPhone,
             'target' => is_scalar($target) ? $target : null,
             // A link and a picture taken out of data: a scheme other than the house's own is no link
             // and no picture (Support\SafeUrl), so `javascript:` never reaches the card.
@@ -143,6 +188,25 @@
 
     // A number for a custom property, with a point as its decimal separator whatever the locale.
     $css = static fn (float $value): string => rtrim(rtrim(number_format($value, 3, '.', ''), '0'), '.');
+
+    // On a phone the box takes the crop's ratio, and the image is drawn as many times wider as the
+    // crop is narrower, moved so the crop fills the box. The browser picks from `srcset` for that
+    // drawn width.
+    $cropStyle = null;
+    $cropSizes = null;
+
+    if ($crop !== null) {
+        $scale = 100 / $crop['w'];
+        $cropStyle = implode(' ', [
+            '--wk-hotspot-crop-ratio: '.$css($width * $crop['w']).' / '.$css($height * $crop['h']).';',
+            '--wk-hotspot-crop-width: '.$css($scale * 100).'%;',
+            '--wk-hotspot-crop-left: '.$css(-$crop['x'] * $scale).'%;',
+            '--wk-hotspot-crop-top: '.$css(-$crop['y'] / $crop['h'] * 100).'%;',
+        ]);
+        $phoneBox = SlotContent::textOf(is_string($phoneSizes) ? $phoneSizes : null);
+        $cropSizes = '(width < 48rem) calc('.($phoneBox !== '' ? $phoneBox : '100vw').' * '.$css($scale).'), '
+            .(filled($sizes) ? SlotContent::textOf(is_string($sizes) ? $sizes : null) : '100vw');
+    }
 
     $rootClasses = WireKit::resolveClasses('image-hotspots', 'base', 'font-[family-name:var(--font-wk-sans)]', $scope);
 
@@ -206,7 +270,7 @@
 <div x-data="wirekitImageHotspots()" data-wk-image-hotspots x-on:keydown.escape.window.capture="dismiss($event)" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}>
     {{-- No ratio and no fit: the box is the image, so a percentage of the box is a percentage of
          the image, on the phone's file as well. --}}
-    <div class="relative">
+    <div @class(['relative', 'max-md:overflow-hidden max-md:aspect-[var(--wk-hotspot-crop-ratio)]' => $crop !== null]) @if($cropStyle !== null) style="{{ $cropStyle }}" @endif>
         <picture class="contents">
             @if($phoneSrc !== null)
             <source media="(width < 48rem)" srcset="{{ $phoneSrcset ?? $phoneSrc }}" @if($phoneWidth !== null) width="{{ $phoneWidth }}" @endif @if($phoneHeight !== null) height="{{ $phoneHeight }}" @endif>
@@ -215,16 +279,16 @@
                 src="{{ $src }}"
                 alt="{{ $alt }}"
                 @if($srcset !== null) srcset="{{ $srcset }}" @endif
-                @if(filled($sizes)) sizes="{{ SlotContent::textOf(is_string($sizes) ? $sizes : null) }}" @endif
+                @if($cropSizes !== null && $srcset !== null) sizes="{{ $cropSizes }}" @elseif(filled($sizes)) sizes="{{ SlotContent::textOf(is_string($sizes) ? $sizes : null) }}" @endif
                 @if($width !== null) width="{{ $width }}" @endif
                 @if($height !== null) height="{{ $height }}" @endif
                 loading="{{ $loading }}"
                 @if($fetchpriority !== null) fetchpriority="{{ $fetchpriority }}" @endif
-                class="block w-full h-auto"
+                @class(['block w-full h-auto', 'max-md:absolute max-md:max-w-none max-md:w-[var(--wk-hotspot-crop-width)] max-md:left-[var(--wk-hotspot-crop-left)] max-md:top-[var(--wk-hotspot-crop-top)]' => $crop !== null])
             >
         </picture>
 
-        @if($items !== [])
+        @wirekitLast($items !== [])
         {{-- `role="list"`: WebKit reads a list without bullets as plain text. A marker's place is
              physical on purpose: its position counts from the image's left edge, and an image
              does not mirror under `dir="rtl"`. The list is the container a label measures its
@@ -233,7 +297,8 @@
         <ul data-wk-prose-skip role="list" aria-label="{{ $label }}" class="@container/wk-hotspots absolute inset-0 m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
             @foreach($items as $index => $item)
             <li data-wk-prose-skip
-                class="absolute -translate-x-1/2 -translate-y-1/2 left-[var(--wk-hotspot-x)] top-[var(--wk-hotspot-y)] max-md:left-[var(--wk-hotspot-phone-x)] max-md:top-[var(--wk-hotspot-phone-y)]"
+                @if(! $item['onPhone']) data-wk-hotspot-off-phone @endif
+                @class(['absolute -translate-x-1/2 -translate-y-1/2 left-[var(--wk-hotspot-x)] top-[var(--wk-hotspot-y)] max-md:left-[var(--wk-hotspot-phone-x)] max-md:top-[var(--wk-hotspot-phone-y)]', 'max-md:hidden' => ! $item['onPhone']])
                 style="--wk-hotspot-x: {{ $css($item['x']) }}%; --wk-hotspot-y: {{ $css($item['y']) }}%; --wk-hotspot-phone-x: {{ $css($item['phoneX']) }}%; --wk-hotspot-phone-y: {{ $css($item['phoneY']) }}%; --wk-hotspot-room: {{ $css($item['room']) }}; --wk-hotspot-phone-room: {{ $css($item['phoneRoom']) }}"
             >
                 <button
@@ -253,10 +318,10 @@
             </li>
             @endforeach
         </ul>
-        @endif
+        @endwirekitLast
     </div>
 
-    @if($strip && $items !== [])
+    @wirekitLast($strip && $items !== [])
     {{-- The targets as a list of links: on the phone under the image, and in the markup for every
          reader, also where the stylesheet hides it. A scroll region of its own, named, with a stop
          for the keyboard and a ring. On paper the row of cards wraps onto the next line. --}}
@@ -273,16 +338,16 @@
                 @if($item['image'] !== null)
                 <img data-wk-prose-skip src="{{ $item['image'] }}" alt="" loading="lazy" class="size-[var(--size-wk-lg)] shrink-0 rounded-[var(--radius-wk-sm)] object-cover">
                 @endif
-                @if($item['href'] !== null)
+                @wirekitLast($item['href'] !== null)
                 <a data-wk-prose-skip href="{{ $item['href'] }}" class="min-w-0 font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] underline-offset-2 hover:underline focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]">{{ $item['label'] }}</a>
                 @else
                 <span class="min-w-0">{{ $item['label'] }}</span>
-                @endif
+                @endwirekitLast
             </li>
             @endforeach
         </ul>
     </div>
-    @endif
+    @endwirekitLast
 </div>
 @else
 {{-- An image without an address has nothing to show markers on. --}}

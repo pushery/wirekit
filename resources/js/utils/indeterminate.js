@@ -1,5 +1,5 @@
 /**
- * `indeterminate` is a DOM PROPERTY, so the server cannot render it.
+ * `indeterminate` is a DOM property, so the server cannot render it.
  *
  * A checkbox's third state — "some, not all" — has no HTML attribute. It exists only as a
  * property on the element, which means something has to apply it after every render.
@@ -9,14 +9,16 @@
  * run: the box would read as "none selected" while something is selected, which is precisely the
  * state it exists to show, and nothing would error.
  *
- * An `x-init` emitted only while the prop is true could also only ever turn the state ON:
+ * An `x-init` emitted only while the prop is true could also only ever turn the state on:
  * going back to a determinate state would have nothing to undo it.
  *
  * Why an attribute plus an observer, and not the two obvious alternatives:
  *
- *   - `x-effect` is what `data-table` uses, and it works there because the value it reads is
- *     reactive ALPINE state. Here the value comes from the server, and an effect over a
- *     literal has no reactive source that could run it again.
+ *   - An `x-effect` that assigns the property has no reactive source when the value comes from
+ *     the server, since an effect over a literal never runs again. Where the value is Alpine
+ *     state, as in `bulk-selection.toggle` and the header of `data-table`, that state is bound
+ *     to the attribute instead: the CSP build's evaluator assigns no property of an element,
+ *     and an effect that does throws there.
  *   - Giving the checkbox its own `x-data` would make the effect reactive, and would also
  *     mean a caller's passed-through `x-data` is silently discarded — HTML keeps the first
  *     of two identical attributes. That is a known defect class in this library and not
@@ -38,7 +40,7 @@ function apply(el) {
 /**
  * Register the `x-wk-indeterminate` directive.
  *
- * The directive exists so the FIRST application happens at Alpine's own initialization time
+ * The directive exists so the first application happens at Alpine's own initialization time
  * rather than on a timer, and so teardown has somewhere to live. Every later application
  * comes from the observer.
  */

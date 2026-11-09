@@ -12,7 +12,7 @@ namespace Pushery\WireKit\Sandbox;
  *     can render the prop-editor UI alongside, and `$source` the WireKit markup
  *     that produced this render.
  *
- * WHY `$source` EXISTS. A sandbox preview is interactive: the developer changes
+ * Why `$source` exists. A sandbox preview is interactive: the developer changes
  * props and the output re-renders, so the code to show is not the static example
  * in the documentation page — it is whatever the current props amount to. Until
  * this field the renderer built that markup internally and then threw it away,

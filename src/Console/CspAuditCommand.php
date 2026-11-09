@@ -44,7 +44,7 @@ use Symfony\Component\Process\Process;
  * The verdict shape is declared once, here, and every annotation refers to it: PHP
  * reads none of them, so separate copies could drift from what the bridge emits
  * without anything failing, and static analysis would then call a live branch
- * unreachable. `warnings` is optional because the branch reporting a SYNTAX error returns before
+ * unreachable. `warnings` is optional because the branch reporting a syntax error returns before
  * a warning could exist.
  *
  * @phpstan-type CspVerdict array{ok: bool, error: string|null, globals: array<int, string>, warnings?: array<int, string>}
@@ -56,7 +56,8 @@ class CspAuditCommand extends Command
         {--vendor : Also scan the view directories packages registered with loadViewsFrom.}
         {--registrations=* : JavaScript file or directory to read Alpine.data registrations from. Repeatable, and ADDED to the built and published bundles.}
         {--registrations-only : Read registrations ONLY from --registrations, ignoring the built and published bundles.}
-        {--json : Emit machine-readable JSON instead of a report.}';
+        {--json : Emit machine-readable JSON instead of a report.}
+        {--expressions : With --json, also list every expression the run handed to the parser, with its file, line and attribute.}';
 
     protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar (needs node)';
 
@@ -72,7 +73,7 @@ class CspAuditCommand extends Command
      * for `delete`, `new`, `typeof` and the rest of that set wherever they stand, so
      * `$wire.delete(1)` is a dead button there; 3.17.3 accepts it.
      *
-     * The advice block below prints whenever there is ANY offender, so stating the 3.17.2
+     * The advice block below prints whenever there is any offender, so stating the 3.17.2
      * behavior unconditionally would tell a developer on 3.17.3 with an arrow-function problem
      * to rewrite methods that work. Telling somebody to change working code is the same class
      * of damage as missing a violation: it spends the credibility this command runs on.
@@ -92,7 +93,7 @@ class CspAuditCommand extends Command
     private array $prohibitedTags = [];
 
     /**
-     * The attributes whose VALUE Alpine evaluates as an expression.
+     * The attributes whose value Alpine evaluates as an expression.
      *
      * Deliberately not "every x-* attribute": `x-ref`, `x-transition` and
      * `x-cloak` take a name or nothing, so scanning them would report a
@@ -128,11 +129,11 @@ class CspAuditCommand extends Command
     ];
 
     /**
-     * The `wire:` names whose value is NOT handed to Alpine's evaluator.
+     * The `wire:` names whose value is not handed to Alpine's evaluator.
      *
      * Kept as a deny-list because Livewire's own wildcard is one, and copying
      * the shape is the same discipline that makes the verdict come from Alpine's
-     * parser rather than from a pattern catalog: the set of EVENTS is open, so
+     * parser rather than from a pattern catalog: the set of events is open, so
      * only the exceptions can be enumerated. Read from the installed
      * `livewire.esm.js`, `js/directives/wire-wildcard.js`:
      *
@@ -167,6 +168,14 @@ class CspAuditCommand extends Command
 
     public function handle(): int
     {
+        // The list is a key of the JSON payload. A report that took the flag and printed no list
+        // would read as a run that checked no expression.
+        if ($this->option('expressions') === true && $this->option('json') !== true) {
+            $this->error('--expressions adds a key to the JSON payload. Pass --json with it.');
+
+            return self::FAILURE;
+        }
+
         $paths = $this->resolvePaths();
 
         if ($paths === []) {
@@ -176,7 +185,7 @@ class CspAuditCommand extends Command
         }
 
         // The surface question, answered before any verdict is formed: which registered view
-        // directories this run did NOT read. A report that cannot distinguish "clean" from
+        // directories this run did not read. A report that cannot distinguish "clean" from
         // "clean over part of the tree" is indistinguishable from a complete one, and that
         // indistinguishability is the damage — not the missing option.
         $unscanned = $this->unscannedNamespaces($paths);
@@ -246,16 +255,16 @@ class CspAuditCommand extends Command
                 continue;
             }
 
-            // A call whose callee is a LITERAL parses and is dead, and that combination is
+            // A call whose callee is a literal parses and is dead, and that combination is
             // invisible to both halves of this audit: the grammar accepts it, and there is
             // no Blade left in it for the substitution check to object to.
             //
             // It exists because `contextualizeExpression()` mirrors Livewire's own SKIP
-            // list, correctly — `true`, `false`, `null` and `undefined` are NOT prefixed
+            // list, correctly — `true`, `false`, `null` and `undefined` are not prefixed
             // with `$wire.`, so `wire:click="true(1)"` reaches the browser as `true(1)` and
             // throws `true is not a function`.
             //
-            // Decidable without a runtime, and deliberately narrow: only a CALL, and only
+            // Decidable without a runtime, and deliberately narrow: only a call, and only
             // where Livewire would otherwise have prefixed it. In an `x-` attribute a bare
             // `true` is an ordinary value (`x-show="true"`), and `$wire['true'](1)` — the
             // repair this command already recommends — is a string key rather than a
@@ -281,7 +290,7 @@ class CspAuditCommand extends Command
             // the grammar's to decide: the CSP build evaluates `x-data="{ open: false }"`,
             // and a method or a getter in the object does not parse, so it is reported like
             // any rejected expression. A call is not: `x-data="wirekitAlertDialog({…})"`
-            // parses, and leaves the element WITHOUT A SCOPE when nothing registered that
+            // parses, and leaves the element without A scope when nothing registered that
             // name.
             //
             // A missing registration is the dangerous case because it fails upward: no scope
@@ -307,7 +316,7 @@ class CspAuditCommand extends Command
             }
 
             if (($verdicts[$i]['ok'] ?? false) === true) {
-                // Parsing and resolving are not the same as EVALUATING, and the gap
+                // Parsing and resolving are not the same as evaluating, and the gap
                 // between them is where a control dies quietly. Collected apart and
                 // never counted as a failure: the rule behind it over-approximates a
                 // runtime question, and a finding that turns out to be nothing costs
@@ -361,7 +370,7 @@ class CspAuditCommand extends Command
         $scanned = count(array_filter($found, static fn (array $entry): bool => $entry['rendering'] === 0));
 
         if ($this->option('json')) {
-            $this->line((string) json_encode([
+            $payload = [
                 'scanned' => $scanned,
                 // What the parser that produced these verdicts actually does, not what a
                 // version somebody tested against did. `null` means the run could not ask.
@@ -397,7 +406,7 @@ class CspAuditCommand extends Command
                 // scanned is not a clean result, it is an unasked question.
                 'registrations_seen' => count($registrationScan['names']),
                 'registration_files' => count($registrationScan['files']),
-                // ONE unambiguous field, because the two counts above are easy to read past: a
+                // One unambiguous field, because the two counts above are easy to read past: a
                 // developer has to know to look at them, and `unregistered: 0` sits right next to
                 // them saying the reassuring thing. This says whether the question was asked at
                 // all.
@@ -409,7 +418,16 @@ class CspAuditCommand extends Command
                 'x_data_checked' => $registrationScan['names'] !== [],
                 'unregistered' => count($unregistered),
                 'unregistered_components' => self::withoutBookkeeping($unregistered),
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
+            ];
+
+            // Every expression the verdicts were formed over, the clean ones included, so a build
+            // step can put the same expressions to a second parser: the Alpine its CSP build
+            // ships, which need not be the `@alpinejs/csp` this run asked.
+            if ($this->option('expressions') === true) {
+                $payload['expressions'] = self::handedToTheParser($found);
+            }
+
+            $this->line((string) json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
             return $offenders === [] && $inScript === [] && $unregistered === [] && $encoders === [] ? self::SUCCESS : self::FAILURE;
         }
@@ -470,7 +488,7 @@ class CspAuditCommand extends Command
             dirname(__DIR__, 2).'/dist',
         ];
 
-        // Every package whose views this run is SCANNING contributes its own registration
+        // Every package whose views this run is scanning contributes its own registration
         // source. A package that serves its bundle from its own route, or ships
         // it unbuilt, is in none of the defaults above, so every factory it registers reads
         // here as "named by a view, registered by nothing": the same words as a genuinely
@@ -494,13 +512,13 @@ class CspAuditCommand extends Command
             }
         }
 
-        // `--registrations` ADDS to that set; `--path` replaces its own. The asymmetry is
+        // `--registrations` adds to that set; `--path` replaces its own. The asymmetry is
         // deliberate, and the two flags are not the same kind of thing.
         //
-        // `--path` names WHAT to check, so narrowing it is the whole point of passing it.
-        // `--registrations` names where to find EVIDENCE that something is registered, and
+        // `--path` names what to check, so narrowing it is the whole point of passing it.
+        // `--registrations` names where to find evidence that something is registered, and
         // narrowing that does not narrow the check: it makes it wrong. A set that is missing
-        // a source does not report less, it reports MORE -- every factory registered only in
+        // a source does not report less, it reports more -- every factory registered only in
         // the dropped source becomes an offender that does not exist.
         //
         // The report's own hint prints `--registrations=<package source>`, so replacing
@@ -541,9 +559,9 @@ class CspAuditCommand extends Command
          *
          * Livewire's documented way to register an Alpine component is an `@script` block
          * in the component's own Blade view, and `Alpine.data('name', …)` inside one is a
-         * registration like any other. Reading only `.js` therefore reported a CORRECT
+         * registration like any other. Reading only `.js` therefore reported a correct
          * registration as missing — and the report's own wording makes that expensive: it
-         * says the element "renders VISIBLE and dead", which sends a developer to repair
+         * says the element "renders visible and dead", which sends a developer to repair
          * something that already works.
          *
          * The surface is the one the audit already walks for `x-data`, so this adds no
@@ -577,10 +595,10 @@ class CspAuditCommand extends Command
          *
          * `@script` is the only placement that actually registers: Livewire re-runs it when
          * the component initializes, which is before its directives are evaluated. A bare
-         * `<script>` in a Livewire view is NOT re-executed on a DOM patch, and an
+         * `<script>` in a Livewire view is not re-executed on a DOM patch, and an
          * `Alpine.data()` call after `alpine:init` arrives too late to register anything.
          *
-         * Counting both alike would trade a false alarm for SILENCE, and silence is the
+         * Counting both alike would trade a false alarm for silence, and silence is the
          * more expensive direction: it hides exactly the class this arm exists to report —
          * an element that renders visible and dead.
          */
@@ -613,7 +631,7 @@ class CspAuditCommand extends Command
         // is hidden by that — the namespaces outside the surface are still reported, which is
         // what makes the narrower reading safe rather than merely simpler.
         if ($given !== []) {
-            // ABSOLUTE, and that is a correctness requirement rather than tidiness. Two
+            // Absolute, and that is a correctness requirement rather than tidiness. Two
             // readers downstream ask which package a path belongs to by looking for a
             // `vendor` segment with a separator in front of it, and the spelling a
             // developer actually types has nothing in front of it at all:
@@ -664,7 +682,7 @@ class CspAuditCommand extends Command
      * That is the failure shape this whole command exists against, so it reads the views of
      * every package namespace as well.
      *
-     * `getHints()` is on `FileViewFinder`, NOT on `ViewFinderInterface` — an application may
+     * `getHints()` is on `FileViewFinder`, not on `ViewFinderInterface` — an application may
      * bind a finder of its own — so the call is guarded rather than assumed. An unreadable
      * surface is reported as unknown, never as empty: those two must not print alike, which
      * is the same rule the zero-expression branch in `handle()` is built on.
@@ -729,7 +747,7 @@ class CspAuditCommand extends Command
      * Whether a directory already sits inside the scan surface.
      *
      * A published package namespace resolves to `resources/views/vendor/<namespace>`, which
-     * is UNDER an application view path and therefore already scanned — reporting it as a
+     * is under an application view path and therefore already scanned — reporting it as a
      * gap would send a developer to re-scan what they just scanned. The containment test is
      * on the path with a trailing separator, so `…/views/vendor-x` is not read as a child of
      * `…/views/vendor`.
@@ -761,13 +779,13 @@ class CspAuditCommand extends Command
     /**
      * Where a package encoder sits inside a `<script>` block.
      *
-     * `AlpinePayload::from()` is for a directive ATTRIBUTE, and its docblock says so. In a
+     * `AlpinePayload::from()` is for a directive attribute, and its docblock says so. In a
      * script context HTML escaping does not apply, so a payload containing the closing-tag
      * sequence ends the block and turns everything after it into markup. The docblock is a
      * true statement that only reaches whoever reads it; this reaches the build.
      *
      * This is the arm rather than the flag, and the difference is reach. Escaping every
-     * slash in the output defuses ONE vector of a context the encoder was never meant for —
+     * slash in the output defuses one vector of a context the encoder was never meant for —
      * it makes the placement less harmful without making it right, and it costs every
      * developer a source full of escaped slashes for a mistake most of them never make. A
      * static check says "this is in the wrong place", at build time, whichever vector
@@ -815,15 +833,21 @@ class CspAuditCommand extends Command
     {
         $hits = [];
 
+        // Only the body of a block is a script context. The attributes of its opening tag are
+        // escaped like any other attribute, and a value a script reads back from `dataset`
+        // belongs there, written with `AlpinePayload::json()`. The tag ends at the first `>`
+        // outside a quoted value and outside an echo, so a `>` in either does not end it early.
         // Non-greedy to the first closing tag: a page with two script blocks must be two
         // spans, not one span swallowing the markup between them.
-        if (! preg_match_all('/<script\b.*?<\/script>/is', $source, $matches, PREG_OFFSET_CAPTURE)) {
+        $block = '/<script\b(?>\{\{.*?\}\}|\{!!.*?!!\}|"[^"]*"|\'[^\']*\'|\{(?!\{|!!)|[^>"\'{])*>(.*?)<\/script>/is';
+
+        if (! preg_match_all($block, $source, $matches, PREG_OFFSET_CAPTURE)) {
             return $hits;
         }
 
-        foreach ($matches[0] as [$block, $offset]) {
+        foreach ($matches[1] as [$body, $offset]) {
             foreach (['AlpinePayload'] as $encoder) {
-                $at = strpos($block, $encoder);
+                $at = strpos($body, $encoder);
 
                 if ($at === false) {
                     continue;
@@ -911,7 +935,14 @@ class CspAuditCommand extends Command
                 continue;
             }
 
-            $region = substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart']);
+            // A Blade comment between the attributes renders to nothing, so an attribute its
+            // prose spells is none of the tag's. Blanked byte for byte rather than cut, so an
+            // offset into the region is still an offset into the file.
+            $region = (string) preg_replace_callback(
+                '/\{\{--.*?--\}\}/s',
+                static fn (array $m): string => (string) preg_replace('/[^\n]/', ' ', $m[0]),
+                substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart']),
+            );
 
             foreach ($this->attributesIn($region, $tag['isComponent']) as $attribute) {
                 $hits[] = [
@@ -945,7 +976,7 @@ class CspAuditCommand extends Command
      * working handler dead, as it would for a component method named after a browser
      * global such as `alert` or `history`.
      *
-     * The skip list is upstream's, verbatim. Upstream ALSO skips the Alpine scope keys
+     * The skip list is upstream's, verbatim. Upstream also skips the Alpine scope keys
      * of the element, which cannot be known from source; the consequence of prefixing
      * one of those anyway is `$wire.x` where `x` was meant, and both are member
      * expressions that parse and resolve — so the unknowable half can only ever cost a
@@ -981,7 +1012,7 @@ class CspAuditCommand extends Command
                 }
 
                 // An identifier followed by `:` is an object-literal key, not a name to
-                // resolve. Read off the ORIGINAL subject, which is what upstream does —
+                // resolve. Read off the original subject, which is what upstream does —
                 // the replacement is not built up as it goes.
                 if (($masked[$wholeOffset + strlen($whole)] ?? '') === ':') {
                     return $whole;
@@ -1032,7 +1063,7 @@ class CspAuditCommand extends Command
         // `x-model.live` / `x-intersect.once` (a dot modifier on a bare base). One rule
         // covers all of them.
         //
-        // What stays OUT stays out by not being on the name list — `x-ref`, `x-cloak`,
+        // What stays out stays out by not being on the name list — `x-ref`, `x-cloak`,
         // `x-teleport` and `x-transition:enter` take a name, a selector or a class list, and
         // none of them is a prefix of a name here. The lookbehind still keeps `wire:model`
         // from matching as a bare `:model`, which is what it was added for.
@@ -1088,7 +1119,7 @@ class CspAuditCommand extends Command
 
             // Blade in a value is a server-side hole in a client-side expression: a comment,
             // an echo, an `@js(…)` payload. All of it is gone by the time Alpine reads the
-            // attribute, so what reaches the parser has to be what is LEFT. Which construct
+            // attribute, so what reaches the parser has to be what is left. Which construct
             // is which, and in what order they have to go, is Blade's question — it is
             // answered once in BladeParser and read here.
             //
@@ -1120,7 +1151,7 @@ class CspAuditCommand extends Command
 
                 $seen[$expression] = true;
 
-                // What the substitution COST is recorded, because the placeholder is the point
+                // What the substitution cost is recorded, because the placeholder is the point
                 // at which this audit stops measuring and starts assuming.
                 //
                 // `BLADE` parses anywhere an identifier parses, which is what makes the check
@@ -1137,7 +1168,7 @@ class CspAuditCommand extends Command
                 // an audit to be wrong in: it does not merely miss, it actively certifies.
                 $unresolved = self::unresolvedReason($rendering);
 
-                // A Livewire action is judged as Livewire PRESENTS it. `wire:click="alert"`
+                // A Livewire action is judged as Livewire presents it. `wire:click="alert"`
                 // never reaches Alpine as the bare identifier `alert` — it is rewritten to a
                 // member of the component proxy first — so reading the raw source declares a
                 // working handler dead whenever a method name happens to collide with a
@@ -1183,14 +1214,14 @@ class CspAuditCommand extends Command
     /**
      * Why this expression's verdict rests on a substitution — or null when it does not.
      *
-     * A Blade COMMENT is deliberately not a reason. It is removed outright rather than
+     * A Blade comment is deliberately not a reason. It is removed outright rather than
      * replaced, because a comment renders to nothing: taking it out reproduces exactly what
      * the browser sees. Every other construct leaves a placeholder, and a placeholder is a
      * promise this command cannot keep.
      *
      * `encoder` is separated from `echo` because it is a finding of its own, about the template
      * rather than the data. Laravel's `Js::from()`, which `@js()` calls, is the encoder for a
-     * `<script>` block. It wraps a non-empty ARRAY or OBJECT in `JSON.parse('…')`, and `JSON`
+     * `<script>` block. It wraps a non-empty array or object in `JSON.parse('…')`, and `JSON`
      * is precisely what Alpine's CSP evaluator cannot resolve; it writes the quotes,
      * apostrophes, ampersands and angle brackets of a string as `\u` escapes, which a CSP
      * tokenizer before Alpine 3.17.2 reads back as letters; and it writes a number, a boolean,
@@ -1253,7 +1284,7 @@ class CspAuditCommand extends Command
      * Hand the expressions to Alpine's own parser.
      *
      * The shape is the bridge's, and it is written out rather than loosened: `warnings`
-     * is optional because the branch that reports a SYNTAX error never reaches the point
+     * is optional because the branch that reports a syntax error never reaches the point
      * where a warning could exist. That optionality is the whole reason this docblock is
      * worth keeping accurate — while it omitted the key entirely, static analysis could
      * prove the loop reading it unreachable, and it was right: the type said the warning
@@ -1274,7 +1305,7 @@ class CspAuditCommand extends Command
             return null;
         }
 
-        // Asked BEFORE the process starts, because afterwards the answer is a guess.
+        // Asked before the process starts, because afterwards the answer is a guess.
         //
         // A missing `node` does not throw: the shell runs, reports 127, and `run()`
         // returns normally. The catch below therefore never fires for the one case it
@@ -1322,7 +1353,7 @@ class CspAuditCommand extends Command
             return null;
         }
 
-        // Recorded from the SAME process that produced the verdicts, so the advice cannot
+        // Recorded from the same process that produced the verdicts, so the advice cannot
         // describe a different parser than the one that judged the expressions.
         $capability = $payload['grammar']['reservedWordAsMember'] ?? null;
         $this->reservedWordAsMember = is_bool($capability) ? $capability : null;
@@ -1394,6 +1425,30 @@ class CspAuditCommand extends Command
     }
 
     /**
+     * Every expression the run gave the parser, each once with the place it stands. An attribute
+     * Blade writes more than one way is parsed in each rendering, and each wording is listed;
+     * a wording two renderings share is listed once.
+     *
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null, tag: string, offset: int, rendering: int}>  $found
+     * @return list<array{file: string, line: int, attribute: string, expression: string}>
+     */
+    private static function handedToTheParser(array $found): array
+    {
+        $listed = [];
+
+        foreach ($found as $entry) {
+            $listed[$entry['file']."\0".$entry['offset']."\0".$entry['expression']] ??= [
+                'file' => $entry['file'],
+                'line' => $entry['line'],
+                'attribute' => $entry['attribute'],
+                'expression' => $entry['expression'],
+            ];
+        }
+
+        return array_values($listed);
+    }
+
+    /**
      * A list as the JSON payload carries it: where an attribute starts in its file and which
      * rendering of it was read are this command's bookkeeping, not part of a finding.
      *
@@ -1429,7 +1484,7 @@ class CspAuditCommand extends Command
         // runtime, and so can the fix for it.
         $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', $scanned));
 
-        // WHERE, on the same footing as WHAT. The count is true of the directories that were
+        // Where, on the same footing as what. The count is true of the directories that were
         // read, and a reader cannot tell from it which those were.
         if ($paths !== []) {
             $this->line(sprintf('Surface: %s', implode(', ', $paths)));
@@ -1438,7 +1493,7 @@ class CspAuditCommand extends Command
         // And the one thing it cannot decide from the source, named in the same breath.
         //
         // "Resolvability" here means: does the identifier exist in a scope this audit can
-        // see in the template. It cannot mean: does that scope SURVIVE the rendered markup.
+        // see in the template. It cannot mean: does that scope survive the rendered markup.
         // A caller who passes their own `x-data` to a component that sets its own has the
         // second one silently thrown away — HTML keeps the first of two identical attributes
         // — so every identifier in it becomes unresolvable at runtime while remaining
@@ -1446,7 +1501,7 @@ class CspAuditCommand extends Command
         //
         // That is not a defect in the check; it is a boundary of it, and it is printed
         // because a PASS without it reads as the scope question settled: the developer
-        // looks at the markup layer LAST, after the runtime error has named their own
+        // looks at the markup layer last, after the runtime error has named their own
         // expression and sent them the other way. An oracle that does not state its
         // boundary is read as covering it.
         $this->line('This does NOT decide whether a scope survives the rendered markup — a passed-through');
@@ -1454,7 +1509,7 @@ class CspAuditCommand extends Command
         $this->line('then dead at runtime while resolving fine here. WireKit warns about that collision');
         $this->line('separately, in the application log, when app.debug is on.');
 
-        // The registration surface, and it sits AFTER the qualifier above rather than
+        // The registration surface, and it sits after the qualifier above rather than
         // between it and its claim, so the qualifier stays beside what it qualifies.
         //
         // It belongs on the same footing as the view surface for the same reason: the
@@ -1511,7 +1566,7 @@ class CspAuditCommand extends Command
 
         // The passes that rest on a placeholder.
         //
-        // These expressions PASSED, and the pass is real as far as it goes — the grammar
+        // These expressions passed, and the pass is real as far as it goes — the grammar
         // accepted what was left after Blade came out. What it does not cover is the text
         // that was taken out, and the reader has no way to know that from a PASS alone.
         // Counted and not listed. An interpolated prop in an `x-data` object is the ordinary way
@@ -1632,7 +1687,7 @@ class CspAuditCommand extends Command
 
         // Last of the qualifiers, so it sits directly above the verdict it qualifies.
         //
-        // This is a statement about the SURFACE rather than about any expression, which is
+        // This is a statement about the surface rather than about any expression, which is
         // why it is neither a violation nor a warning about the code: nothing was found
         // here, because nothing here was read. It stays out of the exit code deliberately —
         // a package's views are not the application's to repair, and reddening its gate on
@@ -1670,7 +1725,7 @@ class CspAuditCommand extends Command
         //
         // What it looks like on the page: the element gets no scope, `x-show` cannot
         // evaluate and therefore never sets `display: none`, while Alpine's init removes
-        // `x-cloak` regardless. The panel is VISIBLE with every control in it dead — so the
+        // `x-cloak` regardless. The panel is visible with every control in it dead — so the
         // symptom points at the stylesheet and the cause is a missing script.
         if ($unregistered !== []) {
             // Two different sentences, and only one of them justifies a ticket.
@@ -1761,7 +1816,7 @@ class CspAuditCommand extends Command
                 );
             }
 
-            // The `x-data` half of this command is GATED on a non-empty registration set, so a
+            // The `x-data` half of this command is gated on a non-empty registration set, so a
             // PASS earned with an empty one is a pass over a check that never ran.
             // The qualifier belongs in the verdict for the same reason the unscanned one does:
             // a developer who reads PASS stops reading, and everything that limits it has to be
@@ -1831,7 +1886,7 @@ class CspAuditCommand extends Command
      * answer is no. The two are the same words in a report and opposite in meaning, which is
      * the whole reason this exists.
      *
-     * A file OUTSIDE any package is `true`: the application's own bundles and sources are in
+     * A file outside any package is `true`: the application's own bundles and sources are in
      * the default candidate set, so a name missing from them really is missing. The uncertain
      * case is a package, whose registrations live in its own tree and reach this run only if
      * `registrationSourceIn()` found them and the scan then read them.
@@ -1862,7 +1917,7 @@ class CspAuditCommand extends Command
     }
 
     /**
-     * The question that comes BEFORE the repair, when an offending view is a package's.
+     * The question that comes before the repair, when an offending view is a package's.
      *
      * A package that serves its bundle from its own route — a deliberate choice, because an
      * inline `<script>` under a nonce-less `script-src 'self'` is refused, and the browser
@@ -1921,7 +1976,7 @@ class CspAuditCommand extends Command
             // most packages the printed command is advice the run already took. Telling a
             // reader to point at a file this run has read is worse than saying nothing: they
             // run it, get the identical report, and conclude the tool is broken. When it was
-            // already read, the finding is CONFIRMED rather than pending -- which is the more
+            // already read, the finding is confirmed rather than pending -- which is the more
             // useful sentence, and the one the closing line below promises.
             $alreadyRead = $source !== null && array_filter(
                 $registrationScan['files'],
@@ -1958,7 +2013,7 @@ class CspAuditCommand extends Command
     /**
      * Where a package plausibly keeps the registrations this run did not read.
      *
-     * Ordered by how likely it is to be the SOURCE rather than a copy: an unbuilt
+     * Ordered by how likely it is to be the source rather than a copy: an unbuilt
      * `resources/js` is what an in-house package ships, `dist` is what a package builds
      * for itself, and `public` is what it publishes. The first that exists wins — this is
      * a pointer for a person to check, not a resolution the verdict rests on.

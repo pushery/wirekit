@@ -24,7 +24,7 @@ use Pushery\WireKit\Support\ComponentManifest;
  * --public restricts the manifest to components whose dedicated docs
  * page is publicly rendered — the variant docs.wirekit.app serves at
  * /components.json. A component whose page is not publicly rendered is
- * omitted entirely. Components with NO dedicated page (the sub-component
+ * omitted entirely. Components with no dedicated page (the sub-component
  * pattern, documented on a parent page) always stay. The flagless full
  * manifest is the build input for docs.wirekit.app and internal tooling.
  *

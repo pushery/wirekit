@@ -29,7 +29,7 @@
     'label' => __('wirekit::Dark mode'),
     // Render the switch/select label sr-only (kept as the control's accessible
     // name) — for a header or toolbar where the surrounding chrome already says
-    // what the control is. The <label> WRAPS the control here, so the name is
+    // what the control is. The <label> wraps the control here, so the name is
     // associated with the element rather than with the visible text and survives
     // being taken off the screen. No-op on the button variant, which has no
     // visible text at all. Mirrors input / select / textarea / combobox /
@@ -37,13 +37,13 @@
     //
     // On `menu` it hides something else, and the difference is worth knowing: there is no
     // <label> and no `label` prop in play at all. What it takes off the screen is the mode
-    // NAME beside the trigger's glyph, leaving the icon alone — for a bar where the word is
+    // name beside the trigger's glyph, leaving the icon alone — for a bar where the word is
     // a line too wide. The trigger keeps its accessible name either way, because the name
     // is that same word rendered sr-only rather than removed.
     'hideLabel' => false,
     // Wording for the three modes, used by the `select` and `menu` variants. Translated by
     // default;
-    // pass your own to change the WORDS rather than just the language — an app
+    // pass your own to change the words rather than just the language — an app
     // may want "Automatic / Day / Night", which no locale file can express.
     'options' => null,
     'scope' => null,
@@ -62,14 +62,14 @@
     $size = WireKit::validateProp('theme-controller', 'size', $size, ['sm', 'md']);
     $surface = WireKit::validateProp('theme-controller', 'surface', $surface, ['filled', 'ghost']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy, so
     // `hideLabel="false"` would mean the opposite of what the call site reads as.
     $hideLabel = BooleanProp::from($hideLabel, false, 'theme-controller', 'hideLabel');
     $touchFloor = BooleanProp::from($touchFloor, false, 'theme-controller', 'touchFloor');
 
     // Control (button-variant) chrome. Full literal class strings so the Tailwind
     // scanner sees them. The inner <button> routes through resolveClasses with its
-    // OWN 'control' block (the wrapper 'base' block only ever reached the outer
+    // own 'control' block (the wrapper 'base' block only ever reached the outer
     // <div>), so config/scoped classes can now restyle the button too.
     $controlSize = match ($size) {
         'sm' => 'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
@@ -100,7 +100,7 @@
 
     // Storage driver: 'local' (localStorage, client-only) or 'cookie' (the server
     // can read it and render the theme itself). The control and the head script
-    // must use the SAME driver — the head script's reader is driven by the same
+    // must use the same driver — the head script's reader is driven by the same
     // config value in WireKitServiceProvider — or one writes where the other never
     // looks. The cookie attributes only matter for the cookie driver.
     $storage = config('wirekit.theme.storage', 'local') === 'cookie' ? 'cookie' : 'local';
@@ -152,7 +152,7 @@
 >
     <span id="{{ $fixedReasonId }}" class="sr-only" x-text="fixedMessage"></span>
 
-    @if($variant === 'button')
+    @wirekitLast($variant === 'button')
         {{-- aria-pressed, not just an icon: "the page is dark" is a state, and a
              reader who cannot see the icon still needs to know which way the
              switch is thrown. The icon alone would be color-and-shape only. --}}
@@ -172,7 +172,7 @@
             class="{{ $controlClasses }}"
         >
             {{-- icon-on / icon-off slots let a developer supply their own glyphs —
-                 and choose the POLARITY (show the current state, or the action).
+                 and choose the polarity (show the current state, or the action).
                  Unset falls back to the built-in moon (on/dark) + sun (off/light),
                  sized to match the control. --}}
             <x-wirekit::swap effect="rotate" expression="isDark">
@@ -217,7 +217,7 @@
             />
             {{-- The knob's travel lives in dist/wirekit.css, keyed off the
                  input's :checked. Not peer-checked: that variant only reaches
-                 SIBLINGS of the peer, and the knob is a grandchild — the class
+                 siblings of the peer, and the knob is a grandchild — the class
                  sat here doing nothing while an Alpine :class binding quietly did
                  the work. One mechanism, in the place that can actually see the
                  checkbox. --}}
@@ -237,7 +237,7 @@
                 aria-hidden="true"
                 class="wk-theme-switch-track wk-choice-frame wk-touch-target relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-border-strong)] inset-ring-[length:var(--border-wk-width)] inset-ring-[var(--color-wk-border-strong)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-checked:inset-ring-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
             >
-                <span class="wk-theme-switch-knob absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
+                <span class="wk-theme-switch-knob absolute top-0.5 start-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
             </span>
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         </label>
@@ -266,7 +266,7 @@
                     @if($callerDescribedBy !== null) aria-describedby="{{ $callerDescribedBy }}" @endif
                     data-wk-theme-toggle
                     {{-- A <select> is a form control under WCAG 1.4.11: its border must
-                         clear 3:1 against the fill. --color-wk-border is the DECORATIVE
+                         clear 3:1 against the fill. --color-wk-border is the decorative
                          token (~1.29:1) — the canonical select.blade.php reaches for
                          --color-wk-border-strong (+ -strong-hover) instead, and so must
                          this one. --}}
@@ -279,7 +279,7 @@
                         <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
                     @endforeach
                 </select>
-                <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2.5" data-wk-select-chevron>
+                <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]" data-wk-select-chevron>
                     <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                     </svg>
@@ -288,7 +288,7 @@
         </label>
     @elseif($variant === 'menu')
         {{-- The fourth shape, and it exists because the other three each answer only part of
-             one question: what mode is on RIGHT NOW.
+             one question: what mode is on right now.
 
                button   carries an icon and cannot say "system" — and a lone sun glyph is
                         ambiguous anyway: it may mean the current state or the one a click
@@ -297,7 +297,7 @@
                select   is the only three-valued one and a native <option> takes no markup,
                         so it can never carry an icon. That is the browser, not an omission.
 
-             So this is a real button with a real menu: the trigger names the active mode AND
+             So this is a real button with a real menu: the trigger names the active mode and
              shows its glyph, and all three modes are listed with theirs. The dropdown brings
              the keyboard model and the escape handling with it rather than this file
              rebuilding them; a menu has no focus trap, and Tab closes it.
@@ -308,7 +308,7 @@
         {{-- The menu takes the control's name, the way a submenu takes its trigger's. --}}
         <x-wirekit::dropdown placement="bottom-start" :label="$label">
             <x-slot:trigger>
-                {{-- A STATIC name, because every visible label inside this button sits in an
+                {{-- A static name, because every visible label inside this button sits in an
                      `x-show` + `x-cloak` block. The stored mode lives in the reader's browser,
                      so the server cannot know which of the three to show — and until Alpine
                      boots, none of them is shown. The button was therefore nameless in the
@@ -317,7 +317,7 @@
 
                      Once Alpine runs, the name is the CONTROL's followed by the mode it shows
                      (`triggerName`). The control comes first because that is what a reader
-                     needs on arrival, and the mode is a VALUE, the way a `<select>` shows its
+                     needs on arrival, and the mode is a value, the way a `<select>` shows its
                      current option. But a select has a visible label beside it and announces
                      its value; this button shows the mode and nothing else, so the mode is
                      what a speech user says, and a name without it matches nothing (WCAG
@@ -378,5 +378,5 @@
                 >{{ $optionLabels[$modeValue] ?? $modeValue }}</x-wirekit::dropdown.item>
             @endforeach
         </x-wirekit::dropdown>
-    @endif
+    @endwirekitLast
 </div>

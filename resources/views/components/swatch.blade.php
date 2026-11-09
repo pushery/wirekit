@@ -38,7 +38,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('swatch', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showLabel = BooleanProp::from($showLabel, false, 'swatch', 'showLabel');
@@ -129,12 +129,12 @@
             <span data-wk-swatch-fill aria-hidden="true" class="relative size-[1em] shrink-0 overflow-hidden rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] bg-cover bg-center forced-color-adjust-none" @if($fillStyle !== '') style="{{ $fillStyle }}" @endif>
             </span>
         @endif
-        @if($unavailable)
+        @wirekitLast($unavailable)
             <span class="sr-only">{{ $name }}</span>
             <span aria-hidden="true" class="line-through">{{ $label }}</span>
         @else
             <span>{{ $label }}</span>
-        @endif
+        @endwirekitLast
     </span>
 @else
 @if($showLabel && $name !== '')
@@ -156,22 +156,22 @@
              forced-colors theme keeps it here, and the line of an unavailable value with it, while
              the edge around it takes the theme's colors. --}}
         <span data-wk-swatch-fill class="absolute inset-0 overflow-hidden rounded-[inherit] bg-cover bg-center forced-color-adjust-none" @if($fillStyle !== '') style="{{ $fillStyle }}" @endif>
-            @if($unavailable)
+            @wirekitLast($unavailable)
                 {{-- A line in the text color over a wider one in the surface color, so it reads on a
                      light fill and on a dark one. --}}
                 <svg data-wk-swatch-unavailable aria-hidden="true" class="absolute inset-0 size-full" viewBox="0 0 20 20" preserveAspectRatio="none" fill="none">
                     <line x1="2" y1="18" x2="18" y2="2" class="stroke-[var(--color-wk-surface)]" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke" />
                     <line x1="2" y1="18" x2="18" y2="2" class="stroke-[var(--color-wk-text)]" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke" />
                 </svg>
-            @endif
+            @endwirekitLast
         </span>
     </span>@if($showLabel && $name !== '')
-    @if($unavailable)
+    @wirekitLast($unavailable)
         {{-- Read as one name with the word the line says; shown as the name alone, beside the line. --}}
         <span class="sr-only">{{ $name }}</span>
         <span aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
     @else
         <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
-    @endif
+    @endwirekitLast
 </span>@endif
 @endif

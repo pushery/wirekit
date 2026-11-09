@@ -2,9 +2,9 @@
      Pass `optimistic="method"` and the choice lands the moment an option is
      picked. A discrete value from a fixed list, and the previous one is the
      server's — so an undo destroys nothing the user typed. The optimistic scope
-     nests INSIDE this component and binds to `selected`; the text field follows
+     nests inside this component and binds to `selected`; the text field follows
      via `after`, which derives its label from the value rather than from the
-     clicked option, so a rollback restores the PREVIOUS selection's label. --}}
+     clicked option, so a rollback restores the previous selection's label. --}}
 @props([
     // Livewire method to call optimistically. The choice appears immediately
     // and is put back if the call fails. Absent -> the plain combobox.
@@ -12,7 +12,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -41,14 +41,14 @@
     // address, a name or anything else a list cannot hold in full. Implies `searchable`.
     'freeInput' => false,
     // `false` hides the clear button. The default is true, because for most lists "none of
-    // them" is a real answer a reader must be able to give back. It is NOT one everywhere: a
-    // control whose value is a PRECONDITION for the field around it -- the country in a phone
+    // them" is a real answer a reader must be able to give back. It is not one everywhere: a
+    // control whose value is a precondition for the field around it -- the country in a phone
     // number, which is what assembles the E.164 -- ends up in a state where the reader sees a
     // number on screen and the form submits nothing. That is the exact failure the surrounding
     // component is usually built to prevent, so it has to be able to say no.
     'clearable' => true,
     // `??` rather than a `config(…, 'Select…')` fallback, and the difference is the
-    // whole point: a config default holds ONE string for every locale, so a literal in
+    // whole point: a config default holds one string for every locale, so a literal in
     // that second argument would be unreachable to a translated app, whose only escape
     // would be publishing the config, which freezes the wording again. The seam survives
     // (an app may still pin its own word), and an untouched default resolves through the
@@ -131,7 +131,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'combobox', 'disabled');
@@ -151,7 +151,7 @@
     $searchDebounce = max(0, \Pushery\WireKit\Support\NumericProp::int($searchDebounce, 0, 'combobox', 'searchDebounce'));
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -165,7 +165,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -193,7 +193,7 @@
     // ['value' => .., 'label' => .., 'disabled' => bool] or plain strings.
     // The `disabled` flag (default false) renders the option visually
     // dimmed + not-allowed cursor and prevents click + keyboard activation.
-    // A GROUP is an array value with neither a 'label' nor a 'value' key — i.e.
+    // A group is an array value with neither a 'label' nor a 'value' key — i.e.
     // a nested map of sub-options (mirrors <x-wirekit::select>: `['Europe' =>
     // ['de' => 'Germany', ...]]`). The extra `value`-key guard keeps the legacy
     // single-option shape `['value' => 'x']` (no label) working as an option.
@@ -203,10 +203,10 @@
     // `keywords` and a `selectedLabel`. OptionMedia validates them and adds only the keys an
     // option uses, so an option without them normalizes to its value and label alone.
     //
-    // A LIST is decided by the ARRAY, never by one key: keys 0, 1, 2 … in order, and within a
+    // A list is decided by the array, never by one key: keys 0, 1, 2 … in order, and within a
     // group by that group's own array. PHP turns a numeric string key into an integer, so
     // deciding by the key's type would read `[31 => 'Rain jacket']` and every
-    // `pluck('name', 'id')` as a list and submit the NAMES instead of the ids.
+    // `pluck('name', 'id')` as a list and submit the names instead of the ids.
     $normalizeOption = function ($key, $opt, bool $inList) {
         if (is_array($opt)) {
             $value = (string) ($opt['value'] ?? $key);
@@ -217,7 +217,8 @@
             return [
                 'value' => $value,
                 'label' => $label,
-                'disabled' => (bool) ($opt['disabled'] ?? false),
+                // A switch, read as a switch prop is: the text `false`, `no` and `off` leave it open.
+                'disabled' => BooleanProp::from($opt['disabled'] ?? false),
             ] + \Pushery\WireKit\Support\OptionMedia::fields('combobox', $opt, $value, $label)
                 + (isset($opt['data']) && is_array($opt['data']) ? ['data' => $opt['data']] : []);
         }
@@ -319,7 +320,7 @@
 
     // The bag read is guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
-    // makes a combobox with no `name` report itself invalid the moment ANY
+    // makes a combobox with no `name` report itself invalid the moment any
     // unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
@@ -334,7 +335,7 @@
 
     // Accessible name resolution. A visible label associates via <label for>
     // (label wins, no aria-label needed). Otherwise fall back to the ariaLabel
-    // prop, then a caller-passed aria-label attribute — applied to the VISIBLE
+    // prop, then a caller-passed aria-label attribute — applied to the visible
     // role="combobox" input (the labelable control), never the roleless wrapper.
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $resolvedAriaLabel = $ariaLabel !== null ? \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) : $callerAriaLabel;
@@ -346,7 +347,7 @@
         ? $wkField->takeLabel($searchable ? $comboId : null)
         : null;
 
-    // Merge a caller aria-describedby with our own error target into ONE attribute on
+    // Merge a caller aria-describedby with our own error target into one attribute on
     // the input, so a caller description reaches the labelable control and
     // never collides with the error id as two attributes.
     // The hint describes the control only while no error does — an error supersedes it, the
@@ -373,7 +374,7 @@
     $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, (bool) $attributes->get('required', false));
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? ''));
     // `required` stays in the bag, read rather than consumed (see the label below). It is checked
-    // against the CHOICE through a stand-in, not on the search field, where typed text that is no
+    // against the choice through a stand-in, not on the search field, where typed text that is no
     // option would satisfy it; a combobox found empty says so under the field (partials/required-message),
     // unless the server's own message already stands there.
     $required = (bool) $attributes->get('required', false);
@@ -390,7 +391,7 @@
         default => 'h-[var(--size-wk-md)] text-[length:var(--text-wk-md)]',
     };
 
-    // Option-row sizing — scales the DROPDOWN with `size` so the open panel
+    // Option-row sizing — scales the dropdown with `size` so the open panel
     // matches its trigger (a `lg` combobox with `sm`-sized options would read as
     // a mismatch). Text size mirrors the trigger; padding scales with it.
     $optionRowClasses = match ($size) {
@@ -430,8 +431,8 @@
         'w-full',
         'px-[var(--padding-wk-x-md)]',
         // Logical, like the chevron and the clear button it makes room for: the chosen option's
-        // medium sits at the START, and a physical side here would put the two on one side in a
-        // right-to-left document.
+        // medium sits at the start, and a physical side here would put the two on one side in a
+        // document that reads from the right.
         'pe-[var(--size-wk-md)]',
         'bg-[var(--color-wk-bg-input)]',
         'text-[color:var(--color-wk-text)]',
@@ -518,7 +519,7 @@
         'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-md)]',
-        'py-1',
+        'py-[var(--padding-wk-y-xs)]',
         $panelWidth === 'auto' ? 'w-max' : '',
     ]), $scope);
 
@@ -551,14 +552,14 @@
         ? __('wirekit::Clear :label', ['label' => $clearLabelText])
         : __('wirekit::Clear selection');
 
-    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // The optimistic layer nests inside this component, and the direction is not
     // interchangeable: a nested Alpine component's method reads and writes its
     // parent's properties through `this`, never the other way around. So it has
     // to be the child to reach `selected`, and the options have to be inside it
     // to reach its `run()`.
     //
     // `after: '_syncQuery'` is what makes the rollback readable. The field shows
-    // the chosen option's label, and after an undo it must show the PREVIOUS
+    // the chosen option's label, and after an undo it must show the previous
     // one's — an option nobody clicked, so it can only come from the value.
     // Free input has no choice to send: the text is the value, and it travels with the form or the
     // model like any field's, so it takes no optimistic layer.
@@ -566,7 +567,7 @@
         'bind' => 'selected',
         'after' => '_syncQuery',
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
@@ -592,14 +593,10 @@
     // and goes to the hidden field this component submits as well (Support\FormOwner).
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
 
-    // A width utility in the caller's `class` replaces the root's own `w-full`, as on a number input.
-    // Beside it the stylesheet's order would decide which width wins, not the attribute. The search
-    // field inside keeps its own and fills the root at whatever width it takes. A width under a
-    // variant is left alone, because it applies at a width of its own.
+    // The root fills its container. A width in the caller's `class` replaces its `w-full` through
+    // `UtilityClasses::yieldToCaller()`, and the search field inside fills the root at whatever
+    // width it takes.
     $rootClasses = 'relative w-full';
-    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
-        $rootClasses = \Pushery\WireKit\Support\UtilityClasses::without($rootClasses, '/^w-/');
-    }
 @endphp
 
 {{-- `wk-combobox` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-` class
@@ -607,8 +604,8 @@
      `wk-field` sits on the input, beside them, where the clamp never reaches them. --}}
 <div {{ $outerAttributes }} class="wk-combobox space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
-             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+        {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         @if($searchable)
@@ -631,19 +628,19 @@
     @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($normalized) }}" @endif
     @click.outside="closeOutside($event)"
     {{-- The chosen option, exposed by name so a binding on the component tag reaches
-         the SELECTION rather than the search field: the bag below is routed to the
+         the selection rather than the search field: the bag below is routed to the
          role="combobox" input, which already carries `x-model="query"`, so without this
          `wire:model` would bind the typed text and the server would receive three letters
          rather than the option behind them. `wire:model` compiles to `x-model`, and
          `x-modelable` is what lets a non-input element answer it. --}}
     x-modelable="{{ $freeInput ? 'query' : 'selected' }}"
     {{-- `x-model` is routed here too, and for the same reason: `x-modelable` above is what
-         ANSWERS it, and a hand-written one is how a parent component embeds this control. Left
+         answers it, and a hand-written one is how a parent component embeds this control. Left
          to the bag below it would land on the search input beside its built-in `x-model="query"` --
          two `x-model` attributes on one tag, where the browser keeps the first and the caller's
          is dropped without a word. `x-modelable` is excluded: a caller may not redirect the seam. --}}
     {{ \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable')) }}
-    {{-- The roleless wrapper otherwise carries ONLY layout — every caller attribute
+    {{-- The roleless wrapper otherwise carries only layout — every caller attribute
          (aria-describedby, data-*, required, …) is routed to the role="combobox" input
          below, never left stranded on this <div>. `autocomplete` is the exception: the
          search field keeps it off. --}}
@@ -740,7 +737,7 @@
              from the ariaLabel prop / caller attribute lands on this input (the
              labelable role="combobox" control), never the roleless wrapper. --}}
         @if(! $label && $resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
-        {{-- Every OTHER caller attribute (data-*, required, readonly …) reaches the actual
+        {{-- Every other caller attribute (data-*, required, readonly …) reaches the actual
              control here, not the wrapper. A caller's `autocomplete` does not: the field keeps
              `autocomplete="off"` above, so the browser's own suggestions do not open over the
              list. --}}
@@ -761,7 +758,7 @@
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
     @else
-    {{-- THE SELECT-ONLY TRIGGER, after the WAI-ARIA APG select-only combobox example: a focusable
+    {{-- The SELECT-ONLY trigger, after the WAI-ARIA APG select-only combobox example: a focusable
          `div` with `role="combobox"`, not an input, because it takes no typed value. Its text is
          the choice, which is what a screen reader reads as the combobox's value, and its name
          comes from the label through `aria-labelledby`.
@@ -843,7 +840,7 @@
             data-wk-combobox-clear
             x-show="{{ $freeInput ? 'query' : 'selected' }}"
             x-cloak
-            {{-- run(null), not runIf: clearing IS a choice — "none of them" — and it
+            {{-- run(null), not runIf: clearing is a choice — "none of them" — and it
                  is a mutation the server has to hear about. `undefined` would be
                  the absence of a choice; null is a choice. --}}
             @click="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
@@ -862,12 +859,12 @@
          contract continues to work. tabindex="-1" keeps the chevron out
          of the natural tab order — the input itself is the focusable
          control per the WAI-ARIA combobox pattern. --}}
-    @if($searchable)
+    @wirekitLast($searchable)
     <button
         type="button"
         {{-- Always return focus to the input — on close too, not only on open.
              This button is aria-hidden + tabindex=-1 (decorative; the input is
-             the focusable combobox control). If a click leaves focus ON this
+             the focusable combobox control). If a click leaves focus on this
              button (which happens when it toggles the panel closed), the browser
              flags "aria-hidden on a focused element". Refocusing the input every
              time keeps focus on the real control and clears that warning. --}}
@@ -899,13 +896,13 @@
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
         </svg>
     </span>
-    @endif
+    @endwirekitLast
     </div>
 
     {{-- Listbox — filtered options rendered via x-for. Each option gets a
          unique id + role=option so AT can announce them as the user navigates. --}}
     {{-- Teleported to `#wk-overlay-root`, for the reason command-palette's overlay
-         already states: `position: fixed` escapes a clipping ancestor but NOT a
+         already states: `position: fixed` escapes a clipping ancestor but not a
          stacking context. Any ancestor with `contain: layout`, a transform or a
          filter scopes this panel's z-index inside itself, and anything painted
          after that ancestor then covers the list however high the z-index goes. A
@@ -917,10 +914,10 @@
          neither. --}}
     <template x-teleport="#wk-overlay-root">
     <ul data-wk-prose-skip
-        {{-- THE MORPH KEY. Without it the id below is what Livewire uses to
+        {{-- The morph key. Without it the id below is what Livewire uses to
              identify this node across an update — it resolves `wire:id`, then
              `wire:key`, then `el.id` — and a key that disagrees between the live
-             node and the incoming template does not patch, it SWAPS the live node
+             node and the incoming template does not patch, it swaps the live node
              for a native `cloneNode(true)` that carries no Alpine expandos. The
              replacement lands in the overlay root, which hangs off <body> in no
              `x-data`, so Alpine's parent walk finds no scope and every expression
@@ -931,7 +928,7 @@
              `$listId` is derived from an explicit id or name when one is given and
              counted when neither is, and a count can restart when only part of the
              page re-renders, so the key does not follow it.
-             STATIC on purpose: a teleported node is patched against its own
+             Static on purpose: a teleported node is patched against its own
              counterpart, one to one, never against a keyed sibling, so several
              comboboxes on a page do not compete for this value. --}}
         wire:key="wk-combobox-list"
@@ -1176,16 +1173,16 @@
              region that arrives together with its text is a new node, and
              nothing is announced at all.
 
-             It sits AFTER the error paragraph on purpose: where that paragraph
+             It sits after the error paragraph on purpose: where that paragraph
              is present and speaking, the layer's own rollback stays silent and
              leaves it the floor. --}}
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
         </div>
     @endif
 
-    @if($requiredMessageId)
-        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
-    @endif
+    {{-- The required message stands last, so it is included without a block, and Livewire
+         writes no morph markers around it: an include is not one of the blocks it marks. --}}
+    @includeWhen($requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
 </div>
 
 {{-- Close the always-present root wrapper. --}}

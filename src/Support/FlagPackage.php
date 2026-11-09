@@ -119,14 +119,14 @@ final class FlagPackage
             return null;
         }
 
-        // `root()` IS the flags directory — it is the path that holds `flags.json`, and it
+        // `root()` is the flags directory — it is the path that holds `flags.json`, and it
         // returns null when that file is not directly inside it. So the format folder sits one
         // level below `$root`: the artwork for `de` in 4x3 is `<root>/4x3/de.svg`, under the
         // same base `manifest()` and `isoCodes()` read `$root.'/flags.json'` from.
         $file = realpath($root.'/'.$format.'/'.$code.'.svg');
 
         // Containment is asserted against `$root` itself for the same reason: a code that climbs
-        // out of the flags directory fails it, and FORMATS above already pins the middle segment.
+        // out of the flags directory fails it, and formats above already pins the middle segment.
         return $file !== false && str_starts_with($file, $root.'/') && is_file($file) ? $file : null;
     }
 

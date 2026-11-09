@@ -2,7 +2,7 @@
  * WireKit Carousel Alpine Component.
  *
  * A native scroll-snap carousel: the browser owns the scrolling, the snapping and
- * the momentum, and this component OBSERVES the result rather than driving it.
+ * the momentum, and this component observes the result rather than driving it.
  *
  * Why observe rather than drive: translating the track by `-current * 100%` means
  * one slide per view by construction and no touch swipe beyond what the transform
@@ -36,7 +36,7 @@ export default function wirekitCarousel(config = {}) {
         _observer: null,
         _slides: [],
         _unwatchMotion: null,
-        // Was the rotation stopped BY the motion preference rather than by the reader?
+        // Was the rotation stopped by the motion preference rather than by the reader?
         // Only that case may be handed back when the preference is withdrawn — a reader
         // who pressed pause did not ask for it to resume behind their back.
         _motionPaused: false,
@@ -114,7 +114,7 @@ export default function wirekitCarousel(config = {}) {
 
         /**
          * Track which slide is showing by watching the scroller, so `current`
-         * stays right no matter HOW the scroll happened — a button, a keyboard,
+         * stays right no matter how the scroll happened — a button, a keyboard,
          * a trackpad, or a thumb flick we never hear about.
          */
         _watchSlides() {
@@ -285,7 +285,7 @@ export default function wirekitCarousel(config = {}) {
         },
 
         /**
-         * Hover and focus pause the rotation WITHOUT touching `playing`: the
+         * Hover and focus pause the rotation without touching `playing`: the
          * reader is looking at a slide, not asking the carousel to stop forever.
          * Conflating the two is why these controls usually lie — the button reads
          * "paused" because a mouse passed over it.
@@ -340,7 +340,7 @@ export default function wirekitCarousel(config = {}) {
         /**
          * The one string a screen reader hears on every slide change.
          *
-         * It arrives as a TEMPLATE that the server already translated, because a
+         * It arrives as a template that the server already translated, because a
          * sentence assembled from fragments here cannot be — "of" is not a word every
          * language puts in the middle, and a literal built in JavaScript is invisible to
          * every extractor. The play/pause label next to it has taken that route since it

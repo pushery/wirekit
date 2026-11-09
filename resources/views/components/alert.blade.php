@@ -13,6 +13,10 @@
     'icon' => true,
     // Optional reveal animation. Null = no animation (default).
     'animateIn' => null,
+    // Shows the title and the message as a toast as well when a Livewire render adds the alert
+    // where the reader does not see it, above or below the window; the alert stays where it
+    // stands, and a screen reader hears it once. Needs a toast region on the page.
+    'toastWhenHidden' => config('wirekit.components.alert.toast-when-hidden', false),
     'scope' => null,
 ])
 
@@ -20,11 +24,12 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $dismissible = BooleanProp::from($dismissible, false, 'alert', 'dismissible');
     $icon = BooleanProp::from($icon, true, 'alert', 'icon');
+    $toastWhenHidden = BooleanProp::from($toastWhenHidden, false, 'alert', 'toastWhenHidden');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -48,7 +53,7 @@
     // `variant` stays as the back-compat alias; when both are given the
     // canonical name decides, matching progress.
     $effectiveIntent = $intent ?? $variant;
-    // An error has to name the prop the CALLER wrote. Always saying `intent`
+    // An error has to name the prop the caller wrote. Always saying `intent`
     // would send someone who typed `variant="rainbow"` looking for a prop they
     // never used — the same wrong-signpost problem this whole fix is about,
     // pointing the other way.
@@ -68,7 +73,7 @@
         // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
         // alone, so a table or a flex row in the content keeps the layout it had.
         '[overflow-wrap:break-word]',
-        'relative flex items-start gap-3',
+        'relative flex items-start gap-[var(--gap-wk-md)]',
         'px-[var(--padding-wk-x-md)]',
         'py-[var(--padding-wk-x-md)]',
         'rounded-[var(--radius-wk-md)]',
@@ -143,8 +148,11 @@
 
 {{-- `data-wk-alert` and the parts marked `data-wk-alert-text` are what utils/alert-arrival.js reads
      when a Livewire render adds this alert: a polite region of the page says those words, since an
-     inserted `role="status"` is not announced on its own. --}}
+     inserted `role="status"` is not announced on its own. With `data-wk-alert-toast` it also takes
+     the parts marked as title and message into a toast that says nothing, when the alert lands out
+     of view. --}}
 <div data-wk-alert
+    @if($toastWhenHidden) data-wk-alert-toast @endif
     @if($dismissible)
         {{-- No x-cloak: starts visible (shown: true), only hides on user dismiss.
              animateIn is silently skipped on dismissible alerts to avoid
@@ -159,7 +167,7 @@
     @elseif($animateAttr)
         {!! $animateAttr !!}
     @endif
-    {{-- role goes through merge(), not ahead of the bag: HTML keeps the FIRST
+    {{-- role goes through merge(), not ahead of the bag: HTML keeps the first
          occurrence of an attribute, so emitting it before the bag silently beat
          a caller-supplied role while leaving both in the markup. `data-intent`
          names the intent for a rule of the application's own. --}}
@@ -183,25 +191,25 @@
     <div class="flex-1 min-w-0">
         @if($title)
             {{-- The marker stands first whatever the tag renders: prose styles a heading, and on a div it costs nothing. --}}
-            <{{ $titleTag }} data-wk-prose-skip data-wk-alert-text class="font-[number:var(--font-wk-heading-weight)] mb-0.5">{{ $title }}</{{ $titleTag }}>
+            <{{ $titleTag }} data-wk-prose-skip data-wk-alert-text data-wk-alert-title class="font-[number:var(--font-wk-heading-weight)] mb-0.5">{{ $title }}</{{ $titleTag }}>
         @endif
-        <div class="text-[color:var(--color-wk-text-muted)]" data-wk-alert-text>{{ $slot }}</div>
-        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
-            <div class="mt-2 flex items-center gap-2">{{ $actions }}</div>
-        @endif
+        <div class="text-[color:var(--color-wk-text-muted)]" data-wk-alert-text data-wk-alert-message>{{ $slot }}</div>
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+            <div class="mt-[var(--space-wk-sm)] flex items-center gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
+        @endwirekitLast
     </div>
 
     {{-- Dismiss button (only when dismissible) — Alpine toggles shown state --}}
-    @if($dismissible)
+    @wirekitLast($dismissible)
         <button
             type="button"
             @click="dismiss()"
             aria-label="{{ __('wirekit::Dismiss') }}"
-            class="wk-touch-target shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="wk-touch-target shrink-0 p-[var(--space-wk-xs)] -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
-    @endif
+    @endwirekitLast
 </div>

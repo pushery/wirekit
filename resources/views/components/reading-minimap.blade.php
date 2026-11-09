@@ -39,7 +39,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@mousemove.passive']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $draggable = BooleanProp::from($draggable, true, 'reading-minimap', 'draggable');
@@ -60,7 +60,7 @@
     //     minimap). Walks the source DOM via TreeWalker,
     //     draws per-line rectangles on a DPR-aware canvas at minimap
     //     scale. Visually mirrors the source page's content rhythm so
-    //     developers read "where am I in THIS specific layout" rather
+    //     developers read "where am I in this specific layout" rather
     //     than "what's the abstract content distribution".
     //
     // Four optional extensions layer on top of either mode:
@@ -69,14 +69,15 @@
     //   - headingAnchors — clickable mini-labels on the outboard edge
     //   - autoFadeIdle   — fade after 3s of inactivity
 
-    // Validate the side prop (left | right).
+    // Validate the side prop: `start` and `end` follow the direction of the page, `left` and
+    // `right` name a physical edge.
     $sideValue = match ($side) {
-        'left', 'right' => $side,
+        'left', 'right', 'start', 'end' => $side,
         default => WireKit::validateProp(
             'reading-minimap',
             'side',
             $side,
-            ['left', 'right']
+            ['left', 'right', 'start', 'end']
         ),
     };
 
@@ -115,9 +116,11 @@
         default => 'hidden lg:block',
     };
 
-    // Position class — left or right edge of the host.
+    // Position class — the edge of the host.
     $positionClass = match ($sideValue) {
         'left' => 'left-0',
+        'start' => 'start-0',
+        'end' => 'end-0',
         default => 'right-0',
     };
 
@@ -168,12 +171,12 @@
     $width = \Pushery\WireKit\Support\CssValue::prop($width, 'reading-minimap', 'width', '60px');
 @endphp
 
-{{-- The root deliberately carries NO `aria-hidden`. Every purely visual part
+{{-- The root deliberately carries no `aria-hidden`. Every purely visual part
      of the minimap — the rendered-canvas container, the stripe column, the
      viewport rectangle, the bookmark marker, the tooltip and the hover
      preview — is marked `aria-hidden="true"` individually instead.
      The heading-anchor <nav> is the one part with real semantics (a named
-     landmark holding focusable links), and it has to live INSIDE this element
+     landmark holding focusable links), and it has to live inside this element
      because it reads its list and its click handler from this Alpine scope.
      `aria-hidden` on the root swallowed it: a keyboard user could still tab
      onto those links while assistive technology could neither name nor
@@ -184,6 +187,9 @@
 <div
     x-data="wirekitReadingMinimap({{ $alpineOptions }})"
     data-side="{{ $sideValue }}"
+    {{-- `start` and `end` become the physical side they stand on once the script has read the
+         direction of the page, and the stylesheet's side rules work in that side. --}}
+    x-bind:data-side="side"
     data-mode="{{ $modeValue }}"
     data-item-style="{{ $itemStyleValue }}"
     data-auto-fade="{{ $autoFadeFlag }}"
@@ -232,7 +238,7 @@
     <ol data-wk-prose-skip class="wk-reading-minimap__stripes relative h-full p-0 m-0 list-none" aria-hidden="true" style="list-style: none; margin: 0; padding: 0;">
         <template x-for="(item, idx) in items" :key="idx">
             <li data-wk-prose-skip
-                class="wk-reading-minimap__stripe absolute left-0 right-0 cursor-pointer"
+                class="wk-reading-minimap__stripe absolute start-0 end-0 cursor-pointer"
                 :class="idx === activeIndex ? 'wk-reading-minimap__stripe--active' : ''"
                 {{-- `top` percentage = source position; `height` per item
                      respects --reading-minimap-stripe-height in line-mode
@@ -256,7 +262,7 @@
          rather than blocking it. Painted above the canvas (z-index: 1 in CSS) so it
          stays visible in rendered mode. --}}
     <div
-        class="wk-reading-minimap__viewport absolute left-0 right-0 pointer-events-auto"
+        class="wk-reading-minimap__viewport absolute start-0 end-0 pointer-events-auto"
         aria-hidden="true"
         :style="viewportStyle()"
         @if (filter_var($draggable, FILTER_VALIDATE_BOOL))
@@ -311,7 +317,7 @@
                          minimap is hovered, so leaving it in the tab order puts
                          focus on something invisible with nothing to show for it
                          (WCAG 2.4.7 / 2.4.11). The condition lives in the
-                         attribute's VALUE rather than around the attribute, the
+                         attribute's value rather than around the attribute, the
                          same shape `map.blade.php` uses for its non-scrolling
                          variant. Nothing is lost: an anchor collapses only when
                          it would land within 16 px of the anchor before it, that
@@ -330,12 +336,12 @@
     {{-- Tooltip — shows hovered item's label in stripe mode. Hidden on touch.
          `transform: translateY(-50%)` vertically centers the tooltip on the
          `top` coordinate (= cursor's Y inside the wrapper). Without it,
-         `top: Npx` would place the tooltip's TOP EDGE at the cursor and
-         the text would visually sit ~half-tooltip-height BELOW the cursor.
+         `top: Npx` would place the tooltip's top edge at the cursor and
+         the text would visually sit ~half-tooltip-height below the cursor.
          Centering gives a "pointer-at-the-tooltip-arrow" feel even though
          there's no literal arrow. --}}
     <div
-        class="wk-reading-minimap__tooltip wk-tooltip-panel absolute pointer-events-none px-2 py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
+        class="wk-reading-minimap__tooltip wk-tooltip-panel absolute pointer-events-none px-2 py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
         aria-hidden="true"
         :class="tooltipText ? '' : 'hidden'"
         :style="tooltipStyle()"
@@ -345,7 +351,7 @@
     {{-- Hover preview popover. Position-fixed; controller
          writes top/left + data-visible on pointermove. Its frame, its position and whether it
          shows are the script's as well, so a Livewire update leaves it alone (`wire:ignore`). --}}
-    @if (filter_var($hoverPreview, FILTER_VALIDATE_BOOL))
+    @wirekitLast (filter_var($hoverPreview, FILTER_VALIDATE_BOOL))
         <div
             class="wk-reading-minimap__preview"
             x-ref="hoverPreview"
@@ -353,5 +359,5 @@
             data-test="reading-minimap-preview"
             wire:ignore
         ></div>
-    @endif
+    @endwirekitLast
 </div>

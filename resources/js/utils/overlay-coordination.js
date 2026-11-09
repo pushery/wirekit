@@ -11,7 +11,7 @@
  *
  * ## What it does not do
  *
- * The channel is a PARAMETER, so opening a dropdown does not close a popover,
+ * The channel is a parameter, so opening a dropdown does not close a popover,
  * deliberately: making every overlay close every other is a product decision
  * about how the interface feels, not a defect fix. Siblings of the same
  * component are what would overlap, and siblings are what this closes.
@@ -47,7 +47,7 @@ let sequence = 0;
  *
  * @param  {Object}   options
  * @param  {string}   options.channel  event name, e.g. `wirekit:dropdown-open`
- * @param  {Function} options.onOther  called when ANOTHER instance announces
+ * @param  {Function} options.onOther  called when another instance announces
  * @param  {Element|null} [options.root]  the instance's root; a sender inside it is not a sibling
  * @return {{uid: string, announce: Function, stop: Function}}
  */

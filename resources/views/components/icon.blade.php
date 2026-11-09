@@ -70,14 +70,16 @@
         $size = \Pushery\WireKit\Support\NumericProp::key($size);
         $validated = isset($sizeMap[$size])
             ? $size
-            : WireKit::validateProp('icon', 'size', $size, array_keys($sizeMap));
+            // A size the map does not know renders at md, the size an icon without `size` takes,
+            // rather than at the first key of the map.
+            : \Pushery\WireKit\Support\StrictnessGate::enforce('icon', 'size', $size, array_keys($sizeMap), 'md');
         $sizeClasses = $sizeMap[$validated];
     }
 
     // A11y default: icons are decorative unless the caller provides an
-    // aria-label / aria-labelledby / role="img". In that case we DO NOT
+    // aria-label / aria-labelledby / role="img". In that case we do not
     // add aria-hidden — the caller is declaring it informative.
-    // If the caller explicitly sets aria-hidden (true OR false), we respect
+    // If the caller explicitly sets aria-hidden (true or false), we respect
     // their choice and never override.
     $callerAriaHidden = $attributes->get('aria-hidden');
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
@@ -90,21 +92,10 @@
     // The size classes are the icon's one class block, so a personalization of `icon` reaches them.
     $iconClasses = WireKit::resolveClasses('icon', 'base', $sizeClasses);
 
-    // A height or width utility in the caller's `class` replaces the icon's own on that axis.
-    // Beside it, the stylesheet's order decided and the attribute's did not: `h-4` sorts before
-    // the default `h-5` and lost, so an icon sized 16px by class rendered at 20px, while `h-7`
-    // sorts after it and happened to win. A utility under a responsive or state variant is left
-    // alone, because it applies at a width or in a state of its own.
+    // A height or width utility in the caller's `class` replaces the icon's own on that axis, and a
+    // `size-*` both: `UtilityClasses::yieldToCaller()` below takes them out of the icon's classes.
     // A bound `:class` arrives as an array, which toCssClasses() reads like `@class` does.
     $callerClass = \Illuminate\Support\Arr::toCssClasses($attributes->get('class', ''));
-
-    if (UtilityClasses::has($callerClass, '/^(?:h|size)-/')) {
-        $iconClasses = UtilityClasses::without($iconClasses, '/^(?:h|size)-/');
-    }
-
-    if (UtilityClasses::has($callerClass, '/^(?:w|size)-/')) {
-        $iconClasses = UtilityClasses::without($iconClasses, '/^(?:w|size)-/');
-    }
 
     // An icon keeps its drawn size in a flex row, where it would otherwise shrink with its
     // neighbors, down to nothing when the row is short of space. Outside a flex container the
@@ -120,7 +111,7 @@
     }
 @endphp
 
-{{-- Render the SVG icon via blade-icons, OR a placeholder when blade-icons
+{{-- Render the SVG icon via blade-icons, or a placeholder when blade-icons
      isn't installed yet. The placeholder preserves layout (same h/w as the
      real icon would have) and draws no glyph. It keeps the SVG branch's accessibility
      decision: hidden when decorative, named and role="img" when the caller named it.
@@ -131,7 +122,7 @@
      an icon informative via `aria-label` / `aria-labelledby` / `role="img"`.
      We post-process the rendered SVG: strip any source-baked aria-hidden,
      then re-inject our resolved choice (or none, for informative icons).
-     This guarantees the rendered SVG carries AT MOST ONE aria-hidden
+     This guarantees the rendered SVG carries AT most one aria-hidden
      attribute, matching the developer's declared intent. --}}
 @php
     // The render is attempted here, not inside the @if below, because it can fail in a
@@ -139,7 +130,7 @@
     //
     // The condition covered two of the three ways an icon goes missing: blade-icons not
     // installed at all, and an alias that resolved to '' because it is unknown. The third
-    // is an alias that resolves PERFECTLY onto a set nobody registered — `inbox` becomes
+    // is an alias that resolves perfectly onto a set nobody registered — `inbox` becomes
     // `heroicon-m-inbox` from a static preset table that never checks whether the glyph
     // exists. With blade-icons present and blade-heroicons absent, that name reaches svg(),
     // finds neither the set nor a fallback, and throws SvgNotFound. Nothing caught it, so
@@ -148,7 +139,7 @@
     // not found.`
     //
     // Catching SvgNotFound rather than pre-checking the registry is deliberate. svg() only
-    // throws after exhausting the per-set fallback AND the global one, so a developer who
+    // throws after exhausting the per-set fallback and the global one, so a developer who
     // configured either still gets their fallback icon; a registry check here would have
     // replaced it with this placeholder and called that a fix.
     $svgHtml = null;
@@ -171,11 +162,11 @@
 @endphp
 @if ($svgHtml !== null)
 @php
-    // Strip EVERY aria-hidden attribute from the OUTER <svg ...> open tag.
+    // Strip every aria-hidden attribute from the outer <svg ...> open tag.
     // The blade-heroicons source bakes `aria-hidden="true"` into the SVG
-    // root; our $mergedAttributes may ALSO have injected one; we leave
+    // root; our $mergedAttributes may also have injected one; we leave
     // neither in place and reapply our resolved choice on the line below.
-    // Operating on the OPENING TAG ONLY (regex anchored at <svg…>) — never
+    // Operating on the opening tag only (regex anchored at <svg…>) — never
     // touches nested SVG content (paths, <use>, embedded text labels).
     $svgHtml = preg_replace_callback(
         '/<svg\b([^>]*)>/i',
@@ -192,8 +183,8 @@
         1
     );
     // Reapply our resolved aria-hidden — only when:
-    //   - we decided the icon is decorative (shouldSetHidden=true), OR
-    //   - the caller explicitly set aria-hidden (true OR false) — we
+    //   - we decided the icon is decorative (shouldSetHidden=true), or
+    //   - the caller explicitly set aria-hidden (true or false) — we
     //     respect their literal value, including aria-hidden="false".
     $resolvedAriaHidden = null;
     if ($shouldSetHidden) {

@@ -1,6 +1,6 @@
 {{-- optimistic-ui: n/a — client-only
      Its state is which step is showing. That is not a value a server owns, so there is
-     nothing to anticipate and nothing to roll back. Whatever the STEPS ask of the server
+     nothing to anticipate and nothing to roll back. Whatever the steps ask of the server
      is theirs to declare. --}}
 @props([
     // Step names, in order. They drive the indicator and the announcement, so a flow with
@@ -25,7 +25,7 @@
     use Pushery\WireKit\Support\ListProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `indicator="false"` would draw the stepper it was asked to suppress.
     $indicator = BooleanProp::from($indicator, true, 'wizard', 'indicator');
 
@@ -52,7 +52,7 @@
 
     $panelClasses = WireKit::resolveClasses('wizard', 'panel', '', $scope);
 
-    // The announcement is a TEMPLATE rather than a sentence built here, because it has to
+    // The announcement is a template rather than a sentence built here, because it has to
     // be translatable — a sentence assembled from fragments in JavaScript cannot be, and
     // word order is not the same in every language.
     $announcementTemplate = $stepNames !== [] && trim($stepNames[0] ?? '') !== ''
@@ -91,7 +91,7 @@
     @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     @if($indicator && $stepNames !== [])
-        {{-- The existing indicator, USED rather than reimplemented. It stays presentational:
+        {{-- The existing indicator, used rather than reimplemented. It stays presentational:
              it reflects `current` and owns no navigation, which is the position
              docs/components/stepper.md takes and this component does not overturn. --}}
         <div>
@@ -118,7 +118,7 @@
         {{ $slot }}
     </div>
 
-    @if(\Pushery\WireKit\Support\SlotContent::given($controls ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($controls ?? null))
         {{ $controls }}
     @else
         {{-- Default controls. Ordinary buttons, so the keyboard model is the browser's and
@@ -143,5 +143,5 @@
                 x-bind:hidden="isLast ? true : null"
             >{{ __('wirekit::Next') }}</x-wirekit::button>
         </x-wirekit::row>
-    @endif
+    @endwirekitLast
 </div>

@@ -15,22 +15,22 @@
 
     // The other half of `reserve-message`, and the half that was missing.
     //
-    // `reserve-message` holds the space BELOW a control so a field does not shove its
+    // `reserve-message` holds the space below a control so a field does not shove its
     // neighbors down the moment validation fires. That fixes the bottom edge. The top
     // edge has the same problem and no answer: a button or a plain block sitting beside a
     // labeled field starts at the container's top while the field's control starts one
     // label-height lower, so two things that belong on one line are not on one line.
     //
     // The usual reaches both fail for reasons worth stating, because both look like they
-    // should work. `align-items: end` aligns the OUTER boxes, and the control is two levels
+    // should work. `align-items: end` aligns the outer boxes, and the control is two levels
     // inside one of them — so a field with a two-line label pushes its neighbor down by a
     // line it does not have. A hand-written `<span>` copying the label's classes drifts the
     // first time a token changes, and it is invisible drift: nothing renders wrong, the two
     // elements simply stop being the same height.
     //
-    // So this renders the REAL label with a non-breaking space. Whatever the label is —
+    // So this renders the real label with a non-breaking space. Whatever the label is —
     // font, line-height, margin, the token behind any of them — this is exactly as tall,
-    // because it IS one.
+    // because it is one.
     //
     // `select-none` is the only class of its own, and it is the mouse half of the same
     // decision `aria-hidden` makes for a screen reader: there is nothing here to read, so

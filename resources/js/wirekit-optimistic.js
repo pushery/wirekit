@@ -13,7 +13,7 @@
  * a test fails the build if the factory ever appears in a default bundle.
  *
  * There is no CSP twin of this file, and that is correct rather than an
- * oversight: the CSP alias exists only for `wirekit-alpine.js`, which BUNDLES
+ * oversight: the CSP alias exists only for `wirekit-alpine.js`, which bundles
  * Alpine and therefore has to choose a distribution. This bundle registers onto
  * whichever Alpine the application already loaded, so it inherits that choice.
  * The wiring it depends on — `$wire.$intercept` — is present in Livewire's own

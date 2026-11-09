@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
      shown early. --}}
-{{-- WireKit Liquid Glass Extension — the FIRST thing in the layout <body>.
+{{-- WireKit Liquid Glass Extension — the first thing in the layout <body>.
 
      Not in <head>: the component emits an <svg>, and the HTML parser has no "in head"
      insertion mode for one, so it terminates that section and switches to the body — and
@@ -28,7 +28,7 @@
 @php
     // The nonce, resolved the same way `fonts` and the asset directives resolve it.
     //
-    // This component emits its own EXTERNAL assets (the chart emits only the ones a custom
+    // This component emits its own external assets (the chart emits only the ones a custom
     // adapter names), so each carries the nonce. Under a
     // `script-src 'strict-dynamic' 'nonce-…'` policy, the shape a nonce-based policy takes,
     // a `<script src>` without the nonce is not executed, and the Tier-2 runtime would be

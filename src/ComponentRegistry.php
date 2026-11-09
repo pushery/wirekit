@@ -24,7 +24,7 @@ class ComponentRegistry
     private static ?array $catalog = null;
 
     /**
-     * Component metadata registry. Every top-level component MUST have an entry.
+     * Component metadata registry. Every top-level component must have an entry.
      * Anti-drift tests enforce this — adding a blade file without a registry
      * entry will fail CI.
      *
@@ -63,12 +63,12 @@ class ComponentRegistry
      * use the alternate form `<x-wirekit-{name}>` — Laravel's prefixed-
      * class-component shape. The two cannot be detected from
      * ComponentRegistry::all() metadata alone (both ship a Blade file
-     * AND a PHP class); this map encodes the exception per component.
+     * and a PHP class); this map encodes the exception per component.
      *
      * Used by CLI surfaces (`wirekit:show`, `wirekit:list`,
      * `wirekit:export-json`, `wirekit:install summary`,
      * `wirekit:export-api-map`) so every "what tag do I use?" report
-     * prints the WORKING form. Without this map, `wirekit:show chart`
+     * prints the working form. Without this map, `wirekit:show chart`
      * would print `<x-wirekit::chart>`, which renders a 500 because the
      * anonymous Blade file references an undefined `$alpineComponent`
      * variable (the class constructor populates it via the class-based
@@ -103,7 +103,7 @@ class ComponentRegistry
     /**
      * Exposes the deprecated tag-form
      * alias for class-based components so tool integrators can
-     * verify both the canonical (single-hyphen) shape AND any
+     * verify both the canonical (single-hyphen) shape and any
      * historical (double-colon) shape that documentation might have
      * shipped. Returns NULL for normal anonymous components (their
      * canonical = their alias).
@@ -124,14 +124,14 @@ class ComponentRegistry
      * list this long drifts the first time someone adds a file and forgets
      * the array; deriving it means the catalog cannot disagree with what ships.
      *
-     * Sub-components are deliberately NOT in `all()`. They are part of the public
+     * Sub-components are deliberately not in `all()`. They are part of the public
      * API — AGENTS.md tells an agent to reach for `card.body`, and `table.th`
      * carries its own documented props — but they are not components in the sense
      * every count in this project means by the word. Folding them in would inflate
      * the component count by close to half overnight without a single new component
      * shipping. They are a separate surface, discoverable on their own terms.
      *
-     * `index.blade.php` is excluded: that file IS the parent (the directory-
+     * `index.blade.php` is excluded: that file is the parent (the directory-
      * component form), not a child of it.
      *
      * @return array<string, array{parent: string, child: string}>
@@ -191,7 +191,7 @@ class ComponentRegistry
     }
 
     /**
-     * Metadata for a name of EITHER kind — `card` or `card.body`.
+     * Metadata for a name of either kind — `card` or `card.body`.
      *
      * The three discovery surfaces (the show command, the JSON export, the MCP
      * catalog) answer "what is card.body?" through this one resolver. A surface that
@@ -281,7 +281,7 @@ class ComponentRegistry
      * Kept separate from `extractProps()` on purpose. Every other reader of
      * that method — the JSON manifest, the API map, the docs pipeline — means
      * "the props this component declares", and an `@aware` key is not one: it
-     * is a value the PARENT owns, which the child reads if it is there. Folding
+     * is a value the parent owns, which the child reads if it is there. Folding
      * the two together would quietly widen every published surface.
      *
      * The one question where they belong together is "is this attribute a name
@@ -306,13 +306,13 @@ class ComponentRegistry
     }
 
     /**
-     * Every name this component ACCEPTS on its tag — `@props` and `@aware` together.
+     * Every name this component accepts on its tag — `@props` and `@aware` together.
      *
      * A different question from `extractProps()`, and the difference is the whole reason this
      * method exists. That one answers "which props does the component declare?", which is what a
      * manifest, a docs page and an API map mean. This one answers "would Blade do something with
      * this attribute?" — and there the two blocks are equal, because `@aware` reads
-     * `currentComponentData`, which carries the component's OWN data before the parent chain. A
+     * `currentComponentData`, which carries the component's own data before the parent chain. A
      * key written directly on the tag therefore arrives and takes effect:
      * `<x-wirekit::accordion.item variant="separated">` renders the separated chrome.
      *
@@ -444,7 +444,7 @@ class ComponentRegistry
      * The nullable companion to `bladeFilePath()`, which answers with a path
      * whether or not the file exists — deliberate, because prop extraction wants
      * a path to hand to a parser that returns nothing for a missing file. A
-     * caller that must DECIDE (does this component have a template at all?)
+     * caller that must decide (does this component have a template at all?)
      * needs the other answer, and building it by re-walking the directory is how
      * two resolvers come to disagree.
      *

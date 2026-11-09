@@ -9,7 +9,7 @@
  *
  * Two things here are subtler than they look:
  *
- *   The scroll root must be the SAME on save and on resume. When the target is
+ *   The scroll root must be the same on save and on resume. When the target is
  *   internally scrollable (overflow-y: auto/scroll) the offset belongs to the
  *   element; otherwise it belongs to the window. Mixing them applies an
  *   element-relative offset to the document — which scrolls to the wrong place,
@@ -21,7 +21,7 @@
  *   failing to store one must never take the page down with it.
  *
  * The two custom events exist because the browser's own `storage` event fires
- * only for OTHER tabs. Siblings in THIS tab (the minimap's bookmark marker)
+ * only for other tabs. Siblings in this tab (the minimap's bookmark marker)
  * would otherwise never hear about a save or a clear.
  *
  * Lifecycle resources held on `this`:
@@ -88,7 +88,7 @@ export default function wirekitReadingBookmark(config = {}) {
 
             this._onScroll = () => {
                 // Debounced rather than throttled: what matters is where the
-                // reader SETTLED, not every position they passed through.
+                // reader settled, not every position they passed through.
                 clearTimeout(this._saveTimer);
                 this._saveTimer = setTimeout(() => this._save(), 1000);
             };
@@ -124,7 +124,7 @@ export default function wirekitReadingBookmark(config = {}) {
         /**
          * Move focus out of the pill before it disappears.
          *
-         * `resume()` and `dismiss()` both hide the pill, and the pill is where the focus IS —
+         * `resume()` and `dismiss()` both hide the pill, and the pill is where the focus is —
          * the reader pressed one of its two buttons. Removing the focused element sends focus
          * to `<body>`, so a keyboard user who accepted the offer lost their place in the
          * document entirely and had to tab from the top again. That is the opposite of what
@@ -166,7 +166,7 @@ export default function wirekitReadingBookmark(config = {}) {
             this._moveFocusToTheReadingTarget();
             this.showPrompt = false;
 
-            // Through the shared helper, NOT window.matchMedia directly: the
+            // Through the shared helper, not window.matchMedia directly: the
             // application's own reduced-motion setting has to be able to reach
             // this, and the OS preference alone cannot see it. Reading matchMedia
             // was what the inline version did — invisible to the guard while it
@@ -182,7 +182,7 @@ export default function wirekitReadingBookmark(config = {}) {
             }
         },
 
-        /** Take the prompt down but KEEP the bookmark — re-offer on the next visit. */
+        /** Take the prompt down but keep the bookmark — re-offer on the next visit. */
         dismiss() {
             this._moveFocusToTheReadingTarget();
             this.showPrompt = false;
@@ -251,7 +251,7 @@ export default function wirekitReadingBookmark(config = {}) {
             }
         },
 
-        /** The target element IF it scrolls internally, otherwise null. */
+        /** The target element if it scrolls internally, otherwise null. */
         _internallyScrollableTarget() {
             const target = document.querySelector(this._target);
 
@@ -277,7 +277,7 @@ export default function wirekitReadingBookmark(config = {}) {
         },
 
         /**
-         * Siblings in THIS tab, e.g. the minimap's bookmark marker. The
+         * Siblings in this tab, e.g. the minimap's bookmark marker. The
          * browser's own `storage` event only reaches other tabs.
          */
         _announce(what, detail) {

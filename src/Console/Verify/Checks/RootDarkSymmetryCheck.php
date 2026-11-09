@@ -24,7 +24,7 @@ final class RootDarkSymmetryCheck extends VerifyCheck
     /**
      * Detect `:root` ↔ `.dark` color-token override asymmetry.
      *
-     * If a developer overrides `--color-wk-accent` in `:root` but DOES NOT
+     * If a developer overrides `--color-wk-accent` in `:root` but does not
      * provide a matching declaration in `.dark`, that override silently
      * carries into dark mode — `:root` outranks the `:where(.dark)` WireKit
      * declares its own dark value with, so the token keeps the light value
@@ -41,7 +41,7 @@ final class RootDarkSymmetryCheck extends VerifyCheck
      */
     private function checkRootDarkSymmetry(): void
     {
-        // Every path out of this check SAYS something. The doctor's contract is that
+        // Every path out of this check says something. The doctor's contract is that
         // every check emits at least one observable line — the note on the
         // Alpine-hygiene check states it, and a silent return makes a test flaky,
         // which is the cheap version of the same problem.
@@ -105,14 +105,14 @@ final class RootDarkSymmetryCheck extends VerifyCheck
 
         $this->reportWarn('Token symmetry: '.count($asymmetric).' color token(s) overridden in `:root` but not in `.dark`');
 
-        // The advice is the same for every token here; the REASON is not, so there are two
+        // The advice is the same for every token here; the reason is not, so there are two
         // messages.
         //
         // "Dark mode falls back to WireKit defaults for these tokens" would be wrong:
         // every default is declared under `:where(:root)` at specificity 0 precisely so
         // that a developer's `:root` override wins "regardless of source order", and the
         // dark defaults are `:where(.dark)`, also specificity 0. So an application that
-        // declares a token in `:root` keeps ITS value in dark mode — nothing falls back
+        // declares a token in `:root` keeps its value in dark mode — nothing falls back
         // to anything.
         //
         // A value that goes through `var()` is a second case, and it can turn over on the

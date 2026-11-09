@@ -46,7 +46,7 @@
     // white space is no picture, so the avatar shows its initials (Support\UrlProp::source()).
     $src = \Pushery\WireKit\Support\UrlProp::source($src);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $fromInitials = BooleanProp::from($fromInitials, false, 'avatar', 'fromInitials');
@@ -88,7 +88,7 @@
     // Shape: circle (default) or square with medium radius.
     //
     // The default arm goes through the validator, like `size` above it. `default => $shape`
-    // emitted the caller's string as a CSS CLASS, so `shape="cirlce"` produced
+    // emitted the caller's string as a CSS class, so `shape="cirlce"` produced
     // `class="cirlce"` — no radius, no warning, and a class name that looks deliberate to
     // anyone reading the markup.
     $shapeClasses = match ($shape) {
@@ -102,7 +102,7 @@
 
     // Same treatment for the status variant, and here the silence costs more: both places
     // that render presence compare against the exact string, so `statusVariant="Dot"`
-    // removes the indicator AND its screen-reader label without rendering anything at all.
+    // removes the indicator and its screen-reader label without rendering anything at all.
     $statusVariant = WireKit::validateProp('avatar', 'statusVariant', (string) $statusVariant, ['dot', 'ring']);
 
     // Status indicator color + size scaling (dot sits on bottom-right)
@@ -181,8 +181,11 @@
     @if($src)
         <img data-wk-prose-skip src="{{ $src }}" alt="{{ \Pushery\WireKit\Support\SlotContent::textOf($alt) }}" class="w-full h-full object-cover" />
     @elseif($initials)
-        <span aria-hidden="{{ $alt ? 'true' : 'false' }}">{{ $initials }}</span>
-        @if($alt)
+        {{-- Any `alt` hides the letters: a name replaces them, and an empty one marks the
+             avatar decorative, as it marks an image, for an avatar beside a visible name.
+             The status dot below keeps its own name in both cases. --}}
+        <span aria-hidden="{{ $alt !== null ? 'true' : 'false' }}">{{ $initials }}</span>
+        @if(filled($alt))
             <span class="sr-only">{{ $alt }}</span>
         @endif
     @else
@@ -213,7 +216,7 @@
             aria-label="{{ $statusLabel }}"
             data-wk-status-shape="{{ match ($status) { 'busy' => 'bar', 'away' => 'half', 'offline' => 'hollow', default => 'filled' } }}"
             @class([
-                'absolute bottom-0 right-0',
+                'absolute bottom-0 end-0',
                 'rounded-full',
                 'bg-[var(--color-wk-bg-elevated)]',
                 'ring-2 ring-[var(--color-wk-bg-elevated)]',
@@ -239,11 +242,11 @@
         </svg></span>
     @endif
 
-    @if($status && $statusVariant === 'ring' && $statusLabel)
+    @wirekitLast($status && $statusVariant === 'ring' && $statusLabel)
         {{-- The ring variant has no dot to name, so the label is real text in an
              sr-only span rather than an aria-label on an empty element. Text
              content is read in every mode; an aria-label on an empty span with a
              live-region role is read in almost none. --}}
         <span class="sr-only">{{ $statusLabel }}</span>
-    @endif
+    @endwirekitLast
 </span>

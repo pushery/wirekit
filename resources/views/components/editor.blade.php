@@ -3,26 +3,26 @@
      work in it, so a refusal keeps what was written and says only that it was
      not saved.
 
-     The commit boundary is BLUR, not the change this component emits. That
+     The commit boundary is blur, not the change this component emits. That
      one rides a 200ms debounce, so committing on it would mean a request every
      fifth of a second while someone types — a timer wearing an event's name,
      and the boundary has to be a real event. Leaving the editor is the moment
      the writing stopped. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // `required` — declared rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
     // complain either, because `required` is in its HTML passthrough list — so it looked like
     // a legitimate attribute all the way down. The result was a required field that submits
     // empty, in the same form as a plain input that behaves correctly.
     'required' => false,
-    // The Livewire method to call when you leave the editor. A refusal KEEPS
+    // The Livewire method to call when you leave the editor. A refusal keeps
     // what you wrote — see the note above.
     // Needs `wirekit-optimistic.js` on the page beside the bundle, as
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -33,7 +33,7 @@
     'id' => null,
     'value' => null,
     'format' => config('wirekit.components.editor.format', 'html'),   // html | json
-    'extensions' => null,        // array of editor extension NAMES (hint for window.wirekitEditor)
+    'extensions' => null,        // array of editor extension names (hint for window.wirekitEditor)
     // The engine this field opens in, by name: its factory is `window.wirekitEditors[engine]`.
     // An application with several schemas registers one factory per name, and a field that
     // names its engine never takes another's, which after `wire:navigate` could be whichever
@@ -57,8 +57,8 @@
     'error' => null,
     'size' => config('wirekit.components.editor.size', 'md'),         // sm | md | lg
     // Cap the editable area's height (any CSS length, e.g. '20rem' / '50vh'). The
-    // content host already scrolls (overflow-y-auto); maxHeight gives it a CEILING
-    // so a long document scrolls INSIDE the field instead of growing the page
+    // content host already scrolls (overflow-y-auto); maxHeight gives it a ceiling
+    // so a long document scrolls inside the field instead of growing the page
     // downward. null = grow with content (the size's min-height is the only bound).
     // Width is set the normal way — the editor is w-full, so constrain it with a
     // class/style on the component (e.g. style="max-width: 40rem" or a max-w-* class).
@@ -72,7 +72,7 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false, 'editor', 'disabled');
@@ -102,7 +102,7 @@
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
-    // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
+    // A caller-supplied `aria-label` names the control, not the wrapper `{{ $attributes }}`
     // lands on. `<x-wirekit::editor aria-label="…">` put the name on a roleless element,
     // so the control the user actually operates kept no accessible name at all — WCAG
     // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
@@ -114,12 +114,12 @@
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
     //
-    // It has to happen BEFORE `$rest` is derived below: the wrapper echoes `$rest`,
+    // It has to happen before `$rest` is derived below: the wrapper echoes `$rest`,
     // not `$attributes`, so a strip applied afterwards would leave the key in the
     // very bag that reaches the element.
     $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
@@ -132,7 +132,7 @@
         : null;
 
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -147,10 +147,10 @@
         default => WireKit::validateProp('editor', 'size', $size, ['sm', 'md', 'lg']),
     };
 
-    // STABLE across re-renders, which a `Str::random(6)` id would not be. Here the two
+    // Stable across re-renders, which a `Str::random(6)` id would not be. Here the two
     // halves are on opposite sides of the server/client line: the <label id> and the
     // error/hint <p id> are re-rendered per request, while aria-labelledby and
-    // aria-describedby are serialized into the x-data payload and applied ONCE, at
+    // aria-describedby are serialized into the x-data payload and applied once, at
     // mount, as Tiptap editorProps. A re-minted id therefore leaves the contenteditable
     // announcing with no accessible name at all (WCAG 4.1.2) — and label[for] cannot
     // reach a contenteditable div, so this reference wiring is the only thing naming it.
@@ -162,7 +162,7 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Error detection: explicit prop OR Laravel validation bag.
+    // Error detection: explicit prop or Laravel validation bag.
     $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
     $hasError = $errorMessage !== null;
@@ -201,7 +201,7 @@
     $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
 
     // Route wire:model to the <textarea x-ref="input"> (the element the editor writes to
-    // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
+    // and fires its input event on), not the wrapper div — otherwise Livewire binds to a
     // div that never emits input and the value is silently lost. Modifiers (.live / .blur
     // / .debounce) are preserved; everything else but the description lands on the wrapper.
     // A caller's `x-ref` belongs to the caller's component. The root below is a root of ours and
@@ -273,7 +273,7 @@
         // Text the engine writes into an empty document, so markup is read as its text.
         'placeholder' => $placeholder instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($placeholder) : $placeholder,
         'maxLength' => $maxLength,
-        // A VISIBLE label does not name this field, and assuming it did shipped an
+        // A visible label does not name this field, and assuming it did shipped an
         // unnamed textbox to everyone with a real engine. `<x-wirekit::label for>`
         // points at the wrapper, and the editable surface the engine builds inside
         // it is a `div[contenteditable][role=textbox]` — not a labelable element,
@@ -281,7 +281,7 @@
         // no engine: without one the component renders its plain textarea, which
         // carries its own aria-label and passes.
         //
-        // So the label is wired by REFERENCE instead, and aria-label stays the
+        // So the label is wired by reference instead, and aria-label stays the
         // fallback for the unlabeled case.
         'ariaLabelledby' => $callerLabelledBy ?? ($label ? $id.'-label' : $fieldLabelId),
         // `__()` on both halves of the same name. editor.js spreads this onto the
@@ -338,7 +338,7 @@
         'focus-within:ring-[length:var(--ring-wk-width)]',
         $hasError ? 'focus-within:ring-[var(--color-wk-danger)]' : 'focus-within:ring-[var(--color-wk-ring)]',
     ])), $scope);
-    // `value` rather than `bind`: this layer is the OUTERMOST x-data here, so an
+    // `value` rather than `bind`: this layer is the outermost x-data here, so an
     // undeclared property is in no scope at all — the binding would name nothing
     // and init() would disarm, leaving a component that advertises support and
     // does nothing. It seeds the baseline only, which `keep` never writes back.
@@ -346,7 +346,7 @@
         'value' => '',
         'action' => $optimistic,
         // The field's own error region. Without it the layer's generic "Could not save"
-        // is the only thing a listener hears, and it BEATS the specific message the server
+        // is the only thing a listener hears, and it beats the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
@@ -380,7 +380,7 @@
     @endif
 
 @if($optimisticConfig)
-    {{-- OUTSIDE the component here, which is the opposite of every other
+    {{-- Outside the component here, which is the opposite of every other
          component that takes this layer — and the reason is where the commit
          comes from. Elsewhere a DOM handler inside the layer calls `run()`, so
          the layer can nest within the component. Here the commit comes from
@@ -410,27 +410,27 @@
         x-wk-focus-unit
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
-        {{-- Toolbar: auto-rendered preset, OR the custom slot when toolbar="custom". --}}
+        {{-- Toolbar: auto-rendered preset, or the custom slot when toolbar="custom". --}}
         @if($editable && $toolbarValue === 'custom' && $toolbar instanceof \Illuminate\View\ComponentSlot && \Pushery\WireKit\Support\SlotContent::given($toolbar))
             <div x-ref="toolbar">{{ $toolbar }}</div>
         @elseif($editable && $toolbarValue !== false && ! empty($presetCommands))
             <x-wirekit::editor.toolbar :commands="$presetCommands" x-ref="toolbar" />
         @endif
 
-        {{-- Editor body. The HOST is the scroll viewport + click surface: flex
+        {{-- Editor body. The host is the scroll viewport + click surface: flex
              column + cursor-text, and [contain:inline-size] so long unwrappable
-             content (an H1 line) can never WIDEN the editor — it wraps inside.
+             content (an H1 line) can never widen the editor — it wraps inside.
              Tiptap's .ProseMirror child carries the wk-editor-content typography
              and fills the box (flex/outline/wrap rules live on .wk-editor-content
-             in dist/wirekit.css — REAL CSS, because Tailwind never scans the JS
-             config strings), so clicking ANYWHERE in the body focuses the
+             in dist/wirekit.css — real CSS, because Tailwind never scans the JS
+             config strings), so clicking anywhere in the body focuses the
              document natively and the wrapper's focus-within ring frames the
              whole field. The server-rendered seed shows pre-hydration only:
-             init() REMOVES it before mounting, because Tiptap appends its view
+             init() removes it before mounting, because Tiptap appends its view
              and never empties the element — leaving the seed would render the
              content twice. The seed is the value rebuilt by EditorSeed, so it
              can run nothing before init() removes it; the value itself still
-             has to be sanitized on STORE (see the docs ::: warning). For
+             has to be sanitized on store (see the docs ::: warning). For
              format="json" there's no server renderer, so the seed is empty. --}}
         <div
             x-ref="content"
@@ -457,7 +457,7 @@
                 @if($name) name="{{ $name }}" @endif
                 hidden
                 aria-hidden="true"
-                {{-- Named so that when Tiptap is ABSENT and the factory un-hides this
+                {{-- Named so that when Tiptap is absent and the factory un-hides this
                      textarea as the fallback, it still has an accessible name (the
                      <label for> targets the content host, not this field). --}}
                 {{-- The caller's own name first. This is the control a reader without the
@@ -499,11 +499,11 @@
             @endif
         @endif
 
-        @if(($maxLength && $editable) || \Pushery\WireKit\Support\SlotContent::given($bottomBar ?? null))
-            <div class="flex items-center justify-between gap-3 border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+        @wirekitLast(($maxLength && $editable) || \Pushery\WireKit\Support\SlotContent::given($bottomBar ?? null))
+            <div class="flex items-center justify-between gap-[var(--gap-wk-md)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                 <div>{{ $bottomBar ?? '' }}</div>
-                @if($maxLength && $editable)
-                    {{-- Soft character counter. maxLength is a SOFT limit: the visible
+                @wirekitLast($maxLength && $editable)
+                    {{-- Soft character counter. maxLength is a soft limit: the visible
                          count is aria-hidden (it would spam a screen reader on every
                          keystroke), while a debounced sr-only live region announces the
                          remaining count when the user pauses. Hard enforcement requires
@@ -512,9 +512,9 @@
                         <span aria-hidden="true" x-text="charCountLabel" :class="{ 'text-[color:var(--color-wk-danger-text)] font-medium': isOverLimit }"></span>
                         <span class="sr-only" aria-live="polite" x-text="charAnnounce"></span>
                     </div>
-                @endif
+                @endwirekitLast
             </div>
-        @endif
+        @endwirekitLast
     </div>
 
     @if($requiredMessageId)

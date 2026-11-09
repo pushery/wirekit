@@ -10,7 +10,7 @@
     // Fills the row it sits in instead of shrinking to its trigger.
     //
     // The wrapper is shrink-to-fit by default, which is right for a menu button in a
-    // toolbar and wrong for the one place a dropdown is the WHOLE row: the account
+    // toolbar and wrong for the one place a dropdown is the whole row: the account
     // trigger at the foot of a sidebar column. There the trigger's highlight has to
     // span the row like the navigation entries above it, and no width set on the
     // trigger can reach past a wrapper sized to that same trigger.
@@ -46,7 +46,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:keydown.escape.window', 'x-on:click.outside', 'x-on:click']);
 
-    // STABLE across re-renders, which a random id per render would not be — and the
+    // Stable across re-renders, which a random id per render would not be — and the
     // panel is the one place where that costs everything.
     //
     // The panel teleports out of the document flow and carries no id in its markup: the script
@@ -66,7 +66,7 @@
         'wk-dropdown-panel-'
     );
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy.
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy.
     $block = BooleanProp::from($block, false, 'dropdown', 'block');
 
     // Base wrapper classes — relative positioning context for floating panel
@@ -90,12 +90,12 @@
      user's action is already applied when close() fires. Disabled items are
      filtered out via :not([aria-disabled="true"]).
 
-     ESC is handled at WINDOW level (not on the wrapper) so it works regardless
+     ESC is handled at window level (not on the wrapper) so it works regardless
      of where focus currently sits: a keydown fired while focus has fallen back
      to `document.body` never bubbles up to a wrapper-level listener. `window`
      also gives users the conventional "ESC closes menu from anywhere" UX.
 
-     Two composition forms supported (use ONE, not both):
+     Two composition forms supported (use one, not both):
        1. Named-slot quick form — provide <x-slot:trigger>...</x-slot:trigger>
           and the default slot becomes the panel content. The parent
           auto-wraps trigger + panel sub-components with their ARIA wiring.
@@ -112,7 +112,7 @@
     }
 @endphp
 <div
-    {{-- panelId travels through the Alpine SCOPE, not the DOM. The panel is
+    {{-- panelId travels through the Alpine scope, not the DOM. The panel is
          teleported out of the document flow to escape a host stacking context, and Alpine keeps
          the scope across that move while `closest()` does not — reading this id off
          `data-wk-panel-id` with an ancestor walk would return null the moment the
@@ -123,7 +123,7 @@
     x-on:click.outside="close()"
     {{-- The same exact-match trap as `_getItems()`: `[role=menuitem]` does not match a
          `menuitemradio` or `menuitemcheckbox` row. A radio menu would still close without the
-         other two, but only by ACCIDENT, because the panel is teleported outside this wrapper
+         other two, but only by accident, because the panel is teleported outside this wrapper
          and a click inside it therefore counts as `click.outside`. A documented behavior
          resting on a side effect of the teleport is one refactor away from a silent
          regression, so all three roles are named. --}}
@@ -131,15 +131,15 @@
     data-wk-panel-id="{{ $panelId }}"
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    @if(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
         {{-- Quick form: <x-slot:trigger> provided. Auto-wrap trigger +
              default slot in the canonical sub-component shells so the
              developer doesn't repeat the trigger/panel composition.
 
-             The wrap is conditional. A call site naming BOTH `<x-slot:trigger>`
+             The wrap is conditional. A call site naming both `<x-slot:trigger>`
              and an explicit `<x-wirekit::dropdown.panel>` would otherwise get two
              nested shells, two teleports and — because the id travels through
-             the Alpine scope — the SAME id on both, and the only signal would be
+             the Alpine scope — the same id on both, and the only signal would be
              a duplicate-id accessibility violation two layers from the cause. So
              the mistake says so out loud in development. --}}
         @php
@@ -176,5 +176,5 @@
             @endphp
         @endif
         {{ $slot }}
-    @endif
+    @endwirekitLast
 </div>

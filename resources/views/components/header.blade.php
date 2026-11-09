@@ -17,7 +17,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('header', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false, 'header', 'sticky');
@@ -30,13 +30,13 @@
     // has to hold in a page whose stylesheet does not come from a Tailwind
     // build that scanned this view. Without `display: flex` there, the slot
     // children stack vertically, and `<x-wirekit::spacer />` /
-    // `margin-left: auto` cannot push items to the right edge because the
+    // `margin-inline-start: auto` cannot push items to the far edge because the
     // container is not a flex parent.
     // `flex-wrap: wrap` keeps brand + nav cluster on a single row whenever they
     // fit, but lets them break to a second row on narrow viewports — without it
     // a long nav cluster (Dashboard / Projects / Team / Reports / Settings +
     // profile) collided with the brand on a 390px phone (the cluster's
-    // `margin-left: auto` pushed it on top of the brand instead of below it).
+    // `margin-inline-start: auto` pushed it on top of the brand instead of below it).
     // Desktop layout is unaffected: wrap only engages when content overflows.
     $headerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; gap: var(--gap-wk-md);';
     // `wk-header` marker: a developer prose wrapper that clamps its direct children
@@ -61,19 +61,19 @@
         'gap-[var(--gap-wk-md)]',
     ]), $scope);
 
-    // The CHROME layer, not the shared sticky one. A popover opened in page content is a
+    // The chrome layer, not the shared sticky one. A popover opened in page content is a
     // teleported panel at --z-wk-dropdown (50), and at --z-wk-sticky (40) this bar would be
-    // painted over — arithmetic, not a quirk. A panel anchored INSIDE
+    // painted over — arithmetic, not a quirk. A panel anchored inside
     // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
     // above, which is correct.
-    // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
+    // Sticks below a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
     $stickyClasses = $sticky ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-chrome)]' : '';
 
     // When `:container="true"`, the inner wrapper takes 100% of the header
     // content area up to the 2xl container limit and centers itself with
     // auto margins. The flex + width / max-width / margin properties are
     // inlined for the same reason as the outer header.
-    $innerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; max-width: var(--size-wk-container-2xl, 96rem); margin-left: auto; margin-right: auto; gap: var(--gap-wk-md);';
+    $innerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; max-width: var(--size-wk-container-2xl, 96rem); margin-inline: auto; gap: var(--gap-wk-md);';
 
     // An inline display wins over every class of the caller's, one under a breakpoint included:
     // where the caller's class reaches for a display, it is left out here and comes back as its
@@ -82,11 +82,11 @@
 @endphp
 
 <header @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->merge($headerStyle ? ['style' => $headerStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $stickyClasses, $headerStyleClasses => $headerStyleClasses !== ''])) }}>
-    @if($container)
+    @wirekitLast($container)
         <div class="flex flex-wrap items-center w-full max-w-[var(--size-wk-container-2xl,96rem)] mx-auto gap-[var(--gap-wk-md)]" style="{{ $innerStyle }}">
             {{ $slot }}
         </div>
     @else
         {{ $slot }}
-    @endif
+    @endwirekitLast
 </header>

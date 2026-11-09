@@ -10,7 +10,7 @@
     // How the result is announced to assistive tech once the stream settles:
     //   'result' (default) — announce the final text once.
     //   'status'           — announce only "Response ready".
-    //   'none'             — announce nothing, and render NO live region.
+    //   'none'             — announce nothing, and render no live region.
     //
     // 'none' exists for one situation and is wrong everywhere else: an application
     // that already has its own status region for this response. Two regions announcing
@@ -18,7 +18,7 @@
     // it twice and cannot tell which one is the real one. Pair it with the `output`
     // slot, which replaces the visible block for the same reason.
     //
-    // If you use it and do NOT announce completion yourself, the response finishes
+    // If you use it and do not announce completion yourself, the response finishes
     // silently for anyone not watching the screen. That is the trade, stated rather
     // than buried: this prop hands the announcement contract to the caller, it does
     // not delete it.
@@ -30,7 +30,7 @@
     // Where the tokens come from:
     //   'sse' (default) — the browser's EventSource. GET-only and body-less.
     //   'fetch'         — POST (or any method) and read the response body. The
-    //                     shape LLM APIs use, because the request IS the payload:
+    //                     shape LLM APIs use, because the request is the payload:
     //                     prompt, options and model belong in a body, not a URL.
     //   'manual'        — no transport at all. Feed the component yourself with
     //                     push()/finish()/fail() or the wirekit-stream-* events,
@@ -43,7 +43,7 @@
     // Names this stream so the wirekit-stream-* events can address one of several
     // on the same page (a pane per voice).
     'name' => null,
-    // Simulate mode: stream THIS text token-by-token from a local timer, with no SSE
+    // Simulate mode: stream this text token-by-token from a local timer, with no SSE
     // endpoint. Drives a live-looking demo (and a typewriter effect), and opts the
     // component into the docs "↻ Replay" affordance so a reader can re-watch it.
     'simulate' => null,
@@ -85,7 +85,7 @@
         $source = null;
     }
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $autoStart = BooleanProp::from($autoStart, true, 'stream', 'autoStart');
@@ -97,7 +97,7 @@
     // defined terminal state on abort / connection loss.
     $config = array_filter([
         'url' => $url,
-        // Handed over only when the developer CHOSE a name.
+        // Handed over only when the developer chose a name.
         //
         // Blade compiles an unset prop to its default, so passing this
         // unconditionally would tell the plugin that every stream in existence had
@@ -117,7 +117,7 @@
         'body' => $body,
         'headers' => $headers,
         'name' => $name,
-        // Screen-reader announcements, translated HERE rather than defaulted
+        // Screen-reader announcements, translated here rather than defaulted
         // inside the plugin as bare English literals — a string that never passes
         // through __() cannot be localized by any developer, and these are the
         // only thing a screen-reader user hears about the stream's state.
@@ -158,8 +158,8 @@
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 <div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }} data-wk-sr-host @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
-    {{-- Single live region: announces that a response is GENERATING (once), then the
-         RESULT (once) when it settles. The visible output below is deliberately NOT a
+    {{-- Single live region: announces that a response is generating (once), then the
+         result (once) when it settles. The visible output below is deliberately not a
          live region, so a screen reader is not re-read on every token. --}}
     @if($announce !== 'none')
     <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="_announceText"></span>
@@ -167,15 +167,15 @@
 
     {{-- The streamed output.
 
-         `output` REPLACES this block, so a caller can keep the state machine and
+         `output` replaces this block, so a caller can keep the state machine and
          the announcement contract while rendering their own markup — a chat
          bubble, a diff view, a syntax-highlighted pane. Without it the component
          was not adoptable as a pure transport: it always drew its own output, so
-         a caller who wanted their own got BOTH, and `x-text="text"` appeared
+         a caller who wanted their own got both, and `x-text="text"` appeared
          twice on the page.
 
-         A NAMED slot rather than the default one, deliberately. The default slot
-         here is documented as ADDITIVE, the place for Stop and Retry controls, so
+         A named slot rather than the default one, deliberately. The default slot
+         here is documented as additive, the place for Stop and Retry controls, so
          this content takes a name of its own, and a caller can use both at once.
 
          The live regions above stay in both paths. They are the announcement
@@ -186,7 +186,7 @@
         {{ $output }}
     @else
     {{-- In the a11y tree for on-demand reading, but not auto-announced. Wraps +
-         preserves newlines. The caret is an INLINE element right after the text
+         preserves newlines. The caret is an inline element right after the text
          span (no whitespace between them) so it trails the last character as the
          text grows — a real typing cursor, not a block on its own line. --}}
     <div
@@ -196,14 +196,14 @@
             x-show="isStreaming"
             x-cloak
             aria-hidden="true"
-            class="wk-stream-caret ml-px inline-block h-[1em] w-[0.5ch] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
+            class="wk-stream-caret ms-px inline-block h-[1em] w-[0.5ch] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
         ></span></div>
     @endif
 
     {{-- Terminal failure — a defined state, overridable via the `error` slot.
 
-         The alert container is rendered UNCONDITIONALLY and starts empty; only its
-         CONTENT is gated on `isFailed`. A live region has to exist before the text
+         The alert container is rendered unconditionally and starts empty; only its
+         content is gated on `isFailed`. A live region has to exist before the text
          it announces: an element that arrives already carrying its message is a new
          node, not a region that changed, and assistive technology says nothing. This
          was the repo's only "async failed" announcement and it had never once
@@ -214,18 +214,18 @@
          there when it matters. --}}
     <div role="alert" class="mt-[var(--gap-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
         <div x-show="isFailed" x-cloak>
-            @if(\Pushery\WireKit\Support\SlotContent::given($error ?? null))
+            @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($error ?? null))
                 {{ $error }}
             @else
                 <span x-text="error"></span>
-            @endif
+            @endwirekitLast
         </div>
     </div>
 
     {{-- Developer controls (Stop / Retry) and custom state UIs render here, inside the
          component's Alpine scope — reference status / isStreaming / start() / stop().
          Given clear breathing room from the streamed text above (only when present). --}}
-    @if($slot->hasActualContent())
+    @wirekitLast($slot->hasActualContent())
         <div class="mt-[var(--gap-wk-md)]">{{ $slot }}</div>
-    @endif
+    @endwirekitLast
 </div>

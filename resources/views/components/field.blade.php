@@ -24,7 +24,7 @@
 {{-- Whether the surrounding row lines its fields up on a shared grid. Read from the parent
      rather than passed, because a field cannot see its siblings and the decision belongs to
      whoever composed the row. `alignFields` is a name no other component declares, which
-     matters: @aware matches on the prop NAME, so a generic one would also answer from a
+     matters: @aware matches on the prop name, so a generic one would also answer from a
      `hero` or a `data-list` that happens to be an ancestor. --}}
 @aware(['alignFields' => false, 'announceErrors' => null, 'wkFieldSet' => null])
 
@@ -38,13 +38,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('field', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $required = BooleanProp::from($required, false, 'field', 'required');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -78,7 +78,7 @@
     $labelFor = $fieldControl !== null ? $fieldControl->forId() : $targetId;
     $labelId = $fieldControl?->labelId();
 
-    // Error detection: explicit prop OR Laravel validation bag (keyed by `name`), through the set
+    // Error detection: explicit prop or Laravel validation bag (keyed by `name`), through the set
     // around the field when there is one, whose message its key is (Support\FieldGroup::entryMessage()).
     $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $name ? ($errors ?? null) : null, $name, $error);
     // A WireKit control in the slot reads the bag under its own name as well and shows the message
@@ -119,7 +119,7 @@
      row alone. Emitted always, not only inside such a row — an identity hook that appears
      conditionally is one nothing else can ever rely on. --}}
 <div data-wk-field {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}>
-    @if($isHorizontal)
+    @wirekitLast($isHorizontal)
         {{-- Horizontal: label in a left column beside the control; control + messages
              take the remaining inline space. --}}
         <div class="flex items-start gap-[var(--padding-wk-x-lg)]">
@@ -136,9 +136,9 @@
                 @elseif($showsHint)
                     <p data-wk-prose-skip @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
                 @endif
-                @if(\Pushery\WireKit\Support\SlotContent::given($after ?? null))
+                @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($after ?? null))
                     <div data-wk-field-after>{{ $after }}</div>
-                @endif
+                @endwirekitLast
             </div>
         </div>
     @else
@@ -187,5 +187,5 @@
         @if(\Pushery\WireKit\Support\SlotContent::given($after ?? null))
             <div data-wk-field-after>{{ $after }}</div>
         @endif
-    @endif
+    @endwirekitLast
 </div>

@@ -13,10 +13,10 @@ namespace Pushery\WireKit\Support;
  * already enforces PHP / Laravel / Livewire via `require`) has no visibility
  * into it, and WireKit is not an npm package so npm peer-deps can't fire either.
  * The earliest WireKit-controlled checkpoint is therefore the artisan layer
- * (`wirekit:install` / `wirekit:doctor`), which CAN read the app's package.json.
+ * (`wirekit:install` / `wirekit:doctor`), which can read the app's package.json.
  *
- * Detection is deliberately CONSERVATIVE: {@see self::isPreV4()} returns true
- * only on POSITIVE pre-v4 evidence, so a valid v4 install is never blocked.
+ * Detection is deliberately conservative: {@see self::isPreV4()} returns true
+ * only on positive pre-v4 evidence, so a valid v4 install is never blocked.
  */
 final class TailwindVersion
 {
@@ -26,7 +26,7 @@ final class TailwindVersion
      * The installed package decides first: `node_modules/tailwindcss/package.json` names the
      * version npm resolved, which is the one the app's build uses. Without it (nothing installed
      * yet, or a Plug'n'Play tree with no `node_modules`) the constraint in `devDependencies`,
-     * then `dependencies`, is read, and only in a form that names ONE major: "^4.0.0", "~3.4",
+     * then `dependencies`, is read, and only in a form that names one major: "^4.0.0", "~3.4",
      * "4.x", "4.1.13". A range such as ">=3.4" or "^3.4 || ^4.0" starts with its lower bound,
      * while npm installs the highest version the range allows, so its first number says nothing
      * about the version that runs. Such a constraint is undetermined, and {@see self::isPreV4()}
@@ -73,7 +73,7 @@ final class TailwindVersion
 
             // The first section that declares the package decides, readable or not.
             //
-            // An optional `^`, `~`, `=` or `v`, then ONE version whose minor and patch may be
+            // An optional `^`, `~`, `=` or `v`, then one version whose minor and patch may be
             // wildcards, and nothing after it but a pre-release tag. The major is group 1.
             if (preg_match('/^\s*[\^~=v]?\s*(\d+)(?:\.(?:\d+|[xX*])){0,2}(?:-[0-9A-Za-z.-]+)?\s*$/', $constraint, $m) !== 1) {
                 return null;
@@ -116,7 +116,7 @@ final class TailwindVersion
         foreach ($cssFiles as $file) {
             // `@` and an explicit false check, not just a `(string)` cast.
             //
-            // The cast catches the RETURN value; it does not stop the warning, and
+            // The cast catches the return value; it does not stop the warning, and
             // Laravel's error handler promotes a warning to an ErrorException — so an
             // unreadable file (a dangling symlink, an artifact owned by another user, a
             // file mid-write) killed the caller either way. glob() lists such a file

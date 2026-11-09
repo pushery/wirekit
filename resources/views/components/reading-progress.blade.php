@@ -38,7 +38,7 @@
     $position = \Pushery\WireKit\WireKit::validateProp('reading-progress', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'top'), ['top', 'bottom']);
     $indicator = \Pushery\WireKit\WireKit::validateProp('reading-progress', 'indicator', \Pushery\WireKit\Support\NumericProp::text($indicator ?: 'bar'), ['bar', 'dot']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $milestones = BooleanProp::from($milestones, false, 'reading-progress', 'milestones');
@@ -46,7 +46,7 @@
     // Reading-progress — a viewport-pinned indicator that fills 0 → 100% as the
     // reader scrolls. Two surfaces share one component: `indicator="bar"` (default,
     // a thin horizontal strip) and `indicator="dot"` (a circular SVG pinned to the
-    // bottom-right). Both reuse the same Alpine state machine; only the rendered
+    // bottom corner at the end of the line). Both reuse the same Alpine state machine; only the rendered
     // DOM differs.
     //
     // The fill animation uses `transform: scaleX` for the bar, which the compositor
@@ -64,7 +64,7 @@
     // `intent` is the canonical name for this axis; `variant` is the
     // back-compat alias. When both are given the canonical one decides.
     $effectiveIntent = $intent ?? $variant;
-    // The error names the prop the CALLER wrote, not the canonical one.
+    // The error names the prop the caller wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
     // Validation — gates against the canonical 6-set + the auto value.
@@ -140,7 +140,7 @@
     $positionMode = $useSticky ? 'sticky' : 'fixed';
 
     // A strip above the page (`announcement-banner strip`) takes `--wk-strip-inset` from the
-    // top of the viewport, so a bar FIXED to the top starts below it — the edge `page-progress`
+    // top of the viewport, so a bar fixed to the top starts below it — the edge `page-progress`
     // uses. Not the sticky branch: that bar pins inside its own container, which already sits
     // below a strip, and folding the inset in there would push it one strip-height down. The
     // class and the inline style carry the same edge because the inline style wins; the class
@@ -150,23 +150,27 @@
 
     // Marker class — used by reduced-motion gating in dist/wirekit.css, and by
     // print-stylesheet rules.
-    // Class strings stay STATIC across the sticky/fixed branch so Tailwind v4's
+    // Class strings stay static across the sticky/fixed branch so Tailwind v4's
     // content scanner picks both variants up cleanly.
     $rootClass = 'wk-reading-progress '.WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
-        // The dot's bottom offset carries `env(safe-area-inset-bottom, 0px)` in BOTH
+        // The dot's bottom offset carries `env(safe-area-inset-bottom, 0px)` in both
         // branches. Sticky and fixed both settle against the viewport's bottom edge, and on
         // a phone with a home indicator the plain padding puts the dot inside the gesture
         // strip — where the system swallows the tap. It resolves to zero everywhere else,
         // so this is the same offset on a desktop.
         //
         // action-bar, scroll-to-top and reading-bookmark carry the same offset.
+        //
+        // The dot stands at the end of the line, as the floating action button does, so a page
+        // that reads from the right has it in the bottom left corner. `--wk-scrollbar-inset` is a
+        // gutter at the end of the line, which is the side this offset is measured from.
         $indicator === 'dot'
             ? ($useSticky
-                ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]'
-                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]')
+                ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none end-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]'
+                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]')
             : ($useSticky
-                ? 'sticky left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$edgeClass
-                : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$edgeClass),
+                ? 'sticky start-0 end-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$edgeClass
+                : 'fixed start-0 end-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$edgeClass),
     ]), $scope);
 
     // Segments prop — a numeric array of fractional positions (0..1) where chapter
@@ -200,10 +204,10 @@
             $stops[] = $segmentColor.' calc('.$pct.'% + 1px)';
             $stops[] = 'transparent calc('.$pct.'% + 1px)';
         }
-        $segmentsStyle = 'background-image: linear-gradient(to right, '.implode(', ', $stops).');';
+        $segmentsStyle = 'background-image: linear-gradient(var(--wk-reading-progress-run, to right), '.implode(', ', $stops).');';
     }
 
-    // Milestones — Alpine $dispatch boundaries fired ONCE per session at each
+    // Milestones — Alpine $dispatch boundaries fired once per session at each
     // 25/50/75/100% threshold. Disabled by default (`milestones=false`); when true,
     // the developer can listen via `x-on:wirekit:reading-progress:milestone.window`.
     $milestonesEnabled = filter_var($milestones, FILTER_VALIDATE_BOOL);
@@ -215,14 +219,18 @@
     // An inline position wins over every class of the caller's, one under a breakpoint included:
     // where the caller's class reaches for a position, it is left out here and comes back as its
     // utility.
-    [$dotStyle, $dotStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: '.($positionMode).'; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);');
-    [$barStyle, $barStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: '.($positionMode).'; '.$edgeStyle.'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : ''));
+    //
+    // It wins over the root's own classes as well, so the dot's style carries the same offsets as
+    // they do, the gutter and the device's inset at the bottom included.
+    [$dotStyle, $dotStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: '.($positionMode).'; inset-inline-end: '.($useSticky ? 'var(--padding-wk-x-lg)' : 'calc(var(--padding-wk-x-lg) + var(--wk-scrollbar-inset, 0px))').'; bottom: calc(var(--padding-wk-x-lg) + env(safe-area-inset-bottom, 0px)); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);');
+    [$barStyle, $barStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: '.($positionMode).'; '.$edgeStyle.'; inset-inline: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : ''));
 @endphp
 
 @if ($indicator === 'dot')
     {{-- Dot variant: a circular SVG with stroke-dasharray fill. 2.5rem default
-         size, pinned bottom-right. The circle's stroke fills clockwise from 0
-         to 2π × r as `progress` advances. Same Alpine state, different render.
+         size, pinned to the bottom corner at the end of the line. The circle's
+         stroke fills clockwise from 0 to 2π × r as `progress` advances. Same
+         Alpine state, different render.
          Uses `wk-reading-progress--dot` so reduced-motion / print rules can
          scope to the dot specifically. --}}
     <div
@@ -268,7 +276,7 @@
                     stroke-linecap="round"
                     stroke-dasharray="100.53"
                     x-bind:stroke-dashoffset="100.53 - (progress / 100) * 100.53"
-                    {{-- Half the standard duration, DERIVED from it rather than written as
+                    {{-- Half the standard duration, derived from it rather than written as
                          `75ms`. This bar tracks scroll continuously, so the full 150ms reads
                          as lag where it does not on the sibling `progress`, whose value
                          changes occasionally — the shorter time is deliberate. What was not
@@ -304,21 +312,21 @@
              caps the width of a prose wrapper's direct children (a
              `.prose > * { max-width: … }` rule in a custom prose
              stylesheet). Without this override the bar wrapper's
-             `left:0; right:0` would resolve correctly to viewport edges
+             `inset-inline: 0` would resolve correctly to viewport edges
              but then that cap kicks in and the bar visibly stops short
-             of the right edge. Inline `!important` is not needed
+             of the far edge. Inline `!important` is not needed
              because inline style already beats class-level rules
              on specificity. --}}
     >
-        {{-- x-bind:style uses the OBJECT form, not a string template.
-             Alpine's `bind:style` with a string template REPLACES the
+        {{-- x-bind:style uses the object form, not a string template.
+             Alpine's `bind:style` with a string template replaces the
              entire `style` attribute on each reactive update, blowing
              away the static styles set on this element (background-
              color, height, width, transform-origin, transition).
              That's the production "bar visible at first paint, no
              fill after scroll" symptom — once the user scrolls and
              Alpine writes `transform: scaleX(0.5)`, the bar loses
-             its background-color and becomes invisible. The OBJECT
+             its background-color and becomes invisible. The object
              form merges with static styles via individual property
              assignment, preserving every static value. --}}
         {{-- The origin is pinned in CSS, and the Tailwind origin utility is not named
@@ -327,8 +335,8 @@
              A reading bar is a direction-encoded object: it fills the way the reader
              travels. Under `dir="rtl"` the reader travels right to left while a scaleX
              anchored at the start edge still grows rightward, so at 10% read the filled
-             part sits at the END of the line instead of its start.
-             `transform-origin` has NO logical keyword in any shipped browser — the
+             part sits at the end of the line instead of its start.
+             `transform-origin` has no logical keyword in any shipped browser — the
              grammar is `left | center | right | top | bottom | <length-percentage>` —
              so the mirror is a `[dir="rtl"]` rule in the stylesheet, which is the same
              shape `.wk-scroll-fade` already uses for its horizontal edge fade.

@@ -87,14 +87,14 @@
             @endif
             <div class="min-w-0 flex-1">
                 <div>{{ $slot }}</div>
-                @if($hasDescription)
+                @wirekitLast($hasDescription)
                     <div data-wk-card-header-description class="{{ $descriptionClasses }}">{{ $description }}</div>
-                @endif
+                @endwirekitLast
             </div>
         </div>
-        @if($hasActions)
+        @wirekitLast($hasActions)
             <div data-wk-card-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
-        @endif
+        @endwirekitLast
     </div>
 @else
     <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'flex items-center gap-[var(--gap-wk-sm)]'])) }}>

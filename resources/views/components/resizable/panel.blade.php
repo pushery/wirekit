@@ -26,7 +26,7 @@
     // Inline custom properties — read by the [data-wk-resizable] selectors
     // in dist/wirekit.css. We keep them as percentages so the layout adapts
     // proportionally when the container resizes (e.g. on viewport changes).
-    // NOTE: clamp to integers to avoid sending floats into inline style
+    // Note: clamp to integers to avoid sending floats into inline style
     // attributes — Blade's @php doesn't sanitize these for us.
     $defaultPct = max(0, min(100, \Pushery\WireKit\Support\NumericProp::int($defaultSize, 0, 'resizable.panel', 'defaultSize')));
     $minPct = max(0, min(100, \Pushery\WireKit\Support\NumericProp::int($minSize, 0, 'resizable.panel', 'minSize')));

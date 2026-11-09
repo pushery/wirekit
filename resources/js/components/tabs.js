@@ -8,7 +8,7 @@
  * would answer neither clicks nor arrow keys.
  *
  * One correctness note worth keeping visible: `focusTab` reads the tab buttons
- * off `$root`, not `$el`. Every caller is a keydown handler bound to a BUTTON,
+ * off `$root`, not `$el`. Every caller is a keydown handler bound to a button,
  * and Alpine binds `$el` to the element the handler sits on — a tab, which
  * contains no tabs. In an inline expression a bare `$el` would resolve to the
  * x-data root by accident of where the expression is evaluated; in a factory
@@ -66,7 +66,7 @@ export default function wirekitTabs(config = {}) {
 
             // A namespaced, bubbling browser event on every change, so a Livewire
             // (or any) listener can observe the switch server-side without
-            // rebuilding the tablist by hand. $watch fires on CHANGE only, and an
+            // rebuilding the tablist by hand. $watch fires on change only, and an
             // unobserved CustomEvent is a no-op, so the event needs no setup and
             // changes nothing where nobody listens. Listen with
             // @wirekit:tab-changed on any ancestor, or on window.
@@ -101,7 +101,7 @@ export default function wirekitTabs(config = {}) {
         /**
          * Move focus within the tablist. Wraps in both directions.
          *
-         * Focus only — selection does NOT follow, which is the deliberate
+         * Focus only — selection does not follow, which is the deliberate
          * difference from the radio pattern: a tab panel can be expensive to
          * render, so the manual-activation model (arrow to a tab, Enter or Space
          * to open it) is the one the WAI-ARIA tabs pattern recommends.

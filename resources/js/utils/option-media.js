@@ -44,7 +44,7 @@ export function chosenText(option) {
 /**
  * The state behind an avatar's fallback, spread into a factory.
  *
- * Methods only, on purpose: spreading an object copies a getter's VALUE at spread time, so a
+ * Methods only, on purpose: spreading an object copies a getter's value at spread time, so a
  * getter here would freeze. The broken photos are keyed by option value, which is stable across
  * filtering, while the rows that show them are created and destroyed on every keystroke.
  */

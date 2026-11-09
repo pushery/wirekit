@@ -13,7 +13,7 @@ import { sameName } from './same-name.js';
 /**
  * Global scroll lock reference counter.
  * Tracks how many overlays currently hold a scroll lock so that
- * body overflow is only restored when ALL overlays are closed.
+ * body overflow is only restored when all overlays are closed.
  */
 let scrollLockCount = 0;
 // Snapshot of style values we mutated, so unlockScroll can restore the page
@@ -27,7 +27,7 @@ let scrollLockSnapshot = null;
  * Push on show, pop on close. The topmost entry (last in array) is the
  * overlay that should respond to ESC and carry `aria-modal="true"` —
  * any open overlay below it is "behind" the topmost in the user's
- * visual + interaction hierarchy and should NOT react to ESC (otherwise
+ * visual + interaction hierarchy and should not react to ESC (otherwise
  * one ESC press cascades through every open modal at once).
  *
  * Required because each Blade overlay registers its own window-level
@@ -84,6 +84,27 @@ function broadcastStackChange() {
 }
 
 /**
+ * Whether the engine keeps a scrollbar's gutter once the scrollbar is gone: `scrollbar-gutter`, in
+ * Chrome 94, Firefox 97 and Safari 18.2. Below that the lock pads the body instead.
+ *
+ * @returns {boolean}
+ */
+function keepsGutter() {
+    return typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('scrollbar-gutter', 'stable');
+}
+
+/**
+ * Whether the root reads from the left. Without a computed style to ask, as outside a browser, it
+ * counts as the default direction.
+ *
+ * @param {HTMLElement} root
+ * @returns {boolean}
+ */
+function readsFromTheLeft(root) {
+    return typeof window.getComputedStyle !== 'function' || window.getComputedStyle(root).direction !== 'rtl';
+}
+
+/**
  * Engage scroll lock on <body>.
  *
  * Two compounding browser quirks force this to be more than a one-line
@@ -92,22 +113,24 @@ function broadcastStackChange() {
  *  1. **Scrollbar layout shift.** Removing the page's vertical scrollbar
  *     widens the viewport by the scrollbar's gutter (~15px on Windows /
  *     classic macOS scrollbars; 0px on macOS auto-hiding scrollbars).
- *     Without compensation the page's content visibly jumps right when
- *     an overlay opens, then jumps back on close — distracting and the
- *     #1 reason 'Known Limitations: ~15px layout shift' was a perennial
- *     bug for every UI library that did the naive overflow:hidden lock.
- *     Fix: `padding-right: scrollbarWidth` on <body> while locked, so the
- *     page width stays constant.
+ *     Without compensation the page's content visibly jumps when an
+ *     overlay opens, then jumps back on close.
+ *     Fix: where the browser can keep a scrollbar's gutter after the
+ *     scrollbar is gone (`scrollbar-gutter`), the root keeps it while
+ *     locked. The browser holds the gutter on the side it draws the
+ *     scrollbar on, in either reading direction, so neither the page nor a
+ *     surface pinned to the viewport moves. Below that, `padding-right:
+ *     scrollbarWidth` on <body> keeps the page's width.
  *
  *  2. **iOS Safari ignores overflow:hidden on <body>.** A long-standing
  *     WebKit bug — touch scrolling continues to drag the page behind the
  *     overlay. Fix: position:fixed + capture-and-restore scrollY pattern.
  *     This pins the document at its current scroll position; on unlock
- *     we restore both the inline styles AND scroll back to the captured
+ *     we restore both the inline styles and scroll back to the captured
  *     position so the page reads as if nothing happened.
  */
 /*
- * Exported so a component with its own overlay machinery can still share THIS counter.
+ * Exported so a component with its own overlay machinery can still share this counter.
  *
  * The count is the whole point. Two overlays open at once, each with its own idea of the
  * body's overflow, is how a page ends up scrollable behind a modal or frozen after the last
@@ -117,12 +140,16 @@ function broadcastStackChange() {
  */
 export function lockScroll() {
     if (scrollLockCount === 0) {
-        const scrollY = window.scrollY || document.documentElement.scrollTop;
+        const root = document.documentElement;
+        const scrollY = window.scrollY || root.scrollTop;
         // Scrollbar width: difference between visual viewport (window.innerWidth,
         // includes scrollbar gutter) and document layout width (clientWidth,
         // excludes scrollbar gutter). 0px for users on auto-hiding scrollbars
         // (macOS default, mobile) — the no-op path stays a no-op.
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const scrollbarWidth = window.innerWidth - root.clientWidth;
+        // Kept by the browser, the gutter stays where the scrollbar stood, so nothing on the page
+        // moves and no pinned surface needs `--wk-scrollbar-inset`.
+        const keepGutter = scrollbarWidth > 0 && keepsGutter();
 
         scrollLockSnapshot = {
             scrollY,
@@ -133,8 +160,17 @@ export function lockScroll() {
             bodyPaddingRight: document.body.style.paddingRight,
             // Whether the gutter below was published, and what the root carried inline before.
             publishedInset: false,
-            rootInset: document.documentElement.style.getPropertyValue?.('--wk-scrollbar-inset') ?? '',
+            rootInset: root.style.getPropertyValue?.('--wk-scrollbar-inset') ?? '',
+            // Whether the lock reserved the gutter, and what the root carried inline before.
+            reservedGutter: false,
+            rootGutter: root.style.getPropertyValue?.('scrollbar-gutter') ?? '',
         };
+
+        // A root that reserves its gutter already keeps it as it is.
+        if (keepGutter && window.getComputedStyle(root).getPropertyValue('scrollbar-gutter') === 'auto') {
+            root.style.setProperty('scrollbar-gutter', 'stable');
+            scrollLockSnapshot.reservedGutter = true;
+        }
 
         document.body.style.overflow = 'hidden';
         // iOS Safari fix: position:fixed pins the body where it is; without
@@ -142,14 +178,16 @@ export function lockScroll() {
         document.body.style.position = 'fixed';
         document.body.style.top = `-${scrollY}px`;
         document.body.style.width = '100%';
-        if (scrollbarWidth > 0) {
+        if (scrollbarWidth > 0 && ! keepGutter) {
             document.body.style.paddingRight = `${scrollbarWidth}px`;
             // A pinned surface is laid out against the viewport, and a classic scrollbar on the
             // document sits outside that box. With the scrollbar gone the box widens by the gutter,
             // and every surface pinned to the inline end would move toward the edge for as long as
             // the overlay is open. They fold `--wk-scrollbar-inset` into their offset, so the
-            // gutter published here keeps them where they were.
-            if (typeof document.documentElement.style.setProperty === 'function') {
+            // gutter published here keeps them where they were. The token is a gutter at the end of
+            // the line, and the document's gutter stands there only on a page that reads from the
+            // left, so a page that reads from the right lends nothing.
+            if (typeof document.documentElement.style.setProperty === 'function' && readsFromTheLeft(root)) {
                 document.documentElement.style.setProperty('--wk-scrollbar-inset', `${scrollbarWidth}px`);
                 scrollLockSnapshot.publishedInset = true;
             }
@@ -161,7 +199,7 @@ export function lockScroll() {
 export function unlockScroll() {
     scrollLockCount = Math.max(0, scrollLockCount - 1);
     if (scrollLockCount === 0 && scrollLockSnapshot) {
-        const { scrollY, bodyOverflow, bodyPosition, bodyTop, bodyWidth, bodyPaddingRight, publishedInset, rootInset } = scrollLockSnapshot;
+        const { scrollY, bodyOverflow, bodyPosition, bodyTop, bodyWidth, bodyPaddingRight, publishedInset, rootInset, reservedGutter, rootGutter } = scrollLockSnapshot;
         // Restore the inline-style values we captured at lock time. Setting
         // them back to '' (empty string) where the developer had no inline
         // style preserves the cascade — class-based overrides keep working.
@@ -177,6 +215,13 @@ export function unlockScroll() {
                 document.documentElement.style.setProperty('--wk-scrollbar-inset', rootInset);
             } else {
                 document.documentElement.style.removeProperty('--wk-scrollbar-inset');
+            }
+        }
+        if (reservedGutter) {
+            if (rootGutter) {
+                document.documentElement.style.setProperty('scrollbar-gutter', rootGutter);
+            } else {
+                document.documentElement.style.removeProperty('scrollbar-gutter');
             }
         }
         // Restore scroll position before iOS-style position:fixed was applied.
@@ -442,7 +487,7 @@ function openerOf(from) {
  *   non-dismissible alert-dialogs still need an escape path so keyboard users
  *   aren't trapped (backdrop click stays gated by `dismissible` for the
  *   "don't approve destructive action by stray click" safety case).
- * @param {string|null} [options.dismissedEvent=null] - Window event sent when the READER
+ * @param {string|null} [options.dismissedEvent=null] - Window event sent when the reader
  *   dismisses the overlay: a click on the backdrop, Escape, the built-in close button, or a Cancel
  *   control composed with `dismiss`. Its detail is `{ name, via }`. Never for a close the page
  *   asked for (the close event, a `wire:model` set to false, a composed close control without
@@ -452,7 +497,7 @@ function openerOf(from) {
  *   overlay rendered in the overlay root, makes the page behind it inert. False for an overlay that
  *   lives inside a page region, such as a preview, where the page around it has to keep scrolling
  *   and working. An overlay that took no lock releases none.
- * @param {string|null} [options.discardQuestion=null] - Asked before the READER closes the overlay
+ * @param {string|null} [options.discardQuestion=null] - Asked before the reader closes the overlay
  *   by Escape, a click beside it or its close button while its panel holds changes
  *   (utils/discard-guard.js). The view renders the alert dialog it is asked in as a child of the
  *   overlay's root, marked `data-wk-discard-question`. Stay leaves the overlay open; Discard calls
@@ -525,7 +570,7 @@ export function createOverlay({
     const stackToken = { showEvent, name };
 
     // The ancestor chain of whatever was focused when the overlay opened,
-    // captured AT OPEN TIME because that is the last moment it is still
+    // captured AT open time because that is the last moment it is still
     // attached. A destructive confirmation usually removes the row that held
     // its own trigger, so by deactivation both the trigger and its parents are
     // detached — but something further up (the table, the list, the section)
@@ -540,7 +585,7 @@ export function createOverlay({
     let openedFrom = null;
 
     /**
-     * Whether the close in progress is a DISMISSAL: Cancel, Escape, or a click on the backdrop of a
+     * Whether the close in progress is a dismissal: Cancel, Escape, or a click on the backdrop of a
      * dismissible overlay. Set by those paths just before they close, and cleared on the next open.
      *
      * A dismissal acted on nothing, so the reader belongs back on the control they opened it from,
@@ -598,7 +643,7 @@ export function createOverlay({
 
     /**
      * A container that survived the removal is rarely focusable on its own.
-     * tabindex="-1" makes it programmatically focusable WITHOUT adding it to the
+     * tabindex="-1" makes it programmatically focusable without adding it to the
      * tab order, which is the standard way to park focus on a region — the same
      * thing an app would otherwise hand-roll after every destructive action.
      */
@@ -793,7 +838,7 @@ export function createOverlay({
                 /*
                  * Re-check the state the tick was queued under. It was not checked at all.
                  *
-                 * `show()` guards `if (this.isOpen) return` at the TOP, which prevents a
+                 * `show()` guards `if (this.isOpen) return` at the top, which prevents a
                  * second show while one is open — and says nothing about the frame in
                  * between. Anything can close the overlay inside that tick: Escape, a
                  * `wirekit-overlay-close` event, a Livewire morph, `wire:model` flipping
@@ -815,7 +860,7 @@ export function createOverlay({
                  * And the tick is no promise that the panel is shown.
                  *
                  * It relies on `x-transition` holding the next ticks until the second frame,
-                 * and that hold is GLOBAL: another component's `$nextTick` schedules a
+                 * and that hold is global: another component's `$nextTick` schedules a
                  * `setTimeout(releaseNextTicks)` first, and when that timer fires it empties
                  * the whole stack — this callback included — while the panel is still
                  * `display: none`. focus-trap then finds no tabbable node, falls back to the
@@ -850,8 +895,8 @@ export function createOverlay({
                     }
 
                     this._trap = createFocusTrap(panelEl, {
-                        // ESC closes when EITHER the overlay is generally
-                        // dismissible OR the caller opted into the
+                        // ESC closes when either the overlay is generally
+                        // dismissible or the caller opted into the
                         // ESC-always-closes contract (alert-dialog's
                         // escape hatch — see option doc above), and only
                         // while this overlay is the topmost one. An overlay
@@ -871,7 +916,7 @@ export function createOverlay({
                         // handlers (handleBackdropClick) can fire.
                         // Non-dismissible: block outside clicks entirely to
                         // prevent unintended page interaction behind the overlay.
-                        // escapeAlwaysCloses does NOT widen this — backdrop
+                        // escapeAlwaysCloses does not widen this — backdrop
                         // click stays gated by the safety-strict `dismissible`.
                         allowOutsideClick: dismissible,
                         // Where focus starts. Passed straight through when the
@@ -986,7 +1031,7 @@ export function createOverlay({
         },
 
         /**
-         * A close the READER made, with the overlay's own controls: Escape, the built-in close
+         * A close the reader made, with the overlay's own controls: Escape, the built-in close
          * button, a click beside the panel. It is a dismissal (see `dismissOverlay`), and it is
          * announced, because the page did not ask for it and may have state to clean up: a typed
          * reason, a PIN, a search. Only when it actually closed something, so a second path

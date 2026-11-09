@@ -5,20 +5,14 @@
     'variant' => 'default',
     // Font size, in `text`'s vocabulary — `xs`, `sm`, `base`, `lg`, `xl`.
     //
-    // `null` inherits, which is what this component has always done and the
-    // right default: a link sits inside a sentence far more often than it
-    // stands alone, and naming a size here would resize every link that lives
-    // in body copy. So the default emits no class at all rather than a `base`
-    // that happens to match today.
+    // `null` takes the size and the font family of the text around the link: a
+    // link sits inside a sentence far more often than it stands alone, and a class
+    // here would resize or restyle every link in body copy, a monospaced or a serif
+    // one included. A named size is for a link that stands on its own, in a footer
+    // or a preferences row, and sets the kit's sans family with it.
     //
-    // Without the axis, a footer or a preferences row had to hand-build the
-    // anchor to get `--text-wk-sm` — reported as six such anchors in one
-    // repository that used this component correctly eight times elsewhere,
-    // wherever the inherited size happened to fit.
-    //
-    // Deliberately `text`'s rung names, `base` and not `md`: two vocabularies
-    // for one ladder is the near-miss that makes a rename sweep silently
-    // re-size a page.
+    // `text`'s rung names, `base` and not `md`, so one vocabulary covers both
+    // ladders and renaming a rung in one cannot resize the other.
     'size' => null,
     'external' => false,
     // Whether a link that opens a new tab says so: the arrow icon `external` draws and the
@@ -51,17 +45,21 @@
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $external = BooleanProp::from($external, false, 'link', 'external');
     $announceNewTab = BooleanProp::from($announceNewTab, true, 'link', 'announceNewTab');
     $plainWithoutHref = BooleanProp::from($plainWithoutHref, false, 'link', 'plainWithoutHref');
 
-    $variantClasses = match (WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted'])) {
+    $variantClasses = match (WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted', 'text'])) {
         'default' => 'text-[color:var(--color-wk-accent-text)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
+        // The color of the running text. The underline stays, and inside a sentence it is what
+        // marks the words as a link; `underline="hover"` suits a link that stands on its own,
+        // such as a number in a table column.
+        'text' => 'text-[color:var(--color-wk-text)]',
     };
 
     // Mirrors `text`'s map rung for rung, including its `var()` fallbacks, so
@@ -77,23 +75,25 @@
         'xl' => 'text-[length:var(--text-wk-xl,1.25rem)]',
     };
 
+    // Without a size the link stands in copy and takes its family from it, as it takes its size;
+    // `text`'s `inherit` family emits no class either.
+    $familyClasses = $sizeClasses === '' ? '' : 'font-[family-name:var(--font-wk-sans)]';
+
     $underlineClasses = match (WireKit::validateProp('link', 'underline', $underline, ['always', 'hover', 'none'])) {
         'always' => 'underline underline-offset-2',
         'hover' => 'hover:underline underline-offset-2',
         'none' => 'no-underline',
     };
 
-    // `array_filter` because `size` defaults to no class at all: an empty entry
-    // inside the implode would put a double space into every link this package
-    // has ever rendered, which is a change to the default output and therefore
-    // exactly what an additive prop may not do.
+    // `array_filter` because `size` and the family default to no class at all: an
+    // empty entry inside the implode would put a double space into the class list.
     $classes = WireKit::resolveClasses('link', 'base', implode(' ', array_filter([
         // A typed token with no break point, an email address or a URL, breaks rather than running
         // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
         // alone, so a table or a flex row in the content keeps the layout it had.
         '[overflow-wrap:break-word]',
-        'font-[family-name:var(--font-wk-sans)]',
-        // Unconditional, and NOT narrowed to the non-anchor branch. A link is defined by what
+        $familyClasses,
+        // Unconditional, and not narrowed to the non-anchor branch. A link is defined by what
         // it does rather than by the tag it happens to render, and this component renders a
         // `<button>` whenever the action has to be a POST or a Livewire call — which is exactly
         // what `as="button"` is for. On an anchor this repeats what the user-agent stylesheet
@@ -115,11 +115,11 @@
         $underlineClasses,
     ])), $scope);
 
-    // Auto-detect new-tab behavior from either the $external prop OR an
+    // Auto-detect new-tab behavior from either the $external prop or an
     // attribute-passed target="_blank". Both paths converge to the same
     // rel="noopener noreferrer" + SR-hint output.
     //
-    // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
+    // Careful: $attributes->merge(['rel' => ...]) treats rel as a default —
     // if the caller passed their own rel (even rel="prev"), theirs wins and
     // our auto-injection would silently fail, re-introducing tabnabbing.
     // To force-override, we remove rel from the bag and render it separately.
@@ -141,11 +141,12 @@
     $plainAttributes = $attributes;
 
     if ($plainWords) {
-        // The words keep their size and their breaking, which shape the line they stand in, and
-        // nothing that marks a link. A block of its own, so a personalization of the link's look
+        // The words keep their size, their family and their breaking, which shape the line they
+        // stand in, and nothing that marks a link. A block of its own, so a personalization of the link's look
         // leaves them alone, and one of `plain` reaches them.
         $plainClasses = WireKit::resolveClasses('link', 'plain', implode(' ', array_filter([
             '[overflow-wrap:break-word]',
+            $familyClasses,
             $sizeClasses,
         ])), $scope);
 
@@ -181,9 +182,9 @@
     @if($href !== null) href="{{ $href }}" @endif
     @if($external) target="_blank" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{-- `type` on a button, and ONLY on a button.
+    {{-- `type` on a button, and only on a button.
 
-         HTML puts a `<button>` with no `type` in the SUBMIT state, so a link-styled action
+         HTML puts a `<button>` with no `type` in the submit state, so a link-styled action
          inside a form — "Resend code", "Cancel" — submitted it on click and on Enter. Silent
          data loss for anyone who followed the prose rather than copying the `type="button"`
          out of the docs example.

@@ -10,7 +10,7 @@
 
      If editing ever lands here the marker moves back, and the note it had was
      right about the hard part: the rollback is not a single value — a moved
-     event returns to its old day AND time, and the announcement has to name what
+     event returns to its old day and time, and the announcement has to name what
      was undone. Kept here because it is the real design question, and it is
      worth more than re-deriving it later. --}}
 @props([
@@ -37,7 +37,7 @@
     // page around it.
     'locale' => null,
     'ariaLabel' => __('wirekit::Calendar'),
-    // Accessible name for the WEEK time-grid, and the switch that makes it a LANDMARK.
+    // Accessible name for the week time-grid, and the switch that makes it a landmark.
     //
     // Its own prop rather than a reuse of `ariaLabel`: that one names the whole calendar, and a
     // region inheriting the widget's name announces the part as the whole. The grid's name was
@@ -76,7 +76,7 @@
     $openDay = \Pushery\WireKit\Support\Moment::of($date, component: 'event-calendar', prop: 'date')?->format('Y-m-d');
 
     // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
-    // `day-detail="false"` would otherwise switch the detail ON. Normalized the way every
+    // `day-detail="false"` would otherwise switch the detail on. Normalized the way every
     // other boolean prop here is.
     $dayDetail = BooleanProp::from($dayDetail, false, 'event-calendar', 'dayDetail');
     $selectableDays = BooleanProp::from($selectableDays, false, 'event-calendar', 'selectableDays') || $dayDetail;
@@ -85,7 +85,7 @@
     $filterable = BooleanProp::from($filterable, false, 'event-calendar', 'filterable');
     /*
      * `DomId::unique()`, not a fresh random per render, and the helper's own docblock names
-     * the reason: only the COUNTED form survives a re-render, which is what a `label[for]` and
+     * the reason: only the counted form survives a re-render, which is what a `label[for]` and
      * a Livewire morph both need.
      *
      * With a random id, every Livewire round trip minted a new one. Alpine keys its component
@@ -144,7 +144,7 @@
     // offset where they name an instant. A date written another way, `31.12.2026` or a Unix
     // timestamp, is written as the date the server reads in it, since the script reads ISO 8601
     // alone alike in every engine and a number as milliseconds (Support\BrowserDate). `allDay` is
-    // read as the script reads it, by its truth in JSON.
+    // read as a switch below, and the script is handed the boolean it names.
     $toDay = static fn ($day) => \Pushery\WireKit\Support\BrowserDate::day($day);
     $toInstant = static fn ($moment) => \Pushery\WireKit\Support\BrowserDate::moment($moment);
 
@@ -174,7 +174,12 @@
             unset($event['end'], $eventsArr[$index]['end']);
         }
 
-        $write = in_array($event['allDay'] ?? null, [null, false, 0, 0.0, ''], true) ? $toInstant : $toDay;
+        // `allDay` is a switch, read as a switch prop is: the words `0`, `false`, `no` and `off` are
+        // off, and any other text is reported and on. The script is handed the boolean, so both
+        // sides place the event alike.
+        $allDay = \Pushery\WireKit\Support\BooleanProp::from($event['allDay'] ?? null, false, 'event-calendar', 'allDay of '.$eventName);
+        $eventsArr[$index]['allDay'] = $allDay;
+        $write = $allDay ? $toDay : $toInstant;
 
         foreach (['start', 'end'] as $end) {
             if (array_key_exists($end, $event)) {
@@ -192,8 +197,8 @@
         }
     }
 
-    // Event intent → block classes (tinted surface + intent left-stripe). Defined
-    // here (PHP literals) so Tailwind compiles them AND the drift inventory traces
+    // Event intent → block classes (tinted surface + intent stripe at the start). Defined
+    // here (PHP literals) so Tailwind compiles them and the drift inventory traces
     // them; the block binds `:class="eventClasses[ev.intent || 'accent']"`. Info tints with
     // --color-wk-info-tone, which aliases the accent until an application gives info a hue of its own.
     // Stripe color = the status intent's *-text token, not its base color: a
@@ -202,16 +207,16 @@
     // separates on every status intent, in both themes. `accent` takes the accent base itself,
     // whose near-black default already stands off its tint, and `info` its own tone.
     $eventClasses = [
-        'accent' => 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-accent)]',
-        'info' => 'bg-[color-mix(in_oklch,var(--color-wk-info-tone)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-info-tone)]',
-        'success' => 'bg-[color-mix(in_oklch,var(--color-wk-success)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-success-text)] border-l-2 border-[var(--color-wk-success-text)]',
-        'warning' => 'bg-[color-mix(in_oklch,var(--color-wk-warning)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-warning-text)] border-l-2 border-[var(--color-wk-warning-text)]',
-        'danger' => 'bg-[color-mix(in_oklch,var(--color-wk-danger)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-danger-text)] border-l-2 border-[var(--color-wk-danger-text)]',
-        'neutral' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-border)]',
+        'accent' => 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-s-2 border-[var(--color-wk-accent)]',
+        'info' => 'bg-[color-mix(in_oklch,var(--color-wk-info-tone)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-s-2 border-[var(--color-wk-info-tone)]',
+        'success' => 'bg-[color-mix(in_oklch,var(--color-wk-success)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-success-text)] border-s-2 border-[var(--color-wk-success-text)]',
+        'warning' => 'bg-[color-mix(in_oklch,var(--color-wk-warning)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-warning-text)] border-s-2 border-[var(--color-wk-warning-text)]',
+        'danger' => 'bg-[color-mix(in_oklch,var(--color-wk-danger)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-danger-text)] border-s-2 border-[var(--color-wk-danger-text)]',
+        'neutral' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] border-s-2 border-[var(--color-wk-border)]',
     ];
 
     // Solid intent fills for the small agenda status-dot. The $eventClasses
-    // BLOCK style above carries a `border-l-2` left stripe — applied to an 8px
+    // block style above carries a `border-s-2` stripe at the start — applied to an 8px
     // circle it ate half the dot (it read as "cut off"). The dot needs a plain
     // solid fill instead: the intent's text tone, which a dot as a graphic needs to stand at
     // 3:1 on the page (the fill tone of warning stood at 2.13:1, a neutral border at 1.30:1).
@@ -236,21 +241,21 @@
     ];
     // A `blocked` (unavailable) day overrides the type tint with a muted surface
     // + the diagonal hatch (.wk-day-blocked in dist/wirekit.css). The unavailable
-    // state is ALSO surfaced in the accessible name (sr-only) — never hatch-only.
+    // state is also surfaced in the accessible name (sr-only) — never hatch-only.
     $markerBlocked = 'wk-day-blocked bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]';
-    // Blocked markers paint the diagonal hatch ACROSS the band — readable stripes,
+    // Blocked markers paint the diagonal hatch across the band — readable stripes,
     // unreadable text on top of them (the label is hard to read over the hatch). The
     // label (and the agenda type-suffix) therefore sits on a small solid chip that
-    // hugs the TEXT, so the hatch stays visible around it as the affordance.
+    // hugs the text, so the hatch stays visible around it as the affordance.
     $markerChip = 'rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-xs)]';
 
     $base = WireKit::resolveClasses('event-calendar', 'base', 'w-full font-[family-name:var(--font-wk-sans)] space-y-[var(--space-wk-sm)]', $scope);
 
-    // State styling, resolved HERE and interpolated into the `:class` ternaries below rather than
+    // State styling, resolved here and interpolated into the `:class` ternaries below rather than
     // written into them. A literal inside `:class` is decided in the browser at runtime, where
     // WireKit::scope() cannot reach it, so a theme could restyle neither "today" nor a hidden
     // category. Resolving each branch at render time keeps the runtime behavior identical and makes
-    // every state personalizable, the shape segmented-control uses. The day number has ONE set of
+    // every state personalizable, the shape segmented-control uses. The day number has one set of
     // keys for both of its forms, the selectable button and the plain number, so a theme restyles
     // "today" once.
     $dayNumberToday = WireKit::resolveClasses('event-calendar', 'day-number-today', 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-text-inverse)] font-[number:var(--font-wk-heading-weight)]', $scope);
@@ -261,7 +266,7 @@
     $categoryHidden = WireKit::resolveClasses('event-calendar', 'category-hidden', 'text-[color:var(--color-wk-text-muted)] line-through', $scope);
 
     $navBtn = 'inline-flex items-center justify-center h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
-    $viewTab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors';
+    $viewTab = 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors';
 
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a
     // did-you-mean, and where the gate does not throw it renders the default level — never
@@ -309,7 +314,7 @@
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    {{-- `allDayLabel` is the factory's only user-facing WORD, and it has to arrive from
+    {{-- `allDayLabel` is the factory's only user-facing word, and it has to arrive from
          here: the week view's axis label below reads the same catalog key through
          `__()`, while the agenda row and every event's accessible name are built in
          JavaScript, which cannot reach the catalog at all. Left to the factory's own
@@ -330,7 +335,7 @@
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares
-         ONE bubble (x-ref="tip" below). Root-level delegation = zero per-item
+         one bubble (x-ref="tip" below). Root-level delegation = zero per-item
          listeners; scroll.capture hides it the moment the week grid scrolls (the
          fixed-position bubble would otherwise drift off its anchor). --}}
     @pointerover="tipShow($event)"
@@ -344,20 +349,20 @@
     {{-- Header: navigation + title + view switcher --}}
     <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
         <div class="flex items-center gap-[var(--space-wk-sm)]">
-            <div class="inline-flex items-center gap-1">
+            <div class="inline-flex items-center gap-[var(--gap-wk-xs)]">
                 <button type="button" @click="prev()" aria-label="{{ __('wirekit::Previous') }}" class="wk-touch-row {{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
-                <button type="button" @click="today()" class="wk-touch-row px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
+                <button type="button" @click="today()" class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
                 <button type="button" @click="next()" aria-label="{{ __('wirekit::Next') }}" class="wk-touch-row {{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
             <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"@if($datesLang) lang="{{ $datesLang }}"@endif></h{{ $levelValue }}>
         </div>
-        {{-- View switcher — a single-select RADIOGROUP (not tabs: the buttons own
+        {{-- View switcher — a single-select radiogroup (not tabs: the buttons own
              no tabpanels; the views swap in place). aria-checked + roving tabindex
              + arrows move-and-select via viewMove(), wrapping at the ends. --}}
         <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="radiogroup" aria-label="{{ __('wirekit::Calendar view') }}"
-            @keydown.arrow-right.prevent="viewMove(1)"
+            @keydown.arrow-right.prevent="viewMove($wkInlineStep($event))"
             @keydown.arrow-down.prevent="viewMove(1)"
-            @keydown.arrow-left.prevent="viewMove(-1)"
+            @keydown.arrow-left.prevent="viewMove($wkInlineStep($event))"
             @keydown.arrow-up.prevent="viewMove(-1)">
             {{-- The checked view is a tint and an inner edge in the muted text color, which holds
                  3:1 against the tint where the tint alone did not. Forced colors paints neither,
@@ -370,7 +375,7 @@
 
     @if($filterable)
         {{-- Category filter (opt-in): one pressed toggle per category the events carry, in the
-             order a reader met them. Pressed means SHOWN, so the resting state is all pressed and
+             order a reader met them. Pressed means shown, so the resting state is all pressed and
              a toggle reads as "hide". Hidden while there is only one category, because one chip
              filters nothing. --}}
         <div x-show="categories.length > 1" x-cloak role="group" aria-label="{{ __('wirekit::Filter by category') }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
@@ -390,7 +395,7 @@
     <div x-show="view === 'month'" class="border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden">
         <div class="grid grid-cols-7 bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
             <template x-for="wd in weekdayLabels" :key="wd">
-                <div class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] text-center" x-text="wd"@if($datesLang) lang="{{ $datesLang }}"@endif></div>
+                <div class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] text-center" x-text="wd"@if($datesLang) lang="{{ $datesLang }}"@endif></div>
             </template>
         </div>
         {{-- A week is a flex row of seven equal cells rather than a grid. A cell grows with its
@@ -399,10 +404,10 @@
         <template x-for="(week, wi) in monthWeeks" :key="wi">
             <div class="flex">
                 <template x-for="day in week" :key="day.date.toISOString()">
-                    <div class="flex-1 basis-0 min-w-0 min-h-[5.5rem] p-1 border-b-[length:var(--border-wk-width)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" :class="day.inMonth ? 'bg-[var(--color-wk-bg)]' : 'bg-[var(--color-wk-bg-subtle)]'">
+                    <div class="flex-1 basis-0 min-w-0 min-h-[5.5rem] p-[var(--space-wk-xs)] border-b-[length:var(--border-wk-width)] border-e-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" :class="day.inMonth ? 'bg-[var(--color-wk-bg)]' : 'bg-[var(--color-wk-bg-subtle)]'">
                         <div class="flex justify-end">
                             @if($selectableDays)
-                                {{-- The day NUMBER is the button, not the cell: the cell also holds the event pills,
+                                {{-- The day number is the button, not the cell: the cell also holds the event pills,
                                      which are buttons of their own, and a button inside a button is neither valid
                                      markup nor operable. Named with the full date, because "8" alone does not say
                                      which month it belongs to. 24px rather than the plain number's 20px: it is a
@@ -423,26 +428,25 @@
                         </template>
                         <div class="mt-0.5 space-y-0.5">
                             <template x-for="ev in day.visibleEvents" :key="ev.id">
-                                <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" class="flex w-full items-baseline gap-1 text-left px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
-                                    {{-- The TITLE is what truncates; `min-w-0` is what lets it,
+                                <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" class="flex w-full items-baseline gap-[var(--gap-wk-xs)] max-sm:flex-col max-sm:items-start max-sm:gap-0 text-start px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                                    {{-- The title is what truncates; `min-w-0` is what lets it,
                                          because a flex child will not shrink below its content
                                          without it and the pill would overflow instead. --}}
-                                    <span data-wk-truncates class="min-w-0 truncate" x-text="ev.title"></span>
+                                    <span data-wk-truncates class="min-w-0 max-sm:w-full truncate" x-text="ev.title"></span>
                                     {{-- Smaller rather than recolored. The pill's background comes
-                                         from the event's intent, so a muted FOREGROUND here would
+                                         from the event's intent, so a muted foreground here would
                                          be a new contrast pair per intent; the week view's
                                          secondary time line solves it the same way — inherit the
                                          color, drop a size.
 
-                                         `max-sm:hidden` because this is the one child that cannot
-                                         shrink, and a month cell on a phone is about as wide as
-                                         the time alone: the title beside it would collapse to
-                                         nothing and the pill would show the time and not the
-                                         title. Dropping the time below `sm` gives the title the
-                                         cell back. Nothing is lost to a screen
-                                         reader: the button's aria-label is `eventLabel(ev)`, which
-                                         spells out title, full date AND time regardless. --}}
-                                    <span x-show="pillTime(ev, day.date)" x-cloak class="max-sm:hidden shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev, day.date)"@if($datesLang) lang="{{ $datesLang }}"@endif></span>
+                                         Below `sm` the time stands under the title: this is the one
+                                         child that cannot shrink, and a month cell on a phone is
+                                         about as wide as the time alone, so beside it the title would
+                                         collapse to nothing. On its own line each keeps the cell's
+                                         width, and the time a sighted reader looks for stays on the
+                                         pill. The button's aria-label, `eventLabel(ev)`, spells out
+                                         title, full date and time either way. --}}
+                                    <span x-show="pillTime(ev, day.date)" x-cloak class="shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev, day.date)"@if($datesLang) lang="{{ $datesLang }}"@endif></span>
                                 </button>
                             </template>
                             {{-- "+N more" is actionable: it jumps to the week view focused on
@@ -451,7 +455,7 @@
                                  It is the minimum target tall (WCAG 2.5.8): one line of small
                                  text is 18px, and 2px under an event pill that is too small and
                                  too close for the spacing exception. --}}
-                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="moreName(day)" class="flex w-full items-center min-h-[var(--size-wk-target-min)] text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> <span x-text="moreWord(day)"></span></button>
+                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="moreName(day)" class="flex w-full items-center min-h-[var(--size-wk-target-min)] text-start px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> <span x-text="moreWord(day)"></span></button>
                         </div>
                     </div>
                 </template>
@@ -495,6 +499,9 @@
 
     {{-- ── Week view (time grid) ───────────────────────────────────── --}}
     {{-- Paper does not scroll: on paper the week prints every hour of the day. --}}
+    {{-- Each day keeps 5.5rem: seven columns split narrower on a phone, and an event beside two
+         others stood as a sliver no title fits. Where seven do not fit, the region scrolls across
+         as well as down; at 768px and wider they fit. --}}
     <div data-wk-week-view data-wk-print-expand x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($weekLabel) }}" @endif tabindex="0" class="relative max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- Sticky top region: day-name headers + the all-day band. Both pin to
              the top of the scroll region so they stay visible while the hour grid
@@ -503,10 +510,10 @@
              (WCAG 2.4.11). --}}
         <div data-wk-scroll-inset="top" class="sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
             {{-- Day-name headers --}}
-            <div class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
+            <div class="grid grid-cols-[3rem_repeat(7,minmax(5.5rem,1fr))]">
                 <div></div>
                 <template x-for="day in weekDays" :key="day.date.toISOString()">
-                    <div class="px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-center border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+                    <div class="px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-center border-s-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                         <div class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="day.weekday"@if($datesLang) lang="{{ $datesLang }}"@endif></div>
                         <div class="text-[length:var(--text-wk-sm)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></div>
                     </div>
@@ -516,66 +523,64 @@
                  allDay:true, which have no hour position, so they render here as
                  full-width chips per day. The band
                  is hidden when the focused week has no all-day events. --}}
-            <div x-show="weekHasAllDay || weekHasMarkers" x-cloak class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
-                {{-- The band shows for all-day events OR day-markers. The "All day"
+            <div x-show="weekHasAllDay || weekHasMarkers" x-cloak class="grid grid-cols-[3rem_repeat(7,minmax(5.5rem,1fr))] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+                {{-- The band shows for all-day events or day-markers. The "All day"
                      axis label only applies to the former — when the band is present
                      purely for markers, the label would mislabel the row, so it blanks. --}}
-                <div class="px-1 py-[var(--padding-wk-y-xs)] text-right text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="weekHasAllDay ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} : ''"></div>
+                <div class="px-1 py-[var(--padding-wk-y-xs)] text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="weekHasAllDay ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} : ''"></div>
                 <template x-for="day in weekDays" :key="'ad-'+day.date.toISOString()">
-                    <div class="min-h-[1.75rem] p-0.5 space-y-0.5 border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+                    <div class="min-h-[1.75rem] p-0.5 space-y-0.5 border-s-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                         {{-- Day markers first (day-level context), then all-day events. --}}
                         <template x-for="(m, mi) in day.markers" :key="'m-'+day.date.toISOString()+mi">
                             <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="block w-full [overflow-wrap:anywhere] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
                         </template>
                         <template x-for="ev in day.allDay" :key="ev.id">
-                            <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" data-wk-truncates class="block w-full truncate text-left px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="ev.title"></button>
+                            <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" data-wk-truncates class="block w-full truncate text-start px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="ev.title"></button>
                         </template>
                     </div>
                 </template>
             </div>
         </div>
         {{-- Time grid: 3rem axis + 7 day columns; each hour row 2.5rem (60rem total).
-             The first grid row is an 8px BREATHING STRIP (replacing an earlier
-             container pt-2): the hour labels are centered on their gridlines, which
-             lifts the first ("12 AM") label half a row up — without this room it
-             would hide behind the sticky day-header. As a real grid ROW (not
-             container padding) the strip is tinted muted AND carries the per-column
-             border-l, so the vertical column lines run CONTINUOUSLY from the sticky
-             header into the hour grid — container padding has no children, so the
-             lines visibly broke there (the vertical column lines were
-             discontinuous in light gray). Its border-b draws the 00:00 gridline the
+             The first grid row is an 8px breathing strip: the hour labels are centered
+             on their gridlines, which lifts the first ("12 AM") label half a row up,
+             and without this room it would hide behind the sticky day header. As a
+             grid row rather than container padding the strip is tinted muted and
+             carries the per-column border-l, so the vertical column lines run without
+             a break from the sticky header into the hour grid; padding has no
+             children to carry them. Its border-b draws the 00:00 gridline the
              "12 AM" label sits on, matching every other hour label. --}}
-        <div class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
+        <div class="grid grid-cols-[3rem_repeat(7,minmax(5.5rem,1fr))]">
             <div class="h-2 bg-[var(--color-wk-bg-muted)]" aria-hidden="true"></div>
             @for ($i = 0; $i < 7; $i++)
-                <div class="h-2 bg-[var(--color-wk-bg-muted)] border-l-[length:var(--border-wk-width)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" aria-hidden="true"></div>
+                <div class="h-2 bg-[var(--color-wk-bg-muted)] border-s-[length:var(--border-wk-width)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" aria-hidden="true"></div>
             @endfor
             {{-- Hour axis --}}
             <div>
                 <template x-for="h in hours" :key="h">
                     {{-- flex items-center centers the label in its 2.5rem row, and
                          -translate-y-1/2 lifts it by exactly half a row so its
-                         vertical center lands ON the hour gridline (robust to the
+                         vertical center lands on the hour gridline (robust to the
                          text's line-height, unlike a fixed -translate-y-2). The
                          breathing-strip row above keeps the first ("12 AM") label
                          fully visible below the sticky day-header. --}}
-                    <div class="h-[2.5rem] flex items-center justify-end pr-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)] -translate-y-1/2" x-text="hourLabel(h)"@if($datesLang) lang="{{ $datesLang }}"@endif></div>
+                    <div class="h-[2.5rem] flex items-center justify-end pe-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)] -translate-y-1/2" x-text="hourLabel(h)"@if($datesLang) lang="{{ $datesLang }}"@endif></div>
                 </template>
             </div>
             {{-- Day columns --}}
             <template x-for="day in weekDays" :key="'col-'+day.date.toISOString()">
-                <div class="relative border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] h-[60rem]">
+                <div class="relative border-s-[length:var(--border-wk-width)] border-[var(--color-wk-border)] h-[60rem]">
                     <template x-for="h in hours" :key="'g-'+h">
                         <div class="h-[2.5rem] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></div>
                     </template>
                     {{-- Current-time line --}}
-                    <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute left-0 right-0 h-px bg-[var(--color-wk-danger)] z-10" :style="nowLineStyle()"></div>
+                    <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute start-0 end-0 h-px bg-[var(--color-wk-danger)] z-10" :style="nowLineStyle()"></div>
                     {{-- Event blocks --}}
                     <template x-for="b in day.blocks" :key="b.event.id">
                         {{-- The min-h floor keeps a block tall enough for title+time even
                              for sub-30-minute events, which would otherwise clip under
                              overflow-hidden. The vertical gutter is 5px on height with the
-                             floor at 2.1875rem (35px): the `% height` calc rounds UP about 1px
+                             floor at 2.1875rem (35px): the `% height` calc rounds up about 1px
                              at this scale, and this pair lands a 1-hour block with a bottom
                              inset that matches the +2px top, while back-to-back events keep a
                              gap instead of merging edge to edge. The horizontal gutter is
@@ -586,10 +591,10 @@
                              with a descender ("p.m.", "μ.μ.") loses it. The shared tip then
                              opens for the block and carries the time with the title
                              (blockTip()). The event
-                             background ($eventClasses) is an OPAQUE color-mix over
-                             var(--color-wk-bg), so the hour gridlines do not show THROUGH
+                             background ($eventClasses) is an opaque color-mix over
+                             var(--color-wk-bg), so the hour gridlines do not show through
                              the block. --}}
-                        <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="blockTip(b)" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="blockStyle(b)" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="blockTip(b)" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="blockStyle(b)" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-start text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span data-wk-truncates class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
                             {{-- Secondary line: a smaller (2xs) tight time so the title
                                  leads and the two lines sit close in the compact block. --}}
@@ -603,7 +608,7 @@
 
     {{-- ── Agenda view ─────────────────────────────────────────────── --}}
     {{-- role="group" carries the name, and without it the name is not carried at all: a
-         <div> with no role maps to `generic`, and `generic` PROHIBITS aria-label — a
+         <div> with no role maps to `generic`, and `generic` prohibits aria-label — a
          conforming screen reader drops it rather than reading it, so the agenda list had
          no boundary anybody could identify. `group` rather than `region` for the same
          reason the week grid stays a non-landmark unless the developer names it: two
@@ -617,31 +622,31 @@
              row's time shares one width and the titles line up. --}}
         <template x-for="day in agendaDays" :key="day.date.toISOString()">
             <div class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]">
-                <p data-wk-prose-skip class="mb-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"@if($datesLang) lang="{{ $datesLang }}"@endif></p>
+                <p data-wk-prose-skip class="mb-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"@if($datesLang) lang="{{ $datesLang }}"@endif></p>
                 {{-- Day markers as their own labeled line, shaped like the holiday
                      marker: the label leads and the type follows in parentheses.
                      The type is shown as text; blocked adds an sr-only "unavailable". --}}
                 <template x-for="(m, mi) in day.markers" :key="'am-'+day.date.toISOString()+mi">
-                    <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="mb-1 flex items-center gap-[var(--space-wk-sm)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)]">
+                    <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="mb-[var(--space-wk-xs)] flex items-center gap-[var(--space-wk-sm)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)]">
                         <span class="min-w-0 flex-1 [overflow-wrap:anywhere]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span></span>
                         <span class="shrink-0 text-[length:var(--text-wk-xs)]" :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="'(' + m.type + ')'"></span>
                         <span x-show="m.blocked" class="sr-only">{{ __('wirekit::unavailable') }}</span>
                     </div>
                 </template>
-                <div class="space-y-1">
+                <div class="space-y-[var(--space-wk-xs)]">
                     <template x-for="ev in day.events" :key="ev.id">
-                        <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="wk-touch-row w-full flex items-center gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-sm)] py-1 rounded-[var(--radius-wk-md)] text-left hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="wk-touch-row w-full flex items-center gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] text-start hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="shrink-0 w-2 h-2 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventDot) }}[ev.intent || 'accent']"></span>
-                            {{-- Time column: right-aligned + tabular-nums so the colon and
-                                 the AM/PM stack into vertical columns. Width is SHARED and
+                            {{-- Time column: aligned to the end + tabular-nums so the colon and
+                                 the AM/PM stack into vertical columns. Width is shared and
                                  dynamic — _measureAgendaTime() measures the inner
                                  data-agenda-time span (natural inline width) of every row
                                  and sets --wk-agenda-time to the widest, so every row's
                                  time shares one width and the titles align (5rem =
                                  first-paint fallback). --}}
-                            <span class="shrink-0 text-right text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);"><span data-agenda-time class="whitespace-nowrap" x-text="ev.timeLabel"@if($timeLangBinding !== null) x-bind:lang="{{ $timeLangBinding }}"@endif></span></span>
+                            <span class="shrink-0 text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);"><span data-agenda-time class="whitespace-nowrap" x-text="ev.timeLabel"@if($timeLangBinding !== null) x-bind:lang="{{ $timeLangBinding }}"@endif></span></span>
                             {{-- pl gives the title a small, even gap from the time column. --}}
-                            <span data-wk-truncates class="min-w-0 flex-1 pl-[var(--space-wk-sm)] truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
+                            <span data-wk-truncates class="min-w-0 flex-1 ps-[var(--space-wk-sm)] truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
                             {{-- Attendees: at most three faces and a count. aria-hidden, because the row's own
                                  name (`rowLabel`) already carries every name — the stack is the sighted half of
                                  that, not a second announcement. `.wk-avatar-group` is the same overlap and ring
@@ -667,14 +672,14 @@
          which is a status message in the WCAG 4.1.3 sense — and until this existed a
          reader could page into an empty range and hear nothing at all.
 
-         It sits OUTSIDE the agenda block and carries its own text rather than the
-         `role="status"` going on the empty div itself. A live region announces a CONTENT
+         It sits outside the agenda block and carries its own text rather than the
+         `role="status"` going on the empty div itself. A live region announces a content
          change; moving an element between `display: none` and visible is not a content
          change every screen reader reports, and the sentence in there never changes
          anyway. The text swap here is what makes the announcement happen. --}}
     <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" x-text="view === 'agenda' && agendaEmpty ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No events in this range')) }} : ''"></p>
 
-    {{-- Shared truncated-title tooltip — ONE bubble for every [data-wk-tip] pill /
+    {{-- Shared truncated-title tooltip — one bubble for every [data-wk-tip] pill /
          chip / row / marker, shown on hover/focus only when the text is actually
          truncated (tipShow checks scrollWidth). The class set follows
          <x-wirekit::tooltip>'s panel so it is the house tooltip visually, plus

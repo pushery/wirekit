@@ -26,7 +26,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so `tooltip="false"`
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy, so `tooltip="false"`
     // would otherwise keep the tooltip. Normalized against each prop's own default.
     $tooltip = BooleanProp::from($tooltip, true, 'status-dot', 'tooltip');
     $focusable = BooleanProp::from($focusable, true, 'status-dot', 'focusable');

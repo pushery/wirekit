@@ -14,11 +14,11 @@
     // over 1.2s once the stat scrolls into view. Respects
     // prefers-reduced-motion (snaps to value, no animation).
     'animate' => config('wirekit.components.stat.animate', false),
-    // Description animation Option A — defer fade-in. When true AND animate=true,
+    // Description animation Option A — defer fade-in. When true and animate=true,
     // the description span is hidden via x-show while the counter runs (~1.2s)
     // and fades in once the animation settles. Mutually exclusive with descriptionAnimate.
     'descriptionDeferred' => false,
-    // Description animation Option C — synchronous color count-up. When true AND animate=true,
+    // Description animation Option C — synchronous color count-up. When true and animate=true,
     // the description text color interpolates from --color-wk-text-muted → --color-wk-text
     // on the same 1.2s timeline as the value. Mutually exclusive with descriptionDeferred.
     'descriptionAnimate' => false,
@@ -51,7 +51,7 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $animate = BooleanProp::from($animate, false, 'stat', 'animate');
@@ -95,7 +95,7 @@
     // Animation wiring is gated on animate=true — Options A/C are no-ops if the parent counter isn't running.
     $hasDescriptionAnim = $animate && ($descriptionDeferred || $descriptionAnimate);
 
-    // When animate (counter) AND animateIn (entrance reveal) are BOTH set,
+    // When animate (counter) and animateIn (entrance reveal) are both set,
     // two Alpine x-data scopes are needed — they cannot share one element.
     // Wrap the existing root in an outer <div> carrying the entrance
     // reveal; the inner root keeps the counter scope.
@@ -112,9 +112,9 @@
         $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
     }
 
-    // ── The counter's MACHINE value, resolved here rather than in JavaScript ──
+    // ── The counter's machine value, resolved here rather than in JavaScript ──
     //
-    // `value` is a DISPLAY string — "€31.200", "$1,250.50", "42%", "10000". The
+    // `value` is a display string — "€31.200", "$1,250.50", "42%", "10000". The
     // counter needs a number to count to, the pieces around it to put back, and
     // the number of decimals to keep. Re-deriving all three in JavaScript from the
     // display string with one grammar gets both halves wrong, one of them silently:
@@ -135,7 +135,7 @@
 
         // The separators this application actually uses, discovered by formatting
         // a probe rather than by carrying a locale table that would go stale.
-        // 1234.5 renders "1,234.5" in en and "1.234,5" in de, so the LAST
+        // 1234.5 renders "1,234.5" in en and "1.234,5" in de, so the last
         // non-digit is the decimal separator and the other one groups.
         $probe = preg_replace('/\d/u', '', \Pushery\WireKit\Support\LocalizedNumber::format(1234.5, precision: 1)) ?? '.';
         $decimalSeparator = mb_substr($probe, -1) ?: '.';
@@ -143,7 +143,7 @@
 
         // Everything before the first digit is the prefix, everything after the
         // last one is the suffix, and what is between them is the number. By
-        // POSITION, so a symbol goes back on the side it came from — the whole
+        // position, so a symbol goes back on the side it came from — the whole
         // point, since concatenating both onto the end is what moved the `$`.
         $core = '';
         if (preg_match_all('/\d/u', $raw, $digits, PREG_OFFSET_CAPTURE) > 0) {
@@ -243,6 +243,19 @@
     // A tile that opens a new tab says so, and keeps the page that opened it out of reach, as a
     // card does. The rel is written out rather than merged: a caller's rel would replace it.
     $opensNewTab = $href !== null && str_contains((string) $attributes->get('target', ''), '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+    // The citation stands last, after every part that can carry an Alpine state of its own (a
+    // sparkline, a progress bar, the animated description), so it is an echo rather than a block
+    // and Livewire writes no morph markers around it either.
+    $citationPart = $citation
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]')).'">'.e($citation).'</span>')
+        : '';
+
     $relAttr = (string) $attributes->get('rel', '');
     $computedRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -250,7 +263,7 @@
 
     // Container: card-like surface with padding + elevated background + border
     $classes = WireKit::resolveClasses('stat', 'base', implode(' ', [
-        'flex flex-col gap-1',
+        'flex flex-col gap-[var(--gap-wk-xs)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'rounded-[var(--radius-wk-lg)]',
         'border-[length:var(--border-wk-width)]',
@@ -287,7 +300,7 @@
 
     // Trend color + arrow glyph — mapped to semantic tokens
     [$trendColor, $trendIcon, $trendLabel] = match ($trend) {
-        // The third slot is the sr-only expansion of the arrow glyph — the ONLY way a
+        // The third slot is the sr-only expansion of the arrow glyph — the only way a
         // non-visual reader learns the direction, so it goes through the catalog exactly
         // as the sibling ticker's `wirekit::Change: …` labels do.
         'up' => ['text-[color:var(--color-wk-success-text)]', '▲', __('wirekit::increased')],
@@ -313,18 +326,23 @@
      * It requires an explicit sign, and that is the whole subtlety. A bare "12%" is a
      * magnitude, not a direction — the caller who writes it is leaning on `trend` to say
      * which way, and reading it as positive would silently overrule them. Only a leading
-     * `+` or `-`, or a change that is plainly zero, carries a direction of its own; a word,
-     * an unsigned figure or anything unparseable leaves the trend word standing, because
-     * there is then nothing for it to contradict.
+     * `+` or `-` in front of a figure, or a change that is plainly zero, carries a direction
+     * of its own; a word, an unsigned figure, a dash standing in for a missing value or
+     * anything unparseable leaves the trend word standing, because there is then nothing for
+     * it to contradict.
+     *
+     * The minus counts in every form typesetting and number formatting write it: the minus
+     * sign U+2212, which ICU writes in Swedish, Finnish, Norwegian and other locales, a dash
+     * or the fullwidth hyphen-minus, each read as `-`.
      */
     $changeDirection = null;
 
     if ($change !== null) {
-        $changeTrimmed = ltrim((string) $change);
+        $changeTrimmed = ltrim(preg_replace('/^\s*[\-\x{2010}-\x{2015}\x{2212}\x{FE58}\x{FE63}\x{FF0D}]\s*(?=[\d.])/u', '-', (string) $change) ?? (string) $change);
         $changeNumber = (float) preg_replace('/[^\d.\-]/', '', $changeTrimmed);
 
         $changeDirection = match (true) {
-            str_starts_with($changeTrimmed, '-') => __('wirekit::decreased'),
+            preg_match('/^-[\d.]/', $changeTrimmed) === 1 && $changeNumber !== 0.0 => __('wirekit::decreased'),
             str_starts_with($changeTrimmed, '+') && $changeNumber !== 0.0 => __('wirekit::increased'),
             // "0", "0%", "0.0" — no sign needed, and nothing a caller could have meant
             // differently by it.
@@ -338,7 +356,7 @@
 
 @if($needsEntranceWrapper)
     {{-- Outer wrapper: owns the entrance reveal (wirekitAnimate scope) when
-         animate=true AND animateIn is set. Inner root keeps the counter
+         animate=true and animateIn is set. Inner root keeps the counter
          scope (wirekitStatAnimate). Two scopes, two elements — Alpine's
          contract is one x-data per element. The replayable contract
          attaches here too so the docs site can re-mount the entrance
@@ -360,7 +378,7 @@
              / $root.progress. When $needsEntranceWrapper is also true, the
              outer wrapper carries the entrance animateAttr — separate scope. --}}
         x-data="wirekitStatAnimate"
-        {{-- `data-target` stays the DISPLAY string: it is the documented handle a
+        {{-- `data-target` stays the display string: it is the documented handle a
              page uses to reach a stat and replay it. The four below are what the
              counter reads — the machine value, the pieces to put back on the
              right sides, how many decimals the display keeps, and the locale that
@@ -381,7 +399,7 @@
     @endif
 >
     {{-- Top row: label + optional icon --}}
-    <{{ $part }} data-wk-prose-skip class="flex items-center justify-between gap-2">
+    <{{ $part }} data-wk-prose-skip class="flex items-center justify-between gap-[var(--gap-wk-sm)]">
         @if($label)
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] font-[number:var(--font-wk-heading-weight)]">
                 {{ $label }}
@@ -399,8 +417,8 @@
          target value on data-target so the Alpine plugin can read it +
          animate 0 → target on scroll-into-view.
 
-         When descriptionDeferred OR descriptionAnimate is also true,
-         the WHOLE stat root receives x-data so the description span
+         When descriptionDeferred or descriptionAnimate is also true,
+         the whole stat root receives x-data so the description span
          can read `animating` from $root scope. --}}
     @if($value !== null)
         @if($animate)
@@ -440,10 +458,10 @@
 
     {{-- Bottom row: change indicator + optional description --}}
     @if($change !== null || $description)
-        <{{ $part }} data-wk-prose-skip class="flex items-center gap-2 text-[length:var(--text-wk-sm)]">
+        <{{ $part }} data-wk-prose-skip class="flex items-center gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
             @if($change !== null)
                 {{-- sr-only label expands the arrow glyph for screen readers --}}
-                <span class="inline-flex items-center gap-1 {{ $trendColor ?? 'text-[color:var(--color-wk-text-muted)]' }} font-[number:var(--font-wk-heading-weight)]">
+                <span class="inline-flex items-center gap-[var(--gap-wk-xs)] {{ $trendColor ?? 'text-[color:var(--color-wk-text-muted)]' }} font-[number:var(--font-wk-heading-weight)]">
                     @if($trendIcon)
                         <span aria-hidden="true">{{ $trendIcon }}</span>
                         <span class="sr-only">{{ $trendLabel }}</span>
@@ -482,16 +500,8 @@
         </{{ $part }}>
     @endif
 
-    {{--: optional citation footnote (smaller + subtle). --}}
-    @if($citation)
-        <span class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]">
-            {{ $citation }}
-        </span>
-    @endif
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    {{--: optional citation footnote (smaller + subtle), built in the php block above. --}}
+    {{ $citationPart }}{{ $newTabHint }}</{{ $tag }}>
 
 @if($needsEntranceWrapper)
     </div>

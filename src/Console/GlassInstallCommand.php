@@ -52,14 +52,14 @@ class GlassInstallCommand extends Command
         File::ensureDirectoryExists($targetPath);
 
         /*
-         * An EDITED published file is not overwritten without `--force`.
+         * An edited published file is not overwritten without `--force`.
          *
          * A developer may have edited the published CSS to adjust the look, rather than
          * set the `--glass-wk-*` tokens in their own stylesheet. This command is
          * plausibly re-run after upgrading the package, and a silent copy would take the
          * customization with no output difference from a first install.
          *
-         * "Edited" is decided by CONTENT, not by mtime: a `vendor:publish`, a deploy step or
+         * "Edited" is decided by content, not by mtime: a `vendor:publish`, a deploy step or
          * a checkout all rewrite the timestamp of a file nobody touched, and a warning that
          * fires on those is one a reader learns to pass with `--force` every time.
          */
@@ -112,7 +112,7 @@ class GlassInstallCommand extends Command
         $this->info('  Published: public/vendor/wirekit/glass/wirekit-glass.css');
         $this->info('  Published: public/vendor/wirekit/glass/wirekit-glass.js');
         $this->newLine();
-        // The BODY, and as its first element — never the head. This component emits an
+        // The body, and as its first element — never the head. This component emits an
         // <svg>, and an SVG in the head ends head parsing: every metadata tag after it is
         // reparented into the body, where a crawler does not look. This message is what a
         // developer reads while doing the install rather than afterwards.

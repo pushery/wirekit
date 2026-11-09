@@ -26,7 +26,7 @@
     // focus ring that extends past the edge. `visible` releases all of it.
     //
     // A prop rather than an !important utility override on the base class, because that
-    // override is not the same thing: it removes the corner clipping for EVERY
+    // override is not the same thing: it removes the corner clipping for every
     // child, and nothing says so until someone drops a full-bleed image or a table
     // into that card.
     'overflow' => 'hidden',
@@ -81,7 +81,7 @@
     // `$as` ends up interpolated into the opening tag below (through `$tag`), and Blade's
     // escaping does not make that safe: `e()` escapes neither a space nor an `=`, so
     // `as="div onmouseover=alert(1)"` would arrive as a working event handler. `tagName()`
-    // checks the SHAPE rather than an allowlist — an enum has to guess which elements a
+    // checks the shape rather than an allowlist — an enum has to guess which elements a
     // developer legitimately wants, and `article` is exactly the kind a guess omits.
     // Validated here rather than beside `$tag`, because the interactive-affordance check
     // further down reads `$as` too and both must see the same sanitized value.
@@ -90,12 +90,12 @@
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'card');
 
     // Written out in full rather than built as "overflow-{$overflow}". Tailwind
-    // scans for COMPLETE literal class names and generates nothing for a name it
+    // scans for complete literal class names and generates nothing for a name it
     // never sees spelled out — an interpolated one produces a class with no rule
     // behind it, and the failure is silent because the attribute is present and
     // simply does nothing.
     //
-    // `auto` is the one arm that turns the card's own box into a SCROLL CONTAINER, so it
+    // `auto` is the one arm that turns the card's own box into a scroll container, so it
     // carries the keyboard contract with it. WCAG 2.1.1 asks that a region which scrolls be
     // reachable and operable without a mouse, and a `<div>` that scrolls is neither: there is
     // no tab stop on it, so the content past the fold cannot be panned at all. The ring rides
@@ -126,7 +126,7 @@
         'ease-[var(--transition-wk-easing)]',
     ]), $scope);
 
-    // accept `outline` AND `outlined` for the bordered-only treatment.
+    // accept `outline` and `outlined` for the bordered-only treatment.
     // Button uses `surface="outline"` (no trailing -d); card takes
     // `variant="outlined"` (with trailing -d). Same visual concept,
     // different vocabulary — the alias here gives the two components the
@@ -145,18 +145,18 @@
 
     // Variant classes: border/shadow combinations for visual weight.
     //
-    // Through the SAME seam as `base`, and that is not symmetry for its own sake. Every
+    // Through the same seam as `base`, and that is not symmetry for its own sake. Every
     // variant sets `border-color` and none leaves it off, so an application that wants a
     // selected state — a metric card that sets a filter, say — cannot express one by
     // appending: its class lands in the same attribute at the same specificity, and the
-    // winner is then decided by EMISSION ORDER in the built stylesheet.
+    // winner is then decided by emission order in the built stylesheet.
     //
     // Tailwind v4 derives that order from the class name rather than from the intent, so
     // the outcome is arbitrary with respect to what the developer meant: an accent border
     // can sort before the component's own, and the selected card then looks exactly like an
     // unselected one.
     //
-    // With the seam an application REPLACES the block in its own scope instead of hanging
+    // With the seam an application replaces the block in its own scope instead of hanging
     // something beside it, which is the one shape that cannot be decided by an ordering
     // nobody controls.
     //
@@ -167,10 +167,10 @@
     $intentBorder = match ($intent) {
         // A bound `null` or empty string is the neutral border without a word.
         null, '', 'neutral' => null,
-        'info' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
-        'success' => 'border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
-        'warning' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
-        'danger' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
+        'info' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_35%,var(--color-wk-border))]',
+        'success' => 'border-[color-mix(in_srgb,var(--color-wk-success)_35%,var(--color-wk-border))]',
+        'warning' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_35%,var(--color-wk-border))]',
+        'danger' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_35%,var(--color-wk-border))]',
         // An unknown value is reported; what comes back is the first allowed value, and the card
         // keeps the border of its surface.
         default => match (WireKit::validateProp('card', 'intent', \Pushery\WireKit\Support\NumericProp::text($intent), ['neutral', 'info', 'success', 'warning', 'danger'])) {
@@ -193,7 +193,7 @@
             'border-[length:var(--border-wk-width)]',
             $intentBorder ?? 'border-transparent',
         ]),
-        // Named after the prop the CALL SITE used, and listing the values in that prop's own
+        // Named after the prop the call site used, and listing the values in that prop's own
         // spelling: a developer who wrote `surface` is told about `outline`, which is what
         // button takes, rather than about a `variant` they never set.
         //
@@ -210,7 +210,7 @@
     // A flat card's background is its variant's, so the base block's background color comes
     // out. Beside it the stylesheet's order decided, and the flat card only came out right
     // because `--color-wk-bg-subtle` sorts after `--color-wk-bg-elevated` — the same ordering
-    // nobody controls that the comment above describes for the border. Read from the RESOLVED
+    // nobody controls that the comment above describes for the border. Read from the resolved
     // base block, so a personalized base loses its background color on a flat card too.
     if ($variant === 'flat') {
         $baseClasses = \Pushery\WireKit\Support\UtilityClasses::without(
@@ -219,7 +219,7 @@
         );
     }
 
-    // The interactive treatment is keyed on whether the card DOES something when it is
+    // The interactive treatment is keyed on whether the card does something when it is
     // clicked, not on whether it happens to render an `<a>`. Keyed on `$href` alone,
     // `as="button"` would get the card frame and no affordance at all, so a card that
     // acts on click would look exactly like a card that does nothing: an element that
@@ -384,7 +384,7 @@
         ]), $scope);
     }
 
-    // `block` stays with the anchor and is deliberately NOT part of the interactive set:
+    // `block` stays with the anchor and is deliberately not part of the interactive set:
     // an `<a>` is inline and needs it to fill the card's box, which makes it a display
     // fix rather than an affordance. Putting it on the interactive branch would change
     // the width of every card that already renders as a `<button>` (inline-block by
@@ -420,17 +420,17 @@
 
     // The other half of the `overflow="auto"` contract: the tab stop.
     //
-    // Deliberately NOT the shape attachment-group uses (`tabindex="{{ $isRow ? '0' : '-1' }}"`,
-    // the condition in the VALUE). That works there because its root is always a `<div>`; this
+    // Deliberately not the shape attachment-group uses (`tabindex="{{ $isRow ? '0' : '-1' }}"`,
+    // the condition in the value). That works there because its root is always a `<div>`; this
     // root is not. With `href` the card renders as an `<a>`, which is already a tab stop, and
-    // writing `-1` onto it would take a link card OUT of the tab order — a keyboard regression
-    // dressed as a keyboard fix. And `-1` on the DEFAULT path would make every card in the
+    // writing `-1` onto it would take a link card out of the tab order — a keyboard regression
+    // dressed as a keyboard fix. And `-1` on the default path would make every card in the
     // library click-focusable, which is a behavior change nobody asked for on a clipping card
     // that scrolls nothing.
     //
     // So three states rather than two, and the two that need no attribute get none.
     //
-    // `a` is absent from the tag list ON PURPOSE and the `$href` term is not a duplicate of
+    // `a` is absent from the tag list on purpose and the `$href` term is not a duplicate of
     // it: an anchor without an `href` is not focusable at all, so `as="a"` on its own still
     // needs the stop.
     $rootIsNativelyFocusable = $href !== null
@@ -438,25 +438,32 @@
 
     // Merged through the bag rather than written into the tag, so a caller who manages focus
     // themselves keeps their own value — `merge()` treats this as a default, which is the
-    // right way round here and is exactly what `rel` below must NOT do.
+    // right way round here and is exactly what `rel` below must not do.
     $scrollKeyboardModel = $overflow === 'auto' && ! $rootIsNativelyFocusable
         ? ['tabindex' => '0']
         : [];
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
-    // The rel is rendered EXPLICITLY and the bag echoes with except('rel'):
-    // $attributes->merge() treats a non-class attribute as a DEFAULT, so a
+    // The rel is rendered explicitly and the bag echoes with except('rel'):
+    // $attributes->merge() treats a non-class attribute as a default, so a
     // caller writing rel="prev" silently replaced the computed value and took
     // the protection with it. See dropdown/item.blade.php for the same shape.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
+    // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
+    // writes no morph markers around it. Its class goes through CompactClasses, as a class
+    // attribute in the markup does.
+    $newTabHint = $opensNewTab
+        ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
+        : '';
+
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
-    // Dev-only composition warning. The card root is a FRAME with no
+    // Dev-only composition warning. The card root is a frame with no
     // padding — real content belongs in card.body / card.header / card.footer
     // (each emits the shared `px-[var(--padding-wk-x-lg)]` padding). If the slot
     // carries visible text but none of those padded sub-components, the content
@@ -464,7 +471,7 @@
     // DX reports hit. Mirrors the table.blade.php raw-descendant warn pattern.
     //
     // False-positive guard: `strip_tags()` leaving non-empty text means there is
-    // real copy in the slot, which EXCLUDES the legitimate edge-to-edge media
+    // real copy in the slot, which excludes the legitimate edge-to-edge media
     // pattern (a bare <img>/<picture>/<video>/<svg> flush in the card has no
     // card.body by design — strip_tags() leaves nothing, so no warn). Errs toward
     // under-warning, never crying wolf.
@@ -503,7 +510,7 @@
         x-on:hashchange.window="openForFragment()"
     @elseif($warnNoBody)
         {{-- Debug-only composition warning. It cannot be an inline console.warn:
-             under Alpine's CSP build naming `console` throws while BUILDING the
+             under Alpine's CSP build naming `console` throws while building the
              component, which takes down the very element being warned about. --}}
         x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from('[wirekit] card: content sits directly in the card with no card.body — the card root is a padding-free frame, so this content renders flush against the border. Wrap it in card.body (or card.header / card.footer). See https://docs.wirekit.app/components/card.') }} })"
     @endif
@@ -542,30 +549,23 @@
                          and in the description stands above it and takes its own click, and the text
                          around it stays part of the head. The lift sits outside the class block, so a
                          personalization keeps it. --}}
-                    @if($hasHints)
+                    @wirekitLast($hasHints)
                         <span id="{{ $hintsId }}" class="{{ $hintsClasses }} [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $hints }}</span>
-                    @endif
+                    @endwirekitLast
                 </div>
                 {{-- The circle and the arrow take no click: the trigger's area lies under them, and a
                      turned arrow is painted above that area, so it took the click itself and the
                      card stayed open. `pointer-events-none` and the marker sit outside the class
                      block, so a personalization keeps both. --}}
                 <span data-wk-card-chevron-frame aria-hidden="true" class="pointer-events-none {{ $chevronClasses }}">
-                    <svg
-                        class="wk-card-chevron shrink-0 w-4 h-4 transition-transform duration-[var(--transition-wk-duration)]"
-                        :class="isOpen ? 'rotate-180' : ''"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        aria-hidden="true"
-                    >
-                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                    </svg>
+                    {{-- Drawn whole, or a pointer into the page's glyphs while `wirekit.icons.sprite` is on;
+                         the turn stays on the instance. --}}
+                    {{ \Pushery\WireKit\Support\KitIcons::svg('card-arrow', 'wk-card-chevron shrink-0 w-4 h-4 transition-transform duration-[var(--transition-wk-duration)]', ':class="isOpen ? \'rotate-180\' : \'\'" aria-hidden="true"') }}
                 </span>
             </div>
-            @if(filled($description))
+            @wirekitLast(filled($description))
                 <div data-wk-card-description class="{{ $descriptionClasses }} [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $description }}</div>
-            @endif
+            @endwirekitLast
         </div>
         {{-- The part that folds, body and footer together, one box that is never `display:
              contents`. Findable, it is `hidden="until-found"` while closed where the engine
@@ -597,7 +597,4 @@
     @else
         {{ $slot }}
     @endif
-    @if($opensNewTab)
-        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
-</{{ $tag }}>
+    {{ $newTabHint }}</{{ $tag }}>

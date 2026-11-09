@@ -3,12 +3,12 @@
      shown early. --}}
 @props([
     'cols' => config('wirekit.components.grid.cols', 1), // @example "1 md:2 lg:4" @example "1 sm:2 md:3 lg:4 xl:6"
-    // A grid that counts columns by CONTENT rather than by viewport. `min` is the
+    // A grid that counts columns by content rather than by viewport. `min` is the
     // narrowest a column may be; as many fit as fit, and one on a narrow screen.
     //
     // This is not the same thing as `cols` with breakpoints, which is why it is
     // its own prop rather than a spelling of that one: `cols` measures the
-    // VIEWPORT, so it looks identical until the container is narrower than the
+    // viewport, so it looks identical until the container is narrower than the
     // window — a sidebar opens, a split view, an embedded preview — and then it
     // keeps counting columns that no longer fit.
     'min' => null, // @example "14rem" @example "20ch"
@@ -83,7 +83,7 @@
     // arbitrary value forces: Tailwind extracts class names from source text, so
     // a track built at runtime has no literal for the scanner to find. `cols`
     // stays a class map for exactly the same reason — its values are a closed
-    // set, so they CAN be literals, and a class survives a stricter CSP than an
+    // set, so they can be literals, and a class survives a stricter CSP than an
     // inline style does.
     $trackStyle = null;
     $templateBase = null;
@@ -114,7 +114,7 @@
         // Split the base from the breakpoint tokens. A track list has spaces and a token
         // cannot, so a breakpoint value is bracketed with `_` standing for each space; a
         // base value keeps its spaces and is simply every token that is not `bp:[…]`.
-        // Named lines (`[sidebar-start] 14rem`) are brackets WITHOUT a prefix, so they stay
+        // Named lines (`[sidebar-start] 14rem`) are brackets without a prefix, so they stay
         // in the base, and the greedy match keeps `lg:[[a]_1fr_[b]]` whole.
         $baseTokens = [];
 
@@ -128,7 +128,7 @@
 
         $templateBase = $baseTokens === [] ? null : implode(' ', $baseTokens);
 
-        // Every value is validated on its own, AFTER the prefix is stripped — the `:` of a
+        // Every value is validated on its own, after the prefix is stripped — the `:` of a
         // breakpoint is syntax of this prop and never reaches CSS, so it is not in the set.
         $invalid = collect(array_filter([$templateBase, ...array_values($templateAt)], fn ($v) => $v !== null))
             ->first(fn (string $value) => ! preg_match($trackValue, $value));
@@ -141,11 +141,11 @@
             // No breakpoint: the track list as a plain inline `grid-template-columns`.
             $trackStyle = 'grid-template-columns: '.$templateBase.';';
         } else {
-            // With breakpoints the base can NOT stay an inline `grid-template-columns`:
+            // With breakpoints the base can not stay an inline `grid-template-columns`:
             // an inline declaration beats every class, so the `lg:` rule would never win.
             // Each value rides in its own custom property instead, and a class that is
-            // written out literally below reads it inside its media query. The VALUE is
-            // arbitrary and the CLASS is not — which is the whole trick, because Tailwind can
+            // written out literally below reads it inside its media query. The value is
+            // arbitrary and the class is not — which is the whole trick, because Tailwind can
             // extract a literal class and cannot extract one assembled at runtime.
             $responsiveTemplate = true;
             $trackStyle = collect(['' => $templateBase] + $templateAt)
@@ -155,7 +155,7 @@
         }
     }
 
-    // `cols` is kept as a CSP FALLBACK when a track prop won — but only if you asked
+    // `cols` is kept as a CSP fallback when a track prop won — but only if you asked
     // for one.
     //
     // `min` and `template` are arbitrary values, so they can only ride in an inline
@@ -163,7 +163,7 @@
     // runtime leaves the scanner nothing to find. Under a `style-src` policy without
     // `'unsafe-inline'` (Level 3: `style-src-attr`) the browser drops that attribute —
     // and suppressing the cols classes as well would make the column definition
-    // disappear ENTIRELY and stack the grid into one column. Elsewhere a
+    // disappear entirely and stack the grid into one column. Elsewhere a
     // dropped inline style costs a shade or a width; here it costs the whole statement.
     //
     // Leaving the class out would read cleaner — a class that never applies is one more
@@ -182,14 +182,14 @@
     $colsTokens = preg_split('/\s+/', trim(is_numeric($cols) ? \Pushery\WireKit\Support\NumericProp::text($cols) : $cols));
 
     if ($responsiveTemplate) {
-        // With breakpoints `cols` is not a fallback — it is the ACTIVE value at every
+        // With breakpoints `cols` is not a fallback — it is the active value at every
         // breakpoint the template leaves free, including the default. `cols="1"
         // template="lg:[1fr_20rem]"` needs `grid-cols-1` below `lg`: dropped as an unrequested
         // default (the rule above), the phone would get no column definition at all, and
         // implicit `auto` tracks cannot shrink below their content the way `minmax(0,1fr)`
         // can — a long word would overflow where one column was promised.
         //
-        // And at a breakpoint the template DOES occupy, the `cols` class is left out rather
+        // And at a breakpoint the template does occupy, the `cols` class is left out rather
         // than left to compete. Two classes on one property at one breakpoint are decided by
         // the order Tailwind emits them, which is not a precedence anyone should have to
         // know; `template` beats `cols` is the documented rule, so it is made structural.
@@ -215,7 +215,7 @@
             ->implode(' ');
 
     // Written out rather than assembled, for the reason `$colsMap` is: Tailwind reads source
-    // text. The VALUE each one reads is arbitrary and lives in the custom property; the class
+    // text. The value each one reads is arbitrary and lives in the custom property; the class
     // itself is one of six fixed strings, which is what makes a runtime track list reachable
     // from a media query without a safelist.
     $templateClassMap = [

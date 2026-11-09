@@ -91,7 +91,7 @@ export default function wirekitMultiSelect(config = {}) {
         // Where the keyboard is standing, as an index into `filteredOptions`.
         // Focus stays on the filter input for the whole interaction — that is
         // what a combobox is — so this index, published through
-        // `aria-activedescendant`, is the ONLY thing that tells a reader which
+        // `aria-activedescendant`, is the only thing that tells a reader which
         // option Enter would take. Without it the control announced a listbox
         // it gave no way to reach.
         highlight: 0,
@@ -225,7 +225,7 @@ export default function wirekitMultiSelect(config = {}) {
         },
 
         // Alpine teardown (Livewire morph / SPA nav): stop autoUpdate if the panel
-        // was still open, since the $watch only fires on an open→closed CHANGE.
+        // was still open, since the $watch only fires on an open→closed change.
         destroy() {
             this._stopServerValue?.();
             this._stopServerValue = null;
@@ -262,7 +262,7 @@ export default function wirekitMultiSelect(config = {}) {
         _options: config.options || [],
         // The stem every option id is built from. Handed in by the Blade rather
         // than minted here so the row's `id` and the input's
-        // `aria-activedescendant` are two readings of ONE string — the pairing
+        // `aria-activedescendant` are two readings of one string — the pairing
         // comes apart the moment those are written independently.
         _id: config.id || null,
         // The text field's id comes from the Blade too: it is the caller's `id` when one was
@@ -493,7 +493,7 @@ export default function wirekitMultiSelect(config = {}) {
          *
          * A combobox normally announces a pick for free: `aria-selected` flips
          * on the very row `aria-activedescendant` names. That cannot happen
-         * here, because `filteredOptions` DROPS an option the moment it is
+         * here, because `filteredOptions` drops an option the moment it is
          * chosen — the row the reader was standing on stops existing. So the
          * selection itself is read back, as the labels the pills now show.
          *
@@ -537,8 +537,8 @@ export default function wirekitMultiSelect(config = {}) {
         /**
          * Arrow into the list.
          *
-         * Opening IS the first move: a closed list has no active option, so the
-         * first ArrowDown must land ON the first row rather than step past it,
+         * Opening is the first move: a closed list has no active option, so the
+         * first ArrowDown must land on the first row rather than step past it,
          * and the first ArrowUp lands on the last.
          */
         openAndMove(delta) {
@@ -616,7 +616,7 @@ export default function wirekitMultiSelect(config = {}) {
          * arrow keys share one idea of where the user is — otherwise hovering
          * row three and pressing Enter takes row one.
          *
-         * The flag suppresses the scroll for THIS move only. The cursor is
+         * The flag suppresses the scroll for this move only. The cursor is
          * already on the row, so scrolling it into view would slide the list
          * out from under the pointer, which then hovers a different row, which
          * scrolls again.
@@ -688,7 +688,7 @@ export default function wirekitMultiSelect(config = {}) {
          *
          * By id rather than through `$refs`, for the reason the docblock of
          * `_panelElement()` spells out in full: with `optimistic` set the refs register into
-         * a nested scope this component cannot read, and an id is scope-free. NOT
+         * a nested scope this component cannot read, and an id is scope-free. Not
          * the teleport — Alpine's closest-element walk follows `_x_teleportBack`,
          * and that same docblock records the measurement proving it.
          */
@@ -715,7 +715,7 @@ export default function wirekitMultiSelect(config = {}) {
         /**
          * Pull the index back inside the list it points into.
          *
-         * A pick REMOVES that option from `filteredOptions`, so the index the
+         * A pick removes that option from `filteredOptions`, so the index the
          * keyboard was standing on can end up past the end — and then
          * `aria-activedescendant` names an id no element carries, which reads
          * to a screen reader as the control having lost its place. Runs on the
@@ -729,7 +729,7 @@ export default function wirekitMultiSelect(config = {}) {
         },
 
         /**
-         * The selection this value would produce, as a NEW array.
+         * The selection this value would produce, as a new array.
          *
          * The optimistic layer needs it: toggleValue() mutates `selected` in place
          * with splice/push, and an in-place mutation is invisible to a layer
@@ -748,10 +748,10 @@ export default function wirekitMultiSelect(config = {}) {
         },
 
         /**
-         * The part of toggleValue() that is not the selection itself — and NOT the
+         * The part of toggleValue() that is not the selection itself — and not the
          * focus move.
          *
-         * Split out so the optimistic layer can run it after ITS write. It runs
+         * Split out so the optimistic layer can run it after its write. It runs
          * on the rollback too, which is exactly why focus is not in here: an
          * undo arrives on the server's schedule, and pulling focus back to the
          * filter at that moment would take the user out of wherever they had
@@ -770,9 +770,9 @@ export default function wirekitMultiSelect(config = {}) {
         /**
          * Toggle one option in or out of the selection — the plain path.
          *
-         * NOT called `toggle`: the optimistic layer mounts inside this component and
+         * Not called `toggle`: the optimistic layer mounts inside this component and
          * declares `toggle()` as part of its own contract, and Alpine resolves a name to
-         * the NEAREST scope that has it. Anything under the layer's element calling
+         * the nearest scope that has it. Anything under the layer's element calling
          * `toggle(value)` would reach the layer's method, which takes no argument and
          * flips the whole value to a boolean. Nothing calls it from there today — the
          * optimistic path runs `run(nextWith(...))` instead — which is exactly the kind
@@ -796,8 +796,8 @@ export default function wirekitMultiSelect(config = {}) {
          * Deselect (remove) a selected value.
          *
          * The removal takes the focused element away with it, and nothing else
-         * puts focus back. The button that calls this sits INSIDE the pill, the
-         * pills are keyed by VALUE, so Alpine drops exactly the node holding
+         * puts focus back. The button that calls this sits inside the pill, the
+         * pills are keyed by value, so Alpine drops exactly the node holding
          * focus — and the field leaves a press on that button out of its own
          * `focusAndOpen()` (`data-wk-pill-remove`), so no other handler runs
          * either. A destroyed active element leaves focus on `<body>`, which
@@ -856,7 +856,7 @@ export default function wirekitMultiSelect(config = {}) {
          *
          * After a tick, because the pills are re-rendered from the array — a
          * query before the template has caught up finds the buttons as they
-         * were. The field element is resolved BEFORE the tick and the query runs
+         * were. The field element is resolved before the tick and the query runs
          * in it: the field survives the removal (only the pill inside it is
          * dropped), while the button the reader pressed does not. It goes
          * through `_fieldElement()` so a nested optimistic `x-data` cannot hide
@@ -967,7 +967,7 @@ export default function wirekitMultiSelect(config = {}) {
          * cause is the nested optimistic scope, as in the sibling combobox.
          *
          * The panel goes by id because it has one and an id is scope-free. The field has no
-         * id, so it is found by its ref ATTRIBUTE — present in the rendered HTML regardless
+         * id, so it is found by its ref attribute — present in the rendered HTML regardless
          * of which scope registered it — scoped to `$root` so a second multi-select on the
          * page cannot answer for this one.
          */

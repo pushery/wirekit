@@ -9,7 +9,7 @@
  *
  * Editable cell types (tristate / toggle) manage their value here and emit the
  * normalized cell map [rowKey:colKey => value] on every change — via a bubbling
- * `cell-change` event AND a JSON hidden input (so wire:model / a form bridge).
+ * `cell-change` event and a JSON hidden input (so wire:model / a form bridge).
  * A `_baseline` snapshot powers the `isChanged` diff highlight (role-matrix).
  *
  * Keyboard grid navigation: arrow keys move focus between interactive cells
@@ -42,11 +42,23 @@
  *   PluralPhrases; the unsaved-changes counter's translated plural forms.
  * @param {string} [config.locale] - the application's locale, for Intl.PluralRules.
  */
+import { inlineKey } from '../utils/inline-direction.js';
 import { pluralizeGrouped } from '../utils/plural.js';
 import { keepTabStop } from '../utils/roving-focus.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { hasModelBinding, jsonValue, observeServerValue, ownValues, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { phpTrim, switchWord } from '../utils/switch-word.js';
+
+/**
+ * The state a tristate cell names: one of its three words in any case, or 'inherit'. The word is
+ * trimmed as the server trims it before it reports a value, so the two never disagree on a cell.
+ */
+function tristateWord(value) {
+    const word = typeof value === 'string' ? phpTrim(value).toLowerCase() : '';
+
+    return ['inherit', 'allow', 'deny'].includes(word) ? word : 'inherit';
+}
 
 /** Whether two cell maps hold the same value in every cell, a missing cell counting as none. */
 function sameCells(a, b) {
@@ -189,15 +201,19 @@ export default function wirekitStatusMatrix(config = {}) {
         },
 
         // tristate resolves a missing value to 'inherit' so a sparse seed still
-        // renders a meaningful default state.
+        // renders a meaningful default state. One of the three words is read in any case and
+        // with spaces around it; any other value names no state and reads as 'inherit', as the
+        // server reads it after reporting it.
         tristateValue(rowKey, colKey) {
-            return this.cellValue(rowKey, colKey) ?? 'inherit';
+            return tristateWord(this.cellValue(rowKey, colKey));
         },
         tristateLabel(rowKey, colKey) {
             return this._stateLabels[this.tristateValue(rowKey, colKey)];
         },
+        // A cell is on for every value a switch reads as on, as the server writes its
+        // `aria-checked`: `1` from a column without a cast as well as `true`.
         toggleOn(rowKey, colKey) {
-            return this.cellValue(rowKey, colKey) === true || this.cellValue(rowKey, colKey) === 'on';
+            return switchWord(this.cellValue(rowKey, colKey)) === true;
         },
 
         setCell(rowKey, colKey, value) {
@@ -247,7 +263,7 @@ export default function wirekitStatusMatrix(config = {}) {
         // ── Heat scaling ─────────────────────────────────────────────────
         // Normalize a numeric value into [0,1] across the matrix's min..max so
         // the cell background can color-mix between the surface and the scale
-        // color. The value LABEL is always rendered too (never color-only).
+        // color. The value label is always rendered too (never color-only).
         heatRatio(value) {
             const min = Number(config.heatMin ?? 0);
             const max = Number(config.heatMax ?? 100);
@@ -259,7 +275,7 @@ export default function wirekitStatusMatrix(config = {}) {
 
         // ── Keyboard grid navigation (roving focus) ──────────────────────
         // Home / End are part of the grid pattern, not an extra: with a single
-        // tab stop into the matrix, arrows are the ONLY way across, so a wide
+        // tab stop into the matrix, arrows are the only way across, so a wide
         // permission matrix costs one keypress per column to cross and there is
         // no way back to the row label but to hold the key down. Ctrl+Home /
         // Ctrl+End are the whole-grid pair, same as in a spreadsheet.
@@ -278,9 +294,12 @@ export default function wirekitStatusMatrix(config = {}) {
             let nr;
             let nc;
 
-            if (e.key in deltas) {
-                nr = r + deltas[e.key][0];
-                nc = c + deltas[e.key][1];
+            // The columns run from the right on a right-to-left page, so the side keys swap there.
+            const key = inlineKey(e, e.target);
+
+            if (key in deltas) {
+                nr = r + deltas[key][0];
+                nc = c + deltas[key][1];
             } else if (e.key === 'Home') {
                 // Ctrl+Home is the first cell of the grid; bare Home the first of the row.
                 nr = e.ctrlKey || e.metaKey ? 0 : r;
@@ -303,7 +322,7 @@ export default function wirekitStatusMatrix(config = {}) {
             }
 
             /*
-             * MOVE the tab stop, do not just move focus. This only did the second half.
+             * Move the tab stop, do not just move focus. This only did the second half.
              *
              * The template nails `tabindex="0"` to cell (0,0) and gives every other cell
              * `-1`, which is the correct starting state and was also the permanent one:
@@ -324,7 +343,7 @@ export default function wirekitStatusMatrix(config = {}) {
         /**
          * Make `el` the grid's single tab stop.
          *
-         * The whole point of the pattern is that a composite widget takes ONE stop, so the
+         * The whole point of the pattern is that a composite widget takes one stop, so the
          * previous holder has to give it up in the same breath — two cells at `0` is two tab
          * stops in a grid the reader is told has one.
          */

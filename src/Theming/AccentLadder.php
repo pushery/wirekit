@@ -82,8 +82,9 @@ final class AccentLadder
     ];
 
     /**
-     * How much of a state color `callout` (15%) and `alert` (10%) mix into the card surface.
-     * Held to the two views by a test.
+     * How much of a state color is mixed into the card surface: 10% is the tint `callout` and
+     * `alert` draw, 15% a stronger tint an application may draw on its own. The text of the accent
+     * reads on both. Held to the two views by a test.
      */
     private const TINTS = [10, 15];
 

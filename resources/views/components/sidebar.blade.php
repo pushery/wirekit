@@ -10,17 +10,17 @@
     // cookie driver below is allowed to answer it instead — which is the whole point
     // of that driver, so an explicit value here wins and turns the seeding off.
     //
-    // Null rather than false so those two cases stay APART. Once the boolean cast has
+    // Null rather than false so those two cases stay apart. Once the boolean cast has
     // run they are the same value, and a server that cannot tell "not set" from
     // "explicitly collapsed=false" would override a developer who asked for expanded.
     'collapsed' => null,
-    // The state on a FIRST visit, before the store has anything to say. Of the three cases, an
-    // explicit `collapsed` wins and turns the seeding OFF, a stored value decides when there is
+    // The state on a first visit, before the store has anything to say. Of the three cases, an
+    // explicit `collapsed` wins and turns the seeding off, a stored value decides when there is
     // one, and with neither this does — so an application whose sidebar should start collapsed
     // and follow the reader afterwards can say so.
     //
     // Both drivers answer this the same way, which is the half that makes it one idea rather
-    // than two. The cookie driver seeds the first RENDER from here; the local driver renders
+    // than two. The cookie driver seeds the first render from here; the local driver renders
     // from here and then hands this same value to the store read as its fallback, so an empty
     // localStorage keeps it instead of collapsing to `false`.
     //
@@ -28,7 +28,7 @@
     'defaultCollapsed' => null,
     // Surface shape. `card` (default) is the self-contained panel: background,
     // border on all four sides, rounded, meant to sit inside a padded column.
-    // `flush` is the full-bleed navigation COLUMN of the common admin layout —
+    // `flush` is the full-bleed navigation column of the common admin layout —
     // no radius, no surrounding border, the surface inherited from the host, and
     // a single inline-end edge separating it from the content.
     //
@@ -38,14 +38,14 @@
     // Default `card`.
     // Which ARIA contract this column carries, and the two are not interchangeable.
     //
-    // `navigation` (the default) is a list of LINKS: each row is in the tab order, Enter
+    // `navigation` (the default) is a list of links: each row is in the tab order, Enter
     // follows it, and the row for
     // the page you are on is marked `aria-current`.
     //
-    // `selection` is one CONTROL holding many choices: the container is in the tab order
+    // `selection` is one control holding many choices: the container is in the tab order
     // once, the arrows move an `aria-activedescendant` marker without moving focus, and
     // the chosen row is marked `aria-selected`. It emits no `aria-current` at all, which
-    // is the whole point — announcing a page you are on AND a value you have picked are
+    // is the whole point — announcing a page you are on and a value you have picked are
     // two different claims, and a column that made both would be lying about one.
     'mode' => 'navigation',
     // The chosen value, in `selection` mode. Matched against each row's `value`, so the
@@ -74,7 +74,7 @@
     // Which side of the content this column stands on: 'start' (default) or 'end'.
     //
     // It decides two things a reader reads as one — where the separator is drawn, and which
-    // way the collapse chevron points. Both belong on the edge that FACES the content: a
+    // way the collapse chevron points. Both belong on the edge that faces the content: a
     // details panel on the trailing side draws its rule on its leading edge and closes to
     // the right, and the mirror image of that is a rule on the page margin and a chevron
     // pointing into the panel it is closing.
@@ -86,7 +86,7 @@
     'side' => 'start',
     // Optional storage key — persists the collapsed state across reloads.
     'persist' => null,
-    // WHERE that choice is remembered: 'local' (default) or 'cookie'.
+    // Where that choice is remembered: 'local' (default) or 'cookie'.
     //
     // No server can read localStorage, so a column that remembers being collapsed
     // renders at its seed width and corrects itself after the first paint. A nonced
@@ -102,7 +102,7 @@
     'persistDriver' => 'local',
     // Accessible name for the navigation landmark. Defaults to "Sidebar" so
     // assistive tech can tell it apart from the main <nav>; override it when the
-    // page carries more than one navigation landmark. Passing aria-label OR
+    // page carries more than one navigation landmark. Passing aria-label or
     // aria-labelledby directly on the component also wins over this default
     // (and suppresses it, so the <nav> never gets a duplicate/conflicting name).
     'label' => __('wirekit::Sidebar'),
@@ -126,6 +126,35 @@
     // (`x-wk-current`, utils/current.js). `sidebar.item` reads it from here. Navigation mode only:
     // a picked value is not a page.
     'trackCurrent' => false,
+    // Opt-in: a name that does not fit is cut with an ellipsis on one line instead of wrapping,
+    // for every entry of the column. `sidebar.item`, `sidebar.collapsible` and `sidebar.group`
+    // read it from here and take `truncate` of their own, which wins for that entry and, on a
+    // group or a section, for the entries inside it.
+    //
+    // The default stays the rule of `app-rail.item`: a clipped destination names nothing, so a
+    // name wraps. A column narrow by design, with names a reader tells apart by their start,
+    // takes the trade knowingly. The full name stays the entry's accessible name, since the cut
+    // is visual, and it repeats as a `title` for a pointer.
+    'truncate' => false,
+    // A handle on the edge that faces the content, by which a reader sets the column's width:
+    // dragged, stepped with the side keys or with the two controls beside its grip. The width is
+    // kept under `persist` with the same driver as the folded state, and each sidebar keeps its
+    // own. Not in `selection` mode, where the column is one control and a separator inside it
+    // would be a second.
+    'resizable' => false,
+    // The width the handle starts from and returns to on Enter or Space, a length in `rem` or
+    // `px`. Only with `resizable`; left out, `16rem`, the width the column has without it.
+    'width' => null,
+    // The bounds of the width a reader drags, lengths in `rem` or `px`. Only with `resizable`.
+    'minWidth' => '12rem',
+    'maxWidth' => '24rem',
+    // The two step controls beside the handle's grip, for a pointer that cannot drag (WCAG 2.5.7),
+    // as on `resizable.handle`. Off, that pointer has only the keyboard left. Only with `resizable`.
+    'handleSteps' => true,
+    // When the three dots of the handle's grip show: `always`, or `hover`, only while the edge is
+    // pointed at, focused from the keyboard or dragged; where the pointer cannot hover, at rest
+    // either way. Only with `resizable`.
+    'handleGrip' => 'always',
     'scope' => null,
 ])
 
@@ -149,7 +178,7 @@
     $toggle = \Pushery\WireKit\WireKit::validateProp('sidebar', 'toggle', \Pushery\WireKit\Support\NumericProp::text($toggle ?: 'end'), ['end', 'start', 'none']);
     $side = \Pushery\WireKit\WireKit::validateProp('sidebar', 'side', \Pushery\WireKit\Support\NumericProp::text($side ?: 'start'), ['start', 'end']);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false, 'sidebar', 'collapsible');
@@ -158,11 +187,11 @@
 
     $persistDriver = WireKit::validateProp('sidebar', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
-    // Whether the CALLER set `collapsed`, taken before anything below answers it: an explicit
+    // Whether the caller set `collapsed`, taken before anything below answers it: an explicit
     // value wins over the store, in the factory and in the seed script alike.
     $collapsedPinned = $collapsed !== null;
 
-    // The server half of the cookie driver, and it runs BEFORE the boolean cast on purpose:
+    // The server half of the cookie driver, and it runs before the boolean cast on purpose:
     // the cast turns null into false, and after that "not set" and "explicitly expanded" are
     // one value. Seeding then would override the developer instead of filling in for them.
     // Which store is asked, and in what order, is `PersistedCookie`'s to say: `app-rail` and
@@ -171,13 +200,55 @@
         $collapsed = \Pushery\WireKit\Support\PersistedCookie::flag($persist);
     }
 
-    // The seeding above only fires when the store HAS something. Where it does not, this is the
+    // The seeding above only fires when the store has something. Where it does not, this is the
     // answer.
     $defaultCollapsed = BooleanProp::from($defaultCollapsed, false, 'sidebar', 'defaultCollapsed');
     $collapsed = BooleanProp::from($collapsed, $defaultCollapsed, 'sidebar', 'collapsed');
 
+    // The width a reader sets. A length is a number with `rem` or `px`; anything else is reported
+    // and takes the default, as an unknown value of a list does.
+    // Normalized here for the report a value that is no boolean gets at the tag that carries it;
+    // the rows read `truncate` from their family through AwareProp, where the nearest value wins.
+    $truncate = BooleanProp::from($truncate, false, 'sidebar', 'truncate');
+    $resizable = BooleanProp::from($resizable, false, 'sidebar', 'resizable') && $mode !== 'selection';
+    $sidebarLength = static function (mixed $value, string $prop, string $default): string {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        $text = trim(\Pushery\WireKit\Support\NumericProp::text($value));
+
+        return preg_match('/^\d+(?:\.\d+)?(?:px|rem)$/', $text) === 1
+            ? $text
+            : \Pushery\WireKit\Support\StrictnessGate::reject('sidebar', $prop, $text, 'a length in rem or px, such as 16rem', $default);
+    };
+    $width = $resizable ? $sidebarLength($width, 'width', '16rem') : null;
+    $minWidth = $resizable ? $sidebarLength($minWidth, 'minWidth', '12rem') : null;
+    $maxWidth = $resizable ? $sidebarLength($maxWidth, 'maxWidth', '24rem') : null;
+    $handleSteps = BooleanProp::from($handleSteps, true, 'sidebar', 'handleSteps') && $resizable;
+    $handleGrip = $resizable ? WireKit::validateProp('sidebar', 'handleGrip', \Pushery\WireKit\Support\NumericProp::text($handleGrip ?: 'always'), ['always', 'hover']) : 'always';
+
+    // The handle is named after the column it sizes, as text: a label given as markup would
+    // otherwise reach the attribute with its tags. Without a label it keeps the default name, since
+    // a separator a reader can move needs one.
+    $widthHandleLabel = $resizable ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null;
+    $widthHandleLabel = $widthHandleLabel === '' ? __('wirekit::Sidebar') : $widthHandleLabel;
+
+    // The first paint at the width the reader left. The cookie driver answers here, the local
+    // driver through the seed after the column. A stored width is clamped in CSS, so bounds that
+    // were narrowed since the reader's last visit hold from the first frame.
+    if ($resizable) {
+        $storedWidth = $persist !== null && $persistDriver === 'cookie'
+            ? \Pushery\WireKit\Support\PersistedCookie::pixels($persist.'-width')
+            : null;
+
+        $attributes = $attributes->style([
+            '--wk-sidebar-w: '.($storedWidth === null ? $width : "clamp({$minWidth}, {$storedWidth}px, {$maxWidth})"),
+        ]);
+    }
+
     // Landmark accessible name. Only emit our default `aria-label` when the
-    // developer supplied NEITHER aria-label NOR aria-labelledby directly on the
+    // developer supplied neither aria-label nor aria-labelledby directly on the
     // component — a raw aria-label / aria-labelledby always wins and suppresses
     // the default, so the <nav> never carries a duplicate or conflicting name.
     // Merging (vs a hardcoded literal) also keeps every other passed-through
@@ -186,16 +257,16 @@
         ? []
         : ['aria-label' => $label !== null ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null];
 
-    // MERGED into the bag rather than written as a conditional attribute on the tag.
+    // Merged into the bag rather than written as a conditional attribute on the tag.
     // `<nav @if(…) data-wk-tone=… @endif {{ $attributes }}>` leaves the spaces around the
     // conditional behind when it is false, so an untoned sidebar would render
     // `<nav  aria-label=` with two spaces.
-    // ONE merge, not two chained ones: a second `->merge()` call re-orders the rendered
+    // One merge, not two chained ones: a second `->merge()` call re-orders the rendered
     // attributes (class ahead of aria-label). The union keeps the label first.
     $navLabelAttrs += $tone === 'default' ? [] : ['data-wk-tone' => $tone];
 
-    // Published so the token remap in dist/wirekit.css can tell a FLUSH column — which
-    // paints nothing and therefore sits on whatever chrome is behind it — from a CARD, which
+    // Published so the token remap in dist/wirekit.css can tell a flush column — which
+    // paints nothing and therefore sits on whatever chrome is behind it — from a card, which
     // brings its own surface and must keep its own tokens with it.
     $navLabelAttrs += ['data-variant' => $variant];
 
@@ -204,26 +275,26 @@
 
     // Sidebar root: a semantic <nav> landmark that holds grouped navigation
     // items. Uniform `p-[var(--padding-wk-y-sm)]` (= 0.375rem all four
-    // sides) so the OUTER gap between the sidebar border and each item's
-    // hover/active highlight matches the INNER gap between the item edge
+    // sides) so the outer gap between the sidebar border and each item's
+    // hover/active highlight matches the inner gap between the item edge
     // and the label text. With asymmetric `px-x-sm py-y-sm` (0.625rem
     // horizontal, 0.375rem vertical) the outer gap would look 67% larger
     // than the inner — visually unbalanced.
 
-    // NO `accent` here, and the omission is deliberate rather than an oversight.
+    // No `accent` here, and the omission is deliberate rather than an oversight.
     //
     // A sidebar's contents are ordinary components — items, groups, disclosures, a profile
     // row — and they read the generic tokens, which a toned column remaps for its subtree.
     // That works for a tone whose hover and active surfaces are a small tint: the foreground
-    // stays legible on them. It does NOT work for the accent tone, whose hover and active
-    // states INVERT, because a generic component paints its foreground from one token and its
+    // stays legible on them. It does not work for the accent tone, whose hover and active
+    // states invert, because a generic component paints its foreground from one token and its
     // hover surface from another and cannot switch them together. The result would be a label
     // in exactly the color of the fill behind it.
     //
     // The rail is safe there because its items switch both at once, through roles built for
     // it (`--color-wk-rail-hover-fg` / `-active-fg`). Rather than ship a combination that is
     // unreadable on several of the bundled themes, the scale here stops at the tones a generic
-    // subtree can carry. A colored second column is expressible by toning the RAIL and
+    // subtree can carry. A colored second column is expressible by toning the rail and
     // leaving this one neutral, which is what every reference console does anyway.
     $tone = WireKit::validateProp('sidebar', 'tone', $tone, ['default', 'muted', 'inverse']);
 
@@ -239,17 +310,17 @@
         : 'border-[var(--color-wk-rail-border)]';
 
     // The surface half, split out so the two shapes read as alternatives rather
-    // than as a base with exceptions bolted on. `border-e` is the LOGICAL
-    // inline-end edge, so a right-to-left document gets the separator on the side
+    // than as a base with exceptions bolted on. `border-e` is the logical
+    // inline-end edge, so a document that reads from the right gets the separator on the side
     // that faces its content instead of the side that faces the page margin.
-    // The edge that faces the content, written out as two LITERAL class names.
+    // The edge that faces the content, written out as two literal class names.
     //
     // `'border-'.$edge.'-[length:…]'` reads better and is invisible to Tailwind: the scanner
     // reads text, so a class assembled from fragments appears nowhere in this file and is
     // emitted into no stylesheet. Both sides would lose their separator entirely, so both
     // spellings stay whole here.
     //
-    // LOGICAL edges, so a right-to-left document mirrors with the writing direction rather
+    // Logical edges, so a document that reads from the right mirrors with the writing direction rather
     // than against it.
     $contentEdgeBorder = $side === 'end'
         ? 'border-s-[length:var(--border-wk-width)]'
@@ -268,8 +339,8 @@
             // card variant must not have it, because a card is supposed to be as tall
             // as its content.
             'h-full',
-            // A flush column deliberately paints NOTHING by default — flush means the
-            // host's background IS the column's. A toned one has to paint, or the tone it
+            // A flush column deliberately paints nothing by default — flush means the
+            // host's background is the column's. A toned one has to paint, or the tone it
             // was given is simply not there. Emitted only when toned, so a default
             // flush column paints nothing.
             ...($tone === 'default' ? [] : [$toneSurface]),
@@ -298,12 +369,16 @@
         'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-sm)]',
         ...$surface,
+        // The handle stands on the column's edge, placed against it. A column that does not fold
+        // takes its width from the handle here; a folding one swaps its two widths below.
+        ...($resizable ? ['relative'] : []),
+        ...($resizable && ! $collapsible ? ['shrink-0', 'w-[var(--wk-sidebar-w,16rem)]'] : []),
     ]), $scope);
 
     // Selection mode and the collapse-to-icon rail do not compose, and the refusal is
     // explicit rather than a half-working hybrid. A collapsed rail hides every label, and
     // a listbox whose options have no visible names is a control nobody can use — while
-    // `aria-selected` would still be announced, so it would READ as usable to a screen
+    // `aria-selected` would still be announced, so it would read as usable to a screen
     // reader and be unusable on screen. Navigation survives collapsing because an icon
     // plus an accessible name is still a link; a choice needs its label.
     $selectionMode = $mode === 'selection' && ! $collapsible;
@@ -331,7 +406,7 @@
         : 'self-start group-data-[collapsed]/wk-sidebar:self-center';
 
     $collapseBtnClasses = WireKit::resolveClasses('sidebar', 'toggle', implode(' ', [
-        // BOTTOM of the column, and never touching the row above it.
+        // Bottom of the column, and never touching the row above it.
         //
         // The documentation tells the reader to click "the chevron toggle at the bottom of
         // the sidebar", and the app rail's expander is down there too: two components, one
@@ -361,7 +436,7 @@
         'inline-flex items-center justify-center shrink-0',
         // The row's own inset across, so the glyph stands in the column of the item icons, in
         // the footer band as in the column.
-        'py-1 px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)]',
+        'py-[var(--padding-wk-y-xs)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -375,7 +450,7 @@
         '',
     ]), $scope);
 
-    // Three zones — fixed head, scrolling middle, fixed foot — but ONLY when a
+    // Three zones — fixed head, scrolling middle, fixed foot — but only when a
     // head or foot is actually supplied. A sidebar with neither renders its slot
     // bare.
     //
@@ -390,15 +465,15 @@
 @endphp
 
 @if(isset($collapsibleSelectionWarning))
-    {{-- Dev-only, and it renders BEFORE the column so it is visible even when the sidebar
+    {{-- Dev-only, and it renders before the column so it is visible even when the sidebar
          itself is what looks wrong. Silent in production, like every other dev warning
          here — it uses the same Alpine helper because naming `console` throws while
-         BUILDING a component under Alpine's CSP build. --}}
+         building a component under Alpine's CSP build. --}}
     <div x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($collapsibleSelectionWarning) }} })" hidden></div>
 @endif
 
 @if($selectionMode)
-    {{-- SELECTION MODE — the WAI-ARIA listbox contract.
+    {{-- Selection mode — the WAI-ARIA listbox contract.
 
          Not a `<nav>`, deliberately. A landmark announces "navigation" and invites a
          screen-reader user to jump into it as a set of destinations; this column is one
@@ -406,7 +481,7 @@
          still comes from the same `$navLabelAttrs`, so a caller's own `aria-label` wins
          exactly as it does for the navigating column.
 
-         `tabindex="0"` on the CONTAINER and nothing focusable inside it is the whole
+         `tabindex="0"` on the container and nothing focusable inside it is the whole
          pattern: one tab stop, and the arrows move a marker rather than focus. That is
          also why the rows below carry ids — `aria-activedescendant` points at one. --}}
     <div
@@ -430,7 +505,7 @@
          the `data-collapsed` marker let descendant labels/indicators react via
          pure CSS (`group-data-[collapsed]/wk-sidebar:*`) — no per-item Alpine.
          The collapsed width reads --size-wk-rail, the same token the app-rail uses,
-         so the two columns stay interchangeable in a shell. It is DERIVED from the
+         so the two columns stay interchangeable in a shell. It is derived from the
          icon and the paddings rather than written as a round number: a collapsed row
          centers its icon and an expanded row aligns it to the leading padding, and
          those coincide only when the column is exactly as wide as its content. A
@@ -445,26 +520,26 @@
              for anything but a scalar, and JSON is a global the CSP evaluator
              cannot resolve. --}}
         x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, pinned: {{ $collapsedPinned ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::from($persistDriver) }} })"
-        {{-- Emitted STATICALLY as well as bound, for the same reason the width below is.
+        {{-- Emitted statically as well as bound, for the same reason the width below is.
              Until Alpine boots, `:data-collapsed` has not run — and every descendant rule
              of the folded column keys off `group-data-[collapsed]/wk-sidebar:*`. Without
-             this a column that was asked to start collapsed would render at the right WIDTH
+             this a column that was asked to start collapsed would render at the right width
              with its contents laid out for the wrong one, until the first frame. Alpine's binding then owns the
              attribute: it sets '' or null on every toggle, so the two never disagree. --}}
         @if($collapsed) data-collapsed @endif
         :data-collapsed="collapsed ? '' : null"
-        {{-- Read by exactly the rules that hide TEXT, and by nothing else. While the column
+        {{-- Read by exactly the rules that hide text, and by nothing else. While the column
              is widening back the names stay out of the layout, so they are never set at a
              width they will not keep, which would make the rows jump and settle. --}}
         :data-settling="settling ? '' : null"
-        {{-- Read by ONE rule: the label fade-in. It marks the moment the names come back
+        {{-- Read by one rule: the label fade-in. It marks the moment the names come back
              into flow after an expand, which is the only moment that animation is about.
              A page that loads with the column already open never carries it. --}}
         :data-just-expanded="justExpanded ? '' : null"
-        {{-- OBJECT syntax, not a ternary, and the difference is load-bearing. A ternary hands
+        {{-- Object syntax, not a ternary, and the difference is load-bearing. A ternary hands
              Alpine one class to add, and Alpine only ever removes what it added itself — so the
              static width below would survive every toggle and a collapsed column would stay at
-             16rem with two width utilities on it. The object form names BOTH classes, so Alpine removes the
+             16rem with two width utilities on it. The object form names both classes, so Alpine removes the
              one whose condition is false no matter who put it there. --}}
         :class="{ 'w-[var(--size-wk-rail,3.25rem)]': collapsed, 'w-[var(--wk-sidebar-w,16rem)]': ! collapsed }"
         {{-- The row gap the collapse control needs. Without it the button's hover surface
@@ -472,23 +547,23 @@
              edge, which reads as one smudged block rather than as two controls. --}}
         :data-wk-ready="ready ? '' : null"
         {{-- The width transition is gated on `data-wk-ready`, which Alpine sets one frame after
-             init. Ungated, a cold load animates the ARRIVAL of the stylesheet: the column lays
+             init. Ungated, a cold load animates the arrival of the stylesheet: the column lays
              out unstyled, the CSS lands, and the browser tweens from one to the other — a column
              unfolding on a page where nothing was toggled. Only ever visible without a cache. --}}
-        {{-- The initial width is emitted STATICALLY as well as through the `:class` above.
+        {{-- The initial width is emitted statically as well as through the `:class` above.
              Until Alpine boots, `:class` has not run, so without this the column carries no
              width at all — it lays out at content width and snaps to its real one a frame
              later, a visible flicker. Alpine's `:class` swaps
              the two widths, so exactly one width utility is ever in the list and the
              equal-specificity conflict never arises. The stored choice lives in the reader's
-             browser, so this static class is the SEED rather than the memory — the nonced
+             browser, so this static class is the seed rather than the memory — the nonced
              script emitted after this column reconciles the two before the first paint, so an
              open column never shows collapsed first. --}}
         {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]']))->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
         {{-- Without a footer zone the control is still the column's last row. With one it
-             rides ON that band instead, rendered by `sidebar-zones` — a control that changes
+             rides on that band instead, rendered by `sidebar-zones` — a control that changes
              the column's width would otherwise spend a whole navigation row on itself, the
              most expensive way to present the least important thing in the column. The app
              rail places its expander the same way. --}}
@@ -501,6 +576,9 @@
                 @include('wirekit::components.partials.sidebar-collapse-toggle')
             </div>
         @endif
+        @wirekitLast($resizable)
+            @include('wirekit::components.partials.sidebar-width-handle')
+        @endwirekitLast
     </nav>
     {{-- Immediately after the column, so `document.currentScript.previousElementSibling` is
          this sidebar and nothing else. Only for the `local` driver: the cookie driver was
@@ -512,6 +590,9 @@
             'seedOn' => $collapsed,
             'seedClassOn' => 'w-[var(--size-wk-rail,3.25rem)]',
             'seedClassOff' => 'w-[var(--wk-sidebar-w,16rem)]',
+            // The marker every rule of the folded column reads, with the width it belongs to.
+            'seedAttrsOn' => ['data-collapsed' => ''],
+            'seedAttrsOff' => ['data-collapsed' => null],
             // No gate. The factory re-decides on viewport only for a column in the shell's
             // drawer, and the drawer is closed while the page loads, so the seeded width is
             // never seen there. A gate would instead shift every sidebar outside a shell on a
@@ -519,10 +600,19 @@
             'seedMinWidth' => null,
         ])
     @endif
+    @if($resizable && $persist !== null && $persistDriver === 'local')
+        @include('wirekit::components.partials.sidebar-width-seed')
+    @endif
 @else
     {{-- <nav> carries a default aria-label so AT distinguishes it from the main
          nav; a developer-supplied aria-label / aria-labelledby / `label` prop overrides it. --}}
     <nav {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes]))->merge($navLabelAttrs) }}>
         @include('wirekit::components.partials.sidebar-zones')
+        @wirekitLast($resizable)
+            @include('wirekit::components.partials.sidebar-width-handle')
+        @endwirekitLast
     </nav>
+    @if($resizable && $persist !== null && $persistDriver === 'local')
+        @include('wirekit::components.partials.sidebar-width-seed')
+    @endif
 @endif

@@ -21,6 +21,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/
  */
+import { inlineKey } from '../utils/inline-direction.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
@@ -552,7 +553,7 @@ export default function wirekitCalendar(config = {}) {
                     isToday: dateStr === todayStr,
                     isSelected: dateStr === this.selected || (this.range && dateStr === this.selectedEnd),
                     isClosed: closed,
-                    // The attribute VALUE, as `rangeMarker` is: `'true'` sets `aria-disabled` and
+                    // The attribute value, as `rangeMarker` is: `'true'` sets `aria-disabled` and
                     // `null` removes it. A closed day stays focusable, so it is no `disabled`.
                     ariaDisabled: closed ? 'true' : null,
                     ...this._rangeFlags(dateStr),
@@ -768,7 +769,7 @@ export default function wirekitCalendar(config = {}) {
                 return;
             }
 
-            // Two clicks, and the SECOND one decides which end it is. Forcing the
+            // Two clicks, and the second one decides which end it is. Forcing the
             // reader to click the earlier day first is the kind of rule that only
             // reads as a rule after they have broken it — so a second click before
             // the start simply becomes the start, and the range stays ordered.
@@ -973,7 +974,7 @@ export default function wirekitCalendar(config = {}) {
             // the end. That makes the shading answer the question the reader is
             // actually asking — "what am I about to choose" — instead of showing
             // nothing until the choice is already made.
-            // IN EITHER DIRECTION. Requiring `hoverDate > selected` would give
+            // In either direction. Requiring `hoverDate > selected` would give
             // hovering backwards no provisional end at all: the reader drags toward
             // an earlier day, sees nothing shade, clicks anyway, and only then
             // discovers the range was right all along.
@@ -992,7 +993,7 @@ export default function wirekitCalendar(config = {}) {
             const isInRange = end !== null && dateStr > lo && dateStr < hi;
 
             // The day under the pointer, standing in for an end nobody has chosen
-            // yet. It needs its own name because the two things that PAINT a day
+            // yet. It needs its own name because the two things that paint a day
             // both miss it: the endpoints are filled by `isSelected`, which is
             // false while `selectedEnd` is null, and the middle is shaded by
             // `isInRange`, which is exclusive precisely because the endpoints
@@ -1008,7 +1009,7 @@ export default function wirekitCalendar(config = {}) {
             // "about to be selected" is the whole point of a preview.
             const isProvisionalEnd = provisional !== null && dateStr === provisional;
 
-            // The caps are the ORDERED ends, not "the one clicked first". While the
+            // The caps are the ordered ends, not "the one clicked first". While the
             // pointer sits before the start, the day under it is the visual start,
             // and keying these off `selected` would give the left cap's half of the
             // band to the day on the right.
@@ -1028,11 +1029,11 @@ export default function wirekitCalendar(config = {}) {
                 isRangeEnd,
                 isInRange,
                 isProvisionalEnd,
-                // The attribute VALUE, computed with the rest of this cell's range
+                // The attribute value, computed with the rest of this cell's range
                 // state: `''` sets `data-wk-in-range` and `null` removes it, which
                 // is what the stylesheet selects on.
                 rangeMarker: (isInRange || isProvisionalEnd) && dateStr !== this.selected && dateStr !== this.selectedEnd ? '' : null,
-                // Likewise the VALUE of the cell's `data-wk-band`, or null to remove it.
+                // Likewise the value of the cell's `data-wk-band`, or null to remove it.
                 band,
             };
         },
@@ -1080,7 +1081,7 @@ export default function wirekitCalendar(config = {}) {
          * Tell the form what `selected` now holds.
          *
          * Split out of selectDate() because the optimistic layer writes
-         * `selected` itself — on the flip AND on the rollback — and has to run
+         * `selected` itself — on the flip and on the rollback — and has to run
          * the same sync afterwards. Without it a rolled-back calendar would
          * show the old date while the form still submits the new one.
          *
@@ -1140,7 +1141,10 @@ export default function wirekitCalendar(config = {}) {
             const daysInMonth = new Date(fYear, fMonth + 1, 0).getDate();
             const lastOffset = this.months - 1;
 
-            switch (event.key) {
+            // On a right-to-left page the week runs from the right, so the key named after a side
+            // moves toward that side: Left Arrow to the next day there. The direction is the
+            // calendar's own, read at its root.
+            switch (inlineKey(event, this.$root)) {
                 case 'ArrowRight':
                     event.preventDefault();
                     if (this.focusedDay < daysInMonth) {
@@ -1177,13 +1181,13 @@ export default function wirekitCalendar(config = {}) {
                         this.focusedDay = new Date(fYear, fMonth, this.focusedDay + 7).getDate();
                         this.focusOffset++;
                     } else {
-                        // Off the last displayed grid, so the VIEW has to move —
+                        // Off the last displayed grid, so the view has to move —
                         // but the day the reader lands on is still the same weekday
                         // one week down, which is what the keyboard table promises.
-                        // Read it BEFORE the view moves: `nextMonth()` writes
+                        // Read it before the view moves: `nextMonth()` writes
                         // `focusedDay = 1`, so a bare call to it would throw the
                         // reader to the 1st of the next month. ArrowRight is the
-                        // branch where day 1 IS the answer, which is why the default
+                        // branch where day 1 is the answer, which is why the default
                         // is right there and wrong here; ArrowLeft overrides it in
                         // exactly this shape.
                         const sameWeekdayNextWeek = new Date(fYear, fMonth, this.focusedDay + 7).getDate();
@@ -1205,7 +1209,7 @@ export default function wirekitCalendar(config = {}) {
                         this.focusOffset--;
                     } else {
                         // The mirror of ArrowDown above: `prevMonth()` also lands on
-                        // the 1st, which is not a day any reader arrowing UPWARD asked
+                        // the 1st, which is not a day any reader arrowing upward asked
                         // for.
                         const sameWeekdayPrevWeek = new Date(fYear, fMonth, this.focusedDay - 7).getDate();
 
@@ -1266,7 +1270,7 @@ export default function wirekitCalendar(config = {}) {
         },
 
         _focusDay() {
-            // Moving focus IS hovering, for someone who is not using a pointer.
+            // Moving focus is hovering, for someone who is not using a pointer.
             //
             // The provisional end — the shading and the `aria-selected` that say
             // "release here and this is your range" — is set by `hoverDay()`. Reached
@@ -1282,7 +1286,7 @@ export default function wirekitCalendar(config = {}) {
             //
             // An arrow key therefore moves `aria-selected` onto cells nobody has
             // chosen, and deliberately: while a range is half-made the provisional
-            // span IS the pending selection — it is exactly what the pointer user is
+            // span is the pending selection — it is exactly what the pointer user is
             // looking at — and the grid pattern's `aria-selected` is the closest true
             // statement available. Announcing it through the live region instead
             // would fire on every arrow key; a state on the focused cell is read when

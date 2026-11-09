@@ -34,7 +34,7 @@ import { watchCurrent } from './watch-current.js';
  * and these components are documented to work in a plain form too. A mutation on
  * an attribute is true whoever wrote it.
  *
- * A mutation record says the attribute was WRITTEN, not that it changed: writing
+ * A mutation record says the attribute was written, not that it changed: writing
  * the same value again is a record too. So the helper compares with the value the
  * server wrote last and stays quiet when it is the same. That answers "did the
  * server change it?". Whether the new value differs from what the reader has in

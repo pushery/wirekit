@@ -38,7 +38,7 @@
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $animate = BooleanProp::from($animate, false, 'attachment', 'animate');
@@ -78,7 +78,7 @@
         return LocalizedNumber::format($shown < 10 ? $shown : round($value), precision: $shown < 10 ? 1 : 0).' '.$units[$i];
     };
 
-    // Short, human label. Prefer the file extension (PDF, DOCX) — it is more
+    // Short, human label. Prefer the file extension (PDF, docx) — it is more
     // informative than a generic glyph — and fall back to the MIME subtype.
     $typeLabel = static function (?string $mime, string $fileName): ?string {
         $ext = pathinfo($fileName, PATHINFO_EXTENSION);
@@ -132,7 +132,7 @@
     $isLink = $href !== null && $href !== '';
     $hasActions = \Pushery\WireKit\Support\SlotContent::given($actions ?? null);
 
-    // When the card is a link AND carries an actions slot, the action controls
+    // When the card is a link and carries an actions slot, the action controls
     // cannot nest inside the anchor: a <button>/<a> inside an <a> is invalid HTML
     // and a WCAG 4.1.1 nested-interactive failure (the inner control is not
     // reliably operable by assistive tech). In that one case the root stays a
@@ -152,7 +152,7 @@
     // so a caller's target would otherwise reach a bare anchor; for that shape the
     // injection is unconditional. Rendered explicitly with the bag echoed via
     // except('rel'), because
-    // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
+    // $attributes->merge() treats rel as a default and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $tag === 'a' && str_contains($targetAttr, '_blank');
@@ -170,7 +170,7 @@
         .($stateText ? ', '.$stateText : '');
 
     // The other half of the target="_blank" rule: rel protects the opener, this
-    // warns the person who cannot see the new tab appear. WHERE it goes depends
+    // warns the person who cannot see the new tab appear. Where it goes depends
     // on how this card is named, and the card has both shapes. With a composed
     // name it carries aria-label, and name computation stops at the label — a
     // span inside would sit in the DOM and outside the announcement, so the hint
@@ -191,7 +191,7 @@
     data-state="{{ $stateValue }}"
     {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
          role="generic", so the composed name ("contract.pdf, PDF, 2.4 MB,
-         Uploaded") was not reliably exposed whenever the card was NOT a link —
+         Uploaded") was not reliably exposed whenever the card was not a link —
          the anchor branch carries its own role, the div branch carried none and
          axe reports aria-prohibited-attr on it. `role="group"` names the card
          without promoting it to a landmark; it rides with the label rather than
@@ -219,11 +219,11 @@
         data-wk-attachment-media
         class="flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)]"
     >
-        @if($isImage)
+        @wirekitLast($isImage)
             <img data-wk-prose-skip src="{{ $thumbnail }}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
         @else
             <x-wirekit::icon :name="$icon ?? 'file-text'" size="md" class="text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
-        @endif
+        @endwirekitLast
     </span>
 
     <span class="min-w-0 flex-1">
@@ -236,19 +236,19 @@
         @if($descriptionParts || $stateText)
             <span data-wk-attachment-meta class="block truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
                 {{ implode(' · ', $descriptionParts) }}
-                @if($stateText)
+                @wirekitLast($stateText)
                     {{-- Hidden from assistive technology: the status region at the end of the
                          card says it, and browse mode would otherwise read it twice. --}}
                     @if($descriptionParts) · @endif<span data-wk-attachment-state aria-hidden="true">{{ $stateText }}</span>
-                @endif
+                @endwirekitLast
             </span>
         @endif
 
         {{-- Upload progress. role=progressbar + aria-valuenow live on the
-             progress component itself; aria-label (NOT the visible `label`
+             progress component itself; aria-label (not the visible `label`
              prop) names it for assistive technology without duplicating the
              file name on screen. --}}
-        @if($stateValue === 'uploading' && $progress !== null)
+        @wirekitLast($stateValue === 'uploading' && $progress !== null)
             <x-wirekit::progress
                 :value="\Pushery\WireKit\Support\NumericProp::cast($progress) ?? 0"
                 size="sm"
@@ -256,7 +256,7 @@
                 class="mt-[var(--space-wk-xs)]"
                 aria-label="{{ __('wirekit::Uploading :name', ['name' => \Pushery\WireKit\Support\SlotContent::textOf($name)]) }}"
             />
-        @endif
+        @endwirekitLast
     </span>
 
     @if($splitLink)
@@ -275,7 +275,7 @@
 
     {{-- The upload state as a status message (WCAG 4.1.3). The application sets `state`, and a
          Livewire update changes it in the card without moving the focus, so the change has to
-         reach a screen reader on its own. A live region announces a change of its CONTENT, not
+         reach a screen reader on its own. A live region announces a change of its content, not
          its arrival with text already inside, so this one is rendered in every state, empty
          while idle, and an update only swaps its text. --}}
     <span role="status" class="sr-only" data-wk-attachment-status>{{ $stateText }}</span>

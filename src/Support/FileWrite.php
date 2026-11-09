@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Support;
 use RuntimeException;
 
 /**
- * Filesystem writes that FAIL LOUDLY.
+ * Filesystem writes that FAIL loudly.
  *
  * PHP's `mkdir()`, `copy()`, `file_put_contents()` and friends return `false` on failure and
  * raise a warning that a console command's output never shows. Ignore the return and a
@@ -38,7 +38,7 @@ final class FileWrite
         }
 
         // The result is re-checked with `is_dir()` rather than trusted, because a concurrent
-        // process can win the race and `mkdir()` then returns false for a directory that IS
+        // process can win the race and `mkdir()` then returns false for a directory that is
         // there. Reporting that as a failure would be a different lie.
         if (! @mkdir($path, $permissions, true) && ! is_dir($path)) {
             throw new RuntimeException(sprintf(
@@ -90,7 +90,7 @@ final class FileWrite
     }
 
     /**
-     * Best-effort delete for a CLEANUP path, where failing is not worth reporting.
+     * Best-effort delete for a cleanup path, where failing is not worth reporting.
      *
      * This exists so the difference is visible in the call, and it has exactly one correct
      * use: removing a temp file while already handling a failure. Throwing there would replace

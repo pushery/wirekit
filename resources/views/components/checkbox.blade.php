@@ -9,7 +9,7 @@
     // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
     'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
-    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // A list of identical controls — one per row — needs to tell the server which row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     // A11y: render the error message in a polite live region by default so a
@@ -43,14 +43,14 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $indeterminate = BooleanProp::from($indeterminate, false, 'checkbox', 'indeterminate');
     $hideLabel = BooleanProp::from($hideLabel, false, 'checkbox', 'hideLabel');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
-    // it does NOT remove that key from the attribute bag. So when the key is also
+    // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
@@ -64,7 +64,7 @@
 
     use Pushery\WireKit\WireKit;
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
@@ -134,16 +134,16 @@
     // toggle: an inline-flex label is placed in its line box by its baseline, and the
     // box's flex baseline shifts when the checkmark SVG flips display none↔block — on a
     // 2× display that re-rounds the whole label by a sub-pixel, pulling the next row
-    // closer. align-top positions the label by its TOP edge instead, independent of the
+    // closer. align-top positions the label by its top edge instead, independent of the
     // changing baseline, so the row stays put. The card variant is block-level `flex`
     // (no line-box baseline) and is unaffected.
     //
     // Routed through the class seam, like the box below, and that is the whole point of
     // the two `resolveClasses` calls here. The default label is `inline-flex`, so it is as
     // wide as its own content: a `flex-1` in the slot has nothing to stretch against and a
-    // right-aligned second element lands behind the first instead of at the row's edge. The
-    // commonest list form an application builds — control, name on the left, code or count
-    // on the right edge — needs the label wrapper and its text to be overridable, so both go
+    // second element aligned to the end lands behind the first instead of at the row's edge. The
+    // commonest list form an application builds — control, name at the start, code or count
+    // at the end of the row — needs the label wrapper and its text to be overridable, so both go
     // through `resolveClasses` as the box does.
     //
     // Passing `class="flex w-full"` on the tag is not a way around it: the attribute bag is
@@ -153,8 +153,8 @@
     // Both variants share one block, matching how `base` below serves both — an override
     // that wants to touch only one reads `$variantValue` from a closure, or scopes itself.
     $labelClasses = WireKit::resolveClasses('checkbox', 'label', $variantValue === 'card'
-        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
-        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top', $scope);
+        ? 'group flex items-start gap-[var(--gap-wk-md)] cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
+        : 'group inline-flex items-start gap-[var(--gap-wk-sm)] cursor-pointer relative align-top', $scope);
 
     // The visible label text. Its size is `--text-wk-md` whatever the `size` prop says, which
     // sizes the box and with it how far the text steps down beside it (`$alignment` above) —
@@ -162,7 +162,7 @@
     // the surface a row layout needs (`min-w-0 flex-1` on this span is
     // what gives a trailing element the edge to sit against).
     //
-    // `sr-only` for `hideLabel` is appended OUTSIDE the seam on purpose: an override replaces
+    // `sr-only` for `hideLabel` is appended outside the seam on purpose: an override replaces
     // the whole block, and folding the visibility switch into it would let a personalization
     // silently unhide a label that a call site asked to hide.
     $textClasses = WireKit::resolveClasses(
@@ -209,7 +209,7 @@
     // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
     $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
-    // Error detection: explicit prop OR Laravel validation bag. A bag entry under a key the
+    // Error detection: explicit prop or Laravel validation bag. A bag entry under a key the
     // group answers for is the group's message, not this checkbox's; rendered here as well, it
     // would repeat under every control of the group.
     $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($errorName) ?? false);
@@ -218,7 +218,7 @@
 
     // Whether this control answers for the group's message.
     //
-    // A group error can be true of SOME of its controls: three checkboxes under one caption,
+    // A group error can be true of some of its controls: three checkboxes under one caption,
     // and a rejection that only two of them can resolve. Announced on all three, the reader who
     // reaches the third hears "invalid" and a sentence that ticking it will not satisfy. The
     // group still owns its bag entry either way — `covers()` is not gated on this — so a
@@ -229,7 +229,7 @@
     $isInvalid = $hasError || ($groupError && ($fieldGroup?->isInvalid($errors ?? null) ?? false));
 
     // aria-describedby: our own hint/error target, the group's, and any caller-supplied value,
-    // merged into ONE attribute. Two separate aria-describedby attributes would make the
+    // merged into one attribute. Two separate aria-describedby attributes would make the
     // browser keep the first and silently drop the other association (WCAG). The order lives
     // in FieldGroup::describedBy, shared with radio and toggle.
     $describedBy = \Pushery\WireKit\Support\FieldGroup::describedBy(
@@ -287,10 +287,10 @@
     // default label is the box plus its text, often many times wider than tall, so a hit
     // area centered there would sit over the words rather than over the control.
     //
-    // DEFAULT VARIANT ONLY, which is the counter-check this needs. In `card` the <label>
-    // IS the target: a bordered, full-width, already-tall clickable card. Hanging an
+    // Default variant only, which is the counter-check this needs. In `card` the <label>
+    // is the target: a bordered, full-width, already-tall clickable card. Hanging an
     // absolutely-positioned 44px area off the box inside it would push roughly 12px past
-    // the card's own edge, so taps in the gap BETWEEN two cards would land on the upper
+    // the card's own edge, so taps in the gap between two cards would land on the upper
     // card's checkbox. The card variant needs no reserve and must not grow one.
     //
     // This is about the dense case, not a lone box: axe reports no `target-size` violation
@@ -319,7 +319,7 @@
         'peer-indeterminate:bg-[var(--color-wk-accent)]',
         'peer-indeterminate:border-[var(--color-wk-accent)]',
         // A checked or indeterminate box keeps its accent border under the pointer. The hover
-        // border above is a LATER rule of the same specificity, so on its own it would recolor
+        // border above is a later rule of the same specificity, so on its own it would recolor
         // the border of a checked box too, and a gray ring would stand around the accent fill.
         // These compound variants outrank it exactly when both states hold.
         'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
@@ -383,9 +383,9 @@
             id="{{ $id }}"
             @if($name !== '') name="{{ $name }}" @endif
             {{-- Always emitted, in both states. `indeterminate` is a DOM property with no
-                 HTML attribute, so the server cannot render it, and an
-                 `x-init="$el.indeterminate = true"` emitted only when true runs once and can
-                 only ever turn the state on. The third state practically always arrives
+                 HTML attribute, so the server cannot render it, and an `x-init` that set the
+                 property, emitted only while it is true, would run once and could only ever
+                 turn the state on. The third state practically always arrives
                  after the first render, through a Livewire round trip that morphs the
                  element without re-initializing it, so the box would read as "none
                  selected" while something is. --}}
@@ -408,9 +408,9 @@
         />
 
         {{-- Visual box — sibling of .peer (consumes peer-checked bg/border). The
-             check + indeterminate overlays are nested HERE and fill the box
+             check + indeterminate overlays are nested here and fill the box
              (w-full h-full), flex-centered by the box, so they stay over the box
-             in BOTH the default and card variants (card label padding does not
+             in both the default and card variants (card label padding does not
              offset them). They toggle via the label's group-has-[:checked] /
              group-has-[:indeterminate] (a nested element isn't a sibling of .peer,
              so peer-checked can't reach it; the box bg/border still use peer-*). --}}
@@ -418,20 +418,11 @@
              personalization keeps it. Under a preset whose border width is 0px the edge is gone, and
              `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet brings it back. --}}
         <span class="wk-choice-frame {{ $boxClasses }}" aria-hidden="true">
-            {{-- Checkmark --}}
-            <svg
-                class="hidden group-has-[:checked]:block pointer-events-none w-full h-full p-0.5 text-[color:var(--color-wk-accent-fg)]"
-                fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"
-            >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            {{-- Indeterminate dash — visible only when input.indeterminate is true --}}
-            <svg
-                class="hidden group-has-[:indeterminate]:block pointer-events-none w-full h-full p-0.5 text-[color:var(--color-wk-accent-fg)]"
-                fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"
-            >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
-            </svg>
+            {{-- Checkmark, and the dash visible only while input.indeterminate is true. Each is drawn
+                 whole, or points into the page's glyphs while `wirekit.icons.sprite` is on
+                 (Support\KitIcons); the classes that show and hide it stay on the instance. --}}
+            {{ \Pushery\WireKit\Support\KitIcons::svg('check', 'hidden group-has-[:checked]:block pointer-events-none w-full h-full p-0.5 text-[color:var(--color-wk-accent-fg)]') }}
+            {{ \Pushery\WireKit\Support\KitIcons::svg('dash', 'hidden group-has-[:indeterminate]:block pointer-events-none w-full h-full p-0.5 text-[color:var(--color-wk-accent-fg)]') }}
         </span>
 
 @php
@@ -440,6 +431,13 @@
     // `true`. Read once for both branches: the slot branch is the consent case, and consent
     // checkboxes are exactly the required ones.
     $wkRequiredMarker = (bool) $attributes->get('required', false);
+
+    // The asterisk as the last child of the text. A string rather than a conditional in the
+    // markup, which Livewire would mark at both ends on every checkbox: when the field turns
+    // required or optional, the morph adds or drops a last child and moves no other.
+    $wkRequiredMark = $wkRequiredMarker
+        ? new \Illuminate\Support\HtmlString('<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>')
+        : '';
 @endphp
         {{-- A card with a description holds the name above it in one column. Each branch holds its
              whole element: one that opened the column and left it to a later branch to close would
@@ -447,21 +445,21 @@
         @if($cardHint)
         <span class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
             @if($slot->hasActualContent())
-                <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $slot }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+                <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $slot }}{{ $wkRequiredMark }}</span>
             @elseif($label)
-                <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+                <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}{{ $wkRequiredMark }}</span>
             @endif
             <span data-wk-choice-description id="{{ $id }}-hint" class="{{ $descriptionClasses }}">{{ $hint }}</span>
         </span>
         @elseif($slot->hasActualContent())
             {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
-            <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $slot }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $slot }}{{ $wkRequiredMark }}</span>
         @elseif($label)
-            <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}{{ $wkRequiredMark }}</span>
         @endif
-        @if($hasTrailing)
+        @wirekitLast($hasTrailing)
             <span data-wk-choice-trailing class="{{ $trailingClasses }}">{{ $trailing }}</span>
-        @endif
+        @endwirekitLast
     </label>
     @if($helpId || $labelAfterGiven)
         @if($helpId)
@@ -479,9 +477,13 @@
     @endif
 
     {{-- Error message or hint text. A card's hint stands inside the card, as its description. --}}
-    @if($hasError && $errorMessage)
-        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint && ! $cardHint)
-        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
+    @php
+        // The message stands last, after the field and every part with a state of its own, so it
+        // is an echo rather than a block and Livewire writes no morph markers around it. It is
+        // built right before the echo, so it runs on the path and in the scope the echo does.
+        $messagePart = $hasError && $errorMessage
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
+            : ($hint && ! $cardHint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+    @endphp
+    {{ $messagePart }}
 </div>

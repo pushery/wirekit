@@ -18,7 +18,7 @@
     // Which tab opens on first paint. Initial only — Alpine reads a seed once, so
     // a later value here never reaches a rendered tablist.
     'default' => null,
-    // Which tab is active, as the SERVER sees it. Distinct from `default` on
+    // Which tab is active, as the server sees it. Distinct from `default` on
     // purpose: this one keeps arriving. Set it and the tablist follows the server
     // on every round trip — a tab restored from a URL, a validation error whose
     // field lives in another panel, a permission that just changed. Leave it unset
@@ -58,7 +58,7 @@
 
     // Normalize $items at the template edge to a keyed map of per-tab metadata:
     //   $tabs[key] = ['label' => string, 'icon' => ?string, 'badge' => ?scalar, 'badgeIntent' => ?string]
-    // Accepts BOTH historical input shapes:
+    // Accepts both historical input shapes:
     //   - Keyed-assoc (legacy):  ['profile' => 'Profile', 'billing' => 'Billing']
     //   - Array-of-objects:      [['key' => 'profile', 'label' => 'Profile',
     //                              'icon' => 'user', 'badge' => 3, 'badgeIntent' => 'danger'], ...]
@@ -100,7 +100,7 @@
     // Resolve the initial active tab: explicit default, otherwise first key
     $activeTab = $active ?? $default ?? (array_key_first($tabs) ?? '');
 
-    // The Alpine seed, deliberately WITHOUT the `$active` term. `$activeTab`
+    // The Alpine seed, deliberately without the `$active` term. `$activeTab`
     // changes whenever the server changes the tab, and a changing value in
     // `x-data` is rewritten by every Livewire morph — which re-initializes the
     // scope, after which an effect queued against the old one writes the old
@@ -123,7 +123,7 @@
     // active panel's slot — the developer's own markup, which is where forms live — is
     // destroyed and rebuilt.
     //
-    // The tab KEYS are the seed: they are the caller's own vocabulary and stable across
+    // The tab keys are the seed: they are the caller's own vocabulary and stable across
     // renders by construction. Two tabsets with the same keys on one page are told apart
     // by DomId: the first keeps the derived id and the second gets `-2`, so every
     // `aria-controls` and `aria-labelledby` stays inside its own tabset. A caller-supplied
@@ -153,10 +153,10 @@
     // `max-w-full overflow-x-auto overflow-y-hidden` makes the tab bar
     // horizontally scrollable when the labels exceed the available width (the
     // canonical mobile tab-bar pattern — Material / iOS both scroll). The
-    // explicit `overflow-y-hidden` is REQUIRED: a bare `overflow-x-auto`
+    // explicit `overflow-y-hidden` is required: a bare `overflow-x-auto`
     // computes `overflow-y` to `auto` per CSS spec (a non-visible value on one
     // axis forces the other off `visible`), so the moment the horizontal
-    // scrollbar consumes vertical space a phantom VERTICAL scrollbar appeared
+    // scrollbar consumes vertical space a phantom vertical scrollbar appeared
     // over the tablist on mobile. Matches the canonical horizontal scroll-area
     // shape (`scroll-area` 'horizontal' variant). The `bordered` variant
     // already had effective `overflow-y:hidden` via its `overflow-hidden`.
@@ -214,20 +214,22 @@
 
 {{-- Tabs root — holds shared Alpine state and ARIA wiring.
      Arrow-key navigation is handled inline (roving tabindex pattern): ArrowLeft/ArrowRight
-     move focus between tab buttons, Home/End jump to first/last, Space/Enter activate. --}}
+     move focus between tab buttons toward the side they name, so on a page that reads from
+     the right, where the row runs from there, Left Arrow goes to the next tab. Home/End jump to
+     first/last, Space/Enter activate. --}}
 <div
     {{-- Selection, the change event and the roving-focus model live in the
          factory (resources/js/components/tabs.js). Alpine's CSP build parses
          neither the method shorthand nor the arrow-function $watch callback, so
          the whole object failed to build and the tablist stopped responding to
-         clicks AND arrow keys. --}}
+         clicks and arrow keys. --}}
     {{-- The debug-only wire:model warning rides in the factory's config rather
          than its own x-init: an element carries one Alpine component, and an
-         inline console.warn throws under the CSP build while BUILDING the
+         inline console.warn throws under the CSP build while building the
          component — taking the tablist down with it. --}}
     @php
         // Composed in PHP, not inline in the directive: Blade's component-tag
-        // compiler rewrites an `<x-slot:…>` wherever it appears in TEMPLATE
+        // compiler rewrites an `<x-slot:…>` wherever it appears in template
         // text — including inside a string literal in a `{{ }}` echo, where it
         // is a parse error rather than a bad string. Inside @php it is ordinary
         // PHP and survives whole, which also keeps it a single literal that the
@@ -274,8 +276,8 @@
                     @keydown.arrow-down.prevent="focusTab('next')"
                     @keydown.arrow-up.prevent="focusTab('prev')"
                 @else
-                    @keydown.arrow-right.prevent="focusTab('next')"
-                    @keydown.arrow-left.prevent="focusTab('prev')"
+                    @keydown.arrow-right.prevent="focusTab($wkInlineStep($event) === 1 ? 'next' : 'prev')"
+                    @keydown.arrow-left.prevent="focusTab($wkInlineStep($event) === 1 ? 'next' : 'prev')"
                 @endif
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
@@ -287,9 +289,9 @@
                 @endif
                 <span>{{ $tab['label'] }}</span>
                 @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($tab['badge']))
-                @if($badgeText !== null)
+                @wirekitLast($badgeText !== null)
                     <x-wirekit::badge size="sm" :intent="$tab['badgeIntent']">{{ $badgeText }}</x-wirekit::badge>
-                @endif
+                @endwirekitLast
             </button>
         @endforeach
     </div>
@@ -304,9 +306,9 @@
                  start beside the panel and the end inside it, and a morph that adds, drops or
                  reorders panels then finds no end to the block and throws.
 
-                 FINDABLE PANEL. An inactive one is `hidden="until-found"` where the engine supports
+                 Findable panel. An inactive one is `hidden="until-found"` where the engine supports
                  it, and a match activates its tab through `x-on:beforematch`, so `aria-selected`
-                 and the roving tab stop follow. The tab stop is BOUND: an element that is itself
+                 and the roving tab stop follow. The tab stop is bound: an element that is itself
                  until-found still takes focus, by script and by Tab, in Chromium and WebKit, so
                  an inactive panel carries no `tabindex` at all. See utils/findable.js. The panel of
                  the seed tab is drawn open and says so with `data-wk-rendered-open`: the server can

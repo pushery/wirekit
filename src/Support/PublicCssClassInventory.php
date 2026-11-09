@@ -22,7 +22,7 @@ use RecursiveIteratorIterator;
  * Tailwind named group. The manifest is a machine-readable discovery surface, so that
  * failure is silent in both directions: a class that does not exist raises no error.
  *
- * TWO EMISSION PATHS, both public:
+ * Two emission paths, both public:
  *
  *   1. `dist/wirekit.css` — literal `.wk-…` selectors carrying styling rules
  *      (`wk-stagger`, `wk-reading-spine__tick`).
@@ -117,14 +117,14 @@ final class PublicCssClassInventory
 
             $source = (string) file_get_contents($file->getPathname());
 
-            // A `wire:key` VALUE is a morph identity, never a CSS class — it appears in no
-            // stylesheet and styles nothing. Blanking the VALUE rather than allowlisting the
+            // A `wire:key` value is a morph identity, never a CSS class — it appears in no
+            // stylesheet and styles nothing. Blanking the value rather than allowlisting the
             // name keeps the exclusion tied to the attribute: a real class sitting beside a
             // `wire:key` is still captured, and the next key needs no new entry.
             $source = (string) preg_replace('/(wire:key\s*=\s*)(["\']).*?\2/s', '$1$2$2', $source);
 
             // Same reasoning, second shape: the first argument of `WireKit::stableId(…)` is a
-            // DOM-ID PREFIX. The scan already carves out the older way of building one —
+            // DOM-ID prefix. The scan already carves out the older way of building one —
             // `'wk-slider-' . $name`, caught by its trailing hyphen — but stableId's prefix
             // carries no hyphen, because the method adds the separator itself. So
             // `stableId('wk-tabs', …)` reads as a public class named `wk-tabs`, which is
@@ -132,14 +132,14 @@ final class PublicCssClassInventory
             $source = (string) preg_replace('/(stableId\s*\(\s*)(["\']).*?\2/s', '$1$2$2', $source);
 
             // Third shape: the attribute names a template strips from its bag. `->except([…])` and
-            // `->only([…])` list ATTRIBUTES, and one of them carries the prefix: a field set hands its
+            // `->only([…])` list attributes, and one of them carries the prefix: a field set hands its
             // controls a value under `wkFieldSet`, and each control removes that name in both
             // spellings so a caller cannot write it onto the input. An attribute name styles nothing.
             $source = (string) preg_replace('/(->\s*(?:except|only)\s*\(\s*)\[[^\]]*\]/s', '$1[]', $source);
 
-            // The negative lookbehind excludes `--wk-…` CSS variables AND Tailwind named-group
+            // The negative lookbehind excludes `--wk-…` CSS variables and Tailwind named-group
             // / peer identifiers (`group/wk-profile`, `peer/wk-…`): a `/`-prefixed token is a
-            // group NAME, not a class. The positive terminator class keeps an interpolated
+            // group name, not a class. The positive terminator class keeps an interpolated
             // `{$x}` continuation from being captured.
             preg_match_all(
                 '/(?<![-a-z0-9\/])(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)(?=[\s\'">,])/',

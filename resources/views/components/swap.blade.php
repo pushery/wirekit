@@ -6,7 +6,7 @@
     // whenever the swap has to react to something on the client — which is nearly
     // always, since a swap that cannot change is just an icon.
     //
-    // It exists because `active` alone CANNOT work here: `active` is resolved in
+    // It exists because `active` alone cannot work here: `active` is resolved in
     // PHP at render time, so the swap would be frozen at whatever the server
     // thought and never move again.
     'expression' => null,
@@ -30,7 +30,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('swap', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false, 'swap', 'active');
@@ -60,7 +60,7 @@
      at all, since you cannot animate between an element and nothing.
 
      The consequence is the whole a11y story: the hidden child is still there, so
-     it must be hidden from assistive tech too, or a screen reader reads BOTH
+     it must be hidden from assistive tech too, or a screen reader reads both
      states and the reader hears "sun moon" on every toggle. --}}
 <span
     data-wk-swap

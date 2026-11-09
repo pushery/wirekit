@@ -18,7 +18,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('toolbar', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false, 'toolbar', 'sticky');
@@ -61,7 +61,7 @@
     $stickyClasses = $sticky
         // No z fallback: a literal beside the token would put this toolbar on another layer
         // than every other sticky surface wherever the token did not resolve.
-        // A page's bar, so it sticks BELOW a strip above the page (`--wk-strip-inset`), not under it.
+        // A page's bar, so it sticks below a strip above the page (`--wk-strip-inset`), not under it.
         ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
 
@@ -75,9 +75,9 @@
     ])), $scope);
 @endphp
 
-{{-- `role="group"`, NOT `role="toolbar"`, as on action-bar and for the same reason.
+{{-- `role="group"`, not `role="toolbar"`, as on action-bar and for the same reason.
 
-     The toolbar role is a composite-widget promise: Tab reaches the whole bar ONCE,
+     The toolbar role is a composite-widget promise: Tab reaches the whole bar once,
      Left/Right move between the controls inside it, Home/End jump to the ends. This
      component binds no keys at all. It is a layout wrapper whose children are
      whatever the caller passed, so Tab walks every one of them and the arrows do
@@ -87,11 +87,11 @@
 
      Adding the model here would be the wrong way out. A roving
      tabindex has to own the tab sequence of every control in the bar, and this bar's
-     contents are arbitrary: the leading slot is documented for a SEARCH FIELD, where
+     contents are arbitrary: the leading slot is documented for a search field, where
      Left/Right belong to the text and taking them is a regression on its own, and
      several WireKit children render a tab stop of their own (a tooltip trigger
      defaults to one) that a roving index neither sees nor moves. A half-owned roving
-     model is worse than none — it leaves the extra tab stops in place AND makes the
+     model is worse than none — it leaves the extra tab stops in place and makes the
      arrows look bound.
 
      `role="group"` says the true thing instead — a related set of controls, each
@@ -106,7 +106,7 @@
 >
     {{-- Leading slot (search, primary controls).
          `flex-1 basis-0 min-w-[min(100%,14rem)]` is the responsive contract:
-         the search cluster grows to fill spare space but NEVER shrinks below
+         the search cluster grows to fill spare space but never shrinks below
          14rem (or the full container width on a phone narrower than that).
          A `min-w-0` would let it collapse to zero — on a narrow viewport the
          search field would vanish instead of forcing the toolbar to wrap to a
@@ -127,12 +127,12 @@
     @endif
 
     {{-- Default/trailing slot (action buttons) --}}
-    @if(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
         <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)]">
             {{ $trailing }}
         </div>
     @elseif($slot->hasActualContent())
-        {{-- Default-slot path: content passed WITHOUT the named leading/
+        {{-- Default-slot path: content passed without the named leading/
              filters/trailing slots. This wrapper must mirror the toolbar's
              own responsive flex behavior (`flex-wrap`, the `align` justify,
              `w-full`) so default-slot content still wraps to a second row on
@@ -150,5 +150,5 @@
         <div class="flex flex-wrap items-center {{ $justifyClass }} gap-[var(--space-wk-sm,0.5rem)] w-full">
             {{ $slot }}
         </div>
-    @endif
+    @endwirekitLast
 </div>

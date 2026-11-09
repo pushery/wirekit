@@ -41,11 +41,11 @@
     //
     // The comparison is documented rather than guessed at, because a brake whose rule is
     // invisible is a brake people learn to resent: surrounding whitespace is trimmed,
-    // everything else is compared EXACTLY. Case, punctuation and inner spacing all count.
+    // everything else is compared exactly. Case, punctuation and inner spacing all count.
     // Trimming is the one concession, and only because a trailing space arrives from a
     // copy-paste rather than from a decision.
     'confirmationPhrase' => null,
-    // An explicit accessible name, for an alert-dialog composed WITHOUT
+    // An explicit accessible name, for an alert-dialog composed without
     // `alert-dialog.title`. Same reasoning as `drawer`: `aria-labelledby` points at an id
     // the title would have bound at runtime, and a caller `aria-label` never reaches the
     // element that carries the role. WCAG 2.1 4.1.2, Level A.
@@ -55,9 +55,9 @@
     // `false` drops the reference even then; `true` keeps it without one, for a description that
     // arrives after this render.
     //
-    // Read through BooleanProp below: `describedby="false"` compiles to the STRING
+    // Read through BooleanProp below: `describedby="false"` compiles to the string
     // "false", which is not `false` and is truthy besides, so a bare `!== false` would
-    // honor only the BOUND spelling `:describedby="false"` and ship the unresolvable
+    // honor only the bound spelling `:describedby="false"` and ship the unresolvable
     // reference silently, in the spelling a reader is most likely to write.
     'describedby' => null,
 ])
@@ -71,7 +71,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('alert-dialog', $attributes->getAttributes());
 
-    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `dismissible="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
     // the only reason the coverage guard did not see it. All three reads are truth tests
@@ -110,7 +110,7 @@
     $titleId = $name !== null ? 'wk-alert-dialog-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-alert-dialog-title-');
     $descId = $name !== null ? 'wk-alert-dialog-desc-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-alert-dialog-desc-');
 
-    // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
+    // A caller-supplied `aria-label` names the dialog, not the wrapper it was landing on.
     // `{{ $attributes }}` sits on the roleless outer element, so `<x-wirekit::alert-dialog
     // aria-label="…">` rendered a name on something no assistive technology reads as a
     // dialog — WCAG 4.1.2. It is pulled out here and applied to the panel below, where

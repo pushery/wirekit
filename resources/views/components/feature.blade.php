@@ -82,7 +82,7 @@
 
     $validTone = isset($toneMap[$tone])
         ? $tone
-        // Named after the prop the CALL SITE used. A message about `tone` sends a developer
+        // Named after the prop the call site used. A message about `tone` sends a developer
         // who wrote `intent` looking for a prop they did not set.
         : WireKit::validateProp('feature', $axis, $tone, array_keys($toneMap));
     $toneClasses = $toneMap[$validTone];
@@ -132,10 +132,10 @@
         </h{{ $levelValue }}>
     @endif
 
-    @if($slot->hasActualContent())
+    @wirekitLast($slot->hasActualContent())
         {{-- A div: the slot may hold paragraphs or a list, which a parser moves out of a p. --}}
         <div data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] leading-relaxed">
             {{ $slot }}
         </div>
-    @endif
+    @endwirekitLast
 </div>

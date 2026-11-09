@@ -18,7 +18,7 @@
 
     WireKit::warnUnknownProps('skip-link', $attributes->getAttributes());
 
-    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // HTML reads a boolean attribute by presence, so `disabled="false"` disables and
     // `autofocus="false"` focuses — the opposite of what the call site says, with no error
     // either way. Strip such flags when their value reads as false, before the bag is printed.
     $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
@@ -44,7 +44,7 @@
         'focus-visible:not-sr-only',
         'focus-visible:absolute',
         'focus-visible:top-[var(--space-wk-sm,0.5rem)]',
-        'focus-visible:left-[var(--space-wk-sm,0.5rem)]',
+        'focus-visible:start-[var(--space-wk-sm,0.5rem)]',
         'focus-visible:z-[100]',
         'focus-visible:px-[var(--space-wk-md,1rem)]',
         'focus-visible:py-[var(--space-wk-sm,0.5rem)]',
