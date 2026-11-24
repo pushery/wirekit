@@ -131,6 +131,11 @@ final class PublicCssClassInventory
             // emitted nowhere.
             $source = (string) preg_replace('/(stableId\s*\(\s*)(["\']).*?\2/s', '$1$2$2', $source);
 
+            // The same for a literal first argument of `DomId::distinct(…)` and `DomId::unique(…)`:
+            // a DOM id or the base of one, which styles nothing. A first argument that is not a
+            // literal, a name joined to a prefix such as `'wk-date-' . $name`, stays as it is.
+            $source = (string) preg_replace('/(DomId::(?:distinct|unique)\s*\(\s*)(["\']).*?\2/s', '$1$2$2', $source);
+
             // Third shape: the attribute names a template strips from its bag. `->except([…])` and
             // `->only([…])` list attributes, and one of them carries the prefix: a field set hands its
             // controls a value under `wkFieldSet`, and each control removes that name in both

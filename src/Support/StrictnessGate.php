@@ -190,7 +190,7 @@ final class StrictnessGate
      * @var list<string>
      */
     public const WIRE_MODEL_TAKERS = [
-        'alert-dialog', 'branch-switcher', 'bulk-selection', 'bulk-selection.toggle', 'calendar', 'cart-item', 'checkbox', 'color-picker',
+        'alert-dialog', 'branch-switcher', 'bulk-selection', 'bulk-selection.toggle', 'calendar', 'captcha', 'cart-item', 'checkbox', 'color-picker',
         'combobox', 'countdown', 'data-table', 'date-picker', 'datetime-picker', 'drawer', 'editor', 'file-upload',
         'filter-builder', 'image-compare', 'image-editor', 'image-hotspots-editor', 'input', 'modal', 'multi-select', 'notification-center',
         'number-input', 'otp-input', 'pagination', 'password-input', 'phone', 'pricing-table', 'radio',
@@ -646,6 +646,29 @@ final class StrictnessGate
                 $instead === '' ? '' : ' '.$instead
             ));
         }
+    }
+
+    /**
+     * Warn that a part of this component's slot works only in a mode the component does not
+     * render, the way warnWireModelInAModeWithoutOne() warns about a binding on its tag. A
+     * component reads its slot as rendered HTML, so the view finds the part by the marker that
+     * part renders, and this words and gates the report. `$part` names the part and what it does,
+     * `$mode` completes "… only in this component …", such as "with `intervals`", and `$instead`
+     * is a sentence on what the part does here and what to write instead.
+     */
+    public static function warnSlotPartInAModeWithoutOne(string $context, string $part, string $mode, string $instead = ''): void
+    {
+        if (! (bool) config('app.debug') && ! app()->runningInConsole()) {
+            return;
+        }
+
+        logger()->warning(sprintf(
+            'WireKit [%s]: %s only in this component %s.%s',
+            $context,
+            $part,
+            $mode,
+            $instead === '' ? '' : ' '.$instead
+        ));
     }
 
     /**

@@ -7,6 +7,7 @@
 --color-wk-accent-content
 --color-wk-accent-fg
 --color-wk-accent-hover
+--color-wk-accent-text
 --color-wk-bg
 --color-wk-bg-elevated
 --color-wk-bg-hover
@@ -27,6 +28,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-warning
@@ -203,6 +205,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -231,11 +234,11 @@ border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 both
 bottom
@@ -254,6 +257,7 @@ breakpoints
 browser
 build
 built
+bundle
 busy
 but
 button
@@ -271,6 +275,7 @@ candidate
 candidates
 cannot
 canonical
+caption
 captions
 card
 carousel
@@ -286,6 +291,7 @@ centering
 change
 changes
 channel
+chapters
 check
 checking
 child
@@ -310,6 +316,7 @@ comes
 comment
 commit
 common
+compact
 compiled
 compiles
 component
@@ -422,6 +429,7 @@ editing
 either
 element
 else
+elseif
 em
 embed
 emit
@@ -576,9 +584,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -648,6 +656,7 @@ keep
 keeps
 key
 kind
+kinds
 kit
 knowing
 knows
@@ -655,6 +664,7 @@ label
 labeled
 labels
 lands
+larger
 last:border-b-0
 last:border-e-0
 later
@@ -684,6 +694,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 log
 logger
 login
@@ -740,8 +751,10 @@ measures
 mechanism
 media
 meet
+menu
 merely
 merge
+metadata
 mid-word
 middle
 min-content
@@ -1026,6 +1039,7 @@ shape
 shapes
 shared
 shares
+sheet
 ships
 short
 show
@@ -1185,6 +1199,7 @@ throwing
 thumbnail
 tint
 title
+titles
 to
 today
 together
@@ -1215,6 +1230,7 @@ trio
 true
 truthy
 turn
+turned
 turns
 two
 type

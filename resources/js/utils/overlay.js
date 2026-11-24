@@ -7,6 +7,8 @@
 import { createFocusTrap } from './focus-trap.js';
 import { createDiscardGuard } from './discard-guard.js';
 import { isComposing } from './ime.js';
+import { keepLazyEntriesThroughRenders } from './lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from './lazy-panel.js';
 import { watchCurrent } from './watch-current.js';
 import { sameName } from './same-name.js';
 
@@ -452,13 +454,30 @@ export function dispatchFromTrigger(trigger, event) {
 const OPENER_CONTROL = 'a[href], button, input, select, textarea, summary, [tabindex]';
 
 /**
+ * The control an event was sent from: the button whose click handler called `$dispatch`, which
+ * WebKit leaves unfocused after the click. Only a target that is a control itself counts. An
+ * event sent from the window, as `window.dispatchEvent` sends one, or from the root of a
+ * component names none, and the element that holds the focus stays the better answer there.
+ *
+ * @param {Event|null|undefined} event
+ * @returns {Element|null}
+ */
+export function controlThatSent(event) {
+    const target = event?.target;
+
+    return target && typeof target.matches === 'function' && target.isConnected && target.matches(OPENER_CONTROL)
+        ? target
+        : null;
+}
+
+/**
  * The element an overlay is opened from: the one a trigger handed over, the control a click on a
  * wrapper around it landed on, or else whatever holds the focus.
  *
  * @param {HTMLElement|Event|null} from
  * @returns {Element|null}
  */
-function openerOf(from) {
+export function openerOf(from) {
     const focused = typeof document !== 'undefined' ? document.activeElement : null;
 
     if (from && typeof from.focus === 'function') {
@@ -642,6 +661,36 @@ export function createOverlay({
     };
 
     /**
+     * Hand focus back after a close that came before the trap was armed.
+     *
+     * The trap is armed a tick after `show()`, once the panel has a box, so a close before that,
+     * such as an Escape pressed right after the overlay opened, finds no trap to hand focus back.
+     * Focus never moved into the panel and stands where it stood when the overlay opened: on the
+     * opener after a key, on <body> after a click in WebKit, which focuses no clicked button. It
+     * goes where the trap would send it, and the way focus-trap sends it: a task later and without
+     * scrolling, unless the overlay has opened again meanwhile and its own trap places focus.
+     *
+     * @param {() => boolean} reopened - whether the overlay is open again by the time focus moves
+     */
+    const returnFocusWithoutTrap = (reopened) => {
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        const target = resolveReturnFocus(document.activeElement ?? document.body);
+
+        if (! target || target === document.body || typeof target.focus !== 'function') {
+            return;
+        }
+
+        setTimeout(() => {
+            if (! reopened() && target.isConnected && document.activeElement !== target) {
+                target.focus({ preventScroll: true });
+            }
+        }, 0);
+    };
+
+    /**
      * A container that survived the removal is rarely focusable on its own.
      * tabindex="-1" makes it programmatically focusable without adding it to the
      * tab order, which is the standard way to park focus on a region — the same
@@ -697,7 +746,7 @@ export function createOverlay({
             // Store named handler references so they can be removed on cleanup
             this._showHandler = (e) => {
                 if (sameName(e.detail?.name, name)) {
-                    this.show(triggerOfShow);
+                    this.show(triggerOfShow ?? controlThatSent(e));
                 }
             };
 
@@ -772,6 +821,26 @@ export function createOverlay({
             // navigation the reader cancels fire no `pagehide`, so they leave the overlay open.
             this._leaveCleanup = () => this._forceClose();
             window.addEventListener('pagehide', this._leaveCleanup);
+
+            // A render of the Livewire component around a lazy dialog must neither remove the panel
+            // it built nor keep a panel the server no longer draws. An opening that does not come
+            // through show(), markup writing `isOpen` or the deprecated `open` alias, still finds a
+            // panel: it is built a tick after the write.
+            if (lazyPanelTemplate(rootEl)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the panel of a lazy dialog before it first opens: in show(), which every way of
+         * opening takes, the event, `wire:model` and a trigger. A dialog that is not lazy, or is
+         * built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(rootEl ?? this.$root));
         },
 
         /**
@@ -808,6 +877,8 @@ export function createOverlay({
          */
         show(from = null) {
             if (this.isOpen) return;
+            // A lazy panel is built here, before it opens and the focus trap below takes it.
+            this.preparePanel();
             this.isOpen = true;
             dismissing = false;
             openedFrom = openerOf(from);
@@ -992,6 +1063,8 @@ export function createOverlay({
             if (this._trap) {
                 this._trap.deactivate(returnFocus ? undefined : { returnFocus: false });
                 this._trap = null;
+            } else if (returnFocus) {
+                returnFocusWithoutTrap(() => this.isOpen);
             }
 
             releaseScrollLock();

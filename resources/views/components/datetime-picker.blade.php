@@ -71,10 +71,13 @@
     // between the day and the time. Null → the application locale. Its other texts stay in the
     // application's language.
     'locale' => null,
+    // Whether the dialog waits out of the page until it first opens, in popover mode. The default
+    // comes from the configuration (`components.datetime-picker.lazy`).
+    'lazy' => config('wirekit.components.datetime-picker.lazy', false),
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Carbon\CarbonImmutable;
@@ -115,7 +118,14 @@
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // `@aware` does not take its keys off the bag, so both spellings are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the picker takes the row's three
+    // tracks itself, label, control and message, as `input` does, so its control stands level
+    // with the controls beside it. Not inside a `field`, which takes the tracks for the control it
+    // wraps.
+    $inAlignedRow = BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
     $size = WireKit::validateProp('datetime-picker', 'size', (string) $size, ['md', 'sm', 'lg']);
@@ -192,7 +202,7 @@
 
     // The description, from what this render emits: the hint, the error, a caller's ids and the help.
     $helpId = filled($help) && filled($label) ? $pickerId.'-help' : null;
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     $describedBy = trim(($hint && ! $hasError ? $hintId : '').' '.($showsError ? $errorId : '').' '.($requiredMessageId ?? ''));
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
     $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $pickerId, $hint ? $hintId : null, $helpId);
@@ -274,6 +284,9 @@
     }
 
     $shownAny = $range ? $rangeShown : $shownDay;
+    // The whole value as the trigger writes it, for the `title` of the value it cuts where the
+    // trigger has no room for it, as under a reader's wider text spacing.
+    $shownWhole = $range ? $rangeShown : ($shownDay === '' ? '' : $shownDay.($shownTime !== '' ? ' '.$atWord.' '.$shownTime : ''));
 
     // The time list's options resolve their look under this component's name
     // (partials/time-list), so a personalization of the picker reaches them.
@@ -470,15 +483,27 @@
         'shadow-[var(--shadow-wk-lg)]',
         'font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]',
     ]), $scope);
+
+    // A lazy picker holds the teleports of its dialog, the backdrop and the panel, in one template of its
+    // own among the children of its root, which the browser keeps out of the page until the picker
+    // builds it as the dialog first opens (utils/lazy-panel.js, openPanel() in utils/picker-dialog.js).
+    // Each trigger names the panel with `aria-controls` once it is built, through a binding a Livewire
+    // update keeps. The wrapper is an echo, since a conditional around a tag's two ends would leave
+    // Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.datetime-picker.lazy', false)), 'datetime-picker', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <div
     {{ $outerAttributes }}
     x-data="wirekitDatetimePicker({{ $config }})"
+    @if($lazy) data-wk-lazy-panel-host @endif
     data-wk-server-value="{{ $serverValue }}"
     x-bind:data-open="isOpen ? '' : null"
     {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [WireKit::resolveClasses('datetime-picker', 'base', 'relative w-full space-y-1.5', $scope)])) }}
     @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif
+    @if($inAlignedRow) data-wk-field @endif
     data-wk-sr-host
 >
     @if($label && ($typesMoment || $typesRange))
@@ -489,6 +514,11 @@
         <x-wirekit::label :id="$labelId" for="{{ $pickerId }}" :required="$required" :help="$help" :help-id="$helpId" :help-field="(string) ($name ?? $pickerId)">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($hiddenName !== null)
         <span id="{{ $labelId }}" class="sr-only" @if($callerLabel === null) data-wk-fallback-name="{{ $pickerId }}" @endif>{{ $hiddenName }}</span>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track, held so that the control stays on the middle one: the name
+             above, if any, is out of the flow. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <div class="relative">
@@ -555,7 +585,7 @@
                     aria-haspopup="dialog"
                     aria-expanded="false"
                     x-bind:aria-expanded="isOpen ? 'true' : 'false'"
-                    aria-controls="{{ $panelId }}"
+                    @if($lazy) :aria-controls="_panelBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} : null" @else aria-controls="{{ $panelId }}" @endif
                     aria-label="{{ __('wirekit::Select a date and time') }}"
                     @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                     @if($hasError) aria-invalid="true" @endif
@@ -571,7 +601,7 @@
             </div>
             {{-- Why a typed moment cannot be taken, in words, in a live region that stays in the
                  page while it is empty, as a field's error is, unless `announce-error` is off. --}}
-            <p data-wk-prose-skip id="{{ $momentErrorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif x-text="momentInputError" class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)] empty:mt-0"></p>
+            <p data-wk-prose-skip id="{{ $momentErrorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif x-text="momentInputError" class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)] empty:mt-0"></p>
         @elseif($typesRange)
             {{-- A range typed in two fields, its start and its end, each a moment in segments in a
                  scope of its own (resources/js/components/datetime-picker-moment.js), named by the
@@ -616,7 +646,7 @@
                                     'momentInputServerError' => $hasError,
                                 ])
                             </div>
-                            <p data-wk-prose-skip id="{{ $rangeMomentErrorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif x-text="momentShownError" class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)] empty:mt-0"></p>
+                            <p data-wk-prose-skip id="{{ $rangeMomentErrorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif x-text="momentShownError" class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)] empty:mt-0"></p>
                         </div>
                     @endforeach
                 </div>
@@ -642,7 +672,7 @@
                     aria-haspopup="dialog"
                     aria-expanded="false"
                     x-bind:aria-expanded="isOpen ? 'true' : 'false'"
-                    aria-controls="{{ $panelId }}"
+                    @if($lazy) :aria-controls="_panelBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} : null" @else aria-controls="{{ $panelId }}" @endif
                     aria-label="{{ __('wirekit::Select a date and time range') }}"
                     @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                     @if($hasError) aria-invalid="true" @endif
@@ -666,7 +696,7 @@
             aria-haspopup="dialog"
             aria-expanded="false"
             x-bind:aria-expanded="isOpen ? 'true' : 'false'"
-            aria-controls="{{ $panelId }}"
+            @if($lazy) :aria-controls="_panelBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} : null" @else aria-controls="{{ $panelId }}" @endif
             aria-labelledby="{{ $triggerNameIds }}"
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($hasError) aria-invalid="true" @endif
@@ -683,7 +713,7 @@
             @if($required)
                 <span id="{{ $pickerId }}-required-word" class="sr-only">{{ __('wirekit::(required)') }}</span>
             @endif
-            <span id="{{ $valueId }}" class="min-w-0 flex-1 truncate">
+            <span id="{{ $valueId }}" class="min-w-0 flex-1 truncate"@if($shownWhole !== '') title="{{ $shownWhole }}"@endif x-bind:title="shownText">
                 @if($range)
                 <span x-show="! showsPlaceholder" x-text="shownRange"@if($datesLang) lang="{{ $datesLang }}"@endif @if($rangeShown === '') style="display: none" @endif>{{ $rangeShown }}</span>
                 @else
@@ -744,7 +774,7 @@
          own frame; the picker hands it the day to show and hears the day it picks. --}}
     {{-- On a phone the dialog is a modal over the page (utils/picker-dialog.js, `modalBelow`): this
          is its backdrop, which a tap closes as Escape does. --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div
             x-show="isOpen && dialogModal"
             x-cloak
@@ -892,21 +922,31 @@
                 @unless($withConfirmation) x-show="confirming" style="display: none" @endunless
                 class="mt-[var(--space-wk-sm)] flex justify-end gap-[var(--gap-wk-sm)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] pt-[var(--padding-wk-y-md)]"
             >
-                <x-wirekit::button intent="neutral" surface="ghost" size="sm" x-on:click="cancel()">{{ __('wirekit::Cancel') }}</x-wirekit::button>
+                <x-wirekit::button intent="neutral" size="sm" x-on:click="cancel()">{{ __('wirekit::Cancel') }}</x-wirekit::button>
                 <x-wirekit::button size="sm" x-on:click="confirmPick()" x-bind:disabled="! canConfirm" :aria-describedby="$range ? $panelId.'-range-error' : null">{{ $range ? __('wirekit::Select range') : __('wirekit::Select') }}</x-wirekit::button>
             </div>
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 
+    {{-- In an aligned row every message stands in one element, the row's third track: a second
+         paragraph would have no track of its own. Empty, it holds the track. --}}
+    @if($inAlignedRow)
+        <div data-wk-field-messages class="space-y-1.5 min-w-0">
+    @endif
     @if($hint && ! $hasError)
-        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($showsError)
-        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
     {{-- The required message stands last, so it is included without a block, and Livewire
          writes no morph markers around it: an include is not one of the blocks it marks. --}}
     @includeWhen($requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
+    {{-- Last in the element, so it takes no morph markers and the message above stays the last
+         thing a morph sees outside an aligned row. --}}
+    @wirekitLast($inAlignedRow)
+        </div>
+    @endwirekitLast
 </div>

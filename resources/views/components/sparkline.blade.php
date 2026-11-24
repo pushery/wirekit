@@ -4,6 +4,8 @@
 @props([
     'data' => [],
     'trend' => null,
+    // A series whose smaller values are the better ones, such as load times or error rates.
+    'lowerIsBetter' => false,
     'inline' => false,
     'height' => null,
     'scope' => null,
@@ -27,6 +29,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $inline = BooleanProp::from($inline, false, 'sparkline', 'inline');
+    $lowerIsBetter = BooleanProp::from($lowerIsBetter, false, 'sparkline', 'lowerIsBetter');
 
     // Sparkline — small, axis-less line/area chart for inline KPI strips and
     // dashboard cells. Delegates to <x-wirekit-chart type="sparkline"> so both
@@ -73,10 +76,13 @@
     // Trend-aware color token. WireKit theming consumes these via the
     // chart adapter's normal palette; we pre-resolve at the Blade level so
     // both Chart.js and ApexCharts get a consistent series color.
-    $trendColor = match ($resolvedTrend) {
-        'up' => 'var(--color-wk-success)',
-        'down' => 'var(--color-wk-danger)',
-        default => 'var(--color-wk-text-muted)',
+    // `lowerIsBetter` names which direction is good, not which way the series runs: the trend
+    // still reads the data, and only the success and the danger color trade places.
+    $goodTrend = $lowerIsBetter ? 'down' : 'up';
+    $trendColor = match (true) {
+        $resolvedTrend === 'neutral' => 'var(--color-wk-text-muted)',
+        $resolvedTrend === $goodTrend => 'var(--color-wk-success)',
+        default => 'var(--color-wk-danger)',
     };
 
     $resolvedHeight = \Pushery\WireKit\Support\CssValue::prop($height, 'sparkline', 'height', $inline ? '1.25em' : '2.5rem');
@@ -264,6 +270,7 @@
 <{{ $sparklineTag }} data-wk-prose-skip
     data-wk-sr-host {{ $sparklineAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $sparklineStyleClasses => $sparklineStyleClasses !== '']))->merge(['style' => $sparklineStyle]) }}
     data-trend="{{ $resolvedTrend }}"
+    @if($lowerIsBetter) data-trend-good="down" @endif
 >
     <x-wirekit-chart
         type="sparkline"

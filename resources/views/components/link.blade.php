@@ -2,7 +2,7 @@
      The anchor primitive. Where a developer puts a wire:click on it, the optimism belongs to whatever that action changes — not to the link. --}}
 @props([
     'href' => null,
-    'variant' => 'default',
+    'variant' => config('wirekit.components.link.variant', 'default'),
     // Font size, in `text`'s vocabulary — `xs`, `sm`, `base`, `lg`, `xl`.
     //
     // `null` takes the size and the font family of the text around the link: a
@@ -29,7 +29,7 @@
     // ring nor the attributes only an anchor reads. `false` keeps the `<a>` without an `href`
     // this component has always drawn, which a script can give its address later.
     'plainWithoutHref' => false,
-    'underline' => 'always',
+    'underline' => config('wirekit.components.link.underline', 'always'),
     'as' => 'a',
     'scope' => null,
 ])
@@ -52,14 +52,25 @@
     $announceNewTab = BooleanProp::from($announceNewTab, true, 'link', 'announceNewTab');
     $plainWithoutHref = BooleanProp::from($plainWithoutHref, false, 'link', 'plainWithoutHref');
 
+    // On a filled surface, a filled banner, a CTA or hero on the accent, or a filled section, every
+    // variant takes the surface's own foreground through `--wk-fill-ink`: the page's link and text
+    // colors stand on the page, and in the default preset the link color is the accent fill's own.
+    // The underline is what marks the words as a link there.
+    //
+    // Under the pointer, `default` and `text` fade to `--opacity-wk-hover`, and in every bundled
+    // preset and both modes the faded color keeps at least 4.5:1 on the page and its subtle and
+    // elevated surfaces. `muted` and `subtle` sit too close to that floor for a fade, so they take
+    // the color of the running text under the pointer, as a muted breadcrumb or sidebar row does:
+    // the hover raises their contrast instead of lowering it. On a filled surface that color is the
+    // surface's own foreground, which they already wear, and the underline marks the link.
     $variantClasses = match (WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted', 'text'])) {
-        'default' => 'text-[color:var(--color-wk-accent-text)]',
-        'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
-        'muted' => 'text-[color:var(--color-wk-text-muted)]',
+        'default' => 'text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))] hover:opacity-[var(--opacity-wk-hover)]',
+        'subtle' => 'text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))] hover:text-[color:var(--wk-fill-ink,var(--color-wk-text))]',
+        'muted' => 'text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))] hover:text-[color:var(--wk-fill-ink,var(--color-wk-text))]',
         // The color of the running text. The underline stays, and inside a sentence it is what
         // marks the words as a link; `underline="hover"` suits a link that stands on its own,
         // such as a number in a table column.
-        'text' => 'text-[color:var(--color-wk-text)]',
+        'text' => 'text-[color:var(--wk-fill-ink,var(--color-wk-text))] hover:opacity-[var(--opacity-wk-hover)]',
     };
 
     // Mirrors `text`'s map rung for rung, including its `var()` fallbacks, so
@@ -101,11 +112,11 @@
         // which Tailwind v4's preflight no longer overrides (v3 set `cursor: pointer`). Without
         // it a link rendered as a button shows the arrow, and the underline is its only affordance.
         'cursor-pointer',
-        // Opacity is in the list: `transition-colors` leaves it out, and the hover dim jumped.
+        // Opacity is in the list: `transition-colors` leaves it out, and the hover dim jumped. The
+        // hover itself is the variant's, above.
         'transition-[color,text-decoration-color,opacity]',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:opacity-[var(--opacity-wk-hover)]',
         // The kit's focus ring rather than the browser's, which follows neither the ring tokens
         // nor a preset. No offset: a link sits inside a line of text, and a ring standing off it
         // would reach into the lines above and below.

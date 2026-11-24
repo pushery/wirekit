@@ -1,7 +1,7 @@
 !loop
 !playing
 --border-wk-width
---color-wk-accent
+--color-wk-accent-text
 --color-wk-bg-elevated
 --color-wk-bg-hover
 --color-wk-border
@@ -57,6 +57,7 @@ api-map
 are
 aria-atomic
 aria-current
+aria-disabled
 aria-disabled:cursor-default
 aria-disabled:opacity-[var(--opacity-wk-disabled)]
 aria-hidden
@@ -88,7 +89,7 @@ being
 belongs
 below
 between
-bg-[var(--color-wk-accent)]
+bg-[var(--color-wk-accent-text)]
 bg-[var(--color-wk-bg-elevated)]
 bg-transparent
 bigger
@@ -96,7 +97,7 @@ bindings
 border
 border-[length:max(1px,var(--border-wk-width))]
 border-[length:var(--border-wk-width)]
-border-[var(--color-wk-accent)]
+border-[var(--color-wk-accent-text)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border-strong)]
 both
@@ -461,6 +462,7 @@ rtl:-scale-x-100
 rule
 rules
 run
+runs
 s
 said
 same
@@ -469,6 +471,7 @@ says
 scope
 screen
 screen-reader
+script
 scroll
 scrollable
 scrollbar-hiding
@@ -609,6 +612,7 @@ w-3
 w-5
 w-[var(--size-wk-md)]
 w-full
+wait
 was
 watches
 way

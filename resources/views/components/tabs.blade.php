@@ -264,8 +264,10 @@
                 role="tab"
                 id="{{ $pairIds[$key]['tab'] }}"
                 aria-controls="{{ $pairIds[$key]['panel'] }}"
-                {{-- Before the script, the tab of the panel the server renders open: the seed. --}}
+                {{-- Before the script, the tab of the panel the server renders open: the seed. It
+                     is the list's one tab stop as well, as the script starts it. --}}
                 aria-selected="{{ (string) $key === (string) $seedTab ? 'true' : 'false' }}"
+                tabindex="{{ (string) $key === (string) $seedTab ? '0' : '-1' }}"
                 {{-- Every comparison and every write takes the key as text, the form the seed and
                      the server's attribute arrive in: a key PHP holds as a number, an id or a
                      year, is the text of its digits on both sides. --}}
@@ -281,8 +283,14 @@
                 @endif
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
-                :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }} ? {{ \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses) }}"
-                class="wk-tab wk-touch-row {{ $tabClasses }}"
+                {{-- The server writes the classes of the state too, on the tab it renders selected,
+                     so the bar shows its choice before Alpine starts and on a page without it. The
+                     binding names both sides as an object, so Alpine takes the classes of the side
+                     that is false off, the server's included; a string only takes off its own.
+                     Alpine takes a class off by its name, so the binding names them as the class
+                     attribute writes them, under their short names while compact classes are on. --}}
+                :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($tabActiveClasses)) }}: active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($tabInactiveClasses)) }}: active !== {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }} }"
+                class="wk-tab wk-touch-row {{ $tabClasses }} {{ (string) $key === (string) $seedTab ? $tabActiveClasses : $tabInactiveClasses }}"
             >
                 @if($tab['icon'])
                     <x-wirekit::icon :name="$tab['icon']" size="sm" />
@@ -327,8 +335,13 @@
                     x-wk-findable="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
                     x-on:beforematch="active = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
                 @else
+                    {{-- The seed tab's panel stands open before the script starts and on a page that
+                         runs none, as its tab stands chosen and as a findable panel is drawn; the
+                         others wait under `x-cloak`, which, unlike a style attribute, no `style-src`
+                         policy drops. A tab the server names takes over as the script starts, so the
+                         markup stays the same from one render to the next. --}}
                     x-show="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
-                    x-cloak
+                    @unless((string) $key === (string) $seedTab) x-cloak @endunless
                 @endif
             >
                 {{-- The slot the item key names, as written or, for a hyphenated key, in the camel

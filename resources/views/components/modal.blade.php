@@ -27,6 +27,9 @@
     // and one here breaks the @props array it sits in.)
     'ariaLabel' => null,
     'scope' => null,
+    // Whether the modal waits out of the page until it first opens. The default comes from the
+    // configuration (`components.modal.lazy`).
+    'lazy' => config('wirekit.components.modal.lazy', false),
 ])
 
 @php
@@ -199,6 +202,13 @@
     // box, and the trigger its place: its own width in a grid cell, the margin a
     // stack gives its children. `class="contents"` on the component hands the trigger over.
     $rootAttributes = \Pushery\WireKit\Support\SlotContent::given($trigger ?? null) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
+    // A lazy modal holds the teleport of its panel in a template of its own among the children of
+    // its root, which the browser keeps out of the page until the factory builds it as the panel
+    // first opens (utils/lazy-panel.js, show() in utils/overlay.js). The wrapper is an echo, since a
+    // conditional around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.modal.lazy', false)), 'modal', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 {{-- Modal component — teleported to the overlay root for proper stacking context.
@@ -215,6 +225,7 @@
      the listener of a modal another overlay covers. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
+    @if($lazy) data-wk-lazy-panel-host @endif
     x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($discardQuestionText)) : 'null' }}, confirmShortcut: {{ $confirmShortcut ? 'true' : 'false' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $rootAttributes }}
@@ -231,7 +242,7 @@
     @endif
 
     {{-- Modal overlay and dialog — rendered when open --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div x-show="isOpen" x-cloak>
             {{-- Backdrop.
                  Leave transition intentionally omitted: an instant close matches the
@@ -298,10 +309,10 @@
                 </div>
             </div>
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 
     {{-- The dialog the question about discarded changes is asked in, when the modal asks one. --}}
     @wirekitLast($discardQuestionText !== null)
-        @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope])
+        @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope, 'lazy' => $lazy])
     @endwirekitLast
 </div>

@@ -7,6 +7,7 @@
 --color-wk-accent-content
 --color-wk-accent-fg
 --color-wk-accent-hover
+--color-wk-accent-text
 --color-wk-bg
 --color-wk-bg-elevated
 --color-wk-bg-muted
@@ -26,6 +27,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-warning
@@ -83,6 +85,7 @@
 [--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]
 [overflow-wrap:anywhere]
+[overflow-wrap:break-word]
 a
 about
 above
@@ -99,6 +102,7 @@ active-tab
 acts
 actually
 add
+address
 adds
 after
 against
@@ -191,6 +195,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -219,11 +224,11 @@ border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 both
 bottom
@@ -238,9 +243,12 @@ break-word
 breaking
 breakpoint
 breakpoints
+breaks
 browser
 build
+builds
 built
+bundle
 busy
 but
 button
@@ -302,6 +310,7 @@ comes
 comment
 commit
 common
+compact
 compiled
 compiles
 component
@@ -342,6 +351,7 @@ data-stack-below
 data-wk-busy-spinner
 data-wk-busy-text
 data-wk-button-group
+data-wk-lazy-panel-host
 data-wk-popover
 data-wk-prose-skip
 data-wk-sr-host
@@ -414,6 +424,7 @@ either
 element
 else
 em
+email
 emit
 emits
 emitted
@@ -577,9 +588,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -656,6 +667,7 @@ label
 labeled
 labels
 lands
+larger
 last:border-b-0
 last:border-e-0
 later
@@ -687,6 +699,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 log
 logger
 login
@@ -702,6 +715,7 @@ made
 make
 manifest
 manually
+many
 margins
 marker
 markers
@@ -794,6 +808,7 @@ no-ops
 nobody
 node
 non-Livewire
+none
 noopener
 nor
 noreferrer
@@ -864,6 +879,7 @@ paints
 pair
 pairing
 panel
+panels
 parses
 part
 parts
@@ -899,6 +915,7 @@ pointer
 pointer-events-none
 pointing
 popover
+popovers
 position
 positioned
 positions
@@ -1004,6 +1021,7 @@ rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 row
+rows
 rule
 run
 runs
@@ -1029,6 +1047,7 @@ screen
 script
 scroll
 scrollbar
+scrolling
 seam
 second
 see
@@ -1050,6 +1069,7 @@ shapes
 share
 shared
 shares
+sheet
 ships
 short
 show
@@ -1118,6 +1138,7 @@ stacking
 stacks
 stand
 stands
+starts
 state
 states
 static
@@ -1163,6 +1184,7 @@ tall
 taller
 target
 technology
+teleport
 tells
 template
 templates
@@ -1300,6 +1322,7 @@ w-[var(--size-wk-md-compact)]
 w-[var(--size-wk-sm)]
 w-max
 wait
+waits
 wants
 warn
 warning
@@ -1367,6 +1390,8 @@ x-cloak
 x-data
 x-init
 x-on:click
+x-on:focusin
+x-on:pointerenter
 x-ref
 x-show
 x-teleport

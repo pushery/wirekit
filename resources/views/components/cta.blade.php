@@ -37,8 +37,7 @@
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'cta');
 
     // Validate `size` against the three-tier enum. An off-enum value is reported through the
-    // strictness gate, and where the gate does not throw it renders the first allowed value,
-    // which is why `md`, the default, leads the list.
+    // strictness gate, and where the gate does not throw it renders the default, `md`.
     $validSize = in_array($size, ['sm', 'md', 'lg'], true)
         ? $size
         : WireKit::validateProp('cta', 'size', $size, ['md', 'sm', 'lg']);
@@ -77,9 +76,15 @@
         'default' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
         'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         // The accent fill sets the focus ring to its foreground for what sits on it, as a filled
-        // banner does: the page ring is the accent's own color in the default preset.
-        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
+        // banner does: the page ring is the accent's own color in the default preset. A heading, a
+        // link, a prose and a text on it take that foreground too, through `--wk-fill-ink` (see
+        // announcement-banner.blade.php).
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
     };
+
+    // The accent is a filled surface: `data-wk-fill` says so wherever the classes hand the words
+    // their foreground (see announcement-banner.blade.php).
+    $handsItsForeground = str_contains($variantClasses, '[--wk-fill-ink:currentColor]');
 
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a
     // did-you-mean, and where the gate does not throw it renders the default level — never
@@ -91,7 +96,7 @@
     }
 @endphp
 
-<section data-variant="{{ $variant }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $variantClasses])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<section data-variant="{{ $variant }}" @if($handsItsForeground) data-wk-fill @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $variantClasses])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="max-w-[var(--size-wk-container-md)] mx-auto">
         @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
             <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-2xl,1.5rem)] sm:text-[length:var(--font-wk-heading-xl,2.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] mb-[var(--space-wk-md,1rem)]">
@@ -100,8 +105,11 @@
         @endif
 
         @if($description instanceof \Illuminate\View\ComponentSlot ? $description->hasActualContent() : filled($description))
-            {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
-            <div data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 mb-[var(--space-wk-lg,1.5rem)]">
+            {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p.
+                 On the page it steps back from the title at 80%; on a filled surface it keeps the
+                 surface's foreground at full strength, since the step would take it below the
+                 contrast text needs against the fill. --}}
+            <div data-wk-prose-skip @class(['text-[length:var(--text-wk-lg)]', 'opacity-80' => ! $handsItsForeground, 'mb-[var(--space-wk-lg,1.5rem)]'])>
                 {{ $description }}
             </div>
         @endif

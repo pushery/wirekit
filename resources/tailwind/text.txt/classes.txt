@@ -29,6 +29,7 @@
 --text-wk-sm
 --text-wk-xl
 --text-wk-xs
+--wk-fill-ink
 --wk-fit-floor
 --z-wk-tooltip
 @endif
@@ -40,6 +41,7 @@
 [word-break:break-all]
 [word-break:normal]
 a
+about
 above
 accent
 action
@@ -54,8 +56,10 @@ already
 also
 an
 and
+announcement
 any
 anywhere
+application
 are
 aria-hidden
 arm
@@ -72,6 +76,7 @@ auto-derived
 axis
 back
 back-compat
+bag
 base
 be
 beats
@@ -114,15 +119,17 @@ class
 classes
 client-only
 close
-code
 color
 colors
 column
 comment
 comments
+compile
 compiles
 complete
 component
+composer
+composers
 container
 control
 copy
@@ -133,6 +140,7 @@ cuts
 cutting
 danger
 data-wk-cut-tip
+data-wk-lazy-panel-host
 data-wk-prose-skip
 date
 dates
@@ -145,6 +153,7 @@ delay-show
 delayHide
 delayShow
 description
+developer
 digit
 direction
 does
@@ -179,6 +188,7 @@ feature
 fewest
 file
 fill
+filled
 finds
 first
 fit
@@ -205,7 +215,9 @@ font-medium
 font-semibold
 for
 forced
+foreground
 form
+four
 from
 full
 gate
@@ -218,6 +230,7 @@ goes
 has
 height
 here
+hero
 hidden
 hide
 hook
@@ -231,10 +244,13 @@ inherit
 inside
 instead
 intent
+intents
 interactive
 interpolated
 into
 introduction
+inverse
+inverted
 is
 isOpen
 it
@@ -242,10 +258,11 @@ its
 itself
 keep
 keeps
-key
 largest
+last
 later
 layout
+lazy
 leading
 leading-[var(--font-wk-line-height,1.5)]
 leading-[var(--leading-wk-relaxed)]
@@ -253,6 +270,7 @@ leading-[var(--leading-wk-tight)]
 least
 left
 length
+let
 lets
 letter
 lg
@@ -305,6 +323,7 @@ none
 normal
 not
 nothing
+nowrap
 null
 number
 of
@@ -361,6 +380,7 @@ reads
 reason
 red
 relaxed
+render
 rendered
 renders
 repeats
@@ -391,6 +411,7 @@ screen
 seam
 seams
 second
+section
 seem
 sees
 semibold
@@ -423,9 +444,13 @@ spelled
 spelling
 spells
 stack
+stand
+stand-in
 stands
 start
+statement
 states
+status
 stay
 sticky-panel
 still
@@ -437,6 +462,7 @@ sub-component
 subtle
 success
 such
+surface
 switch
 tab
 tabStop
@@ -444,18 +470,21 @@ tabindex
 table
 tabular
 tabular-nums
+take
 takes
 tall
 tap
+td
+template
 text
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-success-text)]
-text-[color:var(--color-wk-text)]
-text-[color:var(--color-wk-text-muted)]
-text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
@@ -476,6 +505,7 @@ them
 theme
 then
 there
+they
 this
 through
 tight
@@ -484,6 +514,7 @@ tipClasses
 title
 to
 token
+tokens
 too
 tooltip
 top
@@ -505,6 +536,7 @@ unbound
 unbroken
 under
 unknown
+until
 unvalidated
 up
 use
@@ -515,6 +547,7 @@ value
 variant
 view
 w-max
+waits
 wants
 warning
 was
@@ -546,6 +579,7 @@ would
 wrap
 wrapper
 wraps
+write
 writes
 written
 x-bind:tabindex

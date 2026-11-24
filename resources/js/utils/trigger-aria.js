@@ -30,9 +30,11 @@
  * @param {string}   [options.haspopup]  the popup's role — 'dialog' by default,
  *        'menu' for a dropdown. It describes what opens, so it is not cosmetic:
  *        a screen reader announces the wrong kind of thing when it is wrong.
- * @param {?string}  [options.controls]  id of the panel the trigger opens, set
- *        as `aria-controls`. Omitted when there is no id to point at — an
- *        aria-controls naming nothing is worse than none.
+ * @param {?string|function(): ?string}  [options.controls]  id of the panel the
+ *        trigger opens, set as `aria-controls`. Omitted when there is no id to
+ *        point at — an aria-controls naming nothing is worse than none. A
+ *        function is asked each time the attributes are written, so a panel that
+ *        is built later (`lazy`, utils/lazy-panel.js) is named once it exists.
  * @param {?string}  [options.labelFallback]  accessible name to apply only when
  *        the trigger has none of its own. An icon-only trigger is otherwise
  *        announced as an unnamed button.
@@ -61,9 +63,10 @@ export function applyTriggerAria(el, watch, options = {}) {
     // What the trigger carries, written again whenever something took it off.
     const wanted = () => {
         const attributes = { 'aria-haspopup': options.haspopup || 'dialog', 'aria-expanded': expanded };
+        const controls = typeof options.controls === 'function' ? options.controls() : options.controls;
 
-        if (options.controls) {
-            attributes['aria-controls'] = options.controls;
+        if (controls) {
+            attributes['aria-controls'] = controls;
         }
 
         if (needsLabel && unnamed()) {

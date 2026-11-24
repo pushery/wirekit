@@ -85,6 +85,8 @@
     // pure-Alpine context with no backend; add your own @click to also sync Livewire.
     $classes = WireKit::resolveClasses('dropdown.checkbox-item', 'base', implode(' ', [
         'flex items-center gap-x-[var(--gap-wk-sm)] w-full',
+        // A long token breaks inside the row, as in dropdown/item.blade.php.
+        '[overflow-wrap:anywhere]',
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
@@ -128,7 +130,7 @@
     // morph markers around it: it comes or goes after the label and moves nothing before it. Its
     // class goes through CompactClasses, as a class attribute in the markup does.
     $shortcutPart = $shortcutText === '' ? '' : new \Illuminate\Support\HtmlString(
-        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums')).'" aria-hidden="true">'.e($shortcutText).'</span>'
+        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('ms-auto shrink-0 ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums')).'" aria-hidden="true">'.e($shortcutText).'</span>'
     );
 @endphp
 

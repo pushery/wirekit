@@ -31,7 +31,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\AlpinePayload;
@@ -42,7 +42,13 @@
 
     // `@aware` does not take its key out of the attribute bag, so the spelling written on the
     // tag would render as a stray HTML attribute. Both spellings, as in field.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -101,8 +107,10 @@
     // is read as the codes it holds; cast with `(array)`, an object becomes its properties.
     // A single code written as text, `countries="DE"`, is a list of one through the cast below,
     // so neither list reports a text.
-    $countries = \Pushery\WireKit\Support\ListProp::from($countries);
-    $countryOrder = \Pushery\WireKit\Support\ListProp::from($countryOrder);
+    // A text with commas names several codes, `countries="DE,AT"`. An enum among the codes, as
+    // `Country::cases()` gives them, is read as its value.
+    $countries = \Pushery\WireKit\Support\ListProp::records(\Pushery\WireKit\Support\ListProp::splitAtCommas($countries));
+    $countryOrder = \Pushery\WireKit\Support\ListProp::records(\Pushery\WireKit\Support\ListProp::splitAtCommas($countryOrder));
     $offered = $countries === null
         ? DialingCodes::countries()
         : array_values(array_filter(
@@ -295,9 +303,14 @@
         : __('wirekit::Country');
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif data-wk-server-value="{{ $value }}" x-data="wirekitPhone({{ $config }})">
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif data-wk-server-value="{{ $value }}" x-data="wirekitPhone({{ $config }})">
     @if($label)
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     {{-- Two controls, one value, and that is why this is a group rather than a field with an
@@ -321,6 +334,7 @@
              `+49` beside the box is invisible to a reader who cannot see it, and the number then
              reads as a fragment with no country attached. --}}
         <x-wirekit::combobox
+            :align-fields="false"
             :id="$id.'-country'"
             :options="$countryOptions"
             :value="$start"
@@ -399,7 +413,7 @@
         // built right before the echo, so it runs on the path and in the scope the echo does.
         $messagePart = $hasError && $errorMessage
             ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
-            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : ($inAlignedRow ? new \Illuminate\Support\HtmlString('<span data-wk-field-part="message" aria-hidden="true"></span>') : ''));
     @endphp
     {{ $messagePart }}
 </div>

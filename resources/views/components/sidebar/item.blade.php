@@ -21,6 +21,11 @@
     // that posts. A button takes `type` from the tag, `button` unless it says `submit` or
     // `reset`. Ignored in `selection` mode, where every row is an option.
     'as' => 'a',
+    // Whether the tooltip a sidebar that can collapse wraps the row in draws into the panel the
+    // page's tooltips share. Unset, `components.sidebar.item.shared-tooltip` decides, and where that
+    // is unset too, `components.tooltip.shared`, as for every other tooltip. A row's tooltip is its
+    // name alone, so it always meets the condition under which a tooltip shares.
+    'sharedTooltip' => null,
 ])
 
 {{-- Inherited from the parent <x-wirekit::sidebar>. A row cannot know on its own which
@@ -49,7 +54,9 @@
     // (Support\AwareProp).
     $mode = \Pushery\WireKit\Support\AwareProp::read('mode', ['sidebar'], 'navigation');
     $selected = \Pushery\WireKit\Support\AwareProp::read('selected', ['sidebar'], null);
-    $collapsible = \Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false);
+    // Read as the sidebar reads it: the family hands over what its tag says, and an unbound
+    // `collapsible="false"` says it as text, which PHP takes for true.
+    $collapsible = \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false), false);
     $trackCurrent = \Pushery\WireKit\Support\AwareProp::read('trackCurrent', ['sidebar'], false);
 
     // The folded column's layout is written only where the column can fold: a sidebar that is not
@@ -63,6 +70,14 @@
         false,
         'sidebar.item',
         'truncate',
+    );
+    // The row's own tag first, then the setting for the rows of every sidebar, then the one for
+    // every tooltip.
+    $sharedTooltip = \Pushery\WireKit\Support\BooleanProp::from(
+        $sharedTooltip ?? config('wirekit.components.sidebar.item.shared-tooltip') ?? config('wirekit.components.tooltip.shared', false),
+        false,
+        'sidebar.item',
+        'sharedTooltip',
     );
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -92,7 +107,10 @@
     // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $selectionMode = $mode === 'selection';
+    //
+    // The mode as the sidebar takes it: `@aware` hands over what its tag says, and a sidebar that
+    // is `collapsible` falls back to navigation, so its rows are links of that navigation.
+    $selectionMode = $mode === 'selection' && ! $collapsible;
 
     // Which attribute marks "this is the one", and it is not cosmetic which one.
     //
@@ -234,6 +252,10 @@
     // was built to avoid.
     $iconClasses = WireKit::resolveClasses('sidebar.item', 'icon', 'w-5 h-5', $scope);
 
+    // A bare name draws a glyph of the icon set; markup in the slot is drawn as it came, in a box
+    // the link partial gives it (`partials/sidebar-item-link.blade.php`).
+    $iconIsName = is_string($icon) && ! str_contains($icon, '<');
+
     $activeClasses = WireKit::resolveClasses('sidebar.item', 'active', implode(' ', [
         'bg-[var(--color-wk-bg-active)]',
         'text-[color:var(--color-wk-text)]',
@@ -313,6 +335,10 @@
     } else {
         $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
     }
+
+    // A shared tooltip shows the words of an element on the page. The row's label holds them
+    // already, so it carries an id and the tooltip writes no hidden copy of the name.
+    $labelId = $collapsible && $sharedTooltip ? \Pushery\WireKit\Support\DomId::unique(null, 'wk-sidebar-label-') : null;
 @endphp
 
 {{-- The tooltip is the label for a reader holding a pointer, and only then.
@@ -333,6 +359,8 @@
         :text="\Pushery\WireKit\Support\SlotContent::plain($slot)"
         placement="right"
         focusable-trigger="false"
+        :shared="$sharedTooltip"
+        :text-from="$labelId"
         class="w-full"
         {{-- `$data`, not a bare `collapsed`. The rail state lives on the sidebar, and `@aware`
              answers with the nearest ancestor that was called with `collapsible`: that is the

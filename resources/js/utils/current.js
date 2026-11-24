@@ -157,30 +157,66 @@ function mark(el, current) {
     }
 }
 
+/** The template a lazy sidebar section keeps its entries in until it first shows them. */
+const LAZY_ENTRIES_SELECTOR = 'template[data-wk-lazy-entries]';
+
+/**
+ * The links that wait in the templates of lazy sections below `root`, sections nested in them
+ * included. A template's content is not part of the page, so `querySelectorAll()` never reaches
+ * them; a template already built has its entries on the page and is left out. Given a scope, only
+ * the templates that are its own count, as with its links.
+ *
+ * @param {Element|DocumentFragment} root
+ * @param {Element|null} [scope]
+ * @returns {Element[]}
+ */
+function waitingLinks(root, scope = null) {
+    const links = [];
+
+    for (const template of Array.from(root.querySelectorAll(LAZY_ENTRIES_SELECTOR))) {
+        const own = scope === null || template.parentElement?.closest(`[${WK_CURRENT_SCOPE_ATTRIBUTE}]`) === scope;
+
+        if (own && template._wkBuilt !== true && template.content) {
+            links.push(...Array.from(template.content.querySelectorAll('a[href]')), ...waitingLinks(template.content));
+        }
+    }
+
+    return links;
+}
+
 /**
  * Mark the entry of a scope that leads to the page, and only that one. Returns the entries marked
  * as current.
+ *
+ * The links that wait in a lazy section's template are never marked, but they take part in finding
+ * the longest path. While the page's own entry waits there, a shorter path on the page, the parent
+ * or `/`, is not the current one: no entry is marked until the section builds its entries, which
+ * marks the scope again (utils/lazy-entries.js).
  *
  * @param {Element} scope
  * @param {URL} page
  * @returns {Element[]}
  */
 export function markCurrent(scope, page) {
+    const scopeSelector = `[${WK_CURRENT_SCOPE_ATTRIBUTE}]`;
+    const measure = (el) => {
+        const link = linkOf(el, page);
+
+        return { el, length: link ? matchLength(link, page) : -1, fit: link ? queryFit(link, page) : -1 };
+    };
+
     // The scope's own links, not those of a scope inside it, which answers for itself.
     const entries = Array.from(scope.querySelectorAll('a[href]'))
-        .filter((el) => el.parentElement?.closest(`[${WK_CURRENT_SCOPE_ATTRIBUTE}]`) === scope)
-        .map((el) => {
-            const link = linkOf(el, page);
+        .filter((el) => el.parentElement?.closest(scopeSelector) === scope)
+        .map(measure);
+    const candidates = [...entries, ...waitingLinks(scope, scope).map(measure)];
 
-            return { el, length: link ? matchLength(link, page) : -1, fit: link ? queryFit(link, page) : -1 };
-        });
-
-    const best = entries.reduce((longest, entry) => Math.max(longest, entry.length), -1);
+    const best = candidates.reduce((longest, entry) => Math.max(longest, entry.length), -1);
 
     // Among the entries at the longest path, two views of one page that differ by their query,
     // `?status=open` and `?status=closed`, would both be current. The ones whose query the page
     // carries win, the most specific first; where none does, the path alone decides.
-    const bestFit = entries
+    const bestFit = candidates
         .filter((entry) => best > -1 && entry.length === best)
         .reduce((most, entry) => Math.max(most, entry.fit), -1);
     const current = [];

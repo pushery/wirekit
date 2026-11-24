@@ -109,6 +109,9 @@ export default function wirekitSubmenu(config = {}) {
             this.subOpen = true;
             await this.$nextTick();
 
+            // A flyout that closed before this tick (ArrowLeft, Escape, a hover-out) is not placed.
+            if (! this.subOpen) return;
+
             const trigger = this.$refs.subTrigger;
             const panel = this.$refs.subPanel;
             if (trigger && panel) {
@@ -155,8 +158,9 @@ export default function wirekitSubmenu(config = {}) {
                     }
                 }
 
-                // Not when the reader already moved into the flyout while it was being positioned.
-                if (focusFirst && ! this._focusIsInsideThePanel()) this._focusFirstSubItem();
+                // Not when the reader already moved into the flyout while it was being positioned, nor
+                // when it closed meanwhile and its focus went back to the parent item.
+                if (focusFirst && this.subOpen && ! this._focusIsInsideThePanel()) this._focusFirstSubItem();
             }
         },
 

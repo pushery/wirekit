@@ -102,6 +102,8 @@ class DoctorPropsCommand extends Command
         $legacyFindings = [];
         $listChildFindings = [];
         $conventionFindings = [];
+        // The parts of a path that mark a settings page, for the `content-in-card` hint.
+        $settingsPaths = $this->settingsPaths();
         $scanned = 0;
 
         // Per component, the named slots that are not also props: read from the component's
@@ -129,6 +131,10 @@ class DoctorPropsCommand extends Command
         // read from the `components` directory of the scanned path. A call site of one is checked
         // against the props of the component it hands them to.
         $wrappers = $this->forwardingWrappers($path.'/components');
+
+        // The views the scanned templates include only inside a card, for the `content-in-card`
+        // hint: a partial a settings page includes in a card holds its fields in that card.
+        $includedInCards = $this->viewsIncludedInCards($bladeFiles, $path);
 
         foreach ($bladeFiles as $file) {
             $contents = (string) file_get_contents($file);
@@ -162,7 +168,7 @@ class DoctorPropsCommand extends Command
                 $listChildFindings[] = ['file' => str_replace(base_path().'/', '', $file)] + $child;
             }
 
-            foreach (ConventionHints::find(str_replace(base_path().'/', '', $file), $contents) as $hint) {
+            foreach (ConventionHints::find(str_replace(base_path().'/', '', $file), $contents, $settingsPaths, isset($includedInCards[$this->viewName($file, $path)])) as $hint) {
                 $conventionFindings[] = ['file' => str_replace(base_path().'/', '', $file)] + $hint;
             }
 
@@ -774,6 +780,85 @@ class DoctorPropsCommand extends Command
     }
 
     /**
+     * The views the scanned templates include only inside a card surface, keyed by name. A view
+     * counts when every place that includes it has a card open around the include, or is itself
+     * such a view. A view no scanned template includes, and one included once outside a card,
+     * does not.
+     *
+     * @param  list<string>  $files
+     * @return array<string, true>
+     */
+    private function viewsIncludedInCards(array $files, string $root): array
+    {
+        /** @var array<string, list<array{from: string, inCard: bool}>> $sites */
+        $sites = [];
+
+        foreach ($files as $file) {
+            $contents = (string) file_get_contents($file);
+
+            if (! str_contains($contents, '@include')) {
+                continue;
+            }
+
+            foreach (ConventionHints::includes($contents) as $include) {
+                $sites[str_replace('/', '.', $include['view'])][] = ['from' => $this->viewName($file, $root), 'inCard' => $include['inCard']];
+            }
+        }
+
+        $resolved = [];
+        $views = [];
+
+        foreach (array_keys($sites) as $view) {
+            if ($this->includedInCard($view, $sites, $resolved)) {
+                $views[$view] = true;
+            }
+        }
+
+        return $views;
+    }
+
+    /**
+     * Whether every place that includes a view holds it in a card, directly or through a view it
+     * is included in. A view included in itself, through any chain, counts as outside a card.
+     *
+     * @param  array<string, list<array{from: string, inCard: bool}>>  $sites
+     * @param  array<string, bool>  $resolved
+     * @param  array<string, true>  $seen
+     */
+    private function includedInCard(string $view, array $sites, array &$resolved, array $seen = []): bool
+    {
+        if (isset($resolved[$view])) {
+            return $resolved[$view];
+        }
+
+        if (! isset($sites[$view]) || isset($seen[$view])) {
+            return false;
+        }
+
+        $seen[$view] = true;
+
+        foreach ($sites[$view] as $site) {
+            if (! $site['inCard'] && ! $this->includedInCard($site['from'], $sites, $resolved, $seen)) {
+                return $resolved[$view] = false;
+            }
+        }
+
+        return $resolved[$view] = true;
+    }
+
+    /**
+     * The dotted name a template is included by: its path under the application's views, or under
+     * the scanned directory when it lies elsewhere.
+     */
+    private function viewName(string $file, string $root): string
+    {
+        $views = rtrim(base_path('resources/views'), '/').'/';
+        $base = str_starts_with($file, $views) ? $views : rtrim($root, '/').'/';
+
+        return str_replace('/', '.', substr($file, strlen($base), -strlen('.blade.php')));
+    }
+
+    /**
      * @return list<string>
      */
     private function collectBladeFiles(string $root): array
@@ -793,5 +878,26 @@ class DoctorPropsCommand extends Command
         sort($files);
 
         return $files;
+    }
+
+    /**
+     * The parts of a view's path that mark a settings page: `wirekit.doctor.settings_paths`, a list
+     * or a single word, `settings` when it names none.
+     *
+     * @return list<string>
+     */
+    private function settingsPaths(): array
+    {
+        $configured = config('wirekit.doctor.settings_paths', ['settings']);
+        $configured = is_string($configured) ? [$configured] : $configured;
+        $parts = [];
+
+        foreach (is_array($configured) ? $configured : [] as $part) {
+            if (is_string($part) && trim($part) !== '') {
+                $parts[] = $part;
+            }
+        }
+
+        return $parts === [] ? ['settings'] : $parts;
     }
 }

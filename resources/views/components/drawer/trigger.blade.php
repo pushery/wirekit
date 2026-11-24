@@ -5,7 +5,7 @@
     'for' => null,
     'href' => null,
     // The look of the button the trigger draws, handed to it as written: a trigger above a list is
-    // usually `intent="neutral" surface="outline"`. Null keeps the button's own default. A trigger
+    // usually `intent="neutral"`. Null keeps the button's own default. A trigger
     // with `href` is a link, which takes `size` and has no intent or surface.
     'intent' => null,
     'surface' => null,

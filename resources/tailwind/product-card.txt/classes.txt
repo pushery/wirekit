@@ -29,6 +29,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -89,6 +90,7 @@
 --transition-wk-duration
 --transition-wk-easing
 --wk-button-square
+--wk-fill-ink
 --wk-fit-floor
 --wk-rating-cut
 --wk-rating-fill
@@ -108,8 +110,10 @@
 -my-[3px]
 -required
 -text
+-tooltip
 -variant
 -variants
+-words
 @aware
 @class
 @click
@@ -345,6 +349,7 @@ bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-accent-fg)]
@@ -418,11 +423,11 @@ border-[var(--color-wk-warning)]
 border-b-2
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 bordered-only
 both
@@ -449,7 +454,9 @@ bubble
 bug
 build
 building
+builds
 built
+bundle
 busy
 but
 button
@@ -459,6 +466,7 @@ by
 bypass
 byte-identical
 bytes
+cache
 calendar
 calibrated
 call
@@ -566,6 +574,7 @@ comment
 comments
 commit
 common
+compact
 compare
 compare-at
 compareAt
@@ -579,6 +588,7 @@ complete
 component
 components
 composer
+composers
 computes
 concern
 condition
@@ -656,6 +666,7 @@ data-wk-busy-text
 data-wk-button-group
 data-wk-cut-tip
 data-wk-field-label
+data-wk-fill
 data-wk-icon-missing
 data-wk-kbd-guess
 data-wk-kbd-platform
@@ -663,6 +674,7 @@ data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-product-card
 data-wk-product-card-badges
@@ -683,6 +695,12 @@ data-wk-required-check
 data-wk-required-message
 data-wk-server-value
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -690,6 +708,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 date
 dates
 days
@@ -702,6 +721,7 @@ decimal
 decimals
 decision
 declaration
+declarations
 declarative
 declared
 declares
@@ -719,6 +739,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deletion
 deliberate
 deliberately
@@ -805,6 +826,7 @@ drawn
 draws
 drift
 driven
+drives
 drop
 dropdown
 dropdown/item.blade.php
@@ -935,6 +957,7 @@ filled
 filled-background
 fills
 filter
+find
 finds
 finger
 finish
@@ -1164,13 +1187,14 @@ horizontal
 host
 hover
 hover/keyboard
+hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -1178,8 +1202,6 @@ hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
-hover:opacity-100
-hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-text)]
 hover:text-[color:var(--color-wk-text-muted)]
 hover:underline
@@ -1266,6 +1288,7 @@ introduced
 introduces
 introduction
 invalid
+inverse
 inverted
 invisible
 invite
@@ -1532,6 +1555,7 @@ mirrors
 mismatch
 missing
 missing-accessible-name
+mix
 mixed
 ml
 modal
@@ -1613,6 +1637,7 @@ notice
 noun
 now
 nowhere
+nowrap
 nteractive
 null
 number
@@ -1648,13 +1673,11 @@ onmouseover
 onto
 opacity-0
 opacity-100
-opacity-70
 opacity-[var(--opacity-wk-disabled)]
 open
 opened
 opening
 opens
-operable
 operation
 opinion
 opportunity
@@ -1667,6 +1690,7 @@ optimism
 optimistic
 optimistic-ui
 optimisticArgs
+option
 optional
 options
 or
@@ -1882,6 +1906,7 @@ question
 questions
 queued
 quietly
+race
 racing
 radio
 radiogroup
@@ -1977,9 +2002,11 @@ requested
 require
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageId
 requiredValue
@@ -2012,6 +2039,7 @@ reviewCount
 reviews
 rewrites
 rewriting
+ride
 rides
 right
 ring
@@ -2070,6 +2098,7 @@ scroll
 scrolls
 seam
 seams
+search
 second
 section
 see
@@ -2112,6 +2141,7 @@ share
 shared
 shares
 sharper
+sheet
 shield-check
 shifts
 ship
@@ -2335,6 +2365,7 @@ tall
 taller
 tap
 target
+td
 teaches
 tech
 technology
@@ -2350,7 +2381,6 @@ test
 text
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
@@ -2364,6 +2394,10 @@ text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
@@ -2437,6 +2471,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-[var(--padding-wk-y-sm)]
@@ -2495,6 +2531,7 @@ unconditional
 unconditionally
 under
 underline
+underline-offset-2
 underline-offset-4
 unfilled
 unique

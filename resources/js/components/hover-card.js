@@ -34,11 +34,14 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  */
 import { position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { belongsThroughTeleports, outOfReachBeside } from '../utils/teleport.js';
 import { timerDelay } from '../utils/timer-delay.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * What counts as focusable inside the card. Same selector navigation-menu's
  * flyout panels use — same question, so the same answer rather than a second
@@ -98,6 +101,25 @@ export default function wirekitHoverCard(config = {}) {
                 root: this.$root,
                 onOther: () => this._forceClose(),
             });
+
+            // A render of the Livewire component around a lazy hover card must neither remove the
+            // card it built nor keep a card the server no longer draws. An opening that does not come
+            // through show(), markup writing `isOpen` or the deprecated `open` alias, still finds a
+            // card: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the card of a lazy hover card as it first shows. A hover card that is not lazy, or
+         * is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
         },
 
         destroy() {
@@ -413,6 +435,8 @@ export default function wirekitHoverCard(config = {}) {
          */
         async show() {
             if (this.isOpen) return;
+            // A lazy card is built here, before it opens and the tick below places it.
+            this.preparePanel();
             this.isOpen = true;
             this._coordination?.announce();
 

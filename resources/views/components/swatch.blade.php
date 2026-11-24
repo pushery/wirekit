@@ -166,12 +166,16 @@
             @endwirekitLast
         </span>
     </span>@if($showLabel && $name !== '')
-    @wirekitLast($unavailable)
+    {{-- A block with markers of its own, though it stands last: inside a Livewire component the
+         block around it, which closes the wrapper, leaves its opening marker right before it, with
+         no end on this level. A morph that finds one span here and needs two inserts the second
+         into this block, at its own end. --}}
+    @if($unavailable)
         {{-- Read as one name with the word the line says; shown as the name alone, beside the line. --}}
         <span class="sr-only">{{ $name }}</span>
         <span aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
     @else
         <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
-    @endwirekitLast
+    @endif
 </span>@endif
 @endif

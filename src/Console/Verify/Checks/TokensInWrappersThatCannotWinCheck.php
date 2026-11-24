@@ -32,8 +32,8 @@ final class TokensInWrappersThatCannotWinCheck extends VerifyCheck
      *  - **`@theme { … }`** is Tailwind's utility-generation block, not an override route. A theme
      *    variable no utility references is dropped, so the declaration compiles to nothing; one
      *    that survives is emitted inside `@layer theme` and then loses to the unlayered defaults.
-     *  - **any `@layer`**, for that second reason alone: `dist/wirekit.css` ships unlayered, and
-     *    unlayered CSS beats layered CSS whatever the specificity.
+     *  - **any `@layer`**, for that second reason alone: `dist/wirekit.css` ships its tokens
+     *    unlayered, and unlayered CSS beats layered CSS whatever the specificity.
      *
      * The layer half is deliberately narrow, and a real adopting application is why. The cascade only
      * compares declarations that apply to the same element, so a custom property set on a

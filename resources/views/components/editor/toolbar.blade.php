@@ -17,13 +17,15 @@
 
     // command => [accessible label, glyph, glyph-style, isActive() expr | null (action, not toggle)].
     // Glyphs are text where a letterform is the convention and the letter stands in the
-    // label (B / I / U / S), or where it is a sign a name never contains (¶, •, arrows), and
+    // label (B / I / U / S), or where it is a sign a name never contains (¶, arrows), and
     // flat inline SVGs (stroke currentColor — never emoji codepoints, which
     // render as colored "3D" emoji and clash with the flat set; the link 🔗 was
-    // exactly that bug) where the convention is pictographic (link, undo/redo,
-    // task-list). A letter or a figure that is no part of the label is drawn as well: the
+    // exactly that bug) where the convention is pictographic (link, undo/redo, the two
+    // lists, task-list). A letter or a figure that is no part of the label is drawn as well: the
     // headings and the numbered list stand for their command as a symbol does, and as text
     // `H1` and `1.` would be a visible label the button's name does not contain (WCAG 2.5.3).
+    // The two lists come from one icon set and draw their lines at the same heights, so they
+    // read as one pair; a bullet sign beside the drawn numbers would stand smaller and lower.
     // Static blade-authored markup, never developer-controlled.
     //
     // The label goes through the translator. It reaches the page twice — as the button's
@@ -46,8 +48,8 @@
         'heading-3' => [__('wirekit::Heading 3'), '<svg '.$svgAttrs.'><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2"/><path d="M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2"/></svg>', '', "isActive('heading', { level: 3 })"],
         'paragraph' => [__('wirekit::Paragraph'), '¶', '', "isActive('paragraph')"],
         'quote' => [__('wirekit::Quote'), '”', 'font-serif', "isActive('blockquote')"],
-        'bullet-list' => [__('wirekit::Bullet list'), '•', '', "isActive('bulletList')"],
-        'ordered-list' => [__('wirekit::Numbered list'), '<svg '.$svgAttrs.'><path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>', '', "isActive('orderedList')"],
+        'bullet-list' => [__('wirekit::Bullet list'), '<svg '.$svgAttrs.'><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>', '', "isActive('bulletList')"],
+        'ordered-list' => [__('wirekit::Numbered list'), '<svg '.$svgAttrs.'><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg>', '', "isActive('orderedList')"],
         'task-list' => [__('wirekit::Task list'), '<svg '.$svgAttrs.'><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="m9 11 3 3L22 4"/></svg>', '', "isActive('taskList')"],
         'code-block' => [__('wirekit::Code block'), '{}', 'font-mono', "isActive('codeBlock')"],
         'horizontal-rule' => [__('wirekit::Divider'), '―', '', null],
@@ -152,7 +154,9 @@
                     x-on:mousedown.prevent=""
                     x-on:click="cmd({{ \Pushery\WireKit\Support\AlpinePayload::string($command) }})"
                     @if(isset($historyGuard[$command]))
-                        {{-- Undo/redo disable themselves when the history stack is empty. --}}
+                        {{-- Undo/redo disable themselves when the history stack is empty, which
+                             it is as the editor starts, so they start disabled in the markup too. --}}
+                        disabled
                         :disabled="!{{ $historyGuard[$command] }}"
                     @endif
                     @if($active)

@@ -15,6 +15,8 @@
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
@@ -115,6 +117,25 @@ export default function wirekitContextMenu() {
                 this._forceClose();
             };
             window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
+
+            // A render of the Livewire component around a lazy context menu must neither remove the
+            // menu it built nor keep a menu the server no longer draws. An opening that does not
+            // come through _openAtCoords(), markup writing `isOpen` or the deprecated `open` alias,
+            // still finds a menu: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the menu of a lazy context menu as it first opens. A context menu that is not
+         * lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
         },
 
         // The positioner's teardown handle, held only while the panel is open.
@@ -160,12 +181,18 @@ export default function wirekitContextMenu() {
 
             this._rememberAnchor();
 
+            // A lazy menu is built here, before it opens and the tick below places it.
+            this.preparePanel();
+
             this.isOpen = true;
 
             await this.$nextTick();
 
+            // A menu that closed while it was opening is neither placed nor focused. Alpine holds
+            // this tick while the panel's transition starts, and an Escape in that frame closes the
+            // menu and lets the tick run.
             const panel = this.$refs.panel;
-            if (!panel) return;
+            if (! this.isOpen || ! panel) return;
 
             // Position panel at the cursor / touch point using a virtual reference.
             const virtualRef = {
@@ -244,9 +271,11 @@ export default function wirekitContextMenu() {
             // menu that highlights its first entry is the platform convention, and it is
             // the only shape in which the next keypress has somewhere to start from.
             // `preventScroll` so a menu opened near the fold does not jump the page.
-            // Not when the reader already moved into the menu while it was being positioned.
+            // Not when the reader already moved into the menu while it was being positioned, nor
+            // when it closed meanwhile: a focus moved into the leaving panel would drop to the page
+            // as it hides.
             const items = this._getItems();
-            if (items.length && ! focusIsWithin(panel)) {
+            if (this.isOpen && items.length && ! focusIsWithin(panel)) {
                 items[0].focus({ preventScroll: true });
             }
         },

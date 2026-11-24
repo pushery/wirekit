@@ -16,6 +16,7 @@ after
 and
 any
 application
+are
 aria-hidden
 aria-label
 aria-labelledby
@@ -27,8 +28,10 @@ be
 before
 below
 better
+border
 border-[var(--color-wk-border)]
 border-t
+box
 caller
 class
 component
@@ -44,8 +47,10 @@ default
 derives
 did
 disagrees
+divider
 does
 dropped
+edges
 else
 elseif
 every
@@ -54,6 +59,7 @@ first
 flags
 flex
 focus
+follow
 font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-heading-weight)]
 for
@@ -79,6 +85,7 @@ items-center
 its
 itself
 j
+keep
 keeps
 kept
 know
@@ -116,6 +123,7 @@ output
 own
 parsed
 presentational
+preset
 props
 px-[var(--space-wk-sm,0.5rem)]
 py-[var(--space-wk-xs,0.25rem)]
@@ -137,12 +145,15 @@ resolve
 rests
 result
 role
+rule
+rules
 s
 scope
 screen
 scroller
 sentence
 separator
+sets
 shown
 shrink-0
 sits
@@ -160,10 +171,13 @@ text-[length:var(--text-wk-xs)]
 than
 that
 the
+theme
 then
 there
+they
 this
 timezone
+to
 token
 top
 top-0
@@ -186,6 +200,7 @@ where
 which
 while
 whose
+width
 with
 worse
 writes

@@ -34,15 +34,28 @@ final class CssColor
 
         // Matched in lowercase, as the picker does; the color is returned as it was written.
         $lower = mb_strtolower($color, 'UTF-8');
-        $number = '[\d.]+';
-        $separator = "(?:{$space}|,)+";
-        $alpha = "(?:(?:{$space}|[,\/])+{$number}%?)?";
+        // Digits as CSS writes them, and as the picker's `\d` reads them: under `u`, `\d` would take
+        // the digits of every script.
+        $number = '[0-9.]+';
+        // rgb() and hsl() come in two forms, and CSS reads no mix of them: commas between all parts
+        // and an alpha after a comma, or spaces and an alpha after a slash.
+        $comma = "{$space}*,{$space}*";
+        $commaAlpha = "(?:{$comma}{$number}%?)?";
+        $slashAlpha = "(?:{$space}*\/{$space}*{$number}%?)?";
 
+        // The hue of hsl() and oklch() is a number or a number in `deg`, the unit the picker turns
+        // into the same degrees. Another angle unit would need converting and is no color here.
         $forms = [
             '/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/u',
-            "/^rgba?\({$space}*{$number}{$separator}{$number}{$separator}{$number}{$alpha}{$space}*\)$/u",
-            "/^hsla?\({$space}*{$number}{$separator}{$number}%{$separator}{$number}%{$alpha}{$space}*\)$/u",
-            "/^oklch\({$space}*{$number}%?{$space}+{$number}{$space}+{$number}(?:deg)?(?:{$space}*\/{$space}*{$number}%?)?{$space}*\)$/u",
+            "/^rgba?\({$space}*{$number}{$comma}{$number}{$comma}{$number}{$commaAlpha}{$space}*\)$/u",
+            "/^rgba?\({$space}*{$number}{$space}+{$number}{$space}+{$number}{$slashAlpha}{$space}*\)$/u",
+            // rgb() with three percentages, in either form; three numbers or three percentages,
+            // since the comma form takes no mix of them.
+            "/^rgba?\({$space}*{$number}%{$comma}{$number}%{$comma}{$number}%{$commaAlpha}{$space}*\)$/u",
+            "/^rgba?\({$space}*{$number}%{$space}+{$number}%{$space}+{$number}%{$slashAlpha}{$space}*\)$/u",
+            "/^hsla?\({$space}*{$number}(?:deg)?{$comma}{$number}%{$comma}{$number}%{$commaAlpha}{$space}*\)$/u",
+            "/^hsla?\({$space}*{$number}(?:deg)?{$space}+{$number}%{$space}+{$number}%{$slashAlpha}{$space}*\)$/u",
+            "/^oklch\({$space}*{$number}%?{$space}+{$number}{$space}+{$number}(?:deg)?{$slashAlpha}{$space}*\)$/u",
         ];
 
         foreach ($forms as $form) {

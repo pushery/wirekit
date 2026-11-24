@@ -118,7 +118,9 @@
          is more" leaves them scrolling to find out. x-cloak keeps it hidden until
          Alpine evaluates atBottom, so it never flashes on load. Its shadow is the filled
          surface's own: a second shadow class beside it is decided by the stylesheet's order,
-         not by this attribute, and a larger one here never took effect. --}}
+         not by this attribute, and a larger one here never took effect. It stays filled
+         whatever the application's default surface is: it floats over the messages, and a
+         surface without a background of its own would set its count on their text. --}}
     <x-wirekit::button
         type="button"
         size="sm"

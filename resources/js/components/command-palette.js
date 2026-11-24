@@ -10,13 +10,17 @@
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { pageScrollBehavior } from '../utils/motion.js';
 import {
+    controlThatSent,
     holdPageInert,
     inOverlayRoot,
     lockScroll as lockPageScroll,
+    openerOf,
     releasePageInert,
     unlockScroll as unlockPageScroll,
 } from '../utils/overlay.js';
 import { isComposing } from '../utils/ime.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { pressReaches, registerPaletteHotkey } from '../utils/palette-hotkeys.js';
 import { activeDialog, singleKeysEnabled } from '../utils/shortcuts.js';
 import { typesText } from '../utils/typing-target.js';
@@ -26,6 +30,7 @@ import { graphemesOf } from '../utils/graphemes.js';
 import { PAGE_ATTRIBUTE, choicesOf, digitOfKey, matchesQuery, onRemotePage, pageOf } from '../utils/command-palette-pages.js';
 import { pluralize } from '../utils/plural.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * @param {Object} config - Command palette configuration from Blade
  * @param {string|false|null} [config.hotkey] - Keyboard shortcut. Absent means 'cmd+k'; an
@@ -126,6 +131,8 @@ export default function wirekitCommandPalette(config = {}) {
         // The timer that reports text taken over while the palette opened; see _takeQuery().
         _takeTimer: null,
         _trap: null,
+        // The element focus goes back to when the palette closes, taken as it opens; see show().
+        _opener: null,
         _observer: null,
         _lastSignature: '',
         _navCleanup: null,
@@ -262,7 +269,7 @@ export default function wirekitCommandPalette(config = {}) {
                 const query = typeof event?.detail?.query === 'string' ? event.detail.query : null;
 
                 if (! this.isOpen) {
-                    this.show(query ?? '');
+                    this.show(query ?? '', controlThatSent(event));
                 } else if (query !== null) {
                     this._takeQuery(query);
                 }
@@ -321,6 +328,25 @@ export default function wirekitCommandPalette(config = {}) {
             // position for Back after `pagehide`. See the same listener in `utils/overlay.js`.
             this._leaveCleanup = () => this._forceClose();
             window.addEventListener('pagehide', this._leaveCleanup);
+
+            // A render of the Livewire component around a lazy palette must neither remove the
+            // overlay it built nor keep an overlay the server no longer draws. An opening that does
+            // not come through show(), markup writing `isOpen` or the deprecated `open` alias, still
+            // finds its overlay: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the overlay of a lazy palette as it first opens, before show() reads its options.
+         * A palette that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
         },
 
         destroy() {
@@ -368,9 +394,18 @@ export default function wirekitCommandPalette(config = {}) {
          * Show command palette and activate focus trap.
          *
          * @param {string} [query] the text the field opens with; empty by default
+         * @param {HTMLElement|null} [from] the control that opened the palette, where one did
          */
-        show(query = '') {
+        show(query = '', from = null) {
             if (this.isOpen) return;
+
+            // A lazy overlay is built first: everything below reads its list and its field.
+            this.preparePanel();
+
+            // Where focus goes back to on close, taken before anything moves it: the control the
+            // show event was sent from, which WebKit leaves unfocused after a click, or else the
+            // element that holds the focus, as for the hotkey.
+            this._opener = openerOf(from);
 
             // Every open starts on the top level, whatever page the last one ended on.
             this._leavePages();
@@ -435,6 +470,7 @@ export default function wirekitCommandPalette(config = {}) {
                         // was typed while it opened, would lose all of it to the reader's next
                         // key. `false` tells the trap that the focus is placed.
                         initialFocus: () => this._focusField(),
+                        setReturnFocus: (previous) => this._returnFocusTarget(previous),
                     });
                     this._trap.activate();
                     this._holdPageInertOnceFocused(panel);
@@ -458,6 +494,21 @@ export default function wirekitCommandPalette(config = {}) {
             this._releasePageInert();
             this._releaseScroll();
             this._unwatchVisibleViewport();
+        },
+
+        /**
+         * Where the trap hands focus back: the element the palette was opened from while it is
+         * still on the page, else what focus-trap saw focused when it activated. <body> is no
+         * answer of its own, since focusing it moves nothing.
+         *
+         * @param {Element|undefined} previous - what focus-trap saw focused at activation
+         * @returns {Element|undefined}
+         */
+        _returnFocusTarget(previous) {
+            const opener = this._opener;
+            const body = typeof document !== 'undefined' ? document.body : null;
+
+            return opener && opener !== body && opener.isConnected ? opener : previous;
         },
 
         /**

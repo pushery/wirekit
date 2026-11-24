@@ -267,7 +267,7 @@
                      line goes with the entry when the entry goes into the menu. A border rather than a
                      fill, which forced colors would drop. --}}
                 @wirekitLast($entry['divider'])
-                    <span data-wk-overflow-divider aria-hidden="true" class="ms-[var(--space-wk-xs)] self-stretch my-[var(--space-wk-xs)] border-s border-[color:var(--color-wk-border)]"></span>
+                    <span data-wk-overflow-divider aria-hidden="true" class="ms-[var(--space-wk-xs)] self-stretch my-[var(--space-wk-xs)] border-s-[length:var(--border-wk-width)] border-[color:var(--color-wk-border)]"></span>
                 @endwirekitLast
             </li>
         @endforeach

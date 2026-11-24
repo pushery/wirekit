@@ -1,4 +1,5 @@
 import { applyTriggerAria } from '../utils/trigger-aria.js';
+import { lazyPanelTemplate } from '../utils/lazy-panel.js';
 
 /**
  * Dropdown trigger — puts the menu ARIA on the interactive child.
@@ -29,9 +30,21 @@ export default function wirekitDropdownTrigger(config = {}) {
         _stopTriggerAria: null,
 
         init() {
+            const id = this.$wkAncestorData('[data-wk-panel-id]', 'wkPanelId') || null;
+            // A lazy dropdown builds its panel the first time it is needed, and until then the
+            // trigger names nothing (utils/lazy-panel.js). Asked of this trigger's own dropdown, the
+            // nearest root with a panel id, so a lazy overlay around the dropdown does not answer.
+            const root = typeof this.$el.closest === 'function' ? this.$el.closest('[data-wk-panel-id]') : null;
+            const host = root && root.hasAttribute('data-wk-lazy-panel-host') ? root : null;
+            const waiting = () => {
+                const template = lazyPanelTemplate(host);
+
+                return template !== null && template._wkBuilt !== true;
+            };
+
             this._stopTriggerAria = applyTriggerAria(this.$el, this.$watch.bind(this), {
                 haspopup: 'menu',
-                controls: this.$wkAncestorData('[data-wk-panel-id]', 'wkPanelId') || null,
+                controls: () => (waiting() ? null : id),
                 labelFallback: config.labelFallback || null,
                 missingTriggerWarning: '[wirekit] dropdown.trigger: slot has no focusable element (button/link). '
                     + 'Keyboard users cannot open the dropdown. Wrap the trigger content in a <button>.',

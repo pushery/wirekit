@@ -188,15 +188,17 @@
     {{-- In the a11y tree for on-demand reading, but not auto-announced. Wraps +
          preserves newlines. The caret is an inline element right after the text
          span (no whitespace between them) so it trails the last character as the
-         text grows — a real typing cursor, not a block on its own line. --}}
+         text grows — a real typing cursor, not a block on its own line. The seed text
+         stands in the span from the server, so a completed response reads before the
+         script runs and on a page that runs none; the script writes the same text. --}}
     <div
         class="wk-stream-output whitespace-pre-wrap break-words text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]"
         :data-status="status"
-    ><span x-text="text"></span><span
+    ><span x-text="text">{{ is_string($initialText) ? $initialText : '' }}</span><span
             x-show="isStreaming"
             x-cloak
             aria-hidden="true"
-            class="wk-stream-caret ms-px inline-block h-[1em] w-[0.5ch] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
+            class="wk-stream-caret ms-px inline-block h-[1em] w-[calc(0.5*var(--ch-wk-sans,1ch))] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
         ></span></div>
     @endif
 

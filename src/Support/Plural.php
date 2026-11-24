@@ -66,7 +66,7 @@ final class Plural
             $number = 0;
         }
 
-        $translator = app('translator');
+        $translator = self::translator();
 
         if (! $translator instanceof Translator) {
             return (string) trans_choice($key, $number, $replace);
@@ -94,10 +94,34 @@ final class Plural
      */
     public static function rule(string $key): string
     {
-        $translator = app('translator');
+        $translator = self::translator();
         $resolved = $translator instanceof Translator ? self::resolve($translator, $key) : null;
 
         return $resolved[1] ?? self::language(app()->getLocale());
+    }
+
+    /**
+     * Which of a line's forms Laravel's rule gives a count in a language, as the index the
+     * translator's selector chooses by. Null where the bound translator is not Laravel's, which
+     * leaves the caller to choose without it.
+     */
+    public static function formIndex(string $language, int $count): ?int
+    {
+        $translator = self::translator();
+
+        return $translator instanceof Translator
+            ? $translator->getSelector()->getPluralIndex(self::language($language), $count)
+            : null;
+    }
+
+    /**
+     * The translator `trans_choice()` asks. An application may bind one of its own under the
+     * name, so it is any object here: the methods above work with Laravel's and leave any other
+     * to `trans_choice()` or to their caller.
+     */
+    private static function translator(): object
+    {
+        return app('translator');
     }
 
     /**

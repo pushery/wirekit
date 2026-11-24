@@ -2,6 +2,7 @@ import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { cutGraphemes } from '../utils/graphemes.js';
+import { headingLang } from '../utils/heading-lang.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { sameName } from '../utils/same-name.js';
 import { timerDelay } from '../utils/timer-delay.js';
@@ -60,7 +61,9 @@ import { timerDelay } from '../utils/timer-delay.js';
  *     callback also null-guards the anchor nav, because a frame queued
  *     before teardown can still land after it.
  *   - _resizeObserver, _minimapResizeObserver, _intersectionObserver,
- *     _mutationObserver — disconnected.
+ *     _mutationObserver, _themeObserver — disconnected.
+ *   - _pixelRatioWatch (a media query of the display's pixel density) —
+ *     its `change` listener removed.
  *   - _mutationDebounceTimer, _idleTimer (setTimeout) — cleared.
  *   - _scrollHandler on the scroll host (and on window when the host is
  *     the document), _idleResetHandler, _bookmarkStorageHandler,
@@ -143,6 +146,9 @@ export default (options = {}) => ({
     _scrollEaseRaf: 0,
     _intersectionObserver: null,
     _mutationObserver: null,
+    _themeObserver: null,
+    _paletteSignature: '',
+    _pixelRatioWatch: null,
     _minimapResizeObserver: null,
     _mutationDebounceTimer: 0,
     _idleTimer: 0,
@@ -593,6 +599,8 @@ export default (options = {}) => ({
                 this._intersectionObserver = null;
                 this._buildCanvas();
                 this._initMutationObserver();
+                this._initThemeObserver();
+                this._initPixelRatioWatch();
             }
         }, { rootMargin: '50px' });
         this._intersectionObserver.observe(this.$el);
@@ -692,26 +700,9 @@ export default (options = {}) => ({
         // <video>, <canvas>) carry no text and are handled in a
         // separate pass below — they draw the element's bounding-rect
         // as a single block.
-        const cs = getComputedStyle(this.$el);
-        const tok = (name, fallback) => {
-            const v = cs.getPropertyValue(name).trim();
-            return v || fallback;
-        };
-        const STYLES = {
-            h1: tok('--reading-minimap-color-h1', 'rgba(15, 23, 42, 0.85)'),
-            h2: tok('--reading-minimap-color-h2', 'rgba(15, 23, 42, 0.75)'),
-            h3: tok('--reading-minimap-color-h3', 'rgba(15, 23, 42, 0.65)'),
-            h4: tok('--reading-minimap-color-h4', 'rgba(15, 23, 42, 0.55)'),
-            h5: tok('--reading-minimap-color-h5', 'rgba(15, 23, 42, 0.48)'),
-            h6: tok('--reading-minimap-color-h6', 'rgba(15, 23, 42, 0.42)'),
-            code: tok('--reading-minimap-color-code', 'rgba(99, 102, 241, 0.55)'),
-            table: tok('--reading-minimap-color-table', 'rgba(244, 63, 94, 0.50)'),
-            blockquote: tok('--reading-minimap-color-blockquote', 'rgba(71, 85, 105, 0.55)'),
-            prose: tok('--reading-minimap-color-prose', 'rgba(71, 85, 105, 0.42)'),
-            wirekit: tok('--reading-minimap-color-wirekit', 'rgba(16, 185, 129, 0.50)'),
-            image: tok('--reading-minimap-color-image', 'rgba(245, 158, 11, 0.55)'),
-            default: tok('--reading-minimap-color-default', 'rgba(71, 85, 105, 0.32)'),
-        };
+        const STYLES = this._palette();
+        // What a theme change is compared against (`_initThemeObserver()`).
+        this._paletteSignature = JSON.stringify(STYLES);
 
         const CODE_TAGS = new Set(['PRE', 'CODE', 'KBD', 'SAMP']);
         const HEADING_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
@@ -858,6 +849,76 @@ export default (options = {}) => ({
         });
     },
 
+    /**
+     * A theme change moves the colors the canvas is painted in, and nothing else would paint it
+     * again: neither the source nor the size changed. So the class of `<html>` and `<body>` is
+     * watched, as the charts watch it, and the canvas is built again once the palette read now
+     * differs from the one it was painted in. A class that changes no color leaves it as it is.
+     */
+    _initThemeObserver() {
+        if (typeof MutationObserver === 'undefined') return;
+        this._themeObserver = new MutationObserver(() => {
+            if (! this._themeObserver || this.mode !== 'rendered') return;
+            if (JSON.stringify(this._palette()) === this._paletteSignature) return;
+            this._scheduleRebuild();
+        });
+        const options = { attributes: true, attributeFilter: ['class'] };
+        this._themeObserver.observe(document.documentElement, options);
+        if (document.body) this._themeObserver.observe(document.body, options);
+    },
+
+    /**
+     * The canvas is sized in device pixels when it is built, and a resize, a change of the
+     * article or a theme change builds it again. A window that moves to a display of another
+     * pixel density keeps its size in CSS pixels, so neither ResizeObserver hears the move, and
+     * the canvas would keep the density it was built at: stretched and soft on a display of twice
+     * the density. So the media query of the current density is watched; once it stops matching,
+     * the canvas is built again and the query of the new density is watched in its place.
+     */
+    _initPixelRatioWatch() {
+        if (typeof window.matchMedia !== 'function') return;
+        const query = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+        const onChange = () => {
+            query.removeEventListener('change', onChange);
+            // A change the browser had already queued before destroy() released the watch.
+            if (this._pixelRatioWatch?.query !== query) return;
+            this._pixelRatioWatch = null;
+            if (this.mode !== 'rendered') return;
+            this._scheduleRebuild();
+            this._initPixelRatioWatch();
+        };
+        query.addEventListener('change', onChange);
+        this._pixelRatioWatch = { query, onChange };
+    },
+
+    /**
+     * The canvas colors, read from the minimap's tokens at the moment of the call, one per
+     * element type of the walk in `_buildCanvas()`, each with the light value as its fallback.
+     */
+    _palette() {
+        const cs = getComputedStyle(this.$el);
+        const tok = (name, fallback) => {
+            const v = cs.getPropertyValue(name).trim();
+            return v || fallback;
+        };
+
+        return {
+            h1: tok('--reading-minimap-color-h1', 'rgba(15, 23, 42, 0.85)'),
+            h2: tok('--reading-minimap-color-h2', 'rgba(15, 23, 42, 0.75)'),
+            h3: tok('--reading-minimap-color-h3', 'rgba(15, 23, 42, 0.65)'),
+            h4: tok('--reading-minimap-color-h4', 'rgba(15, 23, 42, 0.55)'),
+            h5: tok('--reading-minimap-color-h5', 'rgba(15, 23, 42, 0.48)'),
+            h6: tok('--reading-minimap-color-h6', 'rgba(15, 23, 42, 0.42)'),
+            code: tok('--reading-minimap-color-code', 'rgba(99, 102, 241, 0.55)'),
+            table: tok('--reading-minimap-color-table', 'rgba(244, 63, 94, 0.50)'),
+            blockquote: tok('--reading-minimap-color-blockquote', 'rgba(71, 85, 105, 0.55)'),
+            prose: tok('--reading-minimap-color-prose', 'rgba(71, 85, 105, 0.42)'),
+            wirekit: tok('--reading-minimap-color-wirekit', 'rgba(16, 185, 129, 0.50)'),
+            image: tok('--reading-minimap-color-image', 'rgba(245, 158, 11, 0.55)'),
+            default: tok('--reading-minimap-color-default', 'rgba(71, 85, 105, 0.32)'),
+        };
+    },
+
     _scheduleRebuild() {
         // Short-circuit when we've already fallen back to stripes mode
         // (the tag-count guard in _buildCanvas() set mode = 'stripes').
@@ -967,6 +1028,8 @@ export default (options = {}) => ({
                 return {
                     id: h.id,
                     label: cutGraphemes(accessibleText(h), 18, '…'),
+                    // The heading's language where it differs from the minimap's (utils/heading-lang.js).
+                    lang: headingLang(h, this.$root),
                     fraction,
                     collapsed,
                 };
@@ -1210,6 +1273,12 @@ export default (options = {}) => ({
         this._minimapResizeObserver?.disconnect();
         this._intersectionObserver?.disconnect();
         this._mutationObserver?.disconnect();
+        this._themeObserver?.disconnect();
+        this._themeObserver = null;
+        if (this._pixelRatioWatch) {
+            this._pixelRatioWatch.query.removeEventListener('change', this._pixelRatioWatch.onChange);
+            this._pixelRatioWatch = null;
+        }
         if (this._mutationDebounceTimer) clearTimeout(this._mutationDebounceTimer);
         if (this._idleTimer) clearTimeout(this._idleTimer);
         if (this._idleResetHandler) {

@@ -142,7 +142,7 @@
                         <span aria-hidden="true" class="h-2 overflow-hidden rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)]">
                             <span data-wk-review-summary-bar class="block h-full w-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-text)]" style="width: {{ $row['share'] }}%"></span>
                         </span>
-                        <span aria-hidden="true" class="min-w-[3ch] text-end tabular-nums text-[color:var(--color-wk-text-muted)]">{{ LocalizedNumber::format((float) $row['count']) }}</span>
+                        <span aria-hidden="true" class="min-w-[calc(3*var(--ch-wk-sans,1ch))] text-end tabular-nums text-[color:var(--color-wk-text-muted)]">{{ LocalizedNumber::format((float) $row['count']) }}</span>
                     @if($row['href'] !== null)
                         </a>
                     @else

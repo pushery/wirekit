@@ -49,6 +49,7 @@
 --text-wk-xs
 --transition-wk-duration
 --transition-wk-easing
+--wk-fill-ink
 --wk-fit-floor
 --wk-page-header-bleed
 --wk-page-header-rest-gap
@@ -58,7 +59,8 @@
 --z-wk-tooltip
 -mx-[var(--wk-page-header-bleed,0px)]
 -my-1
--variant
+-tooltip
+-words
 @container/wk-page-header
 @else
 @endforeach
@@ -114,8 +116,8 @@ an
 ancestor
 and
 announced
+announcement
 announcing
-anonymous
 answer
 answers
 anticipate
@@ -125,6 +127,7 @@ anywhere
 apart
 appear
 appears
+application
 applies
 arbitrary
 are
@@ -143,6 +146,7 @@ arrives
 arriving
 arrow
 as
+ask
 asked
 asks
 assembled
@@ -192,6 +196,7 @@ binds
 block
 body
 bold
+bool
 border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
@@ -213,10 +218,12 @@ browser
 bubble
 bug
 build
+builds
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -272,18 +279,21 @@ comment
 comments
 compete
 compilable
+compile
 compiled
 compiles
 complete
 component
+composer
+composers
 concatenated
 conditional
 config/wirekit.php
+configuration
 confirmation
 console
 container
 content
-context
 contrast
 control
 controls
@@ -293,6 +303,7 @@ corner
 cost
 costs
 could
+count
 counterpart
 counts
 crossed
@@ -305,11 +316,13 @@ danger
 data
 data-[wk-stuck]:border-b-[var(--color-wk-border)]
 data-wk-cut-tip
+data-wk-fill
 data-wk-heading-row
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-page-header-actions
 data-wk-page-header-actions-frame
 data-wk-page-header-meta
@@ -317,17 +330,25 @@ data-wk-page-header-title-row
 data-wk-prose-skip
 data-wk-scroll-inset
 data-wk-stuck
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 date
 dates
 debug
 decided
 decides
+declarations
 declared
 decoration
 default
@@ -337,6 +358,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 delete
 deletes
 deliberately
@@ -355,6 +377,7 @@ dialog
 did
 difference
 different
+differs
 digit
 direction
 directive
@@ -379,6 +402,7 @@ drawing
 drawn
 draws
 drift
+drives
 drop
 drops
 duration-100
@@ -412,8 +436,10 @@ escapes
 escaping
 evaluated
 even
+evens
 event
 events
+ever
 every
 everything
 exactly
@@ -426,6 +452,7 @@ expression
 external
 eye
 face
+factory
 facts
 fade
 fades
@@ -447,6 +474,7 @@ fields
 file
 fill
 filled
+find
 finds
 finish
 fire
@@ -467,6 +495,7 @@ flips
 float
 floor
 flow
+fn
 focus
 focus-return-to
 focus-visible:outline-hidden
@@ -493,6 +522,7 @@ for
 forced
 forced-colors
 forces
+foreground
 form
 four
 fragment
@@ -572,6 +602,7 @@ hide-below-container
 hides
 high
 hoists
+hold
 holds
 honest
 hook
@@ -607,6 +638,7 @@ instanceof
 instead
 int
 intent
+intents
 interaction
 interactive
 internal
@@ -614,6 +646,7 @@ interpolated
 into
 introduction
 invalid
+inverse
 inverted
 invocation
 is
@@ -647,6 +680,7 @@ largest
 last
 later
 layout
+lazy
 leading
 leading-[var(--font-wk-heading-line-height,1.25)]
 leading-[var(--font-wk-line-height,1.5)]
@@ -727,7 +761,6 @@ mean
 meanings
 meant
 measure
-measuring
 mechanism
 medium
 meets
@@ -777,7 +810,6 @@ needs
 negative
 neither
 nest
-nests
 never
 new
 newline
@@ -792,6 +824,7 @@ normal
 not
 nothing
 nowhere
+nowrap
 null
 number
 of
@@ -801,6 +834,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -815,6 +849,7 @@ opportunities
 opportunity
 opposite
 optimistic-ui
+option
 or
 order
 org
@@ -843,6 +878,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 past
 patches
@@ -903,6 +939,7 @@ py-[var(--wk-page-header-rest-gap,var(--padding-wk-y-md))]
 q
 qualified
 question
+race
 racing
 raises
 ran
@@ -946,10 +983,10 @@ resting
 rests
 restyles
 result
-retarget
 retune
 returns
 rewriting
+ride
 right
 ring
 role
@@ -984,6 +1021,7 @@ scroll
 scrolls
 seam
 seams
+search
 second
 section
 see
@@ -1025,7 +1063,6 @@ side
 sidebar
 sign
 silent
-silently
 simply
 since
 single
@@ -1061,10 +1098,12 @@ stack
 stackBelow
 stacking-context
 stand
+stand-in
 stands
 start
 starts
 state
+statement
 states
 static
 status
@@ -1118,13 +1157,13 @@ tall
 taller
 tap
 target
+td
 teleport
 teleported
 tells
 template
 tend
 text
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -1132,6 +1171,10 @@ text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-2xl,1.5rem)]
 text-[length:var(--text-wk-3xl,1.875rem)]
 text-[length:var(--text-wk-4xl,2.25rem)]
@@ -1180,10 +1223,13 @@ title
 to
 toggletip
 token
+tokens
 too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-[var(--wk-page-header-top,var(--wk-strip-inset,0px))]
@@ -1248,7 +1294,9 @@ value
 values
 vanished
 var
+variable
 variant
+variants
 vertical
 via
 view
@@ -1259,6 +1307,7 @@ w-4
 w-[calc(100%_+_2*var(--wk-page-header-bleed,0px))]
 w-full
 w-max
+waits
 walk
 wants
 warning
@@ -1296,6 +1345,7 @@ wire:text
 wirekit:field-help
 with
 without
+wk-heading
 wk-page-header
 wk-page-header-actions-frame
 wk-page-header-sticky

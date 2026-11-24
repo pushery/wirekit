@@ -39,6 +39,12 @@ class ThemeCommand extends Command
         'danger' => '--color-wk-border-error',
     ];
 
+    /**
+     * A theme block the command wrote, with the line break before its start marker and the one
+     * after its end marker, both of which it writes itself.
+     */
+    private const BLOCK = '/\n?\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s';
+
     public function handle(): int
     {
         $preset = (string) $this->argument('preset');
@@ -101,11 +107,7 @@ class ThemeCommand extends Command
         // preset twice produces byte-identical output. The block is written
         // with a line break in front of its start marker, so the pattern
         // takes that break with it; left behind, every run added one more.
-        $newContent = preg_replace(
-            '/\n?\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s',
-            '',
-            $content
-        );
+        $newContent = preg_replace(self::BLOCK, '', $content);
 
         // A PCRE failure returns null, and cast to a string that is '': written,
         // it would empty the developer's stylesheet on exactly the input that
@@ -175,7 +177,24 @@ class ThemeCommand extends Command
         }
         $themeBlock .= "/* wirekit:theme end */\n";
 
-        File::put($appCss, $newContent.$themeBlock);
+        // A block already in the file is replaced where it stands, so a rule the developer keeps
+        // after it, such as an override of a token the preset sets, stays after it and keeps
+        // winning. A file without one gets it at the end. Where an older version of the command
+        // left several, the first takes the new block and the others go.
+        $placed = false;
+        $written = $newContent === $content
+            ? $content.$themeBlock
+            : preg_replace_callback(self::BLOCK, static function () use (&$placed, $themeBlock): string {
+                if ($placed) {
+                    return '';
+                }
+
+                $placed = true;
+
+                return $themeBlock;
+            }, $content);
+
+        File::put($appCss, $written ?? $newContent.$themeBlock);
 
         $this->info("Applied theme: {$themeMeta['label']}");
         $this->line('  Theme variables injected into resources/css/app.css');

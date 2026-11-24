@@ -52,7 +52,6 @@ adds
 against
 aligned
 all
-allowed
 almost
 alone
 already
@@ -193,6 +192,7 @@ collapsible
 combination
 comes
 comma
+compact
 compete
 competes
 competing
@@ -228,6 +228,8 @@ data-wk-accordion-item
 data-wk-accordion-mode
 data-wk-accordion-open
 data-wk-faq
+data-wk-fold-chevron
+data-wk-print-open
 data-wk-rendered-open
 debug
 declare
@@ -244,6 +246,7 @@ descend
 descendants
 describing
 developer
+did
 difference
 differs
 direction
@@ -301,6 +304,7 @@ exposed
 exposes
 fails
 failures
+falls
 false
 family
 faq
@@ -335,6 +339,7 @@ footgun
 for
 forbidden
 forbids
+form
 forwarded
 found
 from
@@ -548,6 +553,7 @@ pairings
 pairs
 panel
 panels
+paper
 parent
 pass
 passed
@@ -565,6 +571,7 @@ plugin
 point
 pointer
 pointing
+points
 policy
 practices
 preceded
@@ -573,6 +580,7 @@ preparing
 presentational
 presses
 prevents
+prints
 produces
 prohibits
 prop
@@ -672,6 +680,7 @@ set
 several
 shapes
 shared-axis
+sheet
 shipped
 short
 should
@@ -708,6 +717,7 @@ stamping
 stand
 standalone
 standard
+stands
 start
 starts
 state
@@ -815,7 +825,6 @@ user
 user-controlled
 utility
 utils/findable.js.
-validateProp
 value
 values
 variant
@@ -834,6 +843,7 @@ walks
 wants
 warning
 was
+way
 what
 whatever
 when

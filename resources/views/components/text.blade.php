@@ -47,8 +47,15 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BlazeRender;
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Under Blaze, which an application may let compile this view into a function, no composer
+    // runs for it, and it does the composers' work on its bag here (Support\BlazeRender).
+    if (BlazeRender::active($attributes)) {
+        BlazeRender::normalize($attributes);
+    }
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -118,12 +125,19 @@
     // The error names the prop the caller wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
+    // On a filled surface, a filled announcement banner, a CTA or hero on the accent, a section
+    // on the accent or the inverse background, or the inverted panel of a tooltip, the four
+    // intents of the running text take the surface's own foreground through `--wk-fill-ink`:
+    // their page colors stand on the page, and on the accent they read as the fill. A status
+    // intent is the developer's statement about the words and keeps its color. `table.td` and
+    // `table.stand-in` write the same page tokens without the variable, since a cell does not
+    // stand on a fill and writes its color into every cell.
     $variantClasses = match (WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger', 'inherit'])) {
         'inherit' => '',
-        'default' => 'text-[color:var(--color-wk-text)]',
-        'muted' => 'text-[color:var(--color-wk-text-muted)]',
-        'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
-        'accent' => 'text-[color:var(--color-wk-accent-text)]',
+        'default' => 'text-[color:var(--wk-fill-ink,var(--color-wk-text))]',
+        'muted' => 'text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]',
+        'subtle' => 'text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]',
+        'accent' => 'text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]',
         'success' => 'text-[color:var(--color-wk-success-text)]',
         'warning' => 'text-[color:var(--color-wk-warning-text)]',
         'danger' => 'text-[color:var(--color-wk-danger-text)]',
@@ -149,8 +163,6 @@
         null => '',
     };
 
-    $truncateClasses = $truncateLine ? 'truncate' : '';
-
     // Literal arms rather than `line-clamp-{$lineClamp}`, and this is the whole prop.
     // Tailwind scans source for complete class names and generates nothing for a name it
     // never sees spelled out, so an interpolated form would emit an attribute with no rule
@@ -174,6 +186,11 @@
         '6' => 'line-clamp-6',
         null => '',
     };
+
+    // `truncate` cuts on one line; with `lineClamp` the text keeps its lines and is cut after the
+    // last of them instead, and `truncate="tooltip"` shows the whole text there as well. Both on one
+    // element would keep the text on one line, `white-space: nowrap` against the clamp.
+    $truncateClasses = $truncateLine && $lineClampClasses === '' ? 'truncate' : '';
 
     // An unbroken token — a checksum, a key, a long URL — has no space to wrap at, so it widens
     // its container instead, and `truncate` would hide characters a reader may need in full.
@@ -244,6 +261,7 @@
     // two comments around every block outside a tag, on every use of the text, cut or not.
     $elementClasses = [$classes];
     $tipPanel = '';
+    $tipLazy = false;
 
     if ($truncateTooltip) {
         // The element carries the tooltip's listeners and becomes an Alpine root of its own. A
@@ -263,13 +281,13 @@
         $tipDelayHide = config('wirekit.components.tooltip.delay-hide', 100);
 
         // The panel of `tooltip` on its default surface, under that component's personalization,
-        // so the two read as one tooltip and their class lists stay equal. A code or a key has no
-        // space to wrap at, so it breaks inside the panel's width instead of running out of it.
+        // so the two read as one tooltip and their class lists stay equal.
         $tipClasses = WireKit::resolveClasses('tooltip', 'panel', implode(' ', [
             'fixed',
             'w-max',
             'z-[var(--z-wk-tooltip)]',
             'max-w-[var(--size-wk-tooltip-max)]',
+            '[overflow-wrap:anywhere]',
             'px-[var(--padding-wk-x-sm)]',
             'py-[var(--padding-wk-y-xs)]',
             'bg-[var(--color-wk-tooltip-bg)]',
@@ -278,11 +296,14 @@
             'font-[family-name:var(--font-wk-sans)]',
             'rounded-[var(--radius-wk-sm)]',
             'shadow-[var(--shadow-wk-md)]',
-        ])).' [overflow-wrap:anywhere]';
+        ]));
 
         // The focus ring is for the tab stop a cut text takes when it stands in no control.
         $elementClasses[] = 'focus-visible:outline-hidden focus-visible:rounded-[var(--radius-wk-sm)] focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
-        $tipPanel = new \Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel', ['tipClasses' => $tipClasses])->render()));
+        // With `components.tooltip.lazy` the panel waits in a template of its own until the tooltip first
+        // shows, as a tooltip's does (utils/lazy-panel.js), and the text names itself to the render hook.
+        $tipLazy = \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.tooltip.lazy', false));
+        $tipPanel = new \Illuminate\Support\HtmlString(($tipLazy ? '<template data-wk-lazy-panel>' : '').trim(view('wirekit::components.partials.text-tip-panel', ['tipClasses' => $tipClasses])->render()).($tipLazy ? '</template>' : ''));
     }
 @endphp
 
@@ -314,4 +335,5 @@
     x-on:pointerup="pointerup($event)"
     x-on:pointerleave="pointerleave($event)"
     x-on:keydown.escape.window.capture="keydownEscape($event)"
+    @if($tipLazy) data-wk-lazy-panel-host @endif
     @endif{{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, $elementClasses)) }}>{{ $truncateTooltip ? $content : ($fitted ?? $content) }}{{ $tipPanel }}</{{ $as }}>

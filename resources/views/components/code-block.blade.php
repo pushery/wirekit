@@ -54,7 +54,7 @@
     // The wrapper supplies bg / border / radius. The inner <pre> + <code>
     // explicitly null those properties to neutralize generic prose
     // stylesheets that target raw markdown code blocks (e.g. a host
-    // prose.css that adds bg-white + radius + padding to every <pre>) —
+    // prose.css that adds a white background, a radius and padding to every <pre>) —
     // without this defense the developer sees a white box nested inside
     // our muted container.
     $preClasses = implode(' ', [
@@ -62,8 +62,9 @@
         'bg-transparent border-0 rounded-none',
     ]);
 
-    $codeClasses = implode(' ', [
-        $wrap ? 'block whitespace-pre-wrap [overflow-wrap:anywhere]' : 'wk-scrollbar relative block overflow-x-auto',
+    // What the two branches below share. Each puts its own layout in front, and only the one that
+    // scrolls names `overflow-x-auto`: a block that wraps scrolls nowhere and is no tab stop.
+    $codeSharedClasses = implode(' ', [
         // A tab stop must show that it has focus. The ring is drawn inside the box: the region
         // fills the wrapper edge to edge, and the wrapper clips to its border, so a ring drawn
         // outside would be cut on every side the two share.
@@ -75,6 +76,10 @@
         'leading-relaxed',
         'text-[color:var(--color-wk-text)]',
     ]);
+
+    $codeWrapClasses = 'block whitespace-pre-wrap [overflow-wrap:anywhere] '.$codeSharedClasses;
+
+    $codeScrollClasses = 'wk-scrollbar relative block overflow-x-auto '.$codeSharedClasses;
 @endphp
 
 @php
@@ -88,7 +93,7 @@
              srMessage is the SR-only announcement; copied drives the icon swap.
              Symmetric success/failure announcements: success path sets both; error path sets only srMessage. --}}
         <div
-            class="flex items-center justify-between gap-[var(--gap-wk-sm)] border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
+            class="flex items-center justify-between gap-[var(--gap-wk-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
             {{-- The copy lives in resources/js/components/code-block.js: a promise
                  chain with two arrow-function callbacks, which Alpine's CSP build
                  parses none of. Unlike clipboard-button this one waits for the
@@ -173,15 +178,48 @@
          with no title produces exactly it. A blank name is no name.
 
          `wrap` breaks the lines, so nothing scrolls and the stop has nothing to reach: the
-         block then takes no tabindex. A name still makes it a landmark.
+         block then takes no tabindex. A name still makes it a landmark. `data-wk-wrap` is the
+         hook the stylesheet indents a wrapped line's continuation by, where the browser can. In
+         that mode a run of hyphens inside a token stands with the character after it
+         (Support\CodeWrapJoins), so an operator such as `->` never ends one line and starts the
+         next; the text a copy reads stays the same.
 
          Code runs from the left whatever the page does: on a page that reads from the right an
          inherited direction sets each line against the right edge, and the bidi algorithm carries
-         the punctuation that closes a line to its other end. The header above follows the page. --}}
-    <pre data-wk-prose-skip dir="ltr" @class([$preClasses])><code data-wk-prose-skip
-        @class([$codeClasses])
-        @unless($wrap) tabindex="0" @endunless
-        @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
-        @if($language) data-language="{{ $language }}" @endif
-    >{{ $slot }}</code></pre>
+         the punctuation that closes a line to its other end. The header above follows the page.
+
+         A line that scrolls shows a shadow at each edge it continues past, the shadows of a table
+         that scrolls sideways (wirekitStickyPanelShadows): on a phone there is no scrollbar until
+         the reader is already dragging, and a line cut off at the edge reads as the whole line.
+         They are read from the scroll position, not from sentinels in the code: a highlighter
+         that runs in the browser writes the code anew from its text and would take a sentinel
+         with it, and highlight.js warns about a block that holds an element. The frame reads left
+         to right as the code does, also in a page that reads from the right, so the shadows stand
+         on the sides the line continues toward.
+
+         A block that wraps has nothing out of view, draws neither shadow and renders no frame: its
+         `<pre>` is a child of the block itself, and a rule that reaches it with `>` from the block
+         still does. In a block that scrolls the `<pre>` stands in the frame, so a rule of the page
+         reaches it with the descendant combinator, `[data-wk-code-block] pre`. --}}
+    @wirekitLast($wrap)
+        <pre data-wk-prose-skip dir="ltr" @class([$preClasses])><code data-wk-prose-skip
+            @class([$codeWrapClasses])
+            data-wk-wrap
+            @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
+            @if($language) data-language="{{ $language }}" @endif
+        >{{ new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\CodeWrapJoins::html((string) $slot)) }}</code></pre>
+    @else
+        <div class="relative" dir="ltr" x-data="wirekitStickyPanelShadows({ inline: 'position' })">
+            <pre data-wk-prose-skip dir="ltr" @class([$preClasses])><code data-wk-prose-skip
+                @class([$codeScrollClasses])
+                tabindex="0" x-ref="scroller"
+                @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
+                @if($language) data-language="{{ $language }}" @endif
+            >{{ $slot }}</code></pre>
+            {{-- aria-hidden: a shadow is a cue for the eye. A screen reader learns of the scroll region
+                 from its tab stop, and from its role and name where the block has a name. --}}
+            <div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
+            <div aria-hidden="true" x-cloak x-show="endShadow" x-transition.opacity class="wk-scroll-shadow-end"></div>
+        </div>
+    @endwirekitLast
 </div>

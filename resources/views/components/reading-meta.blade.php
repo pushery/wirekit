@@ -89,13 +89,20 @@
     aria-atomic="true"
     {{ $attributes->merge(['style' => 'font-size: var(--reading-meta-text-size); color: var(--reading-meta-color);'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass])) }}
 >
-    <span class="wk-reading-meta__total">
-        ~<span x-text="totalMinutes"></span> {{ $totalLabel }}
-    </span>
-    @wirekitLast ($showRemainingBool)
-        <span class="wk-reading-meta__separator" aria-hidden="true">·</span>
-        <span class="wk-reading-meta__remaining">
-            ~<span x-text="remainingMinutes"></span> {{ $remainingLabel }}
+    {{-- Hidden from the start until the factory has counted the words: before the script runs,
+         and on a page that runs none, the estimate would read "~ min read" with no number, and
+         the server cannot count an article the browser holds. A target that is not on the page
+         leaves it hidden as well. `contents`, so the parts stay items of the row; on a wrapper
+         rather than the root, which leaves a caller's own `x-show` on the root to the caller. --}}
+    <span class="contents" x-show="totalMinutes > 0" style="display: none">
+        <span class="wk-reading-meta__total">
+            ~<span x-text="totalMinutes"></span> {{ $totalLabel }}
         </span>
-    @endwirekitLast
+        @wirekitLast ($showRemainingBool)
+            <span class="wk-reading-meta__separator" aria-hidden="true">·</span>
+            <span class="wk-reading-meta__remaining">
+                ~<span x-text="remainingMinutes"></span> {{ $remainingLabel }}
+            </span>
+        @endwirekitLast
+    </span>
 </div>

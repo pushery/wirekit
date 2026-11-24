@@ -30,6 +30,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -field-hint
@@ -37,6 +38,8 @@
 -hint
 -legend
 -my-1
+-tooltip
+-words
 @aware
 @else
 @endforeach
@@ -45,6 +48,7 @@
 @endwirekitLast
 @php
 @props
+[overflow-wrap:anywhere]
 [overflow-wrap:break-word]
 a
 able
@@ -90,6 +94,7 @@ announced
 announces
 announcing
 anonymously
+another
 answer
 answered
 answers
@@ -164,6 +169,7 @@ bind
 binds
 block
 body
+bool
 boolean
 border-0
 border-[length:var(--border-wk-width)]
@@ -182,6 +188,8 @@ brings
 browser
 bubble
 bug
+build
+builds
 built
 but
 button
@@ -258,6 +266,7 @@ conditionally
 config/wirekit.php
 configuration
 console
+constructor
 container
 content
 contrast
@@ -270,6 +279,7 @@ corner
 correctly
 costs
 could
+count
 counterpart
 crossed
 cursor-help
@@ -283,26 +293,36 @@ data-wk-field
 data-wk-field-label
 data-wk-field-part
 data-wk-field-set-controls
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-required-word
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
 decided
 decides
 decision
 declaration
+declarations
 declared
 decorative
 default
@@ -311,10 +331,12 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 demoted
 demotes
+depends
 descendant
 descendants
 described
@@ -326,6 +348,7 @@ detection
 developer
 dies
 different
+differs
 direction
 directives
 disabled
@@ -352,6 +375,7 @@ draws
 drift
 drifts
 drive
+drives
 drop
 dropped
 drops
@@ -403,6 +427,7 @@ explanation
 explicit
 explicitly
 expression
+factory
 fade
 fail
 fall
@@ -420,6 +445,7 @@ filed
 files
 fill
 filled
+find
 finds
 finish
 fire
@@ -435,6 +461,7 @@ flex-1
 flex-wrap
 flex/grid
 flips
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -444,6 +471,7 @@ focusable
 focusable-trigger
 focusableTrigger
 focuses
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -604,6 +632,7 @@ language
 last
 later
 layout
+lazy
 leading-none
 leads
 learn
@@ -617,6 +646,7 @@ legend
 legitimately
 let
 lets
+letting
 level
 levels
 lg
@@ -758,6 +788,7 @@ opens
 operation
 opposite
 optimistic-ui
+option
 or
 order
 ordinary
@@ -828,6 +859,7 @@ production
 project
 prop
 props
+prose
 provide
 proxy
 pt-[var(--padding-wk-y-sm)]
@@ -844,6 +876,7 @@ py-[var(--padding-wk-y-xs)]
 qualified
 question
 quirk
+race
 racing
 radios
 raises
@@ -891,6 +924,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 reserve-message
 reset
@@ -903,6 +938,7 @@ restyles
 result
 return
 rich
+ride
 role
 roles
 roll
@@ -930,6 +966,7 @@ screen
 script
 scroll
 seam
+search
 second
 see
 sees
@@ -1087,6 +1124,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1149,6 +1188,7 @@ visually
 w-1/3
 w-4
 w-max
+waits
 walk
 warning
 was
@@ -1174,6 +1214,7 @@ widening
 wider
 width
 window
+wins
 wire:id
 wire:key
 wire:text
@@ -1191,6 +1232,7 @@ working
 works
 worth
 would
+wrap
 wrapped
 wrapper
 wrapping

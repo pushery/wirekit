@@ -351,7 +351,9 @@
         <div class="flex items-center gap-[var(--space-wk-sm)]">
             <div class="inline-flex items-center gap-[var(--gap-wk-xs)]">
                 <button type="button" @click="prev()" aria-label="{{ __('wirekit::Previous') }}" class="wk-touch-row {{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
-                <button type="button" @click="today()" class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
+                {{-- The one labeled action between the two arrows: a button of the kit, filled, its
+                     rank in `intent`. The arrows show only their icon and stay as they are. --}}
+                <x-wirekit::button intent="neutral" size="sm" x-on:click="today()">{{ __('wirekit::Today') }}</x-wirekit::button>
                 <button type="button" @click="next()" aria-label="{{ __('wirekit::Next') }}" class="wk-touch-row {{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
             <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"@if($datesLang) lang="{{ $datesLang }}"@endif></h{{ $levelValue }}>
@@ -364,12 +366,17 @@
             @keydown.arrow-down.prevent="viewMove(1)"
             @keydown.arrow-left.prevent="viewMove($wkInlineStep($event))"
             @keydown.arrow-up.prevent="viewMove(-1)">
-            {{-- The checked view is a tint and an inner edge in the muted text color, which holds
-                 3:1 against the tint where the tint alone did not. Forced colors paints neither,
-                 so `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
-            <button type="button" role="radio" data-view="month" @click="setView('month')" aria-checked="{{ $view === 'month' ? 'true' : 'false' }}" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Month') }}</button>
-            <button type="button" role="radio" data-view="week" @click="setView('week')" aria-checked="{{ $view === 'week' ? 'true' : 'false' }}" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Week') }}</button>
-            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" aria-checked="{{ $view === 'agenda' ? 'true' : 'false' }}" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
+            {{-- The checked view is tinted in the active color and shows a check before its name.
+                 The check, in the view's text color, holds 3:1 against every fill the tint takes,
+                 where the tint alone did not. Only the checked view makes room for the check. The
+                 tint and the check both follow `aria-checked`, which the server writes, so both
+                 are right before the script starts, as is the group's one tab stop on the checked
+                 view. One view is always checked, so the group keeps its width when
+                 the choice changes. Forced colors paints no tint, so `wk-state-button` is the marker
+                 the stylesheet frames it by in that mode. --}}
+            <button type="button" role="radio" data-view="month" @click="setView('month')" aria-checked="{{ $view === 'month' ? 'true' : 'false' }}" tabindex="{{ $view === 'month' ? '0' : '-1' }}" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" class="wk-state-button group/wk-choice wk-touch-row inline-flex items-center gap-[var(--gap-wk-xs)] {{ $viewTab }} text-[color:var(--color-wk-text-muted)] aria-checked:bg-[var(--color-wk-bg-active)] aria-checked:text-[color:var(--color-wk-text)]"><span data-wk-chosen-check class="hidden group-aria-checked/wk-choice:inline-flex shrink-0">{{ \Pushery\WireKit\Support\KitIcons::svg('check', 'h-4 w-4') }}</span>{{ __('wirekit::Month') }}</button>
+            <button type="button" role="radio" data-view="week" @click="setView('week')" aria-checked="{{ $view === 'week' ? 'true' : 'false' }}" tabindex="{{ $view === 'week' ? '0' : '-1' }}" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" class="wk-state-button group/wk-choice wk-touch-row inline-flex items-center gap-[var(--gap-wk-xs)] {{ $viewTab }} text-[color:var(--color-wk-text-muted)] aria-checked:bg-[var(--color-wk-bg-active)] aria-checked:text-[color:var(--color-wk-text)]"><span data-wk-chosen-check class="hidden group-aria-checked/wk-choice:inline-flex shrink-0">{{ \Pushery\WireKit\Support\KitIcons::svg('check', 'h-4 w-4') }}</span>{{ __('wirekit::Week') }}</button>
+            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" aria-checked="{{ $view === 'agenda' ? 'true' : 'false' }}" tabindex="{{ $view === 'agenda' ? '0' : '-1' }}" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" class="wk-state-button group/wk-choice wk-touch-row inline-flex items-center gap-[var(--gap-wk-xs)] {{ $viewTab }} text-[color:var(--color-wk-text-muted)] aria-checked:bg-[var(--color-wk-bg-active)] aria-checked:text-[color:var(--color-wk-text)]"><span data-wk-chosen-check class="hidden group-aria-checked/wk-choice:inline-flex shrink-0">{{ \Pushery\WireKit\Support\KitIcons::svg('check', 'h-4 w-4') }}</span>{{ __('wirekit::Agenda') }}</button>
         </div>
     </div>
 
@@ -392,7 +399,10 @@
     @endif
 
     {{-- ── Month view ──────────────────────────────────────────────── --}}
-    <div x-show="view === 'month'" class="border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden">
+    {{-- Each of the three views carries its start from the server, hidden unless it is the view
+         the calendar opens in, so the frame of that view, and only that one, stands on the page
+         before the script runs and on a page that runs none. `x-show` takes over as it starts. --}}
+    <div x-show="view === 'month'" @unless($view === 'month') style="display: none" @endunless class="border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden">
         <div class="grid grid-cols-7 bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
             <template x-for="wd in weekdayLabels" :key="wd">
                 <div class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] text-center" x-text="wd"@if($datesLang) lang="{{ $datesLang }}"@endif></div>
@@ -502,7 +512,7 @@
     {{-- Each day keeps 5.5rem: seven columns split narrower on a phone, and an event beside two
          others stood as a sliver no title fits. Where seven do not fit, the region scrolls across
          as well as down; at 768px and wider they fit. --}}
-    <div data-wk-week-view data-wk-print-expand x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($weekLabel) }}" @endif tabindex="0" class="relative max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    <div data-wk-week-view data-wk-print-expand x-show="view === 'week'" @unless($view === 'week') style="display: none" @endunless @if(filled($weekLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($weekLabel) }}" @endif tabindex="0" class="relative max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- Sticky top region: day-name headers + the all-day band. Both pin to
              the top of the scroll region so they stay visible while the hour grid
              scrolls underneath, and the region tells the scroller how much of its top
@@ -526,8 +536,13 @@
             <div x-show="weekHasAllDay || weekHasMarkers" x-cloak class="grid grid-cols-[3rem_repeat(7,minmax(5.5rem,1fr))] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{-- The band shows for all-day events or day-markers. The "All day"
                      axis label only applies to the former — when the band is present
-                     purely for markers, the label would mislabel the row, so it blanks. --}}
-                <div class="px-1 py-[var(--padding-wk-y-xs)] text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="weekHasAllDay ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} : ''"></div>
+                     purely for markers, the label would mislabel the row, so it blanks.
+                     The axis column is 3rem wide, shared with the hour grid below, and a
+                     translation can be one word wider than that ("Ganztägig"): the label
+                     breaks at a syllable where the document's `lang` says how, and anywhere
+                     in a word the browser cannot hyphenate, so it stays in its column
+                     instead of running into the first day's. --}}
+                <div class="px-1 py-[var(--padding-wk-y-xs)] text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)] hyphens-auto [overflow-wrap:anywhere]" x-text="weekHasAllDay ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} : ''"></div>
                 <template x-for="day in weekDays" :key="'ad-'+day.date.toISOString()">
                     <div class="min-h-[1.75rem] p-0.5 space-y-0.5 border-s-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                         {{-- Day markers first (day-level context), then all-day events. --}}
@@ -574,7 +589,7 @@
                         <div class="h-[2.5rem] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></div>
                     </template>
                     {{-- Current-time line --}}
-                    <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute start-0 end-0 h-px bg-[var(--color-wk-danger)] z-10" :style="nowLineStyle()"></div>
+                    <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute start-0 end-0 h-px bg-[var(--color-wk-danger-text)] z-10" :style="nowLineStyle()"></div>
                     {{-- Event blocks --}}
                     <template x-for="b in day.blocks" :key="b.event.id">
                         {{-- The min-h floor keeps a block tall enough for title+time even
@@ -614,7 +629,7 @@
          reason the week grid stays a non-landmark unless the developer names it: two
          calendars on a page would otherwise put two identically-named entries in the
          landmark rotor. It matches the root, which is `role="group"` as well. --}}
-    <div x-show="view === 'agenda'" x-cloak role="group" aria-label="{{ __('wirekit::Agenda') }}" x-effect="measureAgendaOnChange()" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y divide-[var(--color-wk-border)]">
+    <div x-show="view === 'agenda'" @unless($view === 'agenda') style="display: none" @endunless role="group" aria-label="{{ __('wirekit::Agenda') }}" x-effect="measureAgendaOnChange()" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y-[length:var(--border-wk-width)] divide-[var(--color-wk-border)]">
         {{-- No vertical spine: each day's events stack cleanly under their day
              heading, so a continuous rule between the time column and the titles
              read as visual noise. The time column's width still comes from its labels

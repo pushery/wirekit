@@ -85,7 +85,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null, 'requiredMark' => true])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -155,7 +155,9 @@
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set', 'requiredMark', 'required-mark']);
+    // Whether the asterisk is drawn: the field's own `requiredMark`, else the form's around it.
+    $requiredMark = \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
     // What acts only on the field the reader types into goes to the built-in control: on the
     // wrapper the on-screen keyboard reads none of it, `maxlength` limits nothing and a
@@ -270,7 +272,7 @@
     // which is where its hidden copy is rendered (partials/field-help).
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     // A `field` around this control renders its hint below it, and the control is described by it
     // as by a hint of its own (Support\FieldControl).
     $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hintId, $helpId ?? null);
@@ -421,7 +423,7 @@
              before it is edited, in the smaller type and heading weight of a caption, and stays in
              place when the editor opens. --}}
         <label data-wk-field-label @if($labelId) id="{{ $labelId }}" x-on:click="focusFromLabel()" @else for="{{ $controlId }}" @endif x-on:mousedown="keepFocusOnLabel($event)" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
-            {{ $label }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast
+            {{ $label }}@wirekitLast($required && $requiredMark)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast
         </label>
         @if($helpId || $hasLabelAfter)
             @if($helpId)

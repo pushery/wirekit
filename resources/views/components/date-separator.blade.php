@@ -88,6 +88,9 @@
         ]), $scope),
     ])) }}
 >
+    {{-- The two rules are the separator's content, as a divider's line is, so they keep Tailwind's
+         1px where a preset sets the theme's border width to 0px: the edges of a box follow that
+         width, and a rule stays a rule. --}}
     <span aria-hidden="true" class="grow border-t border-[var(--color-wk-border)]"></span>
     <time
         datetime="{{ $carbonDate->toDateString() }}"

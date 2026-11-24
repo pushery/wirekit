@@ -38,10 +38,12 @@
 --ring-wk-offset
 --ring-wk-width
 --shadow-wk-md
+--size-wk-nav-icon
 --size-wk-rail
 --size-wk-tooltip-max
 --space-wk-nav-gap
 --space-wk-nav-icon-gap
+--space-wk-nav-icon-indent
 --space-wk-nav-indent
 --space-wk-sm
 --space-wk-xs
@@ -49,6 +51,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --wk-nav-pad
 --wk-sidebar-w
 --z-wk-tooltip
@@ -59,7 +62,9 @@
 -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 -panel
 -start-0.5
+-tooltip
 -width
+-words
 @aware
 @else
 @endforeach
@@ -67,12 +72,14 @@
 @endphp
 @endunless
 @endwirekitLast
+@if
 @include
 @persist
 @php
 @props
 [--wk-nav-pad:var(--padding-wk-y-sm)]
 [font-weight:inherit]
+[overflow-wrap:anywhere]
 [transform-box:fill-box]
 a
 able
@@ -213,6 +220,7 @@ auto-invokes
 auto-rendered
 autofocus
 automatic
+avatar
 avoids
 away
 axes
@@ -262,6 +270,7 @@ blocking
 blocks
 body
 bolted
+bool
 boolean
 border
 border-[length:var(--border-wk-width)]
@@ -294,7 +303,9 @@ broken
 browser
 bubble
 bug
+build
 building
+builds
 built
 bump
 bundled
@@ -331,6 +342,7 @@ centered
 centering
 centers
 cfg
+chain
 chained
 change
 changes
@@ -394,6 +406,7 @@ comes
 comment
 comments
 common
+compact
 compete
 compiled
 compiles
@@ -470,12 +483,16 @@ data-wk-direction
 data-wk-disclosure-arrow
 data-wk-disclosure-seed-key
 data-wk-disclosure-seed-on
+data-wk-disclosure-seed-turn
+data-wk-fill
 data-wk-grip
 data-wk-icon-nudge
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-entries
+data-wk-lazy-panel-host
 data-wk-option-value
 data-wk-prose-skip
 data-wk-rail-gone
@@ -497,9 +514,16 @@ data-wk-seed-width-min
 data-wk-sidebar-collapse
 data-wk-sidebar-collapse-toggle
 data-wk-sidebar-scroller
+data-wk-sidebar-slot-icon
 data-wk-sidebar-toggle
 data-wk-sidebar-width
 data-wk-sidebar-zone-inset
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tone
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -507,6 +531,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 data-wk-touch
 dataset
 day
@@ -517,6 +542,7 @@ decided
 decides
 decision
 declaration
+declarations
 declare
 declared
 decorative
@@ -532,6 +558,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberate
 deliberately
 delivered
@@ -564,6 +591,7 @@ digits
 dims
 direct
 direction
+directive
 directives
 directly
 disabled
@@ -596,6 +624,7 @@ dots
 down
 drag
 dragged
+drags
 draw
 drawer
 drawerId
@@ -606,6 +635,7 @@ drift
 drifting
 driver
 drivers
+drives
 drop
 dropped
 dropping
@@ -617,6 +647,7 @@ duration-100
 duration-75
 duration-[var(--transition-wk-duration)]
 each
+earlier
 ease-in
 ease-out
 easy
@@ -666,6 +697,7 @@ events
 ever
 every
 everything
+everywhere
 exact
 exactly
 example
@@ -695,6 +727,7 @@ fade
 fades
 failure
 fall
+fallback
 falling
 falls
 false
@@ -710,7 +743,9 @@ fight
 file
 filed
 fill
+filled
 filling
+find
 finds
 finger
 finish
@@ -718,6 +753,7 @@ fire
 fires
 first
 first-visit
+firstElementChild
 fit
 fix
 fixed
@@ -732,6 +768,7 @@ floor
 flow
 flush
 flyout
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -1009,6 +1046,7 @@ layer
 layout
 layout-shift
 lays
+lazy
 leading
 leading-none
 leads
@@ -1110,6 +1148,7 @@ measures
 mechanics
 mechanism
 meet
+meets
 memory
 menus
 merely
@@ -1152,6 +1191,7 @@ move
 moved
 moves
 moving
+ms-[var(--space-wk-nav-icon-indent)]
 ms-[var(--space-wk-nav-indent)]
 ms-[var(--space-wk-sm)]
 ms-auto
@@ -1288,6 +1328,7 @@ overrides
 overview
 owes
 own
+ownTag
 owns
 p-[var(--padding-wk-y-sm)]
 p-[var(--space-wk-sm)]
@@ -1315,6 +1356,7 @@ parser
 part
 partial
 partials/sidebar-collapse-glyph
+partials/sidebar-item-link.blade.php
 parts
 pass
 passed
@@ -1379,6 +1421,7 @@ preserving
 press
 prev
 prevent
+preview
 previews
 previous
 previousElementSibling
@@ -1421,6 +1464,7 @@ quantity
 quarter-rem
 question
 queues
+race
 racing
 radius
 rail
@@ -1451,6 +1495,7 @@ real
 reason
 rebuilding
 receive
+reckoned
 reconciles
 rectangles
 red
@@ -1520,6 +1565,7 @@ reverse
 rewrites
 rhythm
 rid
+ride
 rides
 right
 ring
@@ -1550,6 +1596,7 @@ rtl:-scale-x-100
 rule
 rules
 run
+running
 runs
 runtime
 s
@@ -1581,9 +1628,11 @@ scrolled
 scroller
 scrolling
 scrolls
+search
 second
 second-to-last
 section
+sections
 see
 seed
 seedAttrsOff
@@ -1621,6 +1670,7 @@ server
 server-side
 set
 sets
+setting
 settles
 settling
 several
@@ -1631,6 +1681,8 @@ shape
 shapes
 share
 shared
+shared-tooltip
+sharedTooltip
 shares
 sharing
 sheet
@@ -1685,8 +1737,10 @@ site
 sits
 sitting
 size
+size-[var(--size-wk-nav-icon)]
 sized
 sizes
+skip
 sliver
 slot
 slots
@@ -1730,6 +1784,7 @@ stand
 standalone
 stands
 start
+started
 starts
 state
 stated
@@ -1883,6 +1938,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltipPlacement
 tooltips
 top
@@ -1955,6 +2012,7 @@ unread
 unreadable
 unrelated
 unscoped
+unset
 unsteady
 unstyled
 untidy
@@ -1974,6 +2032,7 @@ uses
 usual
 utilities
 utility
+utils/lazy-entries.js
 v4
 valid
 value
@@ -2005,7 +2064,9 @@ w-[var(--size-wk-rail,3.25rem)]
 w-[var(--wk-sidebar-w,16rem)]
 w-full
 w-max
+wait
 waiting
+waits
 walk
 wants
 warning
@@ -2071,6 +2132,7 @@ wk-tooltip-panel
 wk-touch-row
 wk-touch-target
 wkDisclosureSeedOn
+wkDisclosureSeedTurn
 wkSeedAttrsOn
 wkSeedClassOn
 wkSeedMin
@@ -2116,6 +2178,7 @@ x-on:mouseenter
 x-on:mouseleave
 x-on:pointercancel
 x-on:pointerdown
+x-on:pointerenter
 x-on:pointerleave
 x-on:pointerup
 x-ref

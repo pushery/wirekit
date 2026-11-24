@@ -167,4 +167,119 @@ final class DatePresets
             default => null,
         };
     }
+
+    /**
+     * The presets a calendar lists as its script starts, for the copy the page loads with: each
+     * key with its label, whether it can be picked and whether it is the value's, as
+     * `presetOptions()` in resources/js/components/calendar.js gives them after `_matchPreset()`.
+     *
+     * A preset is closed where the calendar is disabled, and where its range falls outside the
+     * limits, starts or ends on an unavailable day, or spans fewer or more days than a range may;
+     * `custom` is never closed by its range. The chosen one is the preset the server named, else
+     * the first whose range is the value's two ends as written, else `custom` where the list has
+     * it. `$today` is the day the view writes on the root for the script.
+     *
+     * @internal Called by the calendar's view; held to tests/fixtures/calendar-preset-start-cases.json.
+     *
+     * @param  list<string>  $keys
+     * @param  array<string, string>  $labels
+     * @param  array{min: ?string, max: ?string, unavailable: list<string>, minRange: ?int, maxRange: ?int}  $limits  as CalendarLimits::from() reads them
+     * @return list<array{key: string, label: string, disabled: bool, selected: bool}>
+     */
+    public static function start(array $keys, array $labels, string $value, string $named, CarbonImmutable $today, int $weekStartsOn, array $limits, bool $disabled): array
+    {
+        $min = self::dayOf($limits['min']);
+        $chosen = self::chosen($keys, $value, $named, $today, $weekStartsOn, $min);
+        $options = [];
+
+        foreach ($keys as $key) {
+            $options[] = [
+                'key' => $key,
+                'label' => $labels[$key] ?? $key,
+                'disabled' => $disabled || ($key !== self::CUSTOM && self::openRange($key, $today, $weekStartsOn, $min, $limits) === null),
+                'selected' => $chosen === $key,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * The preset a calendar starts on, `_matchPreset()`: the named one, else the first whose range
+     * is the value's two ends, else `custom` where the list has it; null without both ends.
+     *
+     * @param  list<string>  $keys
+     */
+    private static function chosen(array $keys, string $value, string $named, CarbonImmutable $today, int $weekStartsOn, ?CarbonImmutable $min): ?string
+    {
+        if ($keys === []) {
+            return null;
+        }
+
+        if ($named !== '' && $named !== self::CUSTOM && in_array($named, $keys, true)) {
+            return $named;
+        }
+
+        $ends = explode('/', $value);
+        $start = $ends[0];
+        $end = $ends[1] ?? '';
+
+        if ($start === '' || $end === '') {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            $range = self::range($key, $today, $weekStartsOn, $min);
+
+            if ($range !== null && $range[0]->format('Y-m-d') === $start && $range[1]->format('Y-m-d') === $end) {
+                return $key;
+            }
+        }
+
+        return in_array(self::CUSTOM, $keys, true) ? self::CUSTOM : null;
+    }
+
+    /**
+     * The range of a preset inside a calendar's limits, `_presetRange()`, as its two days; null for
+     * one outside them.
+     *
+     * @param  array{min: ?string, max: ?string, unavailable: list<string>, minRange: ?int, maxRange: ?int}  $limits
+     * @return array{0: string, 1: string}|null
+     */
+    private static function openRange(string $key, CarbonImmutable $today, int $weekStartsOn, ?CarbonImmutable $min, array $limits): ?array
+    {
+        $range = self::range($key, $today, $weekStartsOn, $min);
+
+        if ($range === null) {
+            return null;
+        }
+
+        $start = $range[0]->format('Y-m-d');
+        $end = $range[1]->format('Y-m-d');
+        // Both days counted, as `spanOf()` counts them, from the dates alone.
+        $last = (int) gmmktime(0, 0, 0, (int) $range[1]->format('n'), (int) $range[1]->format('j'), (int) $range[1]->format('Y'));
+        $first = (int) gmmktime(0, 0, 0, (int) $range[0]->format('n'), (int) $range[0]->format('j'), (int) $range[0]->format('Y'));
+        $days = (int) round(($last - $first) / 86400) + 1;
+
+        $outside = (($limits['min'] ?? '') !== '' && strcmp($start, (string) $limits['min']) < 0)
+            || (($limits['max'] ?? '') !== '' && strcmp($end, (string) $limits['max']) > 0)
+            || ($limits['minRange'] !== null && $days < $limits['minRange'])
+            || ($limits['maxRange'] !== null && $days > $limits['maxRange'])
+            || in_array($start, $limits['unavailable'], true)
+            || in_array($end, $limits['unavailable'], true);
+
+        return $outside ? null : [$start, $end];
+    }
+
+    /** A day written `YYYY-MM-DD`, or null for anything else. */
+    private static function dayOf(?string $text): ?CarbonImmutable
+    {
+        if ($text === null || preg_match('/^\d{4}-\d{2}-\d{2}$/', $text) !== 1) {
+            return null;
+        }
+
+        $day = CarbonImmutable::createFromFormat('!Y-m-d', $text);
+
+        return $day instanceof CarbonImmutable && $day->format('Y-m-d') === $text ? $day : null;
+    }
 }

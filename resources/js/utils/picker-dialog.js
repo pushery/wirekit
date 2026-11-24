@@ -3,7 +3,10 @@ import { position } from './floating.js';
 import { holdPageInert, lockScroll, releasePageInert, unlockScroll } from './overlay.js';
 import { anchorMoved, anchorSnapshot } from './scroll-anchor.js';
 import { applyTriggerAria } from './trigger-aria.js';
+import { keepLazyEntriesThroughRenders } from './lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from './lazy-panel.js';
 
+import { watchCurrent } from './watch-current.js';
 /**
  * Where a picker's dialog opens as a modal: below the kit's `sm` width, and on a screen too short
  * for a panel below the trigger, as on a phone held sideways. A tablet keeps the panel either way.
@@ -73,9 +76,26 @@ export function pickerDialogState(options) {
         dialogModal: false,
         _scrollLocked: false,
         _inertHeld: false,
+        // Whether a lazy picker's panel is built: the trigger names the panel with `aria-controls` only
+        // from then on. See preparePanel().
+        _panelBuilt: false,
 
         /** The listeners on the page; without a document, as in a unit harness, there are none. */
         pickerDialogInit() {
+            // A render of the Livewire component around a lazy picker must neither remove the panel it
+            // built nor keep a panel the server no longer draws. An opening by markup writing `isOpen`
+            // still finds its panel: it is built a tick after the write. A picker started again over a
+            // panel it built before, as a component carried by `@persist` is, names its panel.
+            const lazyTemplate = lazyPanelTemplate(this.$root);
+
+            if (lazyTemplate) {
+                this._panelBuilt = lazyTemplate._wkBuilt === true;
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+
             if (typeof window === 'undefined' || typeof document === 'undefined') {
                 return;
             }
@@ -145,12 +165,27 @@ export function pickerDialogState(options) {
             this._stopTriggerAria = null;
         },
 
+        /**
+         * Build the panel of a lazy picker before it opens, and let the trigger name it from then on.
+         * A picker that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            if (buildLazyPanel(lazyPanelTemplate(this.$root))) {
+                this._panelBuilt = true;
+            }
+        },
+
         /** A trigger of the caller's: the dialog's ARIA goes on the button inside the slot. */
         initTriggerAria() {
             this._stopTriggerAria?.();
             this._stopTriggerAria = applyTriggerAria(this.$el, this.$watch?.bind(this), {
                 haspopup: 'dialog',
-                controls: options.panelId ?? null,
+                // Asked each time the trigger is written: a lazy panel is named from its build on.
+                controls: () => {
+                    const template = lazyPanelTemplate(this.$root);
+
+                    return template && template._wkBuilt !== true ? null : (options.panelId ?? null);
+                },
                 missingTriggerWarning: options.missingTriggerWarning,
             });
         },
@@ -210,6 +245,9 @@ export function pickerDialogState(options) {
             if (this.isOpen || this._trigger()?.disabled || this._trigger()?.getAttribute('aria-disabled') === 'true') {
                 return;
             }
+
+            // A lazy panel is built first: the hooks and the placement below read it.
+            this.preparePanel();
 
             this.dialogModal = this._opensAsModal();
             this._dialogOpening?.();

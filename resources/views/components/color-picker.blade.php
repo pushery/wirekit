@@ -78,6 +78,10 @@
     'withRecents' => true,
     'presets' => [],
     'recentsKey' => null,
+    // Whether the panel waits out of the page until it is first needed: the pointer or the focus on
+    // the picker, or the panel opening. The default comes from the configuration
+    // (`components.color-picker.lazy`).
+    'lazy' => config('wirekit.components.color-picker.lazy', false),
     'scope' => null,
 ])
 
@@ -268,6 +272,10 @@
     // in `class`. The native branch sets its readout a little further from the swatch.
     $wrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--padding-wk-x-sm)]', $scope);
     $nativeWrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--gap-wk-md)]', $scope);
+    // The color the native field holds as the page loads, as the browser keeps it: a hex color in
+    // lowercase, or black for a value it does not take as one. The readout beside the field shows
+    // it before the script runs and on a page that runs none; the script reads it from the field.
+    $nativeStartValue = preg_match('/^#[0-9a-f]{6}$/i', (string) $value) === 1 ? strtolower((string) $value) : '#000000';
 
     // One stacking wrapper around both render branches, so the hint / error paragraph
     // has somewhere to go: the picker's own root is an inline-flex row, and a message
@@ -398,7 +406,7 @@
             @endwirekitLast
         </label>
         @wirekitLast($showValue)
-            <span class="{{ $valueClasses }}" x-text="current" aria-live="polite"></span>
+            <span class="{{ $valueClasses }}" x-text="current" aria-live="polite">{{ $nativeStartValue }}</span>
         @endwirekitLast
     </div>
 @else
@@ -418,6 +426,10 @@
         // With withClear on, the readout binds the displayValue getter (which
         // shows "No color" while cleared); otherwise the plain formattedValue.
         $readoutExpr = $withClear ? 'displayValue' : 'formattedValue';
+        // What the readout says before the script runs and on a page that runs none: the value the
+        // field sends then, or "No color" for an empty one the picker can clear. The script writes
+        // the value in the picked format over it as it starts.
+        $startReadout = $withClear && $value === '' ? __('wirekit::No color') : $value;
         // Checkerboard backdrop so alpha is legible — a structural transparency
         // grid (like the SV-plane white/black axes, it is not themeable).
         $checker = 'background-image: linear-gradient(45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(-45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-wk-border) 75%), linear-gradient(-45deg, transparent 75%, var(--color-wk-border) 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0;';
@@ -461,6 +473,13 @@
                 'kept' => __('wirekit::Could not save. Your color is still here.'),
             ],
         ]);
+    // A lazy picker holds the teleport of its panel in a template of its own among the children of
+    // its root, which the browser keeps out of the page until the factory builds it
+    // (utils/lazy-panel.js). The wrapper is an echo, since a conditional around a tag's two ends
+    // would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.color-picker.lazy', false)), 'color-picker', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
     @endphp
 
 @if($optimisticConfig)
@@ -475,6 +494,7 @@
              close an open panel under a `wire:model.live` drag. --}}
         data-wk-server-value="{{ $value }}"
         x-data="wirekitColorPicker({{ \Pushery\WireKit\Support\AlpinePayload::from($jsConfig) }})"
+        @if($lazy) data-wk-lazy-panel-host x-on:pointerenter="preparePanel()" x-on:focusin="preparePanel()" @endif
         {{-- The caller's attributes land here, on the element that holds everything the
              picker renders, as they land on the field in the native branch: a listener hears
              the input and change events the hidden field below sends, and a test hook finds
@@ -566,20 +586,30 @@
                 aria-expanded="false"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
-                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldLabelId === null && (filled($callerLabel) || ! filled($id))) aria-label="{{ $triggerLabel }}" @endif
+                {{-- The default slot names the trigger, as it names the native field: its text sits
+                     in the button, visually hidden. A caller's `aria-label` still wins over it, and
+                     without slot text the name is built from `name` unless an `id` lets a
+                     `<label for>` name the button. --}}
+                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldLabelId === null && (filled($callerLabel) || (! filled($id) && ! $slot->hasActualContent()))) aria-label="{{ $triggerLabel }}" @endif
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                 class="wk-touch-row {{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
                 style="{{ $checker }}"
             >
-                <span class="absolute inset-0" :style="swatchStyle"@if($withClear) x-show="!cleared"@endif></span>
+                {{-- The chosen color is the content of this button, as a color is the content of
+                     the swatch component, so a forced-colors theme keeps it while the button's
+                     edge takes the theme's colors. --}}
+                <span data-wk-picker-color="chosen" class="absolute inset-0 forced-color-adjust-none" :style="swatchStyle"@if($withClear) x-show="!cleared"@endif></span>
+                @if($slot->hasActualContent() && ! filled($callerLabel) && $callerLabelledBy === null)
+                    <span class="sr-only">{{ $slot }}</span>
+                @endif
             </button>
         @endif
         @if($nativeOnMobile)</template>@endif
 
         @if($showValue)
-            <span class="{{ $valueClasses }}" x-text="{{ $readoutExpr }}" aria-live="polite"></span>
+            <span class="{{ $valueClasses }}" x-text="{{ $readoutExpr }}" aria-live="polite">{{ $startReadout }}</span>
         @endif
 
         {{-- Hidden form field — mirrors the picked value in the active format. --}}
@@ -593,7 +623,7 @@
              ancestor and sits a clear gap below the swatch. click.outside lives
              here (on the panel),
              not the root, because teleporting moves the panel out of the subtree. --}}
-        <template x-teleport="#wk-overlay-root">
+        {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div
             x-show="isOpen"
             x-cloak
@@ -634,10 +664,15 @@
                 @keydown.home.prevent="planeHome()"
                 @keydown.end.prevent="planeEnd()"
                 class="relative h-40 w-full cursor-crosshair touch-none overflow-hidden rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                :style="planeStyle"
             >
-                <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to right, #fff, transparent);"></div>
-                <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to top, #000, transparent);"></div>
+                {{-- The plane's colors are its content, so a forced-colors theme keeps them. They
+                     sit in a layer of their own rather than on the plane: the plane takes focus,
+                     and its focus outline is a transparent one that the mode paints in the
+                     theme's color only on an element it still adjusts. --}}
+                <div data-wk-picker-color="plane" class="pointer-events-none absolute inset-0 forced-color-adjust-none" :style="planeStyle">
+                    <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to right, #fff, transparent);"></div>
+                    <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to top, #000, transparent);"></div>
+                </div>
                 {{-- Thumb ring stays theme-independent white (+ shadow) on all three
                      sliders: it must contrast against arbitrary colors underneath, so a
                      themed border would vanish against same-toned regions. --}}
@@ -667,8 +702,9 @@
                 @keydown.home.prevent="setHue(0)"
                 @keydown.end.prevent="setHue(360)"
                 class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                style="background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);"
             >
+                {{-- The spectrum, in a layer that keeps it under forced colors, as on the plane. --}}
+                <div data-wk-picker-color="hue" class="pointer-events-none absolute inset-0 rounded-full forced-color-adjust-none" style="background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);"></div>
                 <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="hueMarkerStyle"></div>
             </div>
 
@@ -694,7 +730,9 @@
                     class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     style="{{ $checker }}"
                 >
-                    <div class="pointer-events-none absolute inset-0 rounded-full" :style="alphaTrackStyle"></div>
+                    {{-- The color's run to transparent, kept under forced colors, as on the plane. The
+                         checker under it is a background of the slider and gives way in that mode. --}}
+                    <div data-wk-picker-color="alpha" class="pointer-events-none absolute inset-0 rounded-full forced-color-adjust-none" :style="alphaTrackStyle"></div>
                     <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="alphaMarkerStyle"></div>
                 </div>
             @endif
@@ -807,10 +845,14 @@
                         <button
                             type="button"
                             @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"
-                            class="h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                            style="background-color: {{ $preset }};"
+                            class="relative overflow-hidden h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             aria-label="{{ __('wirekit::Use :color', ['color' => $preset]) }}"
-                        ></button>
+                        >
+                            {{-- The color inside the button's edge, in a layer a forced-colors theme
+                                 keeps, while the button and its focus outline take the theme's
+                                 colors. --}}
+                            <span data-wk-picker-color="preset" class="pointer-events-none absolute inset-0 forced-color-adjust-none" style="background-color: {{ $preset }};"></span>
+                        </button>
                     @endforeach
                 </div>
             @endif
@@ -822,15 +864,17 @@
                         <button
                             type="button"
                             @click="pickColor(recent)"
-                            class="h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                            :style="recentStyle(recent)"
+                            class="relative overflow-hidden h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use :color')) }}.replace(':color', recent)"
-                        ></button>
+                        >
+                            {{-- As on a preset. --}}
+                            <span data-wk-picker-color="recent" class="pointer-events-none absolute inset-0 forced-color-adjust-none" :style="recentStyle(recent)"></span>
+                        </button>
                     </template>
                 </div>
             @endif
         </div>
-        </template>
+        </template>{{ $lazyPanelClose }}
     </div>
 @if($optimisticConfig)
     {{-- Rendered unconditionally and starting empty: a live region that arrives

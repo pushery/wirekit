@@ -14,6 +14,9 @@
     'scope' => null,
 ])
 
+{{-- A form, or the field the label belongs to, may leave the asterisk out (`requiredMark`). --}}
+@aware(['requiredMark' => true])
+
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -27,6 +30,13 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $required = BooleanProp::from($required, false, 'label', 'required');
+
+    // Whether a required field's asterisk is drawn: the label's own `requiredMark`, which a field
+    // component hands over on its tag, else the form's around it. Read from the family, as a key
+    // of the same name on another ancestor is not the form's (Support\AwareProp). The field stays
+    // required either way; only the mark goes.
+    $showsRequiredMark = BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
+    $attributes = $attributes->except(['requiredMark', 'required-mark']);
 
     // Label classes: all values reference design tokens — no hardcoded colors or sizes
     $classes = WireKit::resolveClasses('label', 'base', implode(' ', [
@@ -44,13 +54,13 @@
     // Markup after the label and its help, in their row: a mark such as a badge. It stands outside
     // the <label> and outside the help button, so it joins neither the field's name nor the
     // button's.
-    $hasAfter = isset($after) && $after->hasActualContent();
+    $hasAfter = \Pushery\WireKit\Support\SlotContent::given($after ?? null);
 
     // The asterisk of a required field, the last child of the <label>. A string rather than a
     // conditional in the markup, which Livewire would mark at both ends on every label: when
     // the field turns required or optional, the morph adds or drops a last child and moves no
     // other.
-    $requiredMark = $required
+    $requiredAsterisk = $required && $showsRequiredMark
         ? new \Illuminate\Support\HtmlString('<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>')
         : '';
 @endphp
@@ -62,7 +72,7 @@
     <div data-wk-label-row class="{{ trim('flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
         <span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">
             <label data-wk-field-label {{ $attributes->except('class')->class([$classes]) }}>
-                {{ $slot }}{{ $requiredMark }}
+                {{ $slot }}{{ $requiredAsterisk }}
             </label>
             @wirekitLast(filled($help))
                 @include('wirekit::components.partials.field-help', [
@@ -82,7 +92,7 @@
          same place. A label that is visually hidden shows no button, see the partial. --}}
     <div data-wk-label-row class="{{ trim('flex items-center gap-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
         <label data-wk-field-label {{ $attributes->except('class')->class([$classes]) }}>
-            {{ $slot }}{{ $requiredMark }}
+            {{ $slot }}{{ $requiredAsterisk }}
         </label>
         @include('wirekit::components.partials.field-help', [
             'helpText' => $help,
@@ -99,5 +109,5 @@
          the slot and this span is HTML whitespace, which collapses to a space and lands on
          top of `ms-0.5`, so the gap would be visibly wider than in the components that
          write it dense. --}}
-    {{ $slot }}{{ $requiredMark }}
+    {{ $slot }}{{ $requiredAsterisk }}
 </label>@endif

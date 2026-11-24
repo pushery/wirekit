@@ -87,6 +87,8 @@ import { initialsOf } from '../utils/initials.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { jsonValue, observeServerValue } from '../utils/server-value.js';
 import { timerDelay } from '../utils/timer-delay.js';
+import { measureOnceTheFontsAreIn } from '../utils/measure-once-started.js';
+import { safeObserver } from '../utils/safe-observer.js';
 
 /** The attributes that carry what the server decides; see init(). */
 const EVENTS_ATTRIBUTE = 'data-wk-events';
@@ -177,6 +179,12 @@ export default function wirekitEventCalendar(config = {}) {
         focusedDate: config.date ? dayOr(config.date, new Date()) : new Date(),
         now: new Date(),
         _clock: null,
+
+        // The agenda's time column measured again once it can be: when the root gets a box after
+        // a measure that found none, and once the page's fonts are in. Released in destroy().
+        _agendaReveal: null,
+        _agendaUnmeasured: false,
+        _stopAgendaFontsMeasure: null,
 
         // What an all-day event is called. The agenda row prints it and `eventLabel`
         // puts it in every event's accessible name, so a literal here is a word the
@@ -291,6 +299,31 @@ export default function wirekitEventCalendar(config = {}) {
                 onHide: () => this._stopClock(),
                 onShow: () => this._startClock(),
             });
+
+            /*
+             * The agenda's time column takes the width of its widest label, and a label measures
+             * only while the agenda shows. A calendar that starts inside a tab not yet chosen, a
+             * closed dialog or a closed disclosure measures nothing and falls back to the
+             * stylesheet's width, which a long all-day label runs past; neither the view nor the
+             * days change when it is revealed. So the root's size is watched, and the column is
+             * measured again once the root has a box after a measure that found none. An ordinary
+             * resize measures nothing: the labels do not wrap, so their width does not follow the
+             * root's. A web font that arrives after the measure changes the labels' width, so the
+             * column is measured again once the fonts are in, with the other components that wait
+             * for them.
+             */
+            if (typeof ResizeObserver === 'function' && typeof root?.getBoundingClientRect === 'function') {
+                this._agendaReveal = safeObserver(ResizeObserver, (entries) => {
+                    const box = entries[0]?.contentRect;
+
+                    if (this._agendaUnmeasured && box && box.width > 0) {
+                        this._measureAgendaTime();
+                    }
+                });
+                this._agendaReveal.observe(root);
+            }
+
+            this._stopAgendaFontsMeasure = measureOnceTheFontsAreIn(() => this._measureAgendaTime());
         },
 
         _startClock() {
@@ -320,6 +353,11 @@ export default function wirekitEventCalendar(config = {}) {
             this._stopTipRepair?.();
             this._stopTipRepair = null;
             clearTimeout(this._tipHideTimer);
+
+            this._agendaReveal?.stop();
+            this._agendaReveal = null;
+            this._stopAgendaFontsMeasure?.();
+            this._stopAgendaFontsMeasure = null;
 
             if (this._clock) {
                 clearInterval(this._clock);
@@ -505,6 +543,7 @@ export default function wirekitEventCalendar(config = {}) {
             const labels = Array.from(this.$root.querySelectorAll('[data-agenda-time]'));
             const max = labels.reduce((m, el) => Math.max(m, el.getBoundingClientRect().width), 0);
             if (max > 0) {
+                this._agendaUnmeasured = false;
                 this.$root.style.setProperty('--wk-agenda-time', `${Math.ceil(max)}px`);
             } else if (labels.length > 0 && attempt < 10 && typeof requestAnimationFrame === 'function') {
                 // Labels that exist but measure nothing are not an empty agenda: the panel has
@@ -515,6 +554,9 @@ export default function wirekitEventCalendar(config = {}) {
             } else {
                 // No event rows (marker-only / empty agenda) — fall back to the
                 // stylesheet default rather than pinning a stale or zero width.
+                // Rows that still measure nothing stand in a hidden ancestor: the
+                // root's size watcher in init() measures them once it has a box.
+                this._agendaUnmeasured = labels.length > 0;
                 this.$root.style.removeProperty('--wk-agenda-time');
             }
         },

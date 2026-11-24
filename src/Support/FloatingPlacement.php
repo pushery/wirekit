@@ -9,8 +9,9 @@ namespace Pushery\WireKit\Support;
  *
  * The set Floating UI's `computePosition` accepts, which is what every WireKit overlay hands
  * the value to. One list, so a component that validates its `placement` prop and the page that
- * documents it read the same twelve words. `bottom-start` comes first because a validation
- * failure falls back to the first allowed value, and that is where a field's panel opens.
+ * documents it read the same twelve words. `bottom-start` comes first: it is where a field's
+ * panel opens, and a validation failure that finds no default of the prop's own falls back to
+ * the first allowed value.
  */
 final class FloatingPlacement
 {

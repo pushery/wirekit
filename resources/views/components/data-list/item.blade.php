@@ -123,7 +123,7 @@
     // that spans both columns, a row of its own. In `inline` it is a block above the entry. The
     // other layouts rule the line between every two rows already, so a `total` there adds none.
     $ruleClasses = $emphasis === 'total' && ($isGridPair || $isInline)
-        ? "before:content-[''] before:block before:col-span-full before:my-[var(--space-wk-xs,0.25rem)] before:border-t before:border-[color:var(--color-wk-border)]"
+        ? "before:content-[''] before:block before:col-span-full before:my-[var(--space-wk-xs,0.25rem)] before:border-t-[length:var(--border-wk-width)] before:border-[color:var(--color-wk-border)]"
         : '';
 
     $wrapperStyle = match (true) {

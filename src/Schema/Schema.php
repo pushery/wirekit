@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Schema;
 
 use Pushery\WireKit\Support\SafeUrl;
+use Pushery\WireKit\Support\StrictnessGate;
 
 /**
  * Typed schema.org builders for `<x-wirekit::structured-data>`.
@@ -68,27 +69,195 @@ final class Schema
      * schema.org URL, because that is the shape Google expects and the shape
      * everyone gets wrong.
      *
+     * `priceSpecification` takes the specifications `strikethroughPrice()` and
+     * `unitPrice()` build. Google reads a unit price only from a specification that
+     * holds the price itself, and ignores the specification while the offer names a
+     * price of its own, so where one of them holds the price (it has no `priceType`)
+     * the offer leaves out `price` and `priceCurrency`. Otherwise the price stays on
+     * the offer, and a struck price stands beside it.
+     *
+     * @param  list<array<string, mixed>>  $priceSpecification
      * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
     public static function offer(
-        float|int|string $price,
-        string $priceCurrency,
+        float|int|string|null $price = null,
+        ?string $priceCurrency = null,
         ?string $availability = null,
         ?string $url = null,
         ?string $priceValidUntil = null,
         array $extra = [],
+        array $priceSpecification = [],
     ): array {
+        $specificationHoldsThePrice = array_any(
+            $priceSpecification,
+            static fn (array $specification): bool => ! isset($specification['priceType']) && isset($specification['price']),
+        );
+
         return self::node('Offer', [
             // schema.org takes a price as Number or as Text. It is written as text, so a price
             // passed as a string such as `9.90` keeps its digits exactly, and it carries no
             // currency symbol and no thousands separator, with a full stop for the decimal point.
-            'price' => (string) $price,
-            'priceCurrency' => $priceCurrency,
+            'price' => $price !== null && ! $specificationHoldsThePrice ? self::reportedNumber($price, 'offer', 'price') : null,
+            'priceCurrency' => $specificationHoldsThePrice ? null : $priceCurrency,
+            'priceSpecification' => array_values($priceSpecification),
             'availability' => $availability !== null ? self::availabilityUrl($availability) : null,
             'url' => $url,
             'priceValidUntil' => $priceValidUntil,
         ], $extra);
+    }
+
+    /**
+     * A struck price: the earlier price a sale is measured against, as a
+     * `UnitPriceSpecification` with the `StrikethroughPrice` type. Goes into
+     * `offer(priceSpecification: [...])`.
+     *
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     *
+     * @throws \InvalidArgumentException for a price that is no number of zero or more with a full
+     *                                   stop for the decimal point, such as `12,90`
+     */
+    public static function strikethroughPrice(
+        float|int|string $price,
+        string $priceCurrency,
+        array $extra = [],
+    ): array {
+        return self::node('UnitPriceSpecification', [
+            'priceType' => 'https://schema.org/StrikethroughPrice',
+            'price' => self::priceText($price, 'strikethroughPrice'),
+            'priceCurrency' => $priceCurrency,
+        ], $extra);
+    }
+
+    /**
+     * The price with the unit price it works out to: the price of the variant, the
+     * quantity it holds (`content` in `contentUnit`), and the quantity the unit price
+     * refers to (`reference`, in `referenceUnit`, which defaults to `contentUnit`).
+     * Goes into `offer(priceSpecification: [...])`, where it holds the offer's price.
+     *
+     * A unit is `mg`, `g`, `kg`, `ml`, `cl`, `l`, `cm` or `m`, or its UN/CEFACT code,
+     * and is written as that code, the form Google reads a unit price in. A quantity
+     * with more than two decimals moves to the next smaller unit until it has two or
+     * fewer, as Merchant Center asks: `0.125` kg is written as `125` g.
+     *
+     * The price is a number of zero or more and each quantity a number above zero, each
+     * written with a full stop for the decimal point, as schema.org reads them; a value
+     * in another form, `1,5` among them, is refused rather than read as a number it is not.
+     *
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     *
+     * @throws \InvalidArgumentException for a unit outside that list, and for a price or a quantity in another form
+     */
+    public static function unitPrice(
+        float|int|string $price,
+        string $priceCurrency,
+        float|int|string $content,
+        string $contentUnit,
+        float|int|string $reference = 1,
+        ?string $referenceUnit = null,
+        array $extra = [],
+    ): array {
+        [$contentValue, $contentCode] = self::unitQuantity($content, $contentUnit);
+        [$referenceValue, $referenceCode] = self::unitQuantity($reference, $referenceUnit ?? $contentUnit);
+
+        return self::node('UnitPriceSpecification', [
+            'price' => self::priceText($price, 'unitPrice'),
+            'priceCurrency' => $priceCurrency,
+            'referenceQuantity' => self::node('QuantitativeValue', [
+                'value' => $contentValue,
+                'unitCode' => $contentCode,
+                'valueReference' => self::node('QuantitativeValue', [
+                    'value' => $referenceValue,
+                    'unitCode' => $referenceCode,
+                ]),
+            ]),
+        ], $extra);
+    }
+
+    /**
+     * A number of a builder that is older than the checks of `priceText()`, as text, as it came.
+     * A value that is no number with a full stop for the decimal point, such as `9,90`, goes
+     * through the strictness gate: it throws in a test or on the console, and in a request it is
+     * logged and kept as it was written, so a page in production renders what it rendered.
+     */
+    private static function reportedNumber(float|int|string $value, string $builder, string $key): string
+    {
+        $written = (string) $value;
+
+        if (preg_match('/^-?\d+(?:\.\d+)?$/', trim($written)) === 1) {
+            return $written;
+        }
+
+        return StrictnessGate::reject("Schema::{$builder}()", $key, $written, 'a number with a full stop for the decimal point, such as 9.90', $written);
+    }
+
+    /**
+     * A price as schema.org and Google read it, as text: a number of zero or more with a full
+     * stop for the decimal point and nothing else.
+     *
+     * @throws \InvalidArgumentException for a price in another form
+     */
+    private static function priceText(float|int|string $price, string $builder): string
+    {
+        $written = is_string($price) ? trim($price) : (string) $price;
+
+        if (preg_match('/^\d+(?:\.\d+)?$/', $written) !== 1) {
+            throw new \InvalidArgumentException(sprintf(
+                'Schema::%s() takes a price as a number with a full stop for the decimal point; "%s" is not one.',
+                $builder,
+                $written,
+            ));
+        }
+
+        return $written;
+    }
+
+    /**
+     * A quantity as the value and the UN/CEFACT code a unit price is written in, moved to
+     * the next smaller unit while it has more than two decimals.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function unitQuantity(float|int|string $value, string $unit): array
+    {
+        $codes = ['mg' => 'MGM', 'g' => 'GRM', 'kg' => 'KGM', 'ml' => 'MLT', 'cl' => 'CLT', 'l' => 'LTR', 'cm' => 'CMT', 'm' => 'MTR'];
+        // Each code's next smaller unit, and how many of it one of the larger makes.
+        $smaller = ['KGM' => ['GRM', 1000], 'GRM' => ['MGM', 1000], 'LTR' => ['CLT', 100], 'CLT' => ['MLT', 10], 'MTR' => ['CMT', 100]];
+
+        $code = $codes[strtolower(trim($unit))] ?? strtoupper(trim($unit));
+
+        if (! in_array($code, $codes, true)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Schema::unitPrice() takes a unit of %s or its UN/CEFACT code; "%s" is neither.',
+                implode(', ', array_keys($codes)),
+                $unit,
+            ));
+        }
+
+        // A quantity as schema.org reads a number: digits and a full stop, above zero. A cast
+        // would read `1,5` as 1 and a word as 0, and the unit price would be wrong without a word.
+        $written = is_string($value) ? trim($value) : (string) $value;
+
+        if (preg_match('/^\d+(?:\.\d+)?$/', $written) !== 1 || (float) $written <= 0.0) {
+            throw new \InvalidArgumentException(sprintf(
+                'Schema::unitPrice() takes a quantity as a number above zero with a full stop for the decimal point; "%s" is not one.',
+                $written,
+            ));
+        }
+
+        $number = round((float) $written, 6);
+
+        while (isset($smaller[$code]) && abs(round($number, 2) - $number) > 1e-9) {
+            [$code, $factor] = $smaller[$code];
+            $number = round($number * $factor, 6);
+        }
+
+        // Written as text, as a price is: no exponent, no trailing zeros, a full stop for the point.
+        $text = rtrim(rtrim(number_format($number, 6, '.', ''), '0'), '.');
+
+        return [$text === '-0' ? '0' : $text, $code];
     }
 
     /**
@@ -106,10 +275,10 @@ final class Schema
         array $extra = [],
     ): array {
         return self::node('AggregateRating', [
-            'ratingValue' => (string) $ratingValue,
+            'ratingValue' => self::reportedNumber($ratingValue, 'aggregateRating', 'ratingValue'),
             'reviewCount' => $reviewCount,
-            'bestRating' => (string) $bestRating,
-            'worstRating' => (string) $worstRating,
+            'bestRating' => self::reportedNumber($bestRating, 'aggregateRating', 'bestRating'),
+            'worstRating' => self::reportedNumber($worstRating, 'aggregateRating', 'worstRating'),
         ], $extra);
     }
 
@@ -131,8 +300,8 @@ final class Schema
             'author' => self::node('Person', ['name' => $author]),
             'reviewRating' => $ratingValue !== null
                 ? self::node('Rating', [
-                    'ratingValue' => (string) $ratingValue,
-                    'bestRating' => (string) $bestRating,
+                    'ratingValue' => self::reportedNumber($ratingValue, 'review', 'ratingValue'),
+                    'bestRating' => self::reportedNumber($bestRating, 'review', 'bestRating'),
                 ])
                 : null,
             'reviewBody' => $body,

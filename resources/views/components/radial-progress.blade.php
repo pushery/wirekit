@@ -107,8 +107,11 @@
     ])), $scope);
 
     // Announce the human-readable form when there is one. Without it a screen
-    // reader reads the raw number, which is wrong whenever max is not 100.
-    $announced = $valueText !== null ? \Pushery\WireKit\Support\SlotContent::textOf($valueText) : \Pushery\WireKit\Support\LocalizedNumber::percent(round($percent), 0);
+    // reader reads the raw number, which is wrong whenever max is not 100. The share is
+    // rounded down, as usage-meter writes it, because the thresholds above judge the exact
+    // ratio: 79.6 % under a `warn` of 0.8 is announced as 79 %, not as the 80 % at which the
+    // ring would turn, and 99.5 % is not announced as done.
+    $announced = $valueText !== null ? \Pushery\WireKit\Support\SlotContent::textOf($valueText) : \Pushery\WireKit\Support\LocalizedNumber::percent((float) \Pushery\WireKit\Support\WholePercent::of($numericValue, $numericMax), 0);
 @endphp
 
 {{-- The ring is drawn with a conic-gradient masked into an annulus, driven by one

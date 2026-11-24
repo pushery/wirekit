@@ -29,6 +29,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -52,7 +53,6 @@
 --measure-wk
 --measure-wk-wide
 --opacity-wk-disabled
---opacity-wk-hover
 --padding-wk-x-lg
 --padding-wk-x-md
 --padding-wk-x-sm
@@ -90,6 +90,7 @@
 --transition-wk-duration
 --transition-wk-easing
 --wk-button-square
+--wk-fill-ink
 --wk-fit-floor
 --wk-touch-min
 --z-wk-tooltip
@@ -104,8 +105,10 @@
 -my-[3px]
 -my-[var(--space-wk-xs,0.25rem)]
 -text
+-tooltip
 -variant
 -variants
+-words
 @aware
 @class
 @container/wk-table
@@ -289,6 +292,7 @@ bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-accent-fg)]
@@ -329,6 +333,7 @@ blurs
 board
 body
 bold
+bool
 boolean
 bootstrapped
 border
@@ -356,13 +361,13 @@ border-[var(--color-wk-warning)]
 border-b-2
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
-border-t
+border-e-[var(--color-wk-accent-text)]
 border-t-2
+border-t-[length:var(--border-wk-width)]
 border-t-[var(--color-wk-accent)]
 border-t-[var(--color-wk-border)]
 border-t-[var(--color-wk-danger)]
@@ -391,7 +396,9 @@ browser
 bubble
 bug
 build
+builds
 built
+bundle
 busy
 but
 button
@@ -400,6 +407,7 @@ buttons
 by
 byte-identical
 bytes
+cache
 calibrated
 call
 called
@@ -450,6 +458,7 @@ choose
 chose
 chosen
 chrome
+circle
 claims
 clamp
 clamped
@@ -493,6 +502,7 @@ comment
 comments
 commit
 common
+compact
 compete
 compile
 compiled
@@ -501,6 +511,7 @@ complete
 component
 components
 composer
+composers
 composite-widget
 concern
 condition
@@ -569,15 +580,23 @@ data-wk-busy-spinner
 data-wk-busy-text
 data-wk-button-group
 data-wk-cut-tip
+data-wk-fill
 data-wk-icon-missing
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-sortable-announcer
 data-wk-sortable-reorder
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -585,6 +604,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 date
 dates
 debug
@@ -593,6 +613,7 @@ decided
 decides
 decision
 declaration
+declarations
 declarative
 declared
 declares
@@ -607,6 +628,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deletion
 deliberate
 deliberately
@@ -615,6 +637,7 @@ delivers
 demos
 dense
 depend
+depends
 depth
 derived
 descendant
@@ -634,6 +657,7 @@ dialect
 dialog
 difference
 different
+differs
 digit
 dim
 direction
@@ -673,6 +697,7 @@ drawn
 draws
 drift
 driven
+drives
 drop
 dropdown
 dropdown/item.blade.php
@@ -777,6 +802,7 @@ filled
 filled-background
 fills
 filter
+find
 finds
 finger
 finish
@@ -812,6 +838,7 @@ floor
 flow
 flows
 flush
+fn
 focus
 focus-visible:outline-[color:var(--color-wk-ring)]
 focus-visible:outline-[length:var(--ring-wk-width)]
@@ -949,6 +976,7 @@ height
 help
 helper
 here
+hero
 heroicon-m-inbox
 hidden
 hide
@@ -971,13 +999,14 @@ hook
 horizontal
 host
 hover
+hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -985,8 +1014,6 @@ hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
-hover:opacity-100
-hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-text)]
 hover:underline
 hoverable
@@ -1054,6 +1081,7 @@ introduced
 introduces
 introduction
 invalid
+inverse
 inverted
 invisible
 invocation
@@ -1100,6 +1128,7 @@ landmark
 landmark-unique
 lands
 language
+larger
 largest
 last
 last:border-b-0
@@ -1168,6 +1197,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 log
 logger
 login
@@ -1274,6 +1304,7 @@ mirrors
 mismatch
 missing
 missing-accessible-name
+mix
 mixed
 modal
 mode
@@ -1339,6 +1370,7 @@ nothing
 notice
 now
 nowhere
+nowrap
 null
 number
 numbers
@@ -1363,13 +1395,11 @@ onmouseover
 onto
 opacity-0
 opacity-100
-opacity-70
 opacity-[var(--opacity-wk-disabled)]
 open
 opened
 opening
 opens
-operable
 operation
 opportunity
 opposite
@@ -1377,6 +1407,7 @@ opt-out
 opted
 optimism
 optimistic-ui
+option
 or
 order
 ordinary
@@ -1540,6 +1571,7 @@ qualified
 query
 question
 quietly
+race
 racing
 radius
 raises
@@ -1628,6 +1660,7 @@ return
 returned
 returnedToColumn
 returns
+ride
 rides
 right
 ring
@@ -1678,7 +1711,9 @@ scrolling
 scrolls
 seam
 seams
+search
 second
+section
 see
 seem
 sees
@@ -1708,6 +1743,7 @@ shapes
 share
 shared
 shares
+sheet
 shield-check
 shipped
 ships
@@ -1800,10 +1836,12 @@ stacking-context
 stacks
 stadium
 stand
+stand-in
 standing
 stands
 start
 state
+statement
 states
 static
 status
@@ -1874,6 +1912,7 @@ tall
 taller
 tap
 target
+td
 teaches
 technology
 teleport
@@ -1886,7 +1925,6 @@ test
 text
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
@@ -1896,10 +1934,13 @@ text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
-text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
@@ -1927,6 +1968,7 @@ there
 therefore
 these
 they
+thing
 third
 this
 those
@@ -1960,6 +2002,8 @@ too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1978,7 +2022,6 @@ trailingIcon
 transformed
 transition
 transition-colors
-transition-opacity
 transitively
 translated
 transparent
@@ -2014,6 +2057,7 @@ unconditional
 unconditionally
 under
 underline
+underline-offset-2
 underline-offset-4
 unique
 unknown
@@ -2080,6 +2124,7 @@ w-[var(--size-wk-md-compact)]
 w-[var(--size-wk-sm)]
 w-max
 wait
+waits
 walk
 wants
 warn

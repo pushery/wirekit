@@ -53,10 +53,13 @@
     'min' => null,
     'max' => null,
     'size' => config('wirekit.components.time-picker.size', 'md'),
+    // Whether the dialog waits out of the page until it first opens, in popover mode. The default
+    // comes from the configuration (`components.time-picker.lazy`).
+    'lazy' => config('wirekit.components.time-picker.lazy', false),
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -91,7 +94,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -197,7 +206,7 @@
     // Each state names its own focus-ring color and the base list names none: two ring colors on
     // one element are decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = $hasError
-        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
+        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]'
         // Hover belongs to the resting state only, so an error border keeps its color under
         // the pointer.
         : 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]';
@@ -269,6 +278,15 @@
     // find the layer's names: the caller's `x-model` reaches it as `x-wk-model`, read above the
     // layer's element, which marks the boundary (CallerModel::onField()).
     $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($attributes);
+    // A lazy picker holds the teleports of its dialog, the backdrop and the panel, in one template of its
+    // own among the children of its root, which the browser keeps out of the page until the picker
+    // builds it as the dialog first opens (utils/lazy-panel.js, openPanel() in utils/picker-dialog.js).
+    // The trigger names the panel with `aria-controls` once it is built, through a binding a Livewire
+    // update keeps. The wrapper is an echo, since a conditional around a tag's two ends would leave
+    // Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.time-picker.lazy', false)), 'time-picker', 'lazy') && $popover;
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
     $attributes = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($attributes) : $attributes;
 @endphp
 
@@ -277,13 +295,18 @@
      renders as it always has without `popover`. --}}
 @include('wirekit::components.partials.time-picker-popover')
 @else
-<div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <input
@@ -322,7 +345,7 @@
         // built right before the echo, so it runs on the path and in the scope the echo does.
         $messagePart = $hasError && $errorMessage
             ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
-            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : ($inAlignedRow ? new \Illuminate\Support\HtmlString('<span data-wk-field-part="message" aria-hidden="true"></span>') : ''));
     @endphp
     {{ $messagePart }}
 </div>

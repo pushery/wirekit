@@ -37,6 +37,10 @@
     // Menubar item — same visual pattern as dropdown items with optional shortcut badge.
     $classes = WireKit::resolveClasses('menubar.item', 'base', implode(' ', [
         'flex items-center justify-between gap-x-[var(--gap-wk-md)] w-full',
+        // The label is a flex item of the row, and a flex item is never narrower than its longest
+        // word: `anywhere` lets an email address or a URL break inside the row where the panel's
+        // cap leaves less room than that word, which `break-word` on the panel does not.
+        '[overflow-wrap:anywhere]',
         'p-[var(--padding-wk-x-sm)]',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -105,7 +109,7 @@
         $shortcutKeys = \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut);
     @endphp
     @if($shortcutKeys !== [])
-        <span class="flex items-center gap-[var(--gap-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
+        <span class="flex shrink-0 items-center gap-[var(--gap-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
             @foreach($shortcutKeys as $key)
                 {{-- The component, not a copy of it — see command-palette/item for what the
                      hand-rolled chip was dropping. --}}

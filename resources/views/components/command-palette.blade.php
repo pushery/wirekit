@@ -41,6 +41,9 @@
     // a name. Empty keeps the translated default.
     'label' => null,
     'scope' => null,
+    // Whether the palette waits out of the page until it first opens. The default comes from the
+    // configuration (`components.command-palette.lazy`).
+    'lazy' => config('wirekit.components.command-palette.lazy', false),
 ])
 
 @php
@@ -106,7 +109,7 @@
 
     $inputClasses = WireKit::resolveClasses('command-palette', 'input', implode(' ', [
         'w-full',
-        'border-0 border-b border-[var(--color-wk-border)]',
+        'border-0 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'bg-transparent',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-y-md)]',
@@ -139,7 +142,7 @@
         'gap-[var(--gap-wk-xs)]',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-y-sm)]',
-        'border-b border-[var(--color-wk-border)]',
+        'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
     ]), $scope);
 
     // The row above the field while a page is open: Back, and the page's heading.
@@ -191,9 +194,17 @@
     // written. Its root generates no box, which a flex or grid container would otherwise count
     // as an empty item with a gap of its own beside it.
     $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
+    // A lazy palette holds its overlay, teleported or not, in a template of its own among the
+    // children of its root, which the browser keeps out of the page until the factory builds it as
+    // the palette first opens (utils/lazy-panel.js). The wrapper is an echo, since a conditional
+    // around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.command-palette.lazy', false)), 'command-palette', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <div
+    @if($lazy) data-wk-lazy-panel-host @endif
     x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, namedOnly: {{ $namedOnly ? 'true' : 'false' }}, takesHotkey: {{ $takesHotkey ? 'true' : 'false' }}, hotkeyArea: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkeyArea) }}, label: {{ \Pushery\WireKit\Support\AlpinePayload::string($dialogLabel) }}, placeholder: {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($placeholder)) }}, entryPhrases: {{ \Pushery\WireKit\Support\AlpinePayload::from($entryPhrases) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::string($pluralLocale) }}, remote: {{ \Pushery\WireKit\Support\SlotContent::given($loading ?? null) ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
@@ -212,6 +223,7 @@
          `.self`, so only a click on the container itself closes the palette;
          a click inside the panel is not stopped and reaches the document,
          where a listener the page delegates hears it. --}}
+    {{ $lazyPanelOpen }}
     @if($teleport)
     <template x-teleport="#wk-overlay-root">
     @endif
@@ -256,7 +268,7 @@
                          heading. Before the field in the tab order, so Shift+Tab reaches Back; the
                          field keeps the list keys, and Backspace in it goes back as well. --}}
                     <div x-show="atPage" x-cloak class="{{ $pageBarClasses }}">
-                        <x-wirekit::button intent="neutral" surface="ghost" size="sm" x-on:click="goBack()">
+                        <x-wirekit::button intent="neutral" size="sm" x-on:click="goBack()">
                             <x-slot:iconLeft><span class="inline-flex rtl:-scale-x-100" aria-hidden="true"><x-wirekit::icon name="chevron-left" size="sm" /></span></x-slot:iconLeft>
                             {{ __('wirekit::Back') }}
                         </x-wirekit::button>
@@ -406,7 +418,7 @@
 
                     {{-- Optional footer slot --}}
                     @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
-                        <div class="border-t border-[var(--color-wk-border)] p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+                        <div class="border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                             {{ $footer }}
                         </div>
                     @endif
@@ -416,4 +428,5 @@
     @if($teleport)
     </template>
     @endif
+    {{ $lazyPanelClose }}
 </div>

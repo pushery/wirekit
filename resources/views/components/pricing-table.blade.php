@@ -60,6 +60,19 @@
     // A caller's `wire:model` binds the billing interval, which only a table with `intervals` has.
     if ($intervalMap === null) {
         \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('pricing-table', $attributes->getAttributes(), 'without `intervals`');
+
+        // A tier's `prices` need the same: they switch with the interval only a table with
+        // `intervals` holds. The tiers render before this view and cannot tell which table
+        // they land in, since a slot a caller's own component passes on renders outside it,
+        // so the table finds them here, by the marker each of their amounts carries.
+        if (str_contains((string) $slot, 'data-wk-pricing-interval="')) {
+            \Pushery\WireKit\Support\StrictnessGate::warnSlotPartInAModeWithoutOne(
+                'pricing-table',
+                'a `pricing-tier` with `prices` switches its amounts',
+                'with `intervals`',
+                'Here it shows its first amount. Give the table `intervals`, or give the tier one `price`.'
+            );
+        }
     }
 
     // What the table is priced at right now. `interval` is the server's answer and
@@ -169,10 +182,16 @@
                      `$serverInterval`, the same value the factory is seeded with. --}}
                 aria-pressed="{{ (string) $intervalKey === $serverInterval ? 'true' : 'false' }}"
                 :aria-pressed="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }} ? 'true' : 'false'"
-                :class="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}
-                    ? {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses) }}
-                    : {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses) }}"
-                class="wk-state-button wk-touch-row cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                {{-- The classes of the state follow the same rule: the server writes them for
+                     `$serverInterval`, and the binding names both sides as an object, so Alpine
+                     takes the classes of the side that is false off, the server's included; a
+                     string only takes off its own. Two equal sides are one look and need no binding.
+                     Alpine takes a class off by its name, so the binding names them as the class
+                     attribute writes them, under their short names while compact classes are on. --}}
+                @if($intervalSelectedClasses !== $intervalUnselectedClasses)
+                    :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($intervalSelectedClasses)) }}: interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($intervalUnselectedClasses)) }}: interval !== {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }} }"
+                @endif
+                class="wk-state-button wk-touch-row cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] {{ (string) $intervalKey === $serverInterval ? $intervalSelectedClasses : $intervalUnselectedClasses }}"
                 data-wk-pricing-interval-toggle="{{ $intervalKey }}"
             >{{ $intervalLabelText }}</button>
         @endforeach

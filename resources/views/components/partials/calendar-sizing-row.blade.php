@@ -23,10 +23,10 @@
 <tfoot aria-hidden="true">
     <tr>
         @if($weekNumbers ?? false)
-            <td data-wk-prose-skip class="p-0"></td>
+            <td class="p-0"></td>
         @endif
         @for ($column = 0; $column < 7; $column++)
-            <td data-wk-prose-skip class="p-0"><span class="block h-0 overflow-hidden"><span class="inline-block {{ $sizingHalf }}"></span><span class="inline-block {{ $sizingHalf }}"></span></span></td>
+            <td class="p-0"><span class="block h-0 overflow-hidden"><span class="inline-block {{ $sizingHalf }}"></span><span class="inline-block {{ $sizingHalf }}"></span></span></td>
         @endfor
     </tr>
 </tfoot>

@@ -1,5 +1,6 @@
 --color-wk-accent
 --color-wk-accent-fg
+--color-wk-accent-text
 --color-wk-bg
 --radius-wk-md
 --ring-wk-offset
@@ -71,7 +72,7 @@ focus-visible:outline-hidden
 focus-visible:px-[var(--space-wk-md,1rem)]
 focus-visible:py-[var(--space-wk-sm,0.5rem)]
 focus-visible:ring-[length:var(--ring-wk-width)]
-focus-visible:ring-[var(--color-wk-accent)]
+focus-visible:ring-[var(--color-wk-accent-text)]
 focus-visible:ring-offset-[length:var(--ring-wk-offset)]
 focus-visible:ring-offset-[var(--color-wk-bg)]
 focus-visible:rounded-[var(--radius-wk-md)]

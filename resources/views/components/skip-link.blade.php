@@ -54,7 +54,7 @@
         'focus-visible:shadow-[var(--shadow-wk-lg)]',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
-        'focus-visible:ring-[var(--color-wk-accent)]',
+        'focus-visible:ring-[var(--color-wk-accent-text)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-offset-[var(--color-wk-bg)]',
         'focus-visible:font-medium',

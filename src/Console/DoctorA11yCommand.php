@@ -510,7 +510,7 @@ class DoctorA11yCommand extends Command
         $attributes = '(?:"[^"]*"|\'[^\']*\'|\{\{.*?\}\}|[^\'">{]|\{(?!\{))*';
         $pattern = '/<x-wirekit::button(?![\w.-])(?P<attrs>'.$attributes.')>\s*(?P<inner><x-wirekit::icon(?![\w.-])'.$attributes.'>|<svg[^>]*>.*?<\/svg>)\s*<\/x-wirekit::button>/su';
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return [];
+            return [$this->unscanned($file, 'an icon-only button without a name')];
         }
 
         foreach ($matches[0] as $i => $match) {
@@ -543,7 +543,7 @@ class DoctorA11yCommand extends Command
         $findings = [];
         $pattern = '/<[a-z][\w-]*(?P<attrs>[^>]*\brole\s*=\s*"(?P<role>(?:alert)?dialog)"[^>]*)>/u';
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return [];
+            return [$this->unscanned($file, 'a dialog without a name')];
         }
 
         foreach ($matches[0] as $i => $match) {
@@ -578,7 +578,7 @@ class DoctorA11yCommand extends Command
         $findings = [];
         $pattern = '/<[a-z][\w-]*(?P<attrs>[^>]*\brole\s*=\s*"img"[^>]*)>/u';
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return [];
+            return [$this->unscanned($file, 'an image role without a name')];
         }
 
         foreach ($matches[0] as $i => $match) {
@@ -596,6 +596,26 @@ class DoctorA11yCommand extends Command
         }
 
         return $findings;
+    }
+
+    /**
+     * The finding for a file a rule's pattern could not run over.
+     *
+     * The regex engine gives up on text that is not valid UTF-8 and on a run long enough to
+     * exhaust its stack. Answered with no findings, such a file would count as clean, and an
+     * audit that reports clean over what it never read is worse than none. A warning, because the
+     * file holds no finding of its own yet; `--fail-on=warning` gates on it.
+     *
+     * @return array{file: string, line: int, severity: string, message: string}
+     */
+    private function unscanned(string $file, string $sought): array
+    {
+        return [
+            'file' => $file,
+            'line' => 1,
+            'severity' => 'warning',
+            'message' => sprintf('Could not be scanned for %s: %s. The rule saw nothing in this file, which is not a pass.', $sought, preg_last_error_msg()),
+        ];
     }
 
     /**

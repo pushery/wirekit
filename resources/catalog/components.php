@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 return [
     // ── Form ──
+    'captcha' => ['category' => 'Form', 'description' => 'A Cloudflare Turnstile or ALTCHA check whose token reaches a Livewire property, emptied again when it expires'],
     'checkbox' => ['category' => 'Form', 'description' => 'Checkbox input with label, hint, and error support'],
     'color-picker' => ['category' => 'Form', 'description' => 'Native color picker with preview swatch'],
     'combobox' => ['category' => 'Form', 'description' => 'Autocomplete select with search filtering'],
@@ -43,6 +44,7 @@ return [
     'time-picker' => ['category' => 'Form', 'description' => 'Time selection input'],
     'toggle' => ['category' => 'Form', 'description' => 'Toggle switch with label and hint'],
     'translatable-input' => ['category' => 'Form', 'description' => 'A value in several languages: the primary field, a chip with its state for each further language, one language at a time or all of them in columns'],
+    'external-link-question' => ['category' => 'Display', 'description' => 'Asks before a link takes the reader to another site: the host, the whole address, and a choice not to be warned about that host again; trusted hosts never ask'],
     'unsaved-hint' => ['category' => 'Display', 'description' => 'Says beside the save button that a form holds values its server does not have yet; x-wk-unsaved frames each unsaved field and can ask before leaving'],
     'toggle-button' => ['category' => 'Display', 'description' => 'Single two-state button that stays pressed (aria-pressed) — the bold/italic/mute shape'],
     'tool-call' => ['category' => 'Display', 'description' => 'One tool invocation an assistant made — name, status, arguments as JSON, and the result behind a disclosure'],

@@ -8,8 +8,9 @@
      * remaining columns.
      *
      * It is a slot on this component rather than a sibling `table.details`. A sibling
-     * component reads better at the call site and cannot work: Tailwind's `divide-y` compiles
-     * to `:where(.divide-y > :not(:last-child))` with `border-bottom-width`, so the line
+     * component reads better at the call site and cannot work: the body's divider on the block
+     * axis compiles to a `:where()` over every child but the last, with `border-bottom-width`,
+     * so the line
      * between a record and its details belongs to the record row, and a sibling cannot reach
      * backwards to switch it off -- CSS has no previous-sibling combinator. One component
      * emitting both rows owns the border, the `:last-child` arithmetic and the stripe.
@@ -61,25 +62,27 @@
      * The details row is the inverse of a column's `hide-below`: a column disappears below a
      * size, this appears there. Written out per size because Tailwind reads a literal class
      * name and never an assembled one -- the same reason `table/td.blade.php` spells its
-     * ladder out.
+     * ladder out. Every `hidden` comes with `--wk-table-row-display: none` under the same
+     * variant: a stacked table gives each row its display from the unlayered stylesheet, which
+     * outranks a utility, and reads that property first.
      */
     $detailsHiddenFromContainer = match ($detailsBelowContainer) {
-        'sm' => '@sm/wk-table:hidden',
-        'md' => '@md/wk-table:hidden',
-        'lg' => '@lg/wk-table:hidden',
-        'xl' => '@xl/wk-table:hidden',
-        '2xl' => '@2xl/wk-table:hidden',
-        '3xl' => '@3xl/wk-table:hidden',
-        '4xl' => '@4xl/wk-table:hidden',
-        '5xl' => '@5xl/wk-table:hidden',
+        'sm' => '@sm/wk-table:hidden @sm/wk-table:[--wk-table-row-display:none]',
+        'md' => '@md/wk-table:hidden @md/wk-table:[--wk-table-row-display:none]',
+        'lg' => '@lg/wk-table:hidden @lg/wk-table:[--wk-table-row-display:none]',
+        'xl' => '@xl/wk-table:hidden @xl/wk-table:[--wk-table-row-display:none]',
+        '2xl' => '@2xl/wk-table:hidden @2xl/wk-table:[--wk-table-row-display:none]',
+        '3xl' => '@3xl/wk-table:hidden @3xl/wk-table:[--wk-table-row-display:none]',
+        '4xl' => '@4xl/wk-table:hidden @4xl/wk-table:[--wk-table-row-display:none]',
+        '5xl' => '@5xl/wk-table:hidden @5xl/wk-table:[--wk-table-row-display:none]',
         default => '',
     };
     $detailsHiddenFromViewport = match ($detailsBelow) {
-        'sm' => 'sm:hidden',
-        'md' => 'md:hidden',
-        'lg' => 'lg:hidden',
-        'xl' => 'xl:hidden',
-        '2xl' => '2xl:hidden',
+        'sm' => 'sm:hidden sm:[--wk-table-row-display:none]',
+        'md' => 'md:hidden md:[--wk-table-row-display:none]',
+        'lg' => 'lg:hidden lg:[--wk-table-row-display:none]',
+        'xl' => 'xl:hidden xl:[--wk-table-row-display:none]',
+        '2xl' => '2xl:hidden 2xl:[--wk-table-row-display:none]',
         default => '',
     };
     $detailsHiddenFrom = trim($detailsHiddenFromContainer.' '.$detailsHiddenFromViewport);
@@ -88,8 +91,8 @@
      * The two border corrections a details row needs, emitted here so no call site writes them.
      *
      * 1. While the details row is visible it continues its record, so the line between the two
-     *    has to go -- and that line is the record's own `border-bottom` from `divide-y`.
-     * 2. While it is hidden, `divide-y`'s `:not(:last-child)` still counts it: a `display: none`
+     *    has to go -- and that line is the record's own `border-bottom` from the body's divider.
+     * 2. While it is hidden, the divider's `:not(:last-child)` still counts it: a `display: none`
      *    row is a child like any other, so the last record is `:nth-last-child(2)` and keeps a
      *    bottom border with nothing under it. `nth-last-2` is exactly that row.
      *
@@ -169,7 +172,6 @@
         {{-- The marker is what `table`'s debug check reads to tell this cell from a raw `<td>`.
              It follows `data-wk-prose-skip`, which prose reads only as the first attribute. --}}
         <td
-            data-wk-prose-skip
             data-wk-table-details-cell
             @if($detailsColspan !== null) colspan="{{ $detailsColspan }}" @endif
             @if(filled($detailsFor)) headers="{{ $detailsFor }}" @endif

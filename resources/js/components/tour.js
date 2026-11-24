@@ -9,9 +9,12 @@
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
-import { holdPageInert, inOverlayRoot, releasePageInert } from '../utils/overlay.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
+import { controlThatSent, holdPageInert, inOverlayRoot, openerOf, releasePageInert } from '../utils/overlay.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * @param {Object} config - Tour configuration from Blade
  * @param {string} config.name - Unique tour identifier
@@ -37,8 +40,26 @@ export default function wirekitTour(config = {}) {
 
         init() {
             // Listen for programmatic start — store reference for cleanup
-            this._startHandler = () => this.start();
+            this._startHandler = (event) => this.start(controlThatSent(event));
             window.addEventListener(`wirekit-tour-start-${this._name}`, this._startHandler);
+
+            // A render of the Livewire component around a lazy tour must neither remove the overlay it
+            // built nor keep an overlay the server no longer draws. A start by markup writing `active`
+            // still finds its overlay: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'active', (active) => {
+                    if (active) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the overlay of a lazy tour, its steps included, as the tour first starts. A tour that
+         * is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
         },
 
         /**
@@ -63,8 +84,21 @@ export default function wirekitTour(config = {}) {
 
         /**
          * Start the tour at step 0.
+         *
+         * The element focus goes back to when the tour ends is taken here, from what started it:
+         * the control a `$dispatch` was sent from, which WebKit leaves unfocused after a click, or
+         * else the element that holds the focus. A tour that is already running keeps its own.
+         *
+         * @param {HTMLElement|null} [from] - the control that started the tour, where one did
          */
-        start() {
+        start(from = null) {
+            if (! this.active) {
+                this._opener = openerOf(from);
+            }
+
+            // A lazy overlay is built here, before the tour shows and the tick below counts its steps.
+            this.preparePanel();
+
             this.active = true;
             this.currentStep = 0;
 
@@ -284,9 +318,10 @@ export default function wirekitTour(config = {}) {
             const stepEl = overlay.querySelector(`[data-wk-tour-step="${this.currentStep}"]`);
             if (!stepEl) return;
 
-            // Captured on the first step only. From the second step onward the
-            // focused element is the previous panel, which is about to be hidden,
-            // so re-reading it would record a destination that cannot take focus.
+            // `start()` takes the opener; this is for a tour that came without one. Read before
+            // the first step only: from the second step onward the focused element is the
+            // previous panel, which is about to be hidden, so re-reading it would record a
+            // destination that cannot take focus.
             if (!this._opener) {
                 this._opener = document.activeElement;
             }

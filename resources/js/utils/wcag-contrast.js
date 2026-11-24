@@ -163,12 +163,36 @@ function parseMixOperand(operand) {
 }
 
 /**
+ * An HSL color as gamma-encoded sRGB channels in 0..1, by the conversion of CSS Color 4, as the
+ * PHP side computes it. The hue wraps at 360 degrees; saturation and lightness are clamped to 0..1.
+ *
+ * @param {number} hue
+ * @param {number} saturation
+ * @param {number} lightness
+ * @returns {[number, number, number]}
+ */
+function hslToSrgb(hue, saturation, lightness) {
+    const h = hue % 360;
+    const s = clamp01(saturation);
+    const l = clamp01(lightness);
+    const amount = s * Math.min(l, 1 - l);
+    const channel = (offset) => {
+        const k = (offset + h / 30) % 12;
+
+        return l - amount * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    };
+
+    return [channel(0), channel(8), channel(4)];
+}
+
+/**
  * Parse a CSS color string into linear sRGB plus alpha: [r, g, b, a], each 0..1.
  * Null when the format, or its alpha, is unsupported.
  *
  * Reads #rgb, #rgba, #rrggbb and #rrggbbaa; oklch() and oklab() with an optional `/ alpha`;
- * color(srgb …); rgb() and rgba() in both the comma and the slash form; the `transparent`
- * keyword; and color-mix(in srgb, …), whose operands may themselves be translucent.
+ * color(srgb …); rgb() and rgba() in both the comma and the slash form; hsl() and hsla() in the
+ * forms the color picker writes; the `transparent` keyword; and color-mix(in srgb, …), whose
+ * operands may themselves be translucent.
  *
  * An alpha this cannot read makes the whole color null. Taken for opaque it would be the
  * overestimate this parser exists to end.
@@ -303,9 +327,19 @@ export function parseToLinearRgba(color) {
     }
 
     // rgb() / rgba() — what getComputedStyle returns, so a control's live border or background
-    // read back from the DOM is auditable. Both the legacy comma form and the modern slash form.
-    const rgb = /^rgba?\(\s*([\d.]+%?)\s*[,\s]\s*([\d.]+%?)\s*[,\s]\s*([\d.]+%?)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i.exec(value);
+    // read back from the DOM is auditable. Both the legacy comma form and the modern slash form,
+    // and no mix of them, which CSS does not read either.
+    const commaForm = /^rgba?\(\s*([\d.]+%?)\s*,\s*([\d.]+%?)\s*,\s*([\d.]+%?)\s*(?:,\s*([\d.]+%?)\s*)?\)$/i.exec(value);
+    const rgb = commaForm ?? /^rgba?\(\s*([\d.]+%?)\s+([\d.]+%?)\s+([\d.]+%?)\s*(?:\/\s*([\d.]+%?)\s*)?\)$/i.exec(value);
     if (rgb !== null) {
+        // Either form takes three numbers or three percentages, and no mix of them. CSS Color 4
+        // lets the space form mix them, but Chrome before 122 and Safari before 18 drop such a
+        // declaration, and both are inside the browsers the kit supports.
+        const percentages = [rgb[1], rgb[2], rgb[3]].filter((part) => part.endsWith('%')).length;
+        if (percentages !== 0 && percentages !== 3) {
+            return null;
+        }
+
         const alpha = rgb[4] === undefined ? 1 : parseAlpha(rgb[4]);
         if (alpha === null) {
             return null;
@@ -319,6 +353,23 @@ export function parseToLinearRgba(color) {
             srgbToLinear(channel(rgb[3])),
             alpha,
         ];
+    }
+
+    // hsl() / hsla(), in the forms the color picker writes and `CssColor` reads: the hue as a
+    // number or in `deg`, saturation and lightness in percent, in the two forms of rgb(), with
+    // commas and an alpha after a comma or with spaces and an alpha after a slash. Another angle
+    // unit, such as `turn`, is no color here either.
+    const hsl = /^hsla?\(\s*([\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*(?:,\s*([\d.]+%?)\s*)?\)$/i.exec(value)
+        ?? /^hsla?\(\s*([\d.]+)(?:deg)?\s+([\d.]+)%\s+([\d.]+)%\s*(?:\/\s*([\d.]+%?)\s*)?\)$/i.exec(value);
+    if (hsl !== null) {
+        const alpha = hsl[4] === undefined ? 1 : parseAlpha(hsl[4]);
+        if (alpha === null) {
+            return null;
+        }
+
+        const [r, g, b] = hslToSrgb(leadingFloat(hsl[1]), leadingFloat(hsl[2]) / 100, leadingFloat(hsl[3]) / 100);
+
+        return [srgbToLinear(r), srgbToLinear(g), srgbToLinear(b), alpha];
     }
 
     return null;

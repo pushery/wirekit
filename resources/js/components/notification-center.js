@@ -39,12 +39,16 @@ import { pluralize } from '../utils/plural.js';
 import { isComposing } from '../utils/ime.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
 import { safeHref } from '../utils/safe-href.js';
 import { outOfReachBeside } from '../utils/teleport.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { jsonValue, observeServerValue } from '../utils/server-value.js';
 import { pressedTrigger } from '../utils/trigger-press.js';
+import { isNamedOverlayOpen } from '../utils/overlay.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /** The attribute that carries the notifications; see init(). */
 const ITEMS_ATTRIBUTE = 'data-wk-items';
 
@@ -169,8 +173,14 @@ export default function wirekitNotificationCenter(config = {}) {
         // The observer that follows the server's notifications; see init(). Disconnected in
         // destroy().
         _stopItemsSync: null,
+        // The name of the question before Delete read, read from the root in init(); empty while
+        // the panel deletes without asking.
+        _deleteReadQuestion: '',
 
         init() {
+            // The name of the question before Delete read, when the panel asks one, read here on
+            // the root: closeOutside() runs from the teleported panel.
+            this._deleteReadQuestion = this.$el?.dataset?.wkDeleteReadQuestion || '';
             // The notifications reach this component on an attribute of the root rather than in
             // `x-data`, so that attribute renders the same on every update. A morph that changed
             // it would have Alpine reset the component to the new expression and initialize it
@@ -223,8 +233,20 @@ export default function wirekitNotificationCenter(config = {}) {
                 this._onResize = () => { if (this.isOpen) this.close(); };
                 window.addEventListener('resize', this._onResize, { passive: true });
             }
+            // A render of the Livewire component around a lazy center must neither remove the panel
+            // it built nor keep a panel the server no longer draws. An opening that does not come
+            // through toggle(), markup writing `isOpen` or the deprecated `open` alias, still finds a
+            // panel: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+
             // Demos / inline embeds can start open — anchor the teleported panel
-            // once it's in the DOM.
+            // once it's in the DOM. A lazy center that starts open builds its panel here.
+            if (this.isOpen) this.preparePanel();
             if (this.isOpen) this.$nextTick(() => this._anchor());
 
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
@@ -287,12 +309,28 @@ export default function wirekitNotificationCenter(config = {}) {
         },
 
         // ── Panel control ────────────────────────────────────────────────
+        /**
+         * Build the panel of a lazy center before it opens, on the pointer or the focus on the
+         * trigger, so its rows have started by the time the reader presses it. A center that is
+         * not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
+        },
         toggle() {
+            // Built before `isOpen` turns true, so a lazy panel starts hidden and opens with its
+            // transition.
+            if (! this.isOpen) this.preparePanel();
             this.isOpen = !this.isOpen;
             if (this.isOpen) {
                 this._anchorAt = anchorSnapshot(this.$refs.bell);
                 this.$nextTick(async () => {
                     await this._anchor();
+                    // Not when the panel closed while it was opening. Alpine holds this callback while
+                    // the panel's transition starts, and an Escape in that frame closes the panel, hands
+                    // the focus to the bell and lets the callback run: a focus moved into the leaving
+                    // panel would drop to the page as it hides.
+                    if (! this.isOpen) return;
                     // Not when the reader already moved into the panel while it was being positioned.
                     // Every focus in the panel keeps the page still: the panel is fixed to the bell, so a
                     // scroll the browser makes to show a focused element only moves the bell, and a
@@ -327,8 +365,21 @@ export default function wirekitNotificationCenter(config = {}) {
          * The panel's press outside. The panel is teleported out of the root, so `click.outside`
          * counts the trigger as outside, and the click that opens the panel could close it in
          * the same click; the trigger's own click toggles it (utils/trigger-press.js).
+         *
+         * A press in an alert dialog, or any press while the panel's question before Delete read
+         * is open, answers that dialog and leaves the panel open: the dialog stands in the overlay
+         * root, outside the panel, and the panel holds the button its Cancel gives the focus back
+         * to and the list its yes gives it to. The question can close before the press reaches the
+         * document, so the press is also judged by where it landed.
          */
         closeOutside(event) {
+            const question = this._deleteReadQuestion;
+            const inADialog = typeof event?.target?.closest === 'function' && event.target.closest('[role="alertdialog"]') !== null;
+
+            if (inADialog || (question && isNamedOverlayOpen('wirekit-alert-dialog-show', question))) {
+                return;
+            }
+
             if (! pressedTrigger(event, this, 'bell')) {
                 this.close();
             }

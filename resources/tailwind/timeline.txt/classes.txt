@@ -58,6 +58,7 @@ aria-labelledby
 array
 arrives
 as
+asks
 at
 attempted
 attribute
@@ -140,6 +141,7 @@ context
 continuation
 continuous
 conveys
+correctly
 could
 countdown
 covered
@@ -209,7 +211,6 @@ event
 events
 every
 everything
-exactly
 exhausting
 exist
 explicit
@@ -253,6 +254,7 @@ global
 glyph
 goes
 grammar
+green
 guarantees
 h-12
 h-3
@@ -416,7 +418,6 @@ path
 per
 per-set
 perfectly
-permit
 personalization
 phrase
 pipeline
@@ -450,7 +451,6 @@ reads
 real
 reapply
 reason
-recommends
 red
 redundancy
 registered
@@ -505,6 +505,7 @@ shows
 shrink
 shrink-0
 sibling
+sighted
 signals
 single
 site
@@ -514,7 +515,6 @@ skip
 slot
 sm
 so
-sole
 solid
 somebody
 source

@@ -249,6 +249,10 @@
         aria-valuemax="100"
         aria-valuenow="0"
         x-bind:aria-valuenow="roundedProgress()"
+        {{-- Out of the accessibility tree at zero from the first render, as the script starts
+             it: on a page that runs no script the bar never moves, and a progress stuck at
+             zero would only be noise to a reader. --}}
+        @unless($attributes->has('aria-hidden')) aria-hidden="true" @endunless
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->merge(['style' => $dotStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, 'wk-reading-progress--dot', $dotStyleClasses => $dotStyleClasses !== '']))->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- Inline-style the positioning + sizing so the dot pins to the
@@ -265,11 +269,15 @@
         <svg viewBox="0 0 36 36" class="block h-full w-full -rotate-90" aria-hidden="true">
             {{-- background ring --}}
             <circle cx="18" cy="18" r="16"
+                    class="wk-reading-progress__track"
                     fill="none"
                     stroke="var(--color-wk-border)"
                     stroke-width="2.5" />
-            {{-- progress ring — stroke-dashoffset shrinks as progress grows --}}
+            {{-- progress ring — stroke-dashoffset shrinks as progress grows. Both rings take a
+                 class, so a forced-colors theme, which paints every stroke in one color, can tell
+                 them apart. --}}
             <circle cx="18" cy="18" r="16"
+                    class="wk-reading-progress__arc"
                     fill="none"
                     stroke="{{ $variantColor }}"
                     stroke-width="2.5"
@@ -306,6 +314,10 @@
         aria-valuemax="100"
         aria-valuenow="0"
         x-bind:aria-valuenow="roundedProgress()"
+        {{-- Out of the accessibility tree at zero from the first render, as the script starts
+             it: on a page that runs no script the bar never moves, and a progress stuck at
+             zero would only be noise to a reader. --}}
+        @unless($attributes->has('aria-hidden')) aria-hidden="true" @endunless
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->merge(['style' => $barStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $barStyleClasses => $barStyleClasses !== '']))->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- `max-width: none` defeats developer-side typography CSS that

@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-bg-muted
 --color-wk-bg-subtle
 --color-wk-border
@@ -36,9 +37,9 @@ bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-bg-subtle)]
 blank
 border-[color:var(--color-wk-border)]
-border-b
-border-t
-border-y
+border-b-[length:var(--border-wk-width)]
+border-t-[length:var(--border-wk-width)]
+border-y-[length:var(--border-wk-width)]
 both
 bottom
 bring

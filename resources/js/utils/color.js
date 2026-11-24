@@ -48,7 +48,12 @@ export function rgbToHsv({ r, g, b }) {
     return { h: round(h), s: round(s), v: round(max * 100) };
 }
 
-export function rgbToHsl({ r, g, b }) {
+/**
+ * HSL of an sRGB color: h in degrees, s and l in percent, each to `places` decimal places, whole
+ * numbers by default. One place is what a color of eight bits per channel needs to read back as
+ * itself.
+ */
+export function rgbToHsl({ r, g, b }, places = 0) {
     const rN = r / 255;
     const gN = g / 255;
     const bN = b / 255;
@@ -65,7 +70,9 @@ export function rgbToHsl({ r, g, b }) {
         if (h < 0) { h += 360; }
     }
 
-    return { h: round(h), s: round(s * 100), l: round(l * 100) };
+    const to = (n) => (places === 0 ? round(n) : +n.toFixed(places));
+
+    return { h: to(h), s: to(s * 100), l: to(l * 100) };
 }
 
 function componentToHex(n) {
@@ -82,7 +89,7 @@ export function rgbToHex({ r, g, b, a = 1 }, withAlpha = false) {
 }
 
 /**
- * Parse a CSS color string (hex / rgb[a] / hsl[a]) to { r, g, b, a } or null.
+ * Parse a CSS color string (hex / rgb[a] / hsl[a] / oklch) to { r, g, b, a } or null.
  */
 export function parseColor(input) {
     if (typeof input !== 'string') { return null; }
@@ -107,16 +114,26 @@ export function parseColor(input) {
         return null;
     }
 
-    // rgb() / rgba()
-    const rgb = str.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+%?))?\s*\)$/);
+    // rgb() / rgba(), in either of its two forms, as CSS reads no mix of them: commas between all
+    // parts and an alpha after a comma, or spaces and an alpha after a slash.
+    // Three numbers or three percentages, as the comma form takes no mix of them; a percentage is
+    // of 255.
+    const numbers = str.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+%?))?\s*\)$/)
+        ?? str.match(/^rgba?\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\s*\)$/);
+    const percentages = numbers ? null : (str.match(/^rgba?\(\s*([\d.]+)%\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*([\d.]+%?))?\s*\)$/)
+        ?? str.match(/^rgba?\(\s*([\d.]+)%\s+([\d.]+)%\s+([\d.]+)%(?:\s*\/\s*([\d.]+%?))?\s*\)$/));
+    const rgb = numbers ?? percentages;
     if (rgb) {
         const a = rgb[4] === undefined ? 1 : (rgb[4].endsWith('%') ? parseFloat(rgb[4]) / 100 : parseFloat(rgb[4]));
+        const channel = (raw) => clamp(round(numbers ? +raw : (+raw / 100) * 255), 0, 255);
 
-        return { r: clamp(round(+rgb[1]), 0, 255), g: clamp(round(+rgb[2]), 0, 255), b: clamp(round(+rgb[3]), 0, 255), a: clamp(a, 0, 1) };
+        return { r: channel(rgb[1]), g: channel(rgb[2]), b: channel(rgb[3]), a: clamp(a, 0, 1) };
     }
 
-    // hsl() / hsla()
-    const hsl = str.match(/^hsla?\(\s*([\d.]+)[\s,]+([\d.]+)%[\s,]+([\d.]+)%(?:[\s,/]+([\d.]+%?))?\s*\)$/);
+    // hsl() / hsla() — H in degrees (optional `deg`, as on oklch()); another angle unit is no color.
+    // The same two forms as rgb().
+    const hsl = str.match(/^hsla?\(\s*([\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*([\d.]+%?))?\s*\)$/)
+        ?? str.match(/^hsla?\(\s*([\d.]+)(?:deg)?\s+([\d.]+)%\s+([\d.]+)%(?:\s*\/\s*([\d.]+%?))?\s*\)$/);
     if (hsl) {
         const a = hsl[4] === undefined ? 1 : (hsl[4].endsWith('%') ? parseFloat(hsl[4]) / 100 : parseFloat(hsl[4]));
         const rgbFromHsl = hslToRgb({ h: +hsl[1], s: +hsl[2], l: +hsl[3] });
@@ -209,27 +226,31 @@ export function hslToRgb({ h, s, l }) {
 }
 
 /**
- * Format an { r, g, b, a } color in the requested format ('hex' | 'rgb' | 'hsl').
+ * Format an { r, g, b, a } color in the requested format ('hex' | 'rgb' | 'hsl' | 'oklch').
+ *
+ * Each value reads back as the color of eight bits per channel it was written from: hsl() carries
+ * one decimal place, oklch() its lightness to 0.01 %, its chroma to five places and its hue to 0.01
+ * degree, and an alpha three places. An alpha that rounds to 1 is written in the opaque form.
  */
 export function formatColor({ r, g, b, a = 1 }, format, withAlpha = false) {
-    const alpha = withAlpha ? a : 1;
+    const alpha = withAlpha ? +a.toFixed(3) : 1;
     if (format === 'rgb') {
         return alpha < 1
-            ? `rgba(${r}, ${g}, ${b}, ${+alpha.toFixed(2)})`
+            ? `rgba(${r}, ${g}, ${b}, ${alpha})`
             : `rgb(${r}, ${g}, ${b})`;
     }
     if (format === 'hsl') {
-        const { h, s, l } = rgbToHsl({ r, g, b });
+        const { h, s, l } = rgbToHsl({ r, g, b }, 1);
 
         return alpha < 1
-            ? `hsla(${h}, ${s}%, ${l}%, ${+alpha.toFixed(2)})`
+            ? `hsla(${h}, ${s}%, ${l}%, ${alpha})`
             : `hsl(${h}, ${s}%, ${l}%)`;
     }
     if (format === 'oklch') {
         const { l, c, h } = rgbToOklch({ r, g, b });
-        const parts = `${+(l * 100).toFixed(1)}% ${+c.toFixed(3)} ${+h.toFixed(1)}`;
+        const parts = `${+(l * 100).toFixed(2)}% ${+c.toFixed(5)} ${+h.toFixed(2)}`;
 
-        return alpha < 1 ? `oklch(${parts} / ${+alpha.toFixed(2)})` : `oklch(${parts})`;
+        return alpha < 1 ? `oklch(${parts} / ${alpha})` : `oklch(${parts})`;
     }
 
     return rgbToHex({ r, g, b, a: alpha }, withAlpha);

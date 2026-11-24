@@ -18,8 +18,11 @@
 
          `$refs` survive the teleport: Alpine registers the ref in the original
          scope, so the positioning code that reads `this.$refs.tooltip` is
-         unaffected. --}}
-    <template x-teleport="#wk-overlay-root">
+         unaffected.
+
+         A lazy tooltip holds this template in one of its own until the factory builds the panel,
+         and `$refs.tooltip` is there from the build on. --}}
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
     <div
         {{-- The morph key, and it is what makes writing the id below safe.
              Livewire resolves a node's morph identity as `wire:id`, then
@@ -69,6 +72,11 @@
         {{-- `wk-tooltip-panel` is the marker the stylesheet's forced-colors rule selects, outside
              the resolved classes so a project that restyles the panel keeps its edge there. --}}
         class="wk-tooltip-panel {{ $tooltipClasses }}"
+        {{-- An inverted panel is a filled surface: it hands its text color to a text, heading, link
+             or prose in its content, which read `--wk-fill-ink` before the page's color, drawn by
+             the stylesheet on this marker. An elevated panel is a surface of the page and keeps
+             the page's colors; the wrapper carries its surface marker. --}}
+        @if($surface !== 'elevated') data-wk-fill @endif
     >
         {{-- The words of the cut text in the trigger, on a line of their own above the tooltip's,
              written by the script while that text is cut and empty while it fits. A screen reader
@@ -91,4 +99,4 @@
             @endif
         @endif
     </div>
-    </template>
+    </template>{{ $lazyPanelClose }}

@@ -18,10 +18,15 @@ use Illuminate\Support\HtmlString;
  * one, and it adds no character, so the text a reader selects and copies is still the address.
  *
  * The seams are the ones an address is set at in print: before an at sign, a full stop, a
- * question mark, a number sign, an ampersand and an equals sign, before a slash that follows
- * neither a colon nor another slash, and after the double slash of a scheme. A seam opens only
- * between two characters that are no space, and not after a seam of its own, so a full stop that
- * ends a sentence never starts a line, and `//` stays together.
+ * hyphen, a question mark, a number sign, an ampersand and an equals sign, before a slash that
+ * follows neither a colon nor another slash, and after the double slash of a scheme. A seam opens
+ * only between two characters that are no space, and not after a seam of its own, so a full stop
+ * that ends a sentence never starts a line, and `//` stays together.
+ *
+ * A line may also break after a hyphen that no digit follows (Unicode line breaking, class HY),
+ * and a reader takes a hyphen at the end of a line for a hyphenation and drops it from the
+ * address. So a run of hyphens stands with the character after it in an element the stylesheet
+ * does not wrap (`[data-wk-join]`), and the line breaks at the seam before the run instead.
  *
  * Only text is marked. A tag with its attributes, a comment and the content of a `script` or
  * `style` element pass through as they are, so a link's `href` keeps its value. A character
@@ -33,7 +38,7 @@ use Illuminate\Support\HtmlString;
 final class AddressBreaks
 {
     /** A break may come before each of these. A slash is decided apart, see seamBefore(). */
-    private const SEAMS = ['@', '.', '?', '#', '&', '=', '/'];
+    private const SEAMS = ['@', '.', '-', '?', '#', '&', '=', '/'];
 
     public static function mark(Htmlable|string $content): HtmlString
     {
@@ -82,12 +87,16 @@ final class AddressBreaks
         }
 
         $characters = array_column($units, 'character');
+        $joins = self::hyphenJoins($units);
+        $joinEnds = array_flip($joins);
         $marked = array_fill_keys(array_keys($parts), null);
 
         foreach ($units as $position => $unit) {
             $marked[$unit['part']] = ($marked[$unit['part']] ?? '')
                 .(self::seamBefore($characters, $position) ? '<wbr>' : '')
-                .$unit['unit'];
+                .(isset($joins[$position]) ? '<span data-wk-join>' : '')
+                .$unit['unit']
+                .(isset($joinEnds[$position]) ? '</span>' : '');
         }
 
         $html = '';
@@ -97,6 +106,45 @@ final class AddressBreaks
         }
 
         return new HtmlString($html);
+    }
+
+    /**
+     * The runs of hyphens held to the character after them, as the position of the first hyphen
+     * and the position of that character. A run is held only when it and the character stand in
+     * one text part, and the character is neither a space, where the line breaks anyway, nor a
+     * digit, before which no line breaks behind a hyphen.
+     *
+     * @param  list<array{part: int, unit: string, character: string}>  $units
+     * @return array<int, int>
+     */
+    private static function hyphenJoins(array $units): array
+    {
+        $joins = [];
+
+        foreach ($units as $position => $unit) {
+            if ($unit['character'] !== '-' || ($units[$position - 1]['character'] ?? null) === '-') {
+                continue;
+            }
+
+            $end = $position;
+
+            while (($units[$end]['character'] ?? null) === '-') {
+                $end++;
+            }
+
+            $after = $units[$end] ?? null;
+
+            if ($after === null
+                || $after['part'] !== $unit['part']
+                || self::isSpace($after['character'])
+                || preg_match('~^\p{Nd}$~u', $after['character']) === 1) {
+                continue;
+            }
+
+            $joins[$position] = $end;
+        }
+
+        return $joins;
     }
 
     /**

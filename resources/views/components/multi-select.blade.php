@@ -67,9 +67,13 @@
     'layout' => 'dropdown',
     'scope' => null,
     'ariaLabel' => null,
+    // Whether the list waits out of the page until it is first needed: the pointer or the focus on
+    // the field, or the list opening. The list layout has no list to hold back. The default comes
+    // from the configuration (`components.multi-select.lazy`).
+    'lazy' => config('wirekit.components.multi-select.lazy', false),
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -135,7 +139,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox
@@ -415,6 +425,32 @@
             ? array_values(array_filter(array_map('trim', explode(',', $value)), fn ($v) => $v !== ''))
             : []);
 
+    // The choice as the page loads, for the moment before the script starts and for a page that
+    // runs none. Each chosen value shows the text the script gives it, looked up in the options
+    // the script starts with: `selectedLabel`, else `label`, else the value itself. The first
+    // option of a value names it, as the script's lookup takes the first.
+    $optionByValue = [];
+    foreach ($encodedOptions as $encodedOption) {
+        $optionByValue[(string) $encodedOption['value']] ??= $encodedOption;
+    }
+    $startEntries = array_map(static function (string $chosenValue) use ($optionByValue): array {
+        $option = $optionByValue[$chosenValue] ?? null;
+
+        return [
+            'text' => match (true) {
+                $option === null => $chosenValue,
+                filled($option['selectedLabel'] ?? null) => (string) $option['selectedLabel'],
+                default => (string) $option['label'],
+            },
+            'lang' => $option['lang'] ?? null,
+        ];
+    }, $selectedValues);
+    // The heading over the list layout's choice, counted as the script counts it. Nothing while
+    // nothing is chosen, where the block that holds it is hidden.
+    $startHeading = $selectedValues === []
+        ? ''
+        : str_replace('__COUNT__', (string) count($selectedValues), count($selectedValues) === 1 ? $selectedOne : $selectedMany);
+
     // Server search. The results travel on an attribute of their own rather than in `x-data`,
     // which Alpine reads once: Livewire patches the attribute on every render and the factory
     // follows it (utils/server-search.js). The sentences are translated here, since a sentence
@@ -480,11 +516,26 @@
     // on-screen keyboard reads none of the rest (Support\FieldAttributes). The search text is not
     // the value, so neither `pattern` nor `maxlength` goes there.
     [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'tabindex']);
+    // A lazy multi-select holds the teleport of its list in a template of its own, which the browser
+    // keeps out of the page until the factory builds it (utils/lazy-panel.js). The template stands
+    // among the children of the element the list stood in: the root, or the optimistic layer inside
+    // it, which names itself to the render hook. The field names the list with `aria-controls` once
+    // it is built, through a binding a Livewire update keeps. The wrapper is an echo, since a
+    // conditional around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.multi-select.lazy', false)), 'multi-select', 'lazy');
+    $lazyList = $lazy && ! $listLayout;
+    $lazyPanelOpen = $lazyList ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazyList ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
@@ -517,6 +568,8 @@
              options are the search results on `data-wk-server-options`. --}}
         x-data="wirekitMultiSelect({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, readonly: {{ $readonly ? 'true' : 'false' }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, fieldId: {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
         @if($listLayout) data-wk-multi-select-layout="list" @endif
+        @if($lazyList && ! $optimisticConfig) data-wk-lazy-panel-host @endif
+        @if($lazyList) x-on:pointerenter="preparePanel()" x-on:focusin="preparePanel()" @endif
         data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($selectedValues) }}"
         @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($encodedOptions) }}" @endif
         @click.away="closeOutside($event)"
@@ -525,7 +578,7 @@
         @if($optimisticConfig)
             {{-- `display: contents` so the panel keeps `relative` above it as its
                  containing block — an extra box here would move the dropdown. --}}
-            <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+            <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($lazyList) data-wk-lazy-panel-host @endif>
         @endif
 
         {{-- The selection the page was loaded with, for a page without a script. The fields below
@@ -618,11 +671,17 @@
                         </li>
                     </template>
                 </ul>
+                {{-- The rows come from a template, which renders nothing until Alpine starts, so
+                     the server writes this line in the state the script starts in: under `x-cloak`
+                     when there are options (the search field starts empty and every option matches
+                     it), and with the sentence a server search starts with, which asks for text
+                     before any search has been sent. --}}
                 <p data-wk-prose-skip
                     x-show="listOptions.length === 0"
                     @if($server) x-text="searchEmptyText(filter)" @endif
+                    @if($encodedOptions !== []) x-cloak @endif
                     class="{{ $emptyRowClasses }}"
-                >{{ __('wirekit::No results') }}</p>
+                >{{ $server ? __('wirekit::Type to search') : __('wirekit::No results') }}</p>
                 @wirekitLast($server)
                     <p data-wk-prose-skip
                         x-show="listOptions.length > 0 && searchNote() !== ''"
@@ -633,10 +692,17 @@
             </div>
 
             {{-- The choice, under the options, with a button to take each one out. A chosen option
-                 keeps its name here after the results move on to another search. --}}
-            <div x-show="selected.length > 0" class="mt-[var(--space-wk-sm)] space-y-[var(--space-wk-xs)]">
-                <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" x-text="selectionHeading"></p>
+                 keeps its name here after the results move on to another search. Without a choice
+                 it waits under `x-cloak`, as the script hides it, so its spacing does not stand
+                 under the list until Alpine starts. --}}
+            <div x-show="selected.length > 0" @if($selectedValues === []) x-cloak @endif class="mt-[var(--space-wk-sm)] space-y-[var(--space-wk-xs)]">
+                <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" x-text="selectionHeading">{{ $startHeading }}</p>
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
+                    {{-- The choice as the page loads, as the pills of the dropdown: hidden by the
+                         script as it starts, text only. --}}
+                    @foreach($startEntries as $startEntry)
+                        <li data-wk-prose-skip data-wk-multi-select-start x-show="false" class="{{ $listChosenClasses }}"><span class="min-w-0" @if($startEntry['lang'] !== null) lang="{{ $startEntry['lang'] }}" @endif>{{ $startEntry['text'] }}</span></li>
+                    @endforeach
                     <template x-for="(val, i) in selected" :key="'chosen-'+val">
                         <li data-wk-prose-skip class="{{ $listChosenClasses }}">
                             <span class="min-w-0" x-text="pillLabel(val)"@if($optionsCarryLang) :lang="getLang(val)"@endif></span>
@@ -671,6 +737,19 @@
             class="{{ $containerClasses }} {{ $stateClasses }} wk-field-frame"
             @click="$event.target.closest('[data-wk-pill-remove]') || focusAndOpen()"
         >
+            {{-- The pills as the page loads, for the moment before the script starts and for a page
+                 that runs none: the template below draws nothing until then. The script hides them
+                 as it starts and draws its own in their place, and `x-show` keeps them hidden
+                 through a Livewire render as well. Text only, since without the script a remove
+                 button would remove nothing. The `div` gives up its box, so the pills stand in the
+                 field's row, and the pills the script draws stay the field's only `span` children. --}}
+            @if($startEntries !== [])
+                <div data-wk-multi-select-start x-show="false" class="contents">
+                    @foreach($startEntries as $startEntry)
+                        <span class="{{ $pillClasses }}"><span @if($startEntry['lang'] !== null) lang="{{ $startEntry['lang'] }}" @endif>{{ $startEntry['text'] }}</span></span>
+                    @endforeach
+                </div>
+            @endif
             {{-- Selected value pills --}}
             <template x-for="(val, i) in selected" :key="'pill-'+val">
                 <span class="{{ $pillClasses }}">
@@ -758,7 +837,7 @@
                 aria-haspopup="listbox"
                 aria-expanded="false"
                 :aria-expanded="dropdownOpen ? 'true' : 'false'"
-                aria-controls="{{ $id }}-listbox"
+                @if($lazyList) :aria-controls="_listBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($id.'-listbox') }} : null" @else aria-controls="{{ $id }}-listbox" @endif
                 aria-autocomplete="list"
                 @if($hasError)
                     aria-invalid="true"
@@ -770,6 +849,9 @@
                 {{-- satisfied even when the parent <x-wirekit::field label="..."> --}}
                 {{-- doesn't reach this internal combobox input.                 --}}
                 @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldAriaLabel !== null) aria-label="{{ $fieldAriaLabel }}" @endif
+                {{-- Written by the server too while nothing is chosen, so the empty field asks for a
+                     choice before the script starts and on a page that runs none. --}}
+                @if($selectedValues === []) placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}" @endif
                 :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($placeholder)) }} : ''"
                 {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its
                      minimum. Without it WebKit takes a text input's default width as its minimum, and
@@ -781,7 +863,7 @@
         {{-- Dropdown listbox --}}
         {{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but not
              a stacking context, which is why the combobox and dropdown panels teleport too. --}}
-        <template x-teleport="#wk-overlay-root">
+        {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div
             {{-- The morph key. Livewire identifies a node across an update as
                  `wire:id`, then `wire:key`, then `el.id` — so without this line the
@@ -925,7 +1007,7 @@
                 ></p>
             @endif
         </div>
-        </template>
+        </template>{{ $lazyPanelClose }}
         @endif
 
         {{-- Selection announcer. Outside the listbox — a live region is not an
@@ -987,7 +1069,7 @@
         // built right before the echo, so it runs on the path and in the scope the echo does.
         $messagePart = $hasError && $errorMessage
             ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
-            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : ($inAlignedRow ? new \Illuminate\Support\HtmlString('<span data-wk-field-part="message" aria-hidden="true"></span>') : ''));
     @endphp
     {{ $messagePart }}
 </div>

@@ -8,6 +8,9 @@
     // (`x-wk-current`, utils/current.js). It moves the links of the bar itself; a link in a panel lives in the overlay
     // root, outside the bar.
     'trackCurrent' => false,
+    // Whether each panel waits out of the page until it first opens. The default comes from the
+    // configuration (`components.navigation-menu.lazy`).
+    'lazy' => config('wirekit.components.navigation-menu.lazy', false),
     'scope' => null,
 ])
 
@@ -23,6 +26,11 @@
     // Blade compiles an unbound attribute to a string, and 'false' is truthy, so
     // `track-current="false"` would otherwise turn the tracking on.
     $trackCurrent = BooleanProp::from($trackCurrent, false, 'navigation-menu', 'trackCurrent');
+    // A lazy navigation menu holds each panel's teleport in a template of its own, which the
+    // browser keeps out of the page until the menu builds it as the panel first opens
+    // (utils/lazy-panel.js). Each item marks where its template opens and closes, and this view
+    // writes it there or nothing from its own `lazy` (Support\LazyPanel).
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.navigation-menu.lazy', false)), 'navigation-menu', 'lazy');
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -73,5 +81,5 @@
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Main navigation') }}" @unless($callerBindsName) data-wk-nested-name="{{ __('wirekit::Main menu') }}" x-bind:aria-label="landmarkName" @endunless @endunless
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-navigation-menu', $classes])) }}
 >
-    {{ $slot }}
+    {!! \Pushery\WireKit\Support\LazyPanel::resolve($slot->toHtml(), $lazy) !!}
 </nav>

@@ -8,6 +8,7 @@ use FilesystemIterator;
 use Pushery\WireKit\Support\SourceComments;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 
 /**
@@ -516,6 +517,19 @@ final class ClassInventory
     }
 
     /**
+     * The error for a file a pattern could not run over.
+     *
+     * The regex engine gives up on text that is not valid UTF-8 under a `/u` pattern, and on a
+     * run long enough to exhaust its stack. Read as "no classes here", the file would drop out of
+     * every inventory without a word, and a drift check built on the inventory would pass over
+     * classes it never saw, so the inventory stops and names the file instead.
+     */
+    private static function unreadable(string $file): RuntimeException
+    {
+        return new RuntimeException(sprintf('The class inventory could not read %s: %s.', $file, preg_last_error_msg()));
+    }
+
+    /**
      * Match static `class="…"` / `class='…'`. Records each whitespace-split
      * candidate that passes the class-shape filter. Alpine `:class=` is
      * deliberately excluded — see bladeClasses() docblock.
@@ -533,7 +547,7 @@ final class ClassInventory
         $pattern = '/(?<![:\w])class\s*=\s*(["\'])(?P<value>(?:(?!\1)[\s\S])*)\1/u';
 
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return;
+            throw self::unreadable($file);
         }
 
         foreach ($matches['value'] as $match) {
@@ -584,7 +598,7 @@ final class ClassInventory
          * The bag it reads is a variable or a slot's own, written `SlotAttributes::of($slot)`.
          */
         if (preg_match_all('/(?:@class|->class)\(\s*(?:[^()\[\]\'"]*::yieldToCaller\(\s*(?:\$\w+|[\\\\\w]+::of\(\s*\$\w+\s*\))\s*,\s*)?\[/u', $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
-            return;
+            throw self::unreadable($file);
         }
 
         foreach ($opens[0] as [$openText, $openStart]) {
@@ -716,7 +730,7 @@ final class ClassInventory
         $openPattern = '/implode\s*\(\s*(["\'])\s\1\s*,\s*(?:array_filter\s*\(\s*)?\[/u';
 
         if (preg_match_all($openPattern, $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
-            return;
+            throw self::unreadable($file);
         }
 
         foreach ($opens[0] as $openMatch) {
@@ -806,7 +820,7 @@ final class ClassInventory
 
         foreach ($patterns as $pattern) {
             if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-                continue;
+                throw self::unreadable($file);
             }
 
             foreach ($matches['body'] as $bodyMatch) {
@@ -1157,7 +1171,7 @@ final class ClassInventory
 
         foreach ($patterns as $pattern) {
             if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-                continue;
+                throw self::unreadable($file);
             }
 
             foreach ($matches['name'] as $match) {
@@ -1185,7 +1199,7 @@ final class ClassInventory
         $pattern = '/(["\'])(?P<value>(?:\\\\.|(?!\1).)*)\1/u';
 
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return;
+            throw self::unreadable($file);
         }
 
         foreach ($matches['value'] as $match) {
@@ -1218,7 +1232,7 @@ final class ClassInventory
         $pattern = '/`(?P<value>(?:\\\\.|[^`])*)`/u';
 
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return;
+            throw self::unreadable($file);
         }
 
         foreach ($matches['value'] as $match) {

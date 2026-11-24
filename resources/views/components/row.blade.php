@@ -60,7 +60,9 @@
     //
     // A row is `flex-row` with no wrapping, which is right for a two- or three-item row and
     // wrong for the multi-item ones a phone gets: they overflow the viewport instead of
-    // breaking.
+    // breaking. Two labeled buttons in a narrow card are such a row as well: at 320 pixels, in a
+    // long language or under the text spacing of WCAG 1.4.12 they run out of the card, so the
+    // buttons of a form take `wrap`, which `wirekit:doctor:props` hints at.
     //
     // Wrapping is an opt-in rather than the default: wrapping by default would reflow every
     // multi-item row an application already lays out.

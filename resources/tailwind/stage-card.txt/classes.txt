@@ -105,6 +105,7 @@ be
 because
 becomes
 been
+before
 being
 below
 beside
@@ -150,6 +151,7 @@ claiming
 claims
 clamped
 class
+close
 code
 color
 color-axis
@@ -161,6 +163,7 @@ completion
 component
 component-level
 compute
+conditional
 consistently
 content
 contract
@@ -190,6 +193,7 @@ disagree
 div
 does
 done
+down
 drawing
 drawn
 drew
@@ -201,6 +205,7 @@ ease-[var(--transition-wk-easing)]
 easy
 edge
 effective
+either
 element
 else
 empty
@@ -230,6 +235,7 @@ flex
 flex-col
 flight
 flips
+float
 font
 font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-heading-weight)]
@@ -295,6 +301,7 @@ item
 items
 items-center
 its
+just
 justify-between
 justify-center
 keep
@@ -325,6 +332,7 @@ made
 makes
 mandatory
 map
+marker
 markers
 marks
 match
@@ -354,6 +362,7 @@ neutral
 never
 new
 next
+nine
 no
 nobody
 none
@@ -372,6 +381,8 @@ once
 one
 one-sided
 only
+opened
+opening
 opposite
 optimistic-ui
 optional
@@ -457,8 +468,10 @@ rides
 ring
 roadmap
 role
+root
 rotates
 round
+rounded
 rounded-[var(--radius-wk-full)]
 rounded-[var(--radius-wk-lg)]
 rule
@@ -583,6 +596,7 @@ unresolvable
 until
 upload
 usage
+usage-meter
 use
 used
 uses
@@ -629,6 +643,7 @@ wk-spinner
 work
 would
 wrapper
+writes
 x-bind:aria-valuenow
 x-bind:class
 x-bind:style

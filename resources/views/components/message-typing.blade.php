@@ -77,7 +77,10 @@
     {{-- Content column mirrors the message layout: the name sits above the bubble,
          and the bubble is indented under it — so the reader sees who is typing,
          not an anonymous set of dots floating at the thread edge. --}}
-    <div class="flex flex-col {{ $columnAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
+    {{-- The column is capped at 42 advances of the digit zero of the sans face, the length the
+         font stylesheet declares as `--ch-wk-sans`, rather than at `42ch`: Chromium can resolve
+         `ch` to 0 for a loaded web face, and the column would then have no width. --}}
+    <div class="flex flex-col {{ $columnAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[calc(42*var(--ch-wk-sans,1ch))]">
         @if($hasAuthor)
             <span title="{{ \Pushery\WireKit\Support\SlotContent::textOf($author) }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
                 {{ $author }}

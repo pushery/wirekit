@@ -65,27 +65,50 @@ NEVER apply Tailwind color utilities to recolor a component:
 
 ## House conventions
 
-Three rules keep an application reading as one. `php artisan wirekit:doctor:props`
+Five rules keep an application reading as one. `php artisan wirekit:doctor:props`
 reports a place that leaves one of them as a hint.
 
 - **Buttons are filled.** An action takes its rank from `intent`: the main one in
-  the accent, another `intent="neutral"`, a destructive one `intent="danger"`. An
-  outline beside a filled button reads as a second style, not as a lower rank.
+  the accent, another `intent="neutral"`, a destructive one `intent="danger"`. A
+  button with words sets no `surface`: an outline, soft or ghost button beside a
+  filled one reads as a second style, not as a lower rank. Three kinds of control
+  may wear another surface, because it says something other than a rank: one half
+  of a toggle (`aria-pressed`), whose surface shows whether it is chosen; a button
+  with an icon alone (`icon-only`); and a control that opens something in place, a
+  disclosure (`aria-expanded`) or the trigger in the `trigger` slot of a dropdown
+  or a popover, which reads like a select. A link in running text is
+  `<x-wirekit::link>`.
 - **Content stands in cards.** One card per part of a screen. A card of settings
   has a head: `<x-wirekit::card.header :description="…">` with the icon in its
   `iconSlot` and the name of the part as its heading.
 - **A date or a time does not break.** Write it into an element with
   `whitespace-nowrap`, so a narrow column moves the whole value to the next line.
+- **A row's actions stand at its end.** The cell that holds them is
+  `<x-wirekit::table.td align="end">` or `<x-wirekit::table.td actions>`, and the
+  actions in it stand side by side.
+- **A destructive action asks first.** A button or a menu entry that deletes,
+  removes, cancels or revokes is `intent="danger"` (`danger` on an entry) and
+  opens an `alert-dialog`, whose `alert-dialog.confirm` runs the action. It never
+  runs the action from its own `wire:click`, and `wire:confirm` asks in the
+  browser's dialog instead of the kit's.
 
 ```blade
 {{-- ✅ RIGHT --}}
 <x-wirekit::button type="submit">Save</x-wirekit::button>
 <x-wirekit::button intent="neutral" href="/back">Cancel</x-wirekit::button>
 <span class="whitespace-nowrap">{{ $session->last_active_at->isoFormat('lll') }}</span>
+<x-wirekit::table.td actions>
+    <x-wirekit::button intent="danger" x-on:click="$dispatch('wirekit-alert-dialog-show', { name: 'delete-user' })">Delete</x-wirekit::button>
+</x-wirekit::table.td>
 
-{{-- ❌ WRONG: an outline as the lower rank, and a time free to break --}}
+{{-- ❌ WRONG: an outline and a ghost as the lower rank, a time free to break, and a
+     deletion at the start of its row that runs without asking --}}
 <x-wirekit::button surface="outline" href="/back">Cancel</x-wirekit::button>
+<x-wirekit::button surface="ghost" wire:click="skip">Skip</x-wirekit::button>
 {{ $session->last_active_at->format('d.m.Y H:i') }}
+<x-wirekit::table.td>
+    <x-wirekit::button intent="danger" wire:click="delete({{ $user->id }})">Delete</x-wirekit::button>
+</x-wirekit::table.td>
 ```
 
 ## Design tokens
@@ -103,7 +126,7 @@ Common tokens:
 - `--color-wk-border`, `--color-wk-border-subtle`, `--color-wk-border-hover`, `--color-wk-border-strong`, `--color-wk-border-strong-hover` (form controls MUST use the `strong` pair — the communicating border, WCAG 1.4.11, ≥3:1), `--color-wk-border-error`, `--color-wk-border-success`, `--color-wk-border-unsaved` (a field whose value the server does not have yet, `x-wk-unsaved`)
 - `--color-wk-accent` (fill), `--color-wk-accent-text` (accent-toned text on bg — alias of `--color-wk-accent-content`), `--color-wk-accent-fg` (text on an accent fill)
 - `--space-wk-xs|sm|md|lg|xl|2xl` (+ `--space-wk-section-sm|md|lg`)
-- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `gap` prop of `stack`, `row`, `grid`, `bento-grid` and `feature-grid` maps to `--space-wk-*` by default and to these only with `scale="gap"` — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …).
+- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `gap` prop of `stack`, `row`, `grid`, `bento-grid` and `feature-grid` maps to `--space-wk-*` by default and to these only with `scale="gap"` — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …). One more names a single place: `--gap-wk-card-header-icon`, the space between the icon of a card's head and its words, `var(--gap-wk-md)` by default.
 - `--padding-wk-x-xs|sm|md|lg|xl` and `--padding-wk-y-xs|sm|md|lg|xl` (axis-split — no axis-less shorthand)
 - `--radius-wk-sm|md|lg|xl|full`
 - `--shadow-wk-sm|md|lg`

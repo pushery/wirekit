@@ -80,6 +80,7 @@ bound
 branch
 break
 break-word
+browser
 bug
 build
 but
@@ -158,8 +159,10 @@ embedded
 emit
 empty
 empty-state
+end
 ends
 entry
+evens
 every
 exhausting
 explicitly
@@ -170,7 +173,6 @@ feature
 files
 finds
 first
-first-allowed
 fit
 fix
 flags
@@ -251,6 +253,7 @@ keeps
 key
 kill
 know
+last
 later
 layout
 leave
@@ -259,6 +262,7 @@ level
 lg
 like
 line
+lines
 list
 literal
 live
@@ -287,6 +291,7 @@ mt-[var(--space-wk-sm)]
 muted
 name
 named
+narrow
 navigation
 needs
 neither
@@ -301,6 +306,7 @@ nothing
 null
 occurrence
 of
+off
 on
 one
 one-time
@@ -391,6 +397,7 @@ row
 s
 same
 scope
+screen
 screen-reader
 screen-reader-skipping
 sees
@@ -403,7 +410,6 @@ should
 shown
 shrink
 shrink-0
-side-effect
 single
 size
 slot
@@ -477,6 +483,7 @@ unknown
 unknown-alias
 unless
 until
+up
 use
 useful
 uses
@@ -514,6 +521,9 @@ win
 wins
 with
 without
+wk-lines-balanced
+wk-lines-pretty
+word
 words
 worse
 would

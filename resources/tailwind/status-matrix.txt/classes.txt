@@ -41,7 +41,6 @@
 --leading-wk-tight
 --measure-wk
 --measure-wk-wide
---opacity-wk-hover
 --padding-wk-x-md
 --padding-wk-x-sm
 --padding-wk-x-xs
@@ -70,7 +69,7 @@
 --text-wk-xl
 --text-wk-xs
 --transition-wk-duration
---transition-wk-easing
+--wk-fill-ink
 --wk-fit-floor
 --wk-heat-run
 --z-wk-sticky
@@ -79,6 +78,8 @@
 -ms-0.5
 -my-[3px]
 -text
+-tooltip
+-words
 @break
 @class
 @click
@@ -145,6 +146,7 @@ ancestor
 anchored
 and
 announced
+announcement
 announces
 announcing
 anonymous
@@ -277,6 +279,7 @@ blank
 block
 body
 bold
+bool
 boolean
 bootstrapped
 border
@@ -326,10 +329,12 @@ browser
 bubble
 bug
 build
+builds
 but
 button
 buttons
 by
+cache
 calibrated
 call
 called
@@ -376,6 +381,7 @@ choose
 chose
 chosen
 chrome
+circle
 clamp
 clamping
 clamps
@@ -417,11 +423,13 @@ compliant
 component
 components
 composer
+composers
 composite
 composite-grid
 condition
 conditional
 config/wirekit.php
+configuration
 configured
 connects
 console
@@ -467,15 +475,23 @@ data-wk-announcer
 data-wk-badge-after
 data-wk-badge-dismiss
 data-wk-cut-tip
+data-wk-fill
 data-wk-heat-ramp
 data-wk-icon-missing
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-server-value
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -483,6 +499,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 date
 dates
 dead
@@ -491,6 +508,7 @@ decided
 decides
 decision
 declaration
+declarations
 declared
 declares
 declaring
@@ -505,9 +523,11 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 deny
+depends
 depth
 descendant
 descendants
@@ -522,6 +542,7 @@ dialog
 different
 differentiates
 differently
+differs
 digit
 dim
 direction
@@ -548,6 +569,7 @@ drawing
 drawn
 draws
 drift
+drives
 drop
 dropdown
 dropdowns
@@ -560,7 +582,6 @@ duration-75
 duration-[var(--transition-wk-duration)]
 each
 early
-ease-[var(--transition-wk-easing)]
 ease-in
 ease-out
 echo
@@ -602,8 +623,8 @@ evaluated
 even
 event
 events
+ever
 every
-everything
 exactly
 exchange
 exhausting
@@ -641,6 +662,7 @@ filled
 filled-background
 fills
 filter
+find
 finds
 finish
 finite
@@ -787,6 +809,7 @@ held
 help
 helper
 here
+hero
 heroicon-m-inbox
 hidden
 hidden-input
@@ -807,9 +830,9 @@ host
 hot
 house
 hover
+hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]
 hover:bg-[var(--color-wk-bg-active)]
-hover:opacity-100
-hover:opacity-[var(--opacity-wk-hover)]
+hover:underline
 hoverable
 how
 however
@@ -856,6 +879,7 @@ instead
 intact
 integer
 intent
+intents
 inter-attribute
 interaction
 interactive
@@ -864,6 +888,7 @@ interpolates
 into
 introduction
 invalid
+inverse
 inverted
 invocation
 is
@@ -904,6 +929,7 @@ largest
 last
 later
 layout
+lazy
 leading
 leading-[var(--font-wk-line-height,1.5)]
 leading-[var(--leading-wk-relaxed)]
@@ -1023,6 +1049,7 @@ mints
 mirror
 mismatch
 missing
+mix
 mixed
 mobile
 modal
@@ -1084,6 +1111,7 @@ not
 note
 nothing
 noun
+nowrap
 null
 number
 occurrence
@@ -1106,16 +1134,15 @@ onmouseover
 onto
 opacity-0
 opacity-100
-opacity-70
 open
 opened
 opening
 opens
-operable
 operation
 opportunity
 opposite
 optimistic-ui
+option
 or
 order
 org
@@ -1156,6 +1183,7 @@ parenthesized
 parser
 part
 partial
+parts
 pass
 passed
 passes
@@ -1238,6 +1266,7 @@ py-[var(--padding-wk-y-sm)]
 py-[var(--padding-wk-y-xl)]
 py-[var(--padding-wk-y-xs)]
 qualified
+race
 racing
 radius
 raises
@@ -1311,11 +1340,12 @@ result
 return
 returns
 review
+ride
 rides
 right
 ring
 ring-[length:var(--ring-wk-width)]
-ring-[var(--color-wk-warning)]
+ring-[var(--color-wk-warning-text)]
 risk
 role
 roll
@@ -1366,7 +1396,9 @@ scrolling
 scrolls
 seam
 seams
+search
 second
+section
 see
 seem
 sees
@@ -1453,11 +1485,14 @@ stack
 stacking-context
 stadium
 stand
+stand-in
 stands
 start
 start-0
+starts
 state
 stateLabels
+statement
 states
 static
 status
@@ -1525,11 +1560,13 @@ tabular
 tabular-nums
 tag
 tags
+take
 takes
 taking
 tall
 tap
 target
+td
 teaches
 teleport
 teleported
@@ -1539,7 +1576,6 @@ test
 text
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
@@ -1553,6 +1589,10 @@ text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
@@ -1581,6 +1621,7 @@ there
 therefore
 these
 they
+thing
 third
 this
 three
@@ -1607,6 +1648,8 @@ too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-0
@@ -1622,7 +1665,6 @@ trailingIcon
 transformed
 transition
 transition-colors
-transition-opacity
 transitively
 translated
 transparent
@@ -1654,6 +1696,7 @@ uncaught
 unconditional
 under
 underline
+underline-offset-2
 unique
 unknown
 unknown-alias
@@ -1702,6 +1745,8 @@ w-6
 w-8
 w-full
 w-max
+wait
+waits
 walk
 wants
 warning
@@ -1763,6 +1808,7 @@ wrapped
 wrapper
 wrapping
 wraps
+write
 writes
 writing
 written

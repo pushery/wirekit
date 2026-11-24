@@ -97,11 +97,11 @@
 
     // Connector line between steps, placed from the circle's size: vertically it runs down the
     // circle's center from its lower edge, horizontally through its center from its right edge
-    // to the next circle's left edge (the 0.5rem is the gap between steps).
+    // to the next circle's left edge, across the gap the list stands on (`--gap-wk-sm`).
     $connectorClasses = implode(' ', [
         $isVertical
             ? 'absolute start-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] top-[var(--wk-stepper-circle,var(--size-wk-sm))] w-[1px] h-[calc(100%-0.5rem)] -translate-x-[0.5px] rtl:translate-x-[0.5px]'
-            : 'absolute top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] start-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)] end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)] h-[1px]',
+            : 'absolute top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] start-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)] end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-var(--gap-wk-sm))] h-[1px]',
         'bg-[var(--color-wk-border)]',
     ]);
 
@@ -227,7 +227,7 @@
                     'cursor-pointer text-start' => $stepIsOperable,
                     'rounded-[var(--radius-wk-md)]' => $stepIsOperable,
                     'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $stepIsOperable,
-                    'transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-[var(--opacity-wk-hover)]' => $stepIsOperable,
+                    'group/wk-step' => $stepIsOperable,
                 ])
             >
                 @if($follow === null)
@@ -268,9 +268,15 @@
                 {{-- The label is the block's first child: the shipped stylesheet sets the current
                      step's label in the heading weight through `aria-current="step"`, so the
                      current step is marked by more than the color of its circle, and the
-                     description after it keeps its weight. --}}
+                     description after it keeps its weight. A step that can be followed underlines
+                     its label under the pointer. A fade of the step would mix its muted description
+                     with the page below the contrast text needs; an underline changes no color. --}}
                 <div data-wk-stepper-label class="{{ $labelClasses }}">
-                    <div>{{ $label }}</div>
+                    @if($stepIsOperable)
+                        <div class="underline-offset-2 group-hover/wk-step:underline">{{ $label }}</div>
+                    @else
+                        <div>{{ $label }}</div>
+                    @endif
                     @wirekitLast($description)
                         {{-- Optional helper text, small and muted. --}}
                         <div class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>

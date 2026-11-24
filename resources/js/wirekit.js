@@ -26,6 +26,7 @@ import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
 import { defineShortcut, registerShortcutDirective } from './utils/shortcuts.js';
+import { wirekitCodeJoins } from './utils/code-joins.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -36,6 +37,12 @@ import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { installFocusInvalid } from './utils/focus-invalid.js';
+import { installLazySelectOptions } from './utils/lazy-select-options.js';
+import { installFocusTarget } from './utils/focus-target.js';
+import { installChoicesFollowTheServer } from './utils/choices-follow-the-server.js';
+import { installApexOnDemand } from './utils/apex-on-demand.js';
+import { installSharedTooltips } from './utils/shared-tooltips.js';
+import { installCartRemovalFocus } from './utils/cart-removal-focus.js';
 import { installSubmitOnce } from './utils/submit-once.js';
 import { installCanceledTransitionHandler } from './utils/canceled-transition.js';
 import collapse from '@alpinejs/collapse';
@@ -126,6 +133,8 @@ import wirekitDatetimePickerMoment from './components/datetime-picker-moment.js'
 import wirekitDatetimePickerTime from './components/datetime-picker-time.js';
 import wirekitDatePicker from './components/date-picker.js';
 import wirekitTimePicker from './components/time-picker.js';
+import wirekitExternalLinkQuestion from './components/external-link-question.js';
+import wirekitCaptcha from './components/captcha.js';
 import wirekitTableSearch from './components/table-search.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
@@ -262,12 +271,30 @@ function registerComponents() {
     // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
     // See utils/focus-invalid.js.
     installFocusInvalid();
+    // A lazy select builds its list the first time it is used, and keeps it through Livewire's
+    // renders. See utils/lazy-select-options.js.
+    installLazySelectOptions();
+    // `wirekit:focus` takes the focus to the element a response names, opening what hides it.
+    // See utils/focus-target.js.
+    installFocusTarget();
+    // A toggle, a checkbox or a radio that sends an action of its own shows the server's state
+    // once its component's request has ended, refused or not. See utils/choices-follow-the-server.js.
+    installChoicesFollowTheServer();
+    // A chart drawn with ApexCharts that names the adapter waits for it, which loads where a
+    // chart starts while `wirekit.scripts.apex` is `on-demand`. See utils/apex-on-demand.js.
+    installApexOnDemand(Alpine);
+    // The focus goes on to the next control once a cart line the reader removed has left the
+    // page. See utils/cart-removal-focus.js.
+    installCartRemovalFocus();
     // A form with `data-wk-submit-once` sends itself once until the page changes. See
     // utils/submit-once.js.
     installSubmitOnce();
     // A panel opened again while it closes reports no unhandled rejection: Alpine handles the
     // hide it cancels a frame late. See utils/canceled-transition.js.
     installCanceledTransitionHandler();
+    // The trigger of a shared tooltip that is one element, with no component of its own, is
+    // driven from the document through the tooltip factory. See utils/shared-tooltips.js.
+    installSharedTooltips(typeof window === 'undefined' ? null : window, () => wirekitTooltip);
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -346,6 +373,8 @@ function registerComponents() {
     Alpine.data('wirekitMenubar', wirekitMenubar);
     Alpine.data('wirekitNavigationMenu', wirekitNavigationMenu);
     Alpine.data('wirekitAlertDialog', wirekitAlertDialog);
+    Alpine.data('wirekitExternalLinkQuestion', wirekitExternalLinkQuestion);
+    Alpine.data('wirekitCaptcha', wirekitCaptcha);
     Alpine.data('wirekitTableSearch', wirekitTableSearch);
     Alpine.data('wirekitTableSort', wirekitTableSort);
     Alpine.data('wirekitCarousel', wirekitCarousel);
@@ -419,3 +448,9 @@ window.wirekitPosition = position;
 // for `x-wk-shortcut` to click: a page registers it here and gets its unregister back. Assigned
 // when the bundle runs, so it is there before any component starts. See utils/shortcuts.js.
 window.wirekitShortcut = defineShortcut;
+
+// A highlighter that runs in the browser writes a code block anew from its text, and the joins that
+// hold `->` or `--force` together on a wrapped line go with it: `hljs.addPlugin(window.wirekitCodeJoins)`
+// puts them back. Assigned when the bundle runs, so a page's highlighter setup finds it. See
+// utils/code-joins.js.
+window.wirekitCodeJoins = wirekitCodeJoins;

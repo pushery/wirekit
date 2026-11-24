@@ -117,9 +117,9 @@ body
 boolean
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
-border-b
+border-b-[length:var(--border-wk-width)]
 border-box
-border-t
+border-t-[length:var(--border-wk-width)]
 bordered
 both
 bottom

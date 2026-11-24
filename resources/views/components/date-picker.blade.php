@@ -89,10 +89,13 @@
     'weekNumbers' => false,
     'weekStartsOn' => config('wirekit.components.calendar.week-starts-on', 1),
     'fixedWeeks' => false,
+    // Whether the calendar waits out of the page until it first opens, in popover mode. The default
+    // comes from the configuration (`components.date-picker.lazy`).
+    'lazy' => config('wirekit.components.date-picker.lazy', false),
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -136,7 +139,14 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the picker takes the row's three
+    // tracks itself, label, control and message, as `input` does, so its control stands level
+    // with the controls beside it. Not inside a `field`, which takes the tracks for the control it
+    // wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -258,12 +268,15 @@
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
-        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
+        // The state decides the border and the ring's color together, as in the combobox: a field
+        // with an error keeps its error border while it has the focus and draws its ring in the
+        // danger text color, and only a field at rest takes the border in the accent's text color.
+        $hasError
+            ? 'border-[var(--color-wk-border-error)] focus:ring-[var(--color-wk-danger-text)]'
+            : 'border-[var(--color-wk-border-strong)] focus:ring-[var(--color-wk-ring)] focus:border-[var(--color-wk-accent-text)]',
         'rounded-[var(--radius-wk-md)]',
         'focus:outline-hidden',
         'focus:ring-[length:var(--ring-wk-width)]',
-        'focus:ring-[var(--color-wk-ring)]',
-        'focus:border-[var(--color-wk-accent)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
         'transition-colors',
@@ -298,7 +311,7 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $dateId.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     // A `field` around this control renders its hint below it, and the control is described by it
     // as by a hint of its own (Support\FieldControl).
     $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $dateId, $hint ? $hintId : null, $helpId ?? null);
@@ -450,6 +463,15 @@
     // find the layer's names: the caller's `x-model` reaches it as `x-wk-model`, read above the
     // layer's element, which marks the boundary (CallerModel::onField()).
     $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($attributes);
+    // A lazy picker holds the teleports of its dialog, the backdrop and the panel, in one template of its
+    // own among the children of its root, which the browser keeps out of the page until the picker
+    // builds it as the dialog first opens (utils/lazy-panel.js, openPanel() in utils/picker-dialog.js).
+    // The trigger names the panel with `aria-controls` once it is built, through a binding a Livewire
+    // update keeps. The wrapper is an echo, since a conditional around a tag's two ends would leave
+    // Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.date-picker.lazy', false)), 'date-picker', 'lazy') && $popover;
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
     $attributes = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($attributes) : $attributes;
 @endphp
 
@@ -464,7 +486,7 @@
      gap above an empty hint made the picker taller than one without it. A rule on the element
      before the hint rather than a negative margin on the hint: that element is often the input,
      which is inline-block, and an inline-block's margin does not collapse. --}}
-<div {{ $outerAttributes }} @class(['relative w-full space-y-1.5', '[&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]' => $formatHint]) @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif @class(['relative w-full space-y-1.5', '[&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]' => $formatHint]) @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif>
     @if($label)
         {{-- The label every field shows, through the label component: its type and weight, the
              help beside it, the mark after it and the required marker. The wrapper's
@@ -476,6 +498,11 @@
              pass WCAG 4.1.2 because the input has a programmatically-
              determinable name. --}}
         <label for="{{ $dateId }}" class="sr-only">{{ $fallbackLabel }}</label>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track, held so that the control stays on the middle one: the label
+             above, if any, is out of the flow. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     @if($isRange)
@@ -511,6 +538,13 @@
                 id="{{ $dateId }}"
                 value="{{ $startValue }}"
                 x-on:change="s = $event.target.value"
+                {{-- `min` and `max` on both fields from the server, so the browser's own picker and
+                     its check keep to them before the script runs and on a page that runs none.
+                     How each end bounds the other is left to the scope: a reader can change one
+                     field without the script, and a bound written from the other's first date
+                     would then refuse a date that is valid. --}}
+                @if($min) min="{{ $min }}" @endif
+                @if($max) max="{{ $max }}" @endif
                 :min="{{ \Pushery\WireKit\Support\AlpinePayload::from($min) }}"
                 :max="e || {{ \Pushery\WireKit\Support\AlpinePayload::from($max) }}"
                 @if($disabled) disabled @endif
@@ -528,6 +562,8 @@
                 id="{{ $dateId }}-end"
                 value="{{ $endValue }}"
                 x-on:change="e = $event.target.value"
+                @if($min) min="{{ $min }}" @endif
+                @if($max) max="{{ $max }}" @endif
                 :min="s || {{ \Pushery\WireKit\Support\AlpinePayload::from($min) }}"
                 :max="{{ \Pushery\WireKit\Support\AlpinePayload::from($max) }}"
                 @if($disabled) disabled @endif
@@ -563,14 +599,21 @@
         />
     @endif
 
+    {{-- In an aligned row every message stands in one element, the row's third track: a second
+         paragraph would have no track of its own. Empty, it holds the track. --}}
+    @if($inAlignedRow)
+        <div data-wk-field-messages @class(['space-y-1.5', '[&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]' => $formatHint])>
+    @endif
     @if($hint && !$hasError)
-        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($formatHint)
         {{-- The sentence is composed in the browser because only the browser knows its own
              date order. The translated template travels from here, so the wording is the
-             page's language; the two dates in it are formatted at runtime. --}}
+             page's language; the two dates in it are formatted at runtime. The sentence takes
+             no part in the picker's width (`contain-inline-size`), so a picker as wide as its
+             content keeps its width once the sentence arrives. --}}
         <p
             data-wk-prose-skip
             data-wk-format-hint
@@ -580,13 +623,16 @@
                 template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
             })"
             x-text="message"
-            class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"
+            class="contain-inline-size text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]"
         ></p>
     @endif
 
     @if($showsError)
         {{-- Error message linked via aria-describedby for assistive tech. --}}
-        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @endif
+    @if($inAlignedRow)
+        </div>
     @endif
 
     {{-- The live region of an optimistic field (partials/optimistic-announcer). It comes after the

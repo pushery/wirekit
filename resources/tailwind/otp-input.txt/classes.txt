@@ -44,6 +44,7 @@
 --text-wk-xl
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-tooltip
 -digit-0
 -digit-N
@@ -52,6 +53,8 @@
 -hint
 -my-1
 -required
+-tooltip
+-words
 @aware
 @compositionend
 @else
@@ -69,6 +72,7 @@
 @php
 @props
 @wirekit:otp-complete
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -84,6 +88,7 @@ activating
 acts
 actually
 add
+address
 adds
 adjustment
 advance
@@ -211,6 +216,7 @@ block
 blocked
 blur
 body
+bool
 boolean
 booting
 boots
@@ -235,11 +241,14 @@ browsers
 bubble
 bubbles
 bug
+build
+builds
 built
 but
 button
 buttons
 by
+cache
 call
 called
 caller
@@ -249,6 +258,8 @@ cancel
 cancels
 cannot
 cap
+capitalization
+capitals
 capture
 card
 caret
@@ -307,6 +318,7 @@ come
 comes
 commit
 common
+compares
 compete
 compile
 compiles
@@ -320,6 +332,7 @@ concatenation
 conditional
 config/wirekit.php
 configurable
+configuration
 configured
 conflicting
 console
@@ -339,6 +352,7 @@ corner
 correction
 costs
 could
+count
 counted
 counter
 counterpart
@@ -350,12 +364,14 @@ d
 danger-text
 dark
 data-wk-field-label
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-otp-field
 data-wk-prose-skip
@@ -363,16 +379,24 @@ data-wk-ref-scope
 data-wk-required-check
 data-wk-required-message
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 day
 debug
 decided
 decides
+declarations
 declared
 dedupe
 dedupe_ids
@@ -384,6 +408,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 denser
@@ -402,6 +427,7 @@ device
 did
 different
 differently
+differs
 digit
 digits
 direction
@@ -429,6 +455,7 @@ drawer
 drawing
 drawn
 draws
+drives
 dropped
 drops
 duration-100
@@ -479,6 +506,7 @@ evaluate
 evaluated
 event
 events
+ever
 every
 everything
 exactly
@@ -543,6 +571,7 @@ focuses
 folded
 folding
 folds
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -718,7 +747,6 @@ keeps
 kept
 key
 keyboard
-keyboards
 keydown
 keypad
 keys
@@ -740,6 +768,7 @@ later
 latter
 layer
 layout
+lazy
 leading
 leading-edge
 leading-none
@@ -763,6 +792,7 @@ light
 like
 line
 lines
+link
 linked
 list
 listener
@@ -773,6 +803,7 @@ live
 lives
 logs
 long
+longer
 look
 looked
 looks
@@ -837,7 +868,6 @@ mismatch
 misspelled
 mixed-case
 mixing
-mobile
 modal
 mode
 model
@@ -923,6 +953,7 @@ optimistic
 optimistic-announcer
 optimistic-ui
 optimisticArgs
+option
 or
 order
 orders
@@ -958,6 +989,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 passthrough
 password
@@ -1006,6 +1038,7 @@ promises
 prop
 property
 props
+prose
 proxy
 publish
 publishes
@@ -1020,6 +1053,7 @@ py-0.5
 py-[var(--padding-wk-y-xs)]
 qualified
 question
+race
 racing
 raises
 range
@@ -1072,9 +1106,11 @@ request
 requests
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageClass
 requiredMessageId
@@ -1089,6 +1125,7 @@ rests
 restyles
 result
 retyped
+ride
 right
 role
 roll
@@ -1123,6 +1160,7 @@ script
 scripted
 scripting
 scroll
+search
 second
 see
 seeds
@@ -1148,6 +1186,7 @@ shape
 share
 shared
 shares
+short
 shortcut
 shortcuts
 should
@@ -1164,6 +1203,7 @@ sign-in
 silent-empty-box
 silently
 simply
+since
 single
 single-case
 single-key
@@ -1308,6 +1348,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1326,6 +1368,7 @@ trigger
 true
 truncate
 truthy
+turn
 turns
 twelve
 twenty

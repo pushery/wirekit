@@ -15,6 +15,9 @@
     'searchPlaceholder' => config('wirekit.components.filter-builder.search-placeholder') ?? __('wirekit::Search…'),
     'addLabel' => config('wirekit.components.filter-builder.add-label') ?? __('wirekit::Add filter'),
     'scope' => null,
+    // Whether the panel that adds and edits a filter waits out of the page until it first opens. The
+    // default comes from the configuration (`components.filter-builder.lazy`).
+    'lazy' => config('wirekit.components.filter-builder.lazy', false),
 ])
 
 @php
@@ -33,8 +36,9 @@
     // Operator and boolean words for the Alpine factory. `resources/js` has no translator
     // and these strings are not decoration: every one of them ends up in `chipText()`,
     // which is the accessible name of a filter chip. Same server-translates-then-hands-down
-    // shape status-matrix uses for its state labels.
-    $filterWords = \Pushery\WireKit\Support\AlpinePayload::from([
+    // shape status-matrix uses for its state labels. The chips the page loads with are written
+    // with the same words below.
+    $filterWordList = [
         'contains' => __('wirekit::contains'),
         'is' => __('wirekit::is'),
         'isNot' => __('wirekit::is not'),
@@ -45,7 +49,8 @@
         'after' => __('wirekit::after'),
         'yes' => __('wirekit::Yes'),
         'no' => __('wirekit::No'),
-    ]);
+    ];
+    $filterWords = \Pushery\WireKit\Support\AlpinePayload::from($filterWordList);
 
     // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `searchable="false"` would otherwise mean the opposite of what the call site reads as. The
@@ -69,9 +74,11 @@
     // A field's own lists as well: the factory takes `options` and `operators` only as arrays of
     // records, and a filtered Collection of them would reach it as an object and offer nothing.
     // Only such a list is renumbered. A map of values to labels is another shape, which the
-    // factory does not read, and it is handed on as it was.
+    // factory does not read, and it is handed on as it was. A query's models in any of these
+    // lists are read as the arrays they hold, so the chips the server writes find their field,
+    // their operator and the label of their option as the script does.
     $recordList = static function ($list) {
-        $list = \Pushery\WireKit\Support\ListProp::from($list);
+        $list = \Pushery\WireKit\Support\ListProp::records($list);
 
         if (! is_array($list)) {
             return $list;
@@ -95,8 +102,8 @@
         }
 
         return $field;
-    }, (array) \Pushery\WireKit\Support\ListProp::renumbered($fields, 'filter-builder', 'fields'));
-    $valueArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($value);
+    }, (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::records($fields, 'filter-builder', 'fields')));
+    $valueArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::records($value));
 
     // The value of a rule on a `date` field is written as the day it names (Support\DateModel). A
     // date object would reach the script as `json_encode()` writes it, a Carbon date as its instant
@@ -115,6 +122,15 @@
             $valueArr[$index]['value'] = is_array($rule['value'])
                 ? array_map(static fn ($end) => \Pushery\WireKit\Support\DateModel::written('date', $end), $rule['value'])
                 : \Pushery\WireKit\Support\DateModel::written('date', $rule['value']);
+        }
+    }
+
+    // The chips as the page loads, for the moment before the script starts and for a page that
+    // runs none, each with the text the script writes on it (Support\FilterChipText).
+    $startChips = [];
+    foreach ($valueArr as $rule) {
+        if (is_array($rule)) {
+            $startChips[] = \Pushery\WireKit\Support\FilterChipText::of($rule, $fieldsArr, $filterWordList);
         }
     }
 
@@ -206,6 +222,14 @@
     // longer one as none.
     \Pushery\WireKit\Support\NumericProp::check($searchDebounce, 'filter-builder', 'searchDebounce', whole: true);
     $searchDebounceMs = min(\Pushery\WireKit\Support\NumericProp::cast($searchDebounce) ?? 0, 2147483647);
+    // A lazy filter builder holds the teleport of its panel in a template of its own beside the add
+    // button, whose wrapper names itself to the render hook; the browser keeps the template's
+    // content out of the page until the factory builds it as the panel first opens
+    // (utils/lazy-panel.js). The wrapper is an echo, since a conditional around a tag's two ends
+    // would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.filter-builder.lazy', false)), 'filter-builder', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <div
@@ -265,6 +289,19 @@
             />
         @endif
 
+        {{-- The chips as the page loads; the template below draws nothing until the script
+             starts. The script hides them as it starts and draws its own in their place, and
+             `x-show` keeps them hidden through a Livewire render as well. Text only: without the
+             script a chip opens no editor and its remove button removes nothing. The wrapper gives
+             up its box, so the chips stand in the toolbar's row. --}}
+        @if($startChips !== [])
+            <span data-wk-filter-builder-start x-show="false" class="contents">
+                @foreach($startChips as $startChip)
+                    <span class="{{ $chipClasses }}"><span>{{ $startChip }}</span></span>
+                @endforeach
+            </span>
+        @endif
+
         {{-- Active-filter chips --}}
         <template x-for="(filter, i) in filters" :key="i">
             <span class="{{ $chipClasses }}">
@@ -300,7 +337,7 @@
         </template>
 
         {{-- Add-filter popover trigger + panel (anchored to the trigger). --}}
-        <div class="relative inline-block">
+        <div class="relative inline-block" @if($lazy) data-wk-lazy-panel-host @endif>
             <button
                 type="button"
                 x-ref="trigger"
@@ -318,7 +355,7 @@
                  so the panel escapes any clipping/stacking ancestor and flips/shifts to
                  stay on-screen. click.outside lives here (on the panel), not the root,
                  because teleporting moves the panel out of the root's subtree. --}}
-            <template x-teleport="#wk-overlay-root">
+            {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
             <div
                 x-show="isOpen"
                 x-cloak
@@ -416,21 +453,17 @@
 
                 {{-- Actions --}}
                 <div class="flex items-center justify-end gap-[var(--gap-wk-sm)] pt-[var(--padding-wk-y-xs)]">
-                    <button type="button" @click="close(true)" class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Cancel') }}</button>
+                    {{-- Cancel is a labeled action, so it is a button of the kit and filled, its rank in
+                         `intent`; the action beside it is filled in the accent already. --}}
+                    <x-wirekit::button intent="neutral" size="sm" x-on:click="close(true)">{{ __('wirekit::Cancel') }}</x-wirekit::button>
                     <button type="button" @click="apply()" :disabled="!canApply()" class="wk-touch-row px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-accent)] rounded-[var(--radius-wk-md)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Add')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply')) }}"></button>
                 </div>
             </div>
-            </template>
+            </template>{{ $lazyPanelClose }}
         </div>
 
-        {{-- Clear all (only when filters exist) --}}
-        <button
-            type="button"
-            x-show="filters.length > 0"
-            x-cloak
-            @click="clearAll()"
-            class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
-        >{{ __('wirekit::Clear all') }}</button>
+        {{-- Clear all (only when filters exist): a labeled action, so a button of the kit, filled. --}}
+        <x-wirekit::button intent="neutral" size="sm" x-show="filters.length > 0" x-cloak x-on:click="clearAll()">{{ __('wirekit::Clear all') }}</x-wirekit::button>
     </div>
 
     {{-- Optional result-count / status slot — wrap it in aria-live in your app

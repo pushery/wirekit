@@ -7,6 +7,7 @@
 --color-wk-accent-content
 --color-wk-accent-fg
 --color-wk-accent-hover
+--color-wk-accent-text
 --color-wk-bg
 --color-wk-bg-active
 --color-wk-bg-elevated
@@ -28,6 +29,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-warning
@@ -85,6 +87,7 @@
 @class
 @container/wk-table
 @else
+@endforeach
 @endif
 @endphp
 @endunless
@@ -171,7 +174,7 @@ aria-label
 aria-labelledby
 aria-pressed
 aria-pressed:ring-[length:var(--ring-wk-width)]
-aria-pressed:ring-[var(--color-wk-accent)]
+aria-pressed:ring-[var(--color-wk-accent-text)]
 around
 array
 arrives
@@ -220,6 +223,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -256,17 +260,16 @@ border-[var(--color-wk-text)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 both
 bottom
 bound
 boundaries
-boundary
 box
 bracket
 branch
@@ -280,6 +283,7 @@ browser
 bug
 build
 built
+bundle
 busy
 but
 button
@@ -344,6 +348,7 @@ comes
 comment
 commit
 common
+compact
 compiled
 compiles
 component
@@ -389,7 +394,7 @@ data
 data-[active]:bg-[var(--color-wk-bg-active)]
 data-[active]:font-[number:var(--font-wk-heading-weight)]
 data-[wk-dragging]:cursor-grabbing
-data-[wk-selected]:border-[var(--color-wk-accent)]
+data-[wk-selected]:border-[var(--color-wk-accent-text)]
 data-active
 data-orientation
 data-stack-below
@@ -399,6 +404,7 @@ data-wk-button-group
 data-wk-hotspots-add
 data-wk-icon-missing
 data-wk-image-hotspots-editor
+data-wk-image-hotspots-editor-start
 data-wk-prose-skip
 data-wk-row-control
 data-wk-server-value
@@ -633,6 +639,7 @@ has
 have
 heading
 height
+held
 help
 helper
 here
@@ -657,9 +664,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -739,6 +746,7 @@ justify-center
 justify-start
 keep
 keeps
+kept
 key
 keys
 kill
@@ -751,6 +759,7 @@ labeled
 labels
 lands
 large
+larger
 last:border-b-0
 last:border-e-0
 later
@@ -784,6 +793,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 locale
 log
 logger
@@ -901,6 +911,7 @@ nobody
 node
 non-Livewire
 non-null
+none
 noopener
 nor
 noreferrer
@@ -1126,6 +1137,7 @@ rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 rounded-full
 row
+rows
 rule
 run
 runs
@@ -1173,6 +1185,7 @@ shape
 shapes
 shared
 shares
+sheet
 ships
 shop
 short
@@ -1246,6 +1259,7 @@ stand
 stands
 start
 starting
+starts
 state
 states
 static
@@ -1351,6 +1365,7 @@ tokens
 told
 too
 toolbar
+top
 touch
 touch-none
 touch-target
@@ -1438,6 +1453,7 @@ w-[var(--size-wk-sm)]
 w-[var(--size-wk-xl)]
 w-full
 wait
+waits
 wants
 warn
 warning
@@ -1492,7 +1508,6 @@ wk-touch-row
 wk-touch-target
 wk-touch-text-floor
 word
-words
 working
 worse
 worth
@@ -1518,6 +1533,7 @@ x-bind:disabled
 x-bind:key
 x-bind:style
 x-bind:value
+x-cloak
 x-data
 x-for
 x-model

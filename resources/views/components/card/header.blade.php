@@ -31,14 +31,14 @@
 @php
     // — iconSlot symmetry: optional named slot for a header
     // icon/avatar/illustration. Renders before the default slot content.
-    $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
+    $hasIconSlot = \Pushery\WireKit\Support\SlotContent::given($iconSlot ?? null);
 
     // The buttons at the end of the head, and the sentence under the heading. With either, the head
     // lays out as `page-header` does: the heading column asks for 16rem, and the buttons stand
     // beside it while the head has room and drop under it where it has not. The break is the
     // head's own width, not the window's, since a card stands in a column of its own. Without
     // either the head is the row it always was.
-    $hasActions = isset($actions) && $actions->hasActualContent();
+    $hasActions = \Pushery\WireKit\Support\SlotContent::given($actions ?? null);
 
     // A card that is a link or a button is one control, and its head takes no buttons. With `href`
     // the card renders as an `<a>`, with `as="button"` as a `<button>`, and `role="button"` makes it
@@ -81,7 +81,7 @@
     {{-- With a sentence under the heading, the buttons keep to the top of the column; with the
          heading alone, to its middle. --}}
     <div data-wk-card-header {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'flex flex-wrap justify-between gap-[var(--gap-wk-sm)]', $hasDescription ? 'items-start' : 'items-center'])) }}>
-        <div class="flex min-w-0 grow basis-[16rem] items-center gap-[var(--gap-wk-sm)]">
+        <div class="flex min-w-0 grow basis-[16rem] items-center gap-[var(--gap-wk-card-header-icon)]">
             @if($hasIconSlot)
                 <div class="shrink-0">{{ $iconSlot }}</div>
             @endif
@@ -97,7 +97,7 @@
         @endwirekitLast
     </div>
 @else
-    <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'flex items-center gap-[var(--gap-wk-sm)]'])) }}>
+    <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'flex items-center gap-[var(--gap-wk-card-header-icon)]'])) }}>
         @if($hasIconSlot)
             <div class="shrink-0">{{ $iconSlot }}</div>
         @endif

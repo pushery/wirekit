@@ -54,7 +54,9 @@
     $placed = [];
     // An entry may be a slot key alone, so a single key written as text is an order of one
     // through the cast, and a text is no error here.
-    foreach ((array) (ListProp::from($order) ?? []) as $entry) {
+    // A text with commas names several keys, `order="prices,details"`.
+    // An enum as a key, in the list or in an entry, is read as its value.
+    foreach ((array) (ListProp::records(ListProp::splitAtCommas($order)) ?? []) as $entry) {
         $key = is_array($entry) ? (string) ($entry['key'] ?? '') : (string) $entry;
         $slotName = \Pushery\WireKit\Support\KeyedSlot::nameFor($slots, $key);
 

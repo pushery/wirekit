@@ -54,7 +54,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null, 'requiredMark' => true])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -84,7 +84,9 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set', 'requiredMark', 'required-mark']);
+    // Whether the asterisk is drawn: the field's own `requiredMark`, else the form's around it.
+    $requiredMark = \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
 @endphp
 
 
@@ -383,8 +385,8 @@
     <label
         for="{{ $uploadId }}"
         :class="dragging
-            ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-bg-active)]'
-            : {{ \Pushery\WireKit\Support\AlpinePayload::string(($hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]').($disabled ? '' : ' hover:border-[var(--color-wk-accent)]')) }}"
+            ? 'border-[var(--color-wk-accent-text)] bg-[var(--color-wk-bg-active)]'
+            : {{ \Pushery\WireKit\Support\AlpinePayload::string(($hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]').($disabled ? '' : ' hover:border-[var(--color-wk-accent-text)]')) }}"
         class="{{ $dropzoneClasses }}"
         @dragover.prevent="dragOver()"
         @dragleave.prevent="dragging = false"
@@ -401,7 +403,7 @@
              out only when a field's label names the input already. --}}
         {{-- A compact label that the row cuts is whole in its title, as plain text. --}}
         @if($labelIsVisible || $fieldLabelId === null)
-            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}" @if($labelIsVisible && $variantValue === 'compact') title="{{ \Pushery\WireKit\Support\SlotContent::plain(is_scalar($labelText) ? (string) $labelText : $labelText) }}" @endif>{{ $labelText }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
+            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}" @if($labelIsVisible && $variantValue === 'compact') title="{{ \Pushery\WireKit\Support\SlotContent::plain(is_scalar($labelText) ? (string) $labelText : $labelText) }}" @endif>{{ $labelText }}@wirekitLast($required && $requiredMark)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
         @endif
 
         {{-- Hidden native input — click on label triggers it, drag-drop replaces files. --}}
@@ -497,11 +499,11 @@
     </ul>
 
     @if($hint && !$hasError)
-        <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="mt-1.5 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @wirekitLast($showsError)
         {{-- Error message — aria-describedby'd above, and visually distinguished. --}}
-        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-1.5 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endwirekitLast
 </div>

@@ -1,5 +1,5 @@
 --border-wk-width
---color-wk-accent
+--color-wk-accent-text
 --color-wk-bg-elevated
 --color-wk-border
 --color-wk-ring
@@ -75,6 +75,7 @@ arrays
 arrive
 arrives
 as
+aspect-[var(--wk-hotspot-crop-ratio)]
 at
 attempted
 attribute
@@ -163,9 +164,9 @@ crop
 cursor-pointer
 custom
 data
-data-[wk-active]:border-[var(--color-wk-accent)]
+data-[wk-active]:border-[var(--color-wk-accent-text)]
 data-[wk-active]:ring-[length:var(--ring-wk-width)]
-data-[wk-active]:ring-[var(--color-wk-accent)]
+data-[wk-active]:ring-[var(--color-wk-accent-text)]
 data-wk-hotspot
 data-wk-hotspot-card
 data-wk-hotspot-off-phone
@@ -183,6 +184,7 @@ declaring
 decorative
 default
 degradation
+desktop
 dev
 developer
 dir
@@ -242,8 +244,10 @@ follows
 font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-heading-weight)]
 for
+forceMobile
 forcing
 foreach
+form
 four
 framework
 from
@@ -341,7 +345,11 @@ lazy
 leave
 leaves
 left
+left-[var(--wk-hotspot-crop-left)]
+left-[var(--wk-hotspot-phone-x)]
 left-[var(--wk-hotspot-x)]
+left-auto
+left-full
 lg
 like
 line
@@ -388,6 +396,8 @@ max-md:right-full
 max-md:top-[var(--wk-hotspot-crop-top)]
 max-md:top-[var(--wk-hotspot-phone-y)]
 max-md:w-[var(--wk-hotspot-crop-width)]
+max-w-[calc(var(--wk-hotspot-phone-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]
+max-w-none
 may
 md
 md:hidden
@@ -409,6 +419,8 @@ middle
 min-w-0
 mirror
 missing
+ml-0
+ml-[var(--space-wk-xs)]
 modal
 model
 models
@@ -416,10 +428,13 @@ more
 most
 move
 moved
+mr-0
+mr-[var(--space-wk-xs)]
 mt-[var(--space-wk-sm)]
 name
 named
 names
+narrower
 needs
 neither
 nested
@@ -457,6 +472,7 @@ out
 outer
 outside
 over
+overflow-hidden
 overflow-x-auto
 overscroll-x-contain
 own
@@ -494,6 +510,7 @@ picks
 picture
 place
 placeholder
+places
 plain
 plus
 point
@@ -508,6 +525,7 @@ preserves
 preset
 press
 pressed
+preview
 problem
 props
 provides
@@ -554,6 +572,8 @@ result
 return
 returns
 right
+right-auto
+right-full
 ring
 role
 roll
@@ -658,6 +678,8 @@ to
 tooltip
 top
 top-1/2
+top-[var(--wk-hotspot-crop-top)]
+top-[var(--wk-hotspot-phone-y)]
 top-[var(--wk-hotspot-y)]
 touches
 transition-opacity
@@ -692,6 +714,7 @@ w-4
 w-5
 w-6
 w-8
+w-[var(--wk-hotspot-crop-width)]
 w-full
 w-max
 warning
@@ -715,6 +738,7 @@ widen
 wider
 width
 win
+window
 wins
 with
 without

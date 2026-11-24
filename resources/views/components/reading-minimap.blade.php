@@ -308,9 +308,12 @@
             data-test="reading-minimap-anchors"
         >
             <template x-for="(anchor, idx) in headingAnchorsList" :key="anchor.id">
+                {{-- `lang` only where the heading's language differs from the minimap's: a heading
+                     of an English article on a German page is read as English (WCAG 3.1.2). --}}
                 <a data-wk-prose-skip
                     class="wk-reading-minimap__anchor"
                     :href="anchorHref(anchor)"
+                    :lang="anchor.lang"
                     :style="anchorStyle(anchor)"
                     :data-collapsed="anchor.collapsed ? 'true' : 'false'"
                     {{-- A collapsed anchor is painted at `opacity: 0` until the

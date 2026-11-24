@@ -50,7 +50,7 @@
                 <svg class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)]" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span id="{{ $timeSelectValueId }}" class="min-w-0 flex-1 truncate tabular-nums">
+                <span id="{{ $timeSelectValueId }}" class="min-w-0 flex-1 truncate tabular-nums" x-bind:title="timeSelectEmpty() ? '' : timeSelectText()">
                     <span x-show="! timeSelectEmpty()" x-text="timeSelectText()"></span>
                     <span x-show="timeSelectEmpty()" class="text-[color:var(--color-wk-text-placeholder)]">{{ __('wirekit::Time') }}</span>
                 </span>

@@ -88,6 +88,31 @@ final class SlotContent
     }
 
     /**
+     * The slot's words as a screen reader reads them from content: its text without the elements
+     * hidden from one (`aria-hidden="true"`), the character references in it resolved.
+     */
+    public static function spoken(Htmlable|string|null $slot): string
+    {
+        $html = $slot instanceof Htmlable ? $slot->toHtml() : (string) $slot;
+
+        return trim(html_entity_decode(strip_tags((string) preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s', '', $html)), ENT_QUOTES | ENT_HTML5));
+    }
+
+    /**
+     * Whether the slot names the element it fills: it holds words a screen reader reads, or an
+     * element with a name of its own (`aria-label`, `aria-labelledby`, an image's `alt`).
+     *
+     * A slot that shows only what is hidden from a screen reader, a swatch without a label or an
+     * icon, names nothing, however much it shows: a control around it needs its name elsewhere.
+     */
+    public static function names(Htmlable|string|null $slot): bool
+    {
+        $html = $slot instanceof Htmlable ? $slot->toHtml() : (string) $slot;
+
+        return self::spoken($html) !== '' || preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/', $html) === 1;
+    }
+
+    /**
      * The text of a prop that takes text or markup, such as a `label`.
      *
      * An Htmlable is markup, read as plain() reads a slot. A string is text already: its tags, if it

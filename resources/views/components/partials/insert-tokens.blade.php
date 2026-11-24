@@ -13,6 +13,6 @@
      takes no expression and so runs under Alpine's CSP build. --}}
 <div data-wk-prose-skip data-wk-insert-tokens x-data x-wk-insert-token data-wk-insert-for="{{ $insertFor }}" role="group" aria-label="{{ $insertName }}" class="flex flex-wrap gap-[var(--gap-wk-xs)]">
     @foreach($insertTokens as $token => $meaning)
-        <x-wirekit::button type="button" intent="neutral" surface="outline" size="xs" :disabled="$insertDisabled" data-wk-insert-token="{{ $token }}"><span class="font-[family-name:var(--font-wk-mono)]">{{ $token }}</span>@if(filled($meaning))<span class="sr-only">, {{ $meaning }}</span>@endif</x-wirekit::button>
+        <x-wirekit::button type="button" intent="neutral" size="xs" :disabled="$insertDisabled" data-wk-insert-token="{{ $token }}"><span class="font-[family-name:var(--font-wk-mono)]">{{ $token }}</span>@if(filled($meaning))<span class="sr-only">, {{ $meaning }}</span>@endif</x-wirekit::button>
     @endforeach
 </div>

@@ -128,8 +128,11 @@
     $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
 
     // What is chosen, as text, the way the browser compares an input's value. A list may arrive as a
-    // Collection, which ListProp reads as the list it holds; a single value passes through.
+    // Collection, which ListProp reads as the list it holds; a single value passes through. An enum
+    // in the list, as a model attribute cast to a collection of enums hands one over, is read as its
+    // value, and an entry that is a list itself is reported and left out (Support\FieldValue).
     $chosen = \Pushery\WireKit\Support\ListProp::renumbered($value);
+    $chosen = is_array($chosen) ? \Pushery\WireKit\Support\FieldValue::items($chosen, 'swatch-group') : $chosen;
     $chosen = array_map(
         static fn (mixed $item): string => (string) $item,
         array_values(array_filter(is_array($chosen) ? $chosen : [$chosen], static fn (mixed $item): bool => is_scalar($item) && (string) $item !== '')),
@@ -212,11 +215,11 @@
         'cursor-pointer has-[:disabled]:cursor-not-allowed',
     ]), $scope);
 
-    // The state is drawn on the swatch, the input's next sibling: an outline in the accent color
+    // The state is drawn on the swatch, the input's next sibling: an outline in the accent's text color
     // for the chosen one, with a gap of the surface between, and the focus ring of every field.
     $swatchClasses = implode(' ', [
         'outline-offset-2',
-        'peer-checked:outline-2 peer-checked:outline-solid peer-checked:outline-[color:var(--color-wk-accent)]',
+        'peer-checked:outline-2 peer-checked:outline-solid peer-checked:outline-[color:var(--color-wk-accent-text)]',
         'group-hover/swatch:border-[var(--color-wk-border-strong-hover)]',
         'peer-focus-visible:ring-[length:var(--ring-wk-width)]',
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',

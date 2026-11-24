@@ -79,6 +79,13 @@
         $noiseDb = null;
     }
 
+    // The decibels stand after the loudspeaker of the noise arrow and nowhere else. Given without a
+    // noise class, they have no arrow to stand in and are reported like a class the scale does not
+    // have. A wrong noise class is reported above.
+    if ($noiseDb !== null && blank($noise)) {
+        StrictnessGate::reject('tire-label', 'noise-db', (string) $noiseDb, 'a noise class beside it', '');
+    }
+
     // The size of the price, so the classes stand as large as the price does. Literal arms, as on
     // `price`: an assembled class has no rule behind it.
     $sizeClasses = match (WireKit::validateProp('tire-label', 'size', (string) $size, ['xs', 'sm', 'md', 'lg', 'xl'])) {

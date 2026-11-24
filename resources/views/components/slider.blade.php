@@ -64,6 +64,11 @@
     // beside the track each slider reserves room for its own widest value, so five sliders
     // with five different value words drew five different track lengths.
     'valuePosition' => 'end',
+    // Where the label stands: `start`, beside the track as it always has, or `above`, on its own
+    // line over the track. `above` lines up the tracks of sliders under each other: beside the
+    // track each label takes the width of its own words, so a longer label starts its track
+    // further along, and the marks of two sliders no longer stand over each other.
+    'labelPosition' => 'start',
     // Step marks: a list of values (`[0, 25, 50, 75, 100]`) for plain ticks, or a
     // value => label map (`[0 => 'Low', 100 => 'High']`) for labeled ticks.
     'marks' => [],
@@ -77,7 +82,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null, 'requiredMark' => true])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -87,7 +92,9 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set', 'requiredMark', 'required-mark']);
+    // Whether the asterisk is drawn: the field's own `requiredMark`, else the form's around it.
+    $requiredMark = \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
 
     // A range field gives its value as text, and Livewire takes the server's echo of an `int` or
     // `float` property for a change and writes it over a newer value: a binding to one gets
@@ -127,6 +134,12 @@
         default => \Pushery\WireKit\WireKit::validateProp('slider', 'valuePosition', (string) $valuePosition, ['end', 'below']) === 'below',
     };
     $valueBelow = $valueBelow && $showValue;
+    $labelAbove = match ($labelPosition) {
+        'start' => false,
+        'above' => true,
+        default => \Pushery\WireKit\WireKit::validateProp('slider', 'labelPosition', (string) $labelPosition, ['start', 'above']) === 'above',
+    };
+    $labelAbove = $labelAbove && filled($label);
     $tooltip = BooleanProp::from($tooltip, false, 'slider', 'tooltip');
     $disabled = BooleanProp::from($disabled, false, 'slider', 'disabled');
     $required = BooleanProp::from($required, false, 'slider', 'required');
@@ -180,7 +193,7 @@
     // which is where its hidden copy is rendered (partials/field-help).
     $helpId = filled($help) && filled($label) ? $sliderId.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     // A `field` around this control renders its hint below it, and the control is described by it
     // as by a hint of its own (Support\FieldControl).
     $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $sliderId, $hint ? $sliderId.'-hint' : null, $helpId ?? null);
@@ -351,11 +364,12 @@
         // With the value below, a grid rather than the row: the label keeps its column and the
         // value gets a line of its own under the track. A wrapping row would center the value
         // under the label and the track together, half a label away from the track's middle.
-        // One column when no label is shown, or an empty first column would still cost a gap.
+        // One column when no label is shown, or an empty first column would still cost a gap, and
+        // when the label stands above the track, where it is the first row of that column.
         // The gap is a gap token and runs between the rows too, so the value line keeps the same
         // distance from whatever sits above it: the track, or the marks under the track.
         $valueBelow
-            ? 'grid items-center gap-[var(--gap-wk-sm)] w-full '.($label ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)]')
+            ? 'grid items-center gap-[var(--gap-wk-sm)] w-full '.($label && ! $labelAbove ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)]')
             : 'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
         // `min(16rem, 100%)`, not a bare `16rem`. The floor keeps a shrink-to-fit
         // context (a flex or grid auto item, a table cell, a fit-content wrapper) from
@@ -368,13 +382,15 @@
         // of the two was meant, one of them was wrong in the source of truth; 16rem is what
         // shipped and what every preview is drawn against, so that is what stays.)
         'min-w-[min(16rem,100%)]',
-        $tooltip ? 'pt-7' : '',
+        $tooltip && ! $labelAbove ? 'pt-7' : '',
         // With the value below, the value's own line takes the room the marks hang into (see
         // $valueClasses), so the wrapper reserves nothing under the track itself. A message
         // takes that room too: the row wraps, the message is a line of its own (`basis-full`),
         // and it starts under the marks. Without the wrap it was a fourth item of the row,
         // beside the value, and took its width from the track.
-        $valueBelow ? '' : ($hasMessage ? 'flex-wrap gap-y-[var(--gap-wk-xs)]' : ($hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-[var(--padding-wk-y-md)]' : ''))),
+        // A label above the track is a line of its own as well, so the row wraps for it too.
+        $valueBelow ? '' : (($hasMessage || $labelAbove) ? 'flex-wrap gap-y-[var(--gap-wk-xs)]' : ''),
+        ($valueBelow || $hasMessage) ? '' : ($hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-[var(--padding-wk-y-md)]' : '')),
     ])), $scope);
 
     // The native input — we make the thumb and track visible via `wk-slider`
@@ -438,6 +454,21 @@
         }
     }
 
+    // The value as the page loads, in the text and at the place the factory gives it when it
+    // starts (`valueText`, `pct`), so the readout and the bubble show it before the script runs
+    // and on a page that runs none. The script writes over both as it starts.
+    $startValueText = $valueTextMap[(string) $currentValue]
+        ?? \Pushery\WireKit\Support\LocalizedNumber::scale((float) $currentValue, precision: $valuePlaces);
+    $startRange = ((float) $max - (float) $min) ?: 1.0;
+    $startPct = round(max(0.0, min(100.0, (((float) $currentValue - (float) $min) / $startRange) * 100)), 4);
+
+    // Above the track the label is a line of its own: the whole first line of the wrapped row,
+    // or the first row of the one-column grid. With the tooltip, the room the bubble needs over
+    // the track stands between the label and the track, where the wrapper's `pt-7` reserved it
+    // over the label beside the track. The label, or the row that holds it with its help,
+    // carries them.
+    $labelLineClasses = $labelAbove ? ($tooltip ? 'basis-full mb-7' : 'basis-full') : '';
+
     $valueClasses = WireKit::resolveClasses('slider', 'value', implode(' ', array_filter([
         'tabular-nums',
         'text-[length:var(--text-wk-sm)]',
@@ -447,7 +478,7 @@
         $valueBelow ? 'grid justify-items-center text-center' : 'grid justify-items-end text-end',
         // Below the track: the track's column, so the value centers under the track rather
         // than under the label beside it.
-        $valueBelow && $label ? 'col-start-2' : '',
+        $valueBelow && $label && ! $labelAbove ? 'col-start-2' : '',
         // And the value line starts under the marks. They hang out of flow from the track, so
         // the grid row does not know they are there: a tick is 0.5rem under the track and a
         // labeled one adds a line of `xs` text, 1.75rem in all.
@@ -580,11 +611,12 @@
         {{-- With help, the label and its button are one item of the row, the button outside the
              label so it stays out of the field's name. --}}
         @if($helpId || $hasLabelAfter)
-        <div data-wk-label-row class="{{ $hasLabelAfter ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
+        <div data-wk-label-row class="{{ $hasLabelAfter ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}{{ $labelLineClasses !== '' ? ' '.$labelLineClasses : '' }}">@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
         @endif
         {{-- Its own label rather than the label component: it stands beside the track in this row,
-             not above a control, and takes the row's smaller type. --}}
-        <label data-wk-field-label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</label>
+             or on a line of its own above it with `labelPosition="above"`, and takes the row's
+             smaller type either way. --}}
+        <label data-wk-field-label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ ($labelLineClasses !== '' && ! ($helpId || $hasLabelAfter)) ? ' '.$labelLineClasses : '' }}">{{ $label }}@wirekitLast($required && $requiredMark)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</label>
         @if($helpId || $hasLabelAfter)
             @if($helpId)
                 @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
@@ -611,8 +643,8 @@
                  at the lowest value it starts where the thumb starts and extends inward,
                  at the highest it ends where the thumb ends, and it centers in the middle.
                  (The native thumb has no JS-readable width, so pct doubles as the shift.) --}}
-            <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" :style="bubbleStyle()" aria-hidden="true">
-                <span class="wk-tooltip-panel block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="bubbleShiftStyle()" x-text="valueText"></span>
+            <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" style="inset-inline-start: {{ $startPct }}%" :style="bubbleStyle()" aria-hidden="true">
+                <span class="wk-tooltip-panel block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" style="transform: translateX(calc(var(--wk-slider-run, 1) * -{{ $startPct }}%))" :style="bubbleShiftStyle()" x-text="valueText">{{ $startValueText }}</span>
             </div>
         @endif
 
@@ -711,7 +743,9 @@
                             title="{{ $mark['description'] }}"
                         @endif
                     >
-                        <span class="relative h-1 w-px translate-x-[calc(var(--wk-slider-run,1)*-50%)] bg-[var(--color-wk-border)]" style="inset-inline-start: {{ $mark['pct'] }}%"></span>
+                        {{-- The tick is drawn in the control border: a mark without a label shows its
+                             place on the scale by this stroke alone. --}}
+                        <span class="relative h-1 w-px translate-x-[calc(var(--wk-slider-run,1)*-50%)] bg-[var(--color-wk-border-strong)]" style="inset-inline-start: {{ $mark['pct'] }}%"></span>
                         @wirekitLast($mark['label'] !== '')
                             <span data-wk-slider-mark-label="{{ $loop->index }}" x-bind:style="markLabelStyle({{ $loop->index }})" class="mt-0.5 whitespace-nowrap text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
                         @endwirekitLast
@@ -745,7 +779,7 @@
                  box: that is `data-wk-slider-value` on the parent. This comment offered the
                  attribute as one until the box became a grid, and a rule written against it then
                  moved the text inside the box instead of the box. --}}
-            <span aria-live="polite" class="col-start-1 row-start-1 whitespace-nowrap" x-text="valueText"></span>
+            <span aria-live="polite" class="col-start-1 row-start-1 whitespace-nowrap" x-text="valueText">{{ $startValueText }}</span>
         </span>
     @endif
 @if($optimisticConfig)

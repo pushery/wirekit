@@ -192,7 +192,7 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     // A `field` around this control renders its hint below it, and the control is described by it
     // as by a hint of its own (Support\FieldControl).
     $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);

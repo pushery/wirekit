@@ -61,6 +61,14 @@
     // selected nothing and the browser fell back to the first option — the field
     // showed one choice while everything reading the component believed another.
     'value' => null,
+    // Whether the field carries only its placeholder and chosen option until it is first used, by
+    // focus or pointer, while the rest of the list waits in a template after it. The default comes
+    // from the configuration (`components.select.lazy`).
+    'lazy' => config('wirekit.components.select.lazy', false),
+    // A name for the list of a lazy field, so that several fields with the same options carry it
+    // once: the first field of the render with the key writes the list, every other one points to
+    // it. Null gives each field its own list.
+    'optionsKey' => null,
     'scope' => null,
 ])
 
@@ -246,8 +254,8 @@
     // tokens. Each state names its own ring color: a second one in the base list would be
     // decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = match (true) {
-        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
-        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
+        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]',
+        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success-text)]',
         // Hover belongs to the resting state only, so an error or a success border keeps its
         // color under the pointer.
         default => 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -314,6 +322,46 @@
     // layer's element, which marks the boundary (CallerModel::onField()).
     $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($attributes);
     $attributes = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($attributes) : $attributes;
+
+    // A lazy field carries its placeholder and chosen option, and the list waits in a template after
+    // it until the first focus or pointer (resources/js/utils/lazy-select-options.js). The server has
+    // to know which option is chosen, so the field builds with the page where only the browser
+    // knows: an `x-model`, or a `wire:model` without `value` whose path BoundProperty cannot follow,
+    // or that ends on a list. A browser fills a field only with a value it holds as an option, so a
+    // field it may fill in builds with the page too, as does one whose options all come in the slot.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.select.lazy', false)), 'select', 'lazy');
+    $chosenValue = $value;
+    if ($lazy) {
+        $autocomplete = strtolower(trim((string) $attributes->get('autocomplete', '')));
+        $lazy = $optionList !== []
+            && ! \Pushery\WireKit\Support\CallerModel::binds($attributes)
+            && ($autocomplete === '' || $autocomplete === 'off');
+        $wirePath = trim((string) $attributes->whereStartsWith('wire:model')->first());
+
+        if ($lazy && $wirePath !== '' && $value === null) {
+            $component = \Pushery\WireKit\Support\BoundProperty::rendering();
+            $bound = $component === null ? null : \Pushery\WireKit\Support\BoundProperty::find($component, $wirePath);
+            $boundValue = $bound !== null && $bound[1]->isInitialized($bound[0]) ? $bound[1]->getValue($bound[0]) : null;
+            $lazy = $bound !== null && $bound[1]->isInitialized($bound[0]) && ! is_array($boundValue) && ! $boundValue instanceof \Traversable;
+            $chosenValue = $lazy ? \Pushery\WireKit\Support\FieldValue::one($boundValue, 'select') : null;
+        }
+    }
+    // As text through NumericProp, so a bound float that is not finite or an object without text
+    // matches no option instead of ending the render.
+    $isChosen = fn ($candidate): bool => $chosenValue !== null && \Pushery\WireKit\Support\NumericProp::text($chosenValue) === (string) $candidate;
+    // The options inside the field, and the template after it: an echo rather than a block, so
+    // Livewire writes no morph markers beside the field. The list marks no option chosen, since a
+    // shared one serves fields with different values: the field keeps its value when it builds,
+    // and a render takes the choice from the option the server writes into the field.
+    $fieldOptions = $lazy
+        ? \Pushery\WireKit\Support\SelectOptions::chosen($optionList, $isChosen, $placeholder, $chosenValue === null || $chosenValue === '')
+        : \Pushery\WireKit\Support\SelectOptions::html($optionList, $isSelected, $placeholder, $value === null || $value === '');
+    $optionsKey = $lazy && filled($optionsKey) ? trim((string) $optionsKey) : null;
+    $lazyList = $lazy ? \Pushery\WireKit\Support\SelectOptions::html($optionList, static fn (): bool => false, $placeholder, false)->toHtml() : '';
+    $writesList = $lazy && ($optionsKey === null || \Pushery\WireKit\Support\SelectOptionLists::claim($optionsKey, $lazyList));
+    $lazyOptionList = $writesList
+        ? new \Illuminate\Support\HtmlString('<template data-wk-select-options'.($optionsKey !== null ? '="'.e($optionsKey).'"' : '').'>'.$lazyList.'</template>')
+        : '';
 @endphp
 
 <div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
@@ -323,8 +371,10 @@
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
-    @elseif($inAlignedRow)
-        {{-- An empty label track, held so that the control stays on the middle one. --}}
+    @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track, held so that the control stays on the middle one: a label
+             hidden from the eye is out of the flow and holds no track. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
@@ -341,6 +391,8 @@
             @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($fieldRequired) aria-required="true" @endif
+            @if($lazy) data-wk-lazy-options @endif
+            @if($optionsKey !== null && ! $writesList) data-wk-options-from="{{ $optionsKey }}" @endif
             {{-- wk-field: lifts font-size to the 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $selectClasses, $stateClasses, $sizeClasses])) }}
         >
@@ -368,10 +420,12 @@
 
                 The placeholder and the options are written as one string (Support\SelectOptions):
                 Livewire puts two comments around every control structure, once per pass of a loop.
+                A lazy field writes its placeholder and chosen option here, and the list after it.
             --}}
-            {{ \Pushery\WireKit\Support\SelectOptions::html($optionList, $isSelected, $placeholder, $value === null || $value === '') }}
+            {{ $fieldOptions }}
             {{ $slot }}
         </select>
+        {{ $lazyOptionList }}
 
         {{-- Dropdown arrow indicator — color via design token for automatic dark mode --}}
         <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]">

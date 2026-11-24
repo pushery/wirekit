@@ -27,6 +27,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-warning
@@ -47,7 +48,6 @@
 --gap-wk-xl
 --gap-wk-xs
 --opacity-wk-disabled
---opacity-wk-hover
 --padding-wk-x-lg
 --padding-wk-x-md
 --padding-wk-x-sm
@@ -119,6 +119,7 @@ accepts
 accessibility
 accessible
 ackgrounds
+across
 action
 activated
 active-tab
@@ -238,6 +239,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -270,11 +272,11 @@ border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 both
 bottom
@@ -296,6 +298,7 @@ browser-default
 build
 building
 built
+bundle
 busy
 but
 button
@@ -525,7 +528,7 @@ emitted
 empty
 enabled
 end
-end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)]
+end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-var(--gap-wk-sm))]
 ending
 ends
 enough
@@ -551,6 +554,7 @@ expression
 expressions
 extra
 factory
+fade
 fading
 fails
 failure
@@ -673,6 +677,8 @@ go
 goes
 grid
 group
+group-hover/wk-step:underline
+group/wk-step
 grown
 guess
 guessing
@@ -714,6 +720,7 @@ hides
 high
 higher
 hint
+hints
 historical
 hit
 hold
@@ -728,9 +735,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -738,7 +745,6 @@ hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
-hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-text)]
 hover:underline
 hovered
@@ -832,6 +838,8 @@ labels
 ladder
 lands
 lang
+language
+larger
 last
 last:border-b-0
 last:border-e-0
@@ -867,6 +875,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 log
 logger
 login
@@ -1292,6 +1301,7 @@ shapes
 share
 shared
 shares
+sheet
 ship
 shipped
 ships
@@ -1504,7 +1514,6 @@ tracking-[var(--font-wk-letter-spacing)]
 tracks
 trade
 transition-colors
-transition-opacity
 translatable
 translated
 transparent
@@ -1526,7 +1535,10 @@ unbound
 unconditional
 unconditionally
 under
+underline
+underline-offset-2
 underline-offset-4
+underlines
 unfinished
 unknown
 unlabeled
@@ -1627,6 +1639,7 @@ wire:model
 wire:poll
 wire:submit
 wire:target
+wirekit:doctor:props
 with
 withheld
 withholds

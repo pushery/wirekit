@@ -117,7 +117,7 @@
     ></span>
 
     @wirekitLast(! $slot->hasActualContent())
-        <x-wirekit::button intent="danger" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Confirm') }}</x-wirekit::button>
+        <x-wirekit::button intent="danger" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Confirm') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the rendered markup,
              because that is what a slot holds: by the time it is cast to a string
@@ -133,6 +133,6 @@
     @else
         {{-- Plain text slot — wrap it so keyboard and screen-reader semantics stay
              correct rather than shipping a bare span somebody has to click. --}}
-        <x-wirekit::button intent="danger" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
+        <x-wirekit::button intent="danger" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
     @endwirekitLast
 </div>

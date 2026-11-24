@@ -1,5 +1,5 @@
 --border-wk-width
---color-wk-accent
+--color-wk-accent-text
 --color-wk-bg-muted
 --color-wk-border
 --color-wk-border-strong
@@ -39,6 +39,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --wk-swatch-size
 --z-wk-tooltip
 -error
@@ -46,6 +47,8 @@
 -hint
 -label
 -my-1
+-tooltip
+-words
 @aware
 @else
 @endforeach
@@ -96,6 +99,7 @@ announceErrors
 announce_error
 announced
 announcing
+another
 answer
 anticipate
 any
@@ -180,10 +184,13 @@ broken
 browser
 bubble
 bug
+build
+builds
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -227,6 +234,7 @@ closes
 code
 collapsed
 collapses
+collection
 color
 colors
 column
@@ -239,6 +247,7 @@ component
 components
 conditional
 config/wirekit.php
+configuration
 console
 constraint
 container
@@ -265,23 +274,32 @@ danger-text
 dark
 data-wk-arrow-ring
 data-wk-field-label
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-swatch
 data-wk-swatch-fill
 data-wk-swatch-option
 data-wk-swatch-unavailable
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
 decided
 declarations
@@ -291,8 +309,10 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -320,6 +340,7 @@ drawer
 drawing
 drawn
 draws
+drives
 dropped
 drops
 duration-100
@@ -335,6 +356,7 @@ either
 element
 elements
 elevated
+else
 elsewhere
 empty
 end
@@ -342,7 +364,9 @@ ends
 ensures
 enter
 enters
+entry
 enum
+enums
 error
 escape
 escaped
@@ -351,6 +375,7 @@ escaping
 evaluated
 event
 events
+ever
 every
 exactly
 explains
@@ -358,6 +383,7 @@ explanation
 explicit
 expression
 fabric
+factory
 fade
 failed
 fails
@@ -371,6 +397,7 @@ fill
 filled
 fills
 filter
+find
 finds
 finish
 fire
@@ -392,6 +419,7 @@ focus-within
 focusable
 focusable-trigger
 focusableTrigger
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -422,6 +450,7 @@ gap-y-[var(--gap-wk-xs)]
 get
 gets
 given
+gives
 global
 glyph
 go
@@ -471,6 +500,7 @@ high
 hint
 hit
 hoists
+hold
 holds
 horizontal
 host
@@ -543,6 +573,7 @@ lang
 language
 last
 later
+lazy
 leading-none
 leads
 learns
@@ -562,6 +593,7 @@ like
 line
 line-through
 lines
+link
 linked
 list
 listener
@@ -667,6 +699,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -712,6 +745,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 passes
 passthrough
@@ -719,7 +753,7 @@ patches
 path
 peer
 peer-checked:outline-2
-peer-checked:outline-[color:var(--color-wk-accent)]
+peer-checked:outline-[color:var(--color-wk-accent-text)]
 peer-checked:outline-solid
 peer-checked:text-[color:var(--color-wk-text)]
 peer-disabled:opacity-[var(--opacity-wk-disabled)]
@@ -764,6 +798,7 @@ project
 prop
 property
 props
+prose
 proxy
 put
 puts
@@ -777,6 +812,7 @@ py-[var(--padding-wk-y-xs)]
 qualified
 question
 quoted
+race
 racing
 radio
 radiogroup
@@ -814,6 +850,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 resolved
 resolves
@@ -821,6 +859,8 @@ rest
 rests
 restyles
 result
+ride
+right
 ring
 rings
 role
@@ -834,6 +874,7 @@ rounded-full
 row
 rule
 run
+running
 s
 safe
 same
@@ -846,6 +887,7 @@ screen
 script
 scripts
 scroll
+search
 second
 see
 sees
@@ -865,6 +907,7 @@ shape
 share
 shared
 shares
+short
 shortcut
 shortcuts
 should
@@ -878,6 +921,7 @@ siblings
 side
 sidebar
 simply
+since
 single
 single-key
 site
@@ -981,8 +1025,10 @@ theme
 then
 there
 therefore
+these
 they
 this
+though
 through
 tick
 timer
@@ -996,6 +1042,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1029,6 +1077,7 @@ unknown
 unless
 unlike
 unsteady
+until
 up
 usable
 use
@@ -1049,6 +1098,7 @@ visibly
 visually
 w-4
 w-max
+waits
 walk
 warning
 was
@@ -1073,6 +1123,7 @@ wider
 width
 window
 winning
+wins
 wire:id
 wire:key
 wire:model
@@ -1095,6 +1146,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps

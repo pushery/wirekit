@@ -10,10 +10,10 @@ import { watchCurrent } from '../utils/watch-current.js';
  * `x-init`): inline, under a strict Content-Security-Policy the nested scope
  * would not build and the menu button would toggle nothing.
  *
- * Anchoring goes through `window.wirekitPosition`, which ships in the full
- * bundle but not the core one. Absence is a supported configuration rather than
- * an error — the menu still opens and closes, it just falls back to the CSS
- * placement — so the check stays a silent guard.
+ * Anchoring goes through `window.wirekitPosition`, which every bundle that ships
+ * this menu sets when it loads, and the core one lacks. Absence is a supported
+ * configuration rather than an error — the menu still opens and closes, it just
+ * falls back to the CSS placement — so the check stays a silent guard.
  *
  * Lifecycle resources held on `this`: one. `place()` asks the positioner to put
  * the placement back when something removes it, which registers a MutationObserver

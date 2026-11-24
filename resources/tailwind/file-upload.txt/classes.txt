@@ -1,5 +1,5 @@
 --border-wk-width
---color-wk-accent
+--color-wk-accent-text
 --color-wk-bg-active
 --color-wk-bg-hover
 --color-wk-bg-muted
@@ -42,11 +42,14 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -help
 -hint
 -my-1
+-tooltip
+-words
 @aware
 @change
 @click
@@ -57,6 +60,7 @@
 @endwirekitLast
 @php
 @props
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -74,6 +78,7 @@ action
 activating
 acts
 actually
+address
 adds
 after
 again
@@ -184,11 +189,12 @@ block
 block-level
 blur
 body
+bool
 boolean
 border
 border-2
 border-[length:var(--border-wk-width)]
-border-[var(--color-wk-accent)]
+border-[var(--color-wk-accent-text)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border-error)]
 border-[var(--color-wk-border-strong)]
@@ -207,12 +213,14 @@ browser-default
 bubble
 bug
 build
+builds
 bullets
 but
 button
 buttons
 by
 byte
+cache
 call
 caller
 caller-supplied
@@ -283,7 +291,9 @@ complain
 component
 computed
 concatenated
+conditional
 config/wirekit.php
+configuration
 console
 const
 constraint
@@ -297,6 +307,7 @@ copy
 corner
 costs
 could
+count
 counted
 counterpart
 couple
@@ -314,21 +325,31 @@ danger
 dashed
 data-wk-file-failed
 data-wk-file-remove
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-ref-scope
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
 decides
+declarations
 declared
 declares
 default
@@ -337,9 +358,11 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 dense
+depends
 descendant
 descendants
 described
@@ -352,6 +375,7 @@ dialog
 did
 differ
 different
+differs
 dims
 direction
 directives
@@ -382,6 +406,7 @@ drawn
 draws
 drifting
 driven
+drives
 drop
 dropped
 dropping
@@ -466,6 +491,7 @@ fill-rule
 filled
 fills
 filter
+find
 finds
 fine
 finish
@@ -480,6 +506,7 @@ flex-col
 flips
 floor
 flow
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -490,6 +517,7 @@ focusable-trigger
 focusableTrigger
 focuses
 folded
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -576,6 +604,7 @@ hides
 high
 hint
 hoists
+hold
 holds
 hook
 horizontal
@@ -583,7 +612,7 @@ host
 hover
 hover-reveal
 hover:bg-[var(--color-wk-bg-hover)]
-hover:border-[var(--color-wk-accent)]
+hover:border-[var(--color-wk-accent-text)]
 hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text-muted)]
 hoverable
@@ -653,6 +682,7 @@ last
 later
 lay
 layer
+lazy
 leading-none
 leads
 least
@@ -675,6 +705,7 @@ like
 limit
 line
 lines
+link
 linked
 list
 list-none
@@ -752,8 +783,8 @@ moves
 moving
 ms-0.5
 ms-[var(--space-wk-sm)]
+mt-1.5
 mt-[var(--padding-wk-y-sm)]
-mt-[var(--padding-wk-y-xs)]
 mt-[var(--space-wk-xs)]
 much
 multiple
@@ -812,6 +843,7 @@ opposite
 opt
 optimistic
 optimistic-ui
+option
 or
 order
 original
@@ -849,6 +881,7 @@ parse
 parser
 part
 partial
+parts
 passed
 passthrough
 patches
@@ -900,6 +933,7 @@ project
 prop
 property
 props
+prose
 protocol
 proxy
 public
@@ -920,6 +954,7 @@ queries
 query
 question
 quiet
+race
 racing
 radio
 radius
@@ -967,6 +1002,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 resolved
 resolves
@@ -975,6 +1012,7 @@ rests
 restyles
 result
 returns
+ride
 right
 ring
 role
@@ -991,6 +1029,7 @@ row
 rows
 rule
 run
+running
 runs
 s
 safe
@@ -1006,6 +1045,7 @@ scope
 screen
 script
 scroll
+search
 second
 see
 seeds
@@ -1031,6 +1071,7 @@ shared
 shares
 shift
 shipped
+short
 shortcut
 shortcuts
 shorter
@@ -1046,6 +1087,7 @@ sidebar
 silent
 silently
 simply
+since
 single
 single-key
 site
@@ -1144,7 +1186,6 @@ text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
-text-[length:var(--text-wk-xs)]
 text-[length:var(--text-wk-xs,0.75rem)]
 text-center
 text-ellipsis
@@ -1159,6 +1200,7 @@ theme
 then
 there
 therefore
+these
 they
 this
 those
@@ -1177,6 +1219,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-[var(--padding-wk-y-md)]
@@ -1214,6 +1258,7 @@ unless
 unlike
 unrelated
 unsteady
+until
 up
 updated
 updates
@@ -1248,6 +1293,7 @@ w-4
 w-8
 w-full
 w-max
+waits
 walk
 warning
 was

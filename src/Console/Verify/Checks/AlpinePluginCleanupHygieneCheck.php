@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Pushery\WireKit\Console\Verify\VerifyCheck;
+use Pushery\WireKit\Support\JsSource;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -71,98 +72,6 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
         }
 
         return false;
-    }
-
-    /**
-     * JavaScript source with every comment blanked out, line for line.
-     *
-     * Every pattern in the cleanup-hygiene check is a plain text match, so prose that names one
-     * would count as the thing itself, in both directions: a comment naming
-     * `MutationObserver.disconnect()` would turn the check red, and a comment that happens to
-     * contain `destroy() {` would make the file look like it has a teardown while a real leak
-     * goes unreported.
-     *
-     * Contents are replaced with spaces rather than removed, and newlines are kept, because the
-     * disconnect scan reads "the three lines above this one". Deleting the lines would move every
-     * call site away from its own context.
-     *
-     * Quote state is tracked so a `//` inside a string literal stays put — `'https://…'` would
-     * otherwise swallow the rest of its line, and with it any call that shares it. A regex literal
-     * carrying a quote (`/['"]/`) is the shape this does not model; it would flip the state and
-     * blank too much or too little from there to the end of the file. Modeling it takes a real
-     * tokenizer, and the cost of the gap is one file scanned wrongly, in a check whose own
-     * docblock calls itself a heuristic.
-     */
-    private function stripJsComments(string $source): string
-    {
-        $out = '';
-        $length = strlen($source);
-        $quote = null;
-        $i = 0;
-
-        while ($i < $length) {
-            $char = $source[$i];
-            $next = $i + 1 < $length ? $source[$i + 1] : '';
-
-            if ($quote !== null) {
-                $out .= $char;
-
-                // A backslash escapes whatever follows, the closing quote included.
-                if ($char === '\\' && $next !== '') {
-                    $out .= $next;
-                    $i += 2;
-
-                    continue;
-                }
-
-                if ($char === $quote) {
-                    $quote = null;
-                }
-
-                $i++;
-
-                continue;
-            }
-
-            if ($char === "'" || $char === '"' || $char === '`') {
-                $quote = $char;
-                $out .= $char;
-                $i++;
-
-                continue;
-            }
-
-            if ($char === '/' && $next === '/') {
-                while ($i < $length && $source[$i] !== "\n") {
-                    $out .= ' ';
-                    $i++;
-                }
-
-                continue;
-            }
-
-            if ($char === '/' && $next === '*') {
-                $out .= '  ';
-                $i += 2;
-
-                while ($i < $length && ! ($source[$i] === '*' && ($i + 1 < $length) && $source[$i + 1] === '/')) {
-                    $out .= $source[$i] === "\n" ? "\n" : ' ';
-                    $i++;
-                }
-
-                if ($i < $length) {
-                    $out .= '  ';
-                    $i += 2;
-                }
-
-                continue;
-            }
-
-            $out .= $char;
-            $i++;
-        }
-
-        return $out;
     }
 
     /**
@@ -246,8 +155,8 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
 
                 // Every pattern below is a plain text match, so prose that names one would count
                 // as the thing itself — loudly for `.disconnect()`, and silently for `destroy() {`,
-                // where a comment would hide a real leak. See stripJsComments().
-                $source = $this->stripJsComments($source);
+                // where a comment would hide a real leak. See JsSource::withoutComments().
+                $source = JsSource::withoutComments($source);
 
                 $relativePath = str_replace($developerJsDir.'/', '', $path);
 

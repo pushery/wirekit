@@ -9,7 +9,10 @@ import { focusIsWithin, placementReference, position } from '../utils/floating.j
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * @param {Object} config - Dropdown configuration from Blade
  * @param {string} config.placement - Floating UI placement
@@ -91,6 +94,30 @@ export default function wirekitDropdown(config = {}) {
                 root: this.$root,
                 onOther: () => this.close(),
             });
+
+            // A render of the Livewire component around a lazy dropdown must neither remove the
+            // panel it built nor keep a panel the server no longer draws.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                // An opening that does not come through show(), markup writing `isOpen` or the
+                // deprecated `open` alias, still finds a panel: it is built a tick after the write.
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the panel of a lazy dropdown before it opens, on the pointer or the focus on the
+         * trigger, so its rows have started by the time the reader presses it. The panel takes its
+         * id at once, and the trigger names it from the next time it writes its attributes. A
+         * dropdown that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            if (buildLazyPanel(lazyPanelTemplate(this.$root))) {
+                this._applyPanelId();
+                this._keepPanelId();
+            }
         },
 
         /**
@@ -144,6 +171,19 @@ export default function wirekitDropdown(config = {}) {
             return this.$refs.trigger ?? this.$root?.querySelector('[data-wk-dropdown-trigger]') ?? null;
         },
 
+        /**
+         * Whether a key event comes from this dropdown's trigger, and not from a field or a control
+         * that stands elsewhere in the root.
+         *
+         * @param {Event} event
+         * @returns {boolean}
+         */
+        _fromTrigger(event) {
+            const trigger = this._triggerElement();
+
+            return !! trigger && typeof trigger.contains === 'function' && trigger.contains(event.target);
+        },
+
         destroy() {
             this._resetTypeAhead();
             this._coordination?.stop();
@@ -173,6 +213,9 @@ export default function wirekitDropdown(config = {}) {
          * Open dropdown and position panel relative to trigger.
          */
         async show() {
+            // Built before `isOpen` turns true, so a lazy panel starts hidden and opens with its
+            // transition, and the trigger's `aria-expanded` write names the panel it opened.
+            this.preparePanel();
             this.isOpen = true;
             this._coordination?.announce();
 
@@ -303,7 +346,19 @@ export default function wirekitDropdown(config = {}) {
             // A key an element inside the menu already answered is spent: the Escape that
             // dismissed the tooltip over a cut label leaves the menu open, as it leaves a dialog
             // open (utils/focus-trap.js, escapeUnlessHandled()), and the focus stays put.
-            if (!this.isOpen || e.defaultPrevented) return;
+            if (e.defaultPrevented) return;
+
+            // ArrowDown on the trigger of a closed menu opens it with its first row focused, as
+            // Enter and Space do through the button's click. Every other key on a closed menu is
+            // the page's.
+            if (! this.isOpen) {
+                if (e.key === 'ArrowDown' && this._fromTrigger(e)) {
+                    e.preventDefault();
+                    this.show();
+                }
+
+                return;
+            }
 
             const items = this._getItems();
             if (!items.length) return;

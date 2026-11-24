@@ -13,6 +13,10 @@
     // those three have to reach the panel's edges, and padding on the outside puts a gutter
     // between the scrollbar and the border and stops a sticky header from sitting flush.
     'padded' => true,
+    // Whether the panel waits out of the page until the pointer or the focus reaches the trigger,
+    // or the popover opens. A page with many popovers then starts none of their panels it does not
+    // need. The default comes from the configuration (`components.popover.lazy`).
+    'lazy' => config('wirekit.components.popover.lazy', false),
     'scope' => null,
 ])
 
@@ -65,6 +69,10 @@
         'text-[color:var(--color-wk-text)]',
         // Scrolls once the position helper caps its height to a short viewport.
         'overflow-y-auto overscroll-contain',
+        // A token with no break point, an email address or a URL, breaks inside the panel rather
+        // than scrolling it sideways; `break-word` leaves every min-content width alone, so the
+        // rows inside keep their layout.
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // An unpadded panel takes every padding utility out of the resolved list. Adding `p-0`
@@ -78,6 +86,14 @@
     if (! $padded) {
         $panelClasses = UtilityClasses::without($panelClasses, UtilityClasses::PADDING);
     }
+
+    // A lazy popover holds the teleport of its panel in a template of its own, which the browser
+    // keeps out of the page until the factory builds it (utils/lazy-panel.js). The wrapper is an
+    // echo rather than a block: Livewire writes no morph markers around an echo, and a marker
+    // inside the template's content would be built with the panel.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.popover.lazy', false)), 'popover', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -89,6 +105,7 @@
 <div
     x-data="wirekitPopover({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 8, 'popover', 'offset') }} })"
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
+    @if($lazy) data-wk-lazy-panel-host @endif
 >
     {{-- Trigger — clicking toggles the popover.
 
@@ -103,6 +120,7 @@
         x-ref="trigger"
         x-on:click="toggle()"
         x-init="initTriggerAria()"
+        @if($lazy) x-on:pointerenter="preparePanel()" x-on:focusin="preparePanel()" @endif
     >
         {{ $trigger }}
     </div>
@@ -112,7 +130,7 @@
      stacking context: a host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after that ancestor
      covers the panel however high the z-index goes. --}}
-<template x-teleport="#wk-overlay-root">
+{{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
     <div
         {{-- Theme marker — see docs/theming.md "Theme markers". --}}
         data-wk-popover
@@ -147,5 +165,5 @@
     >
         {{ $slot }}
     </div>
-</template>
+</template>{{ $lazyPanelClose }}
 </div>

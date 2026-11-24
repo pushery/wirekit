@@ -2,11 +2,13 @@ import { keepRaw } from '../utils/keep-raw.js';
 import { resolveThemeColors, palette, seriesColors, paletteSchemeOf, withOpacity, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
-import { followChartServerData } from '../utils/chart-server-data.js';
+import { chartServerDataNow, followChartServerData } from '../utils/chart-server-data.js';
+import { queueChartBuild } from '../utils/chart-build-queue.js';
 import { followPointLink, pointLink, takePointLinks } from '../utils/chart-point-links.js';
 import { takeTooltipExtras, tooltipExtraRows } from '../utils/chart-tooltip-extras.js';
 import { applyTokenColors, tokenColorsOf, tokenColorsSignature } from '../utils/chart-token-colors.js';
 import { ownThemeOptionsOf } from '../utils/chart-own-theme-options.js';
+import { developerStepsTheValueAxis, stepsTheXAxisOfItsPoints, stepTheValueAxisInWholeNumbers, stepTheXAxisInWholeNumbers } from '../utils/chart-whole-steps.js';
 
 /**
  * How much of a series' fill shows, by chart type, in each palette. The semantic colors are strong,
@@ -107,7 +109,8 @@ function sweepStaleCharts() {
  *   passes a reactive one.
  *
  * Lifecycle:
- * - init(): Creates chart + observer inside $nextTick (after DOM ready)
+ * - init(): Queues the chart's build, which runs in a task of its own once the start is done
+ *   (utils/chart-build-queue.js)
  * - destroy(): Cleans up chart, observer, and Livewire event listener
  *
  * Cleanup is automatic on Livewire SPA navigation (livewire:navigating)
@@ -117,6 +120,10 @@ export default function wirekitChartJs(config) {
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
+        // The chart's build, queued until its turn (utils/chart-build-queue.js), and the payload
+        // the component rendered beside the chart when it started, which the chart is built from.
+        _cancelBuild: null,
+        _dataAtStart: null,
         _motionCleanup: null,
         _wireStreamHandler: null,
 
@@ -144,6 +151,10 @@ export default function wirekitChartJs(config) {
         // The colors and fonts of the axes, the legend and the tooltip the developer set, which a
         // change of mode leaves as written. See utils/chart-own-theme-options.js.
         _ownThemeOptions: new Set(),
+        // Whether the kit steps the value axis, and the x-axis of a scatter or a bubble chart, in
+        // whole numbers (`utils/chart-whole-steps.js`).
+        _wholeSteps: false,
+        _wholeStepsX: false,
         // Stops following the data the component renders beside the chart; set once the
         // chart exists. See utils/chart-server-data.js.
         _stopFollowingServerData: null,
@@ -303,6 +314,7 @@ Chart.register(...registerables);</pre>
             // Asked until it can be answered — utils/await-peer.js. The library may land after
             // Alpine has mounted this chart (a lazily imported chart.js), so the panel and the
             // console hint wait for the load plus a grace period instead of speaking at once.
+            this._dataAtStart = chartServerDataNow(this.$el);
             this._stopAwaitingLibrary = awaitPeer({
                 isReady: () => typeof Chart !== 'undefined',
                 onReady: () => {
@@ -350,19 +362,22 @@ Chart.register(...registerables);</pre>
             // One-shot prototype patch — defensive race-condition guard.
             patchChartDrawOnce();
 
-            // Sweep any stale chart from a previous mount whose canvas got
-            // detached (replay-button flow). Doing this before the new
-            // chart's constructor runs is critical: once `new Chart()`
-            // schedules its first RAF the global animator is iterating
-            // every active chart per frame, so a stale chart's null-ctx
-            // crash takes the whole animator down (including the new
-            // chart's render). Plus: hand the new canvas to `Chart.getChart`
-            // first — if Chart.js already has an instance on this exact
-            // canvas (rare, but possible in hmr / hot-reload contexts),
-            // destroy that one too.
-            sweepStaleCharts();
+            this._cancelBuild?.();
+            this._cancelBuild = queueChartBuild(() => {
+                this._cancelBuild = null;
 
-            this.$nextTick(() => {
+                // Sweep any stale chart from a previous mount whose canvas got
+                // detached (replay-button flow). Doing this right before the new
+                // chart's constructor runs is critical, which is why it waits for
+                // the build's turn: once `new Chart()` schedules its first RAF the
+                // global animator is iterating every active chart per frame, so a
+                // stale chart's null-ctx crash takes the whole animator down
+                // (including the new chart's render). Plus: hand the new canvas to
+                // `Chart.getChart` first — if Chart.js already has an instance on
+                // this exact canvas (rare, but possible in hmr / hot-reload
+                // contexts), destroy that one too.
+                sweepStaleCharts();
+
                 const canvas = this.$refs.canvas;
                 if (!canvas) return;
                 const existing = Chart.getChart?.(canvas);
@@ -403,6 +418,20 @@ Chart.register(...registerables);</pre>
                 // What the developer set where the theme writes as well, read before the factory
                 // adds options of its own below.
                 this._ownThemeOptions = ownThemeOptionsOf(rawConfig.options);
+
+                // Whole steps on the value axis while every value it shows is a whole number, where
+                // the developer chose no steps of their own; read again with each update of the data.
+                this._wholeSteps = ! developerStepsTheValueAxis(rawConfig.type, rawConfig.options);
+                if (this._wholeSteps) {
+                    rawConfig.options = rawConfig.options || {};
+                    stepTheValueAxisInWholeNumbers(rawConfig.options, rawConfig.data?.datasets || []);
+                }
+                // The x-axis of a scatter and a bubble chart, whose points stand at numbers on it.
+                this._wholeStepsX = stepsTheXAxisOfItsPoints(rawConfig.type, rawConfig.options);
+                if (this._wholeStepsX) {
+                    rawConfig.options = rawConfig.options || {};
+                    stepTheXAxisInWholeNumbers(rawConfig.options, rawConfig.data?.datasets || []);
+                }
 
                 // Where the data points lead: out of the configuration before Chart.js reads it, and
                 // onto a click and the pointer over a point.
@@ -472,11 +501,11 @@ Chart.register(...registerables);</pre>
 
                 // A Livewire update renders new labels and series beside the chart, outside its
                 // `wire:ignore`; follow them and update the chart in place.
-                this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload));
+                this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload), this._dataAtStart);
 
                 // Set up dark mode observer after chart is created.
                 // This avoids the race condition where the observer fires
-                // before $nextTick completes and this.chart is still null.
+                // before the build has run and this.chart is still null.
                 // Seed the theme signature from what the chart was just built with, so
                 // the first unrelated class toggle after construction is a no-op rather
                 // than a full re-theme that lands on the identical palette.
@@ -606,6 +635,14 @@ Chart.register(...registerables);</pre>
             });
             chart.data.datasets.length = incoming.length;
 
+            // The new values decide the steps of the axes again.
+            if (this._wholeSteps) {
+                stepTheValueAxisInWholeNumbers(chart.options, chart.data.datasets);
+            }
+            if (this._wholeStepsX) {
+                stepTheXAxisInWholeNumbers(chart.options, chart.data.datasets);
+            }
+
             chart.update();
         },
 
@@ -724,6 +761,13 @@ Chart.register(...registerables);</pre>
                         chart.data.labels.shift();
                     }
                 }
+                // A point that is not a whole number gives the axis its steps back.
+                if (this._wholeSteps) {
+                    stepTheValueAxisInWholeNumbers(chart.options, chart.data.datasets);
+                }
+                if (this._wholeStepsX) {
+                    stepTheXAxisInWholeNumbers(chart.options, chart.data.datasets);
+                }
                 chart.update('none');
             };
 
@@ -835,9 +879,12 @@ Chart.register(...registerables);</pre>
          * Safe to call multiple times (idempotent).
          */
         destroy() {
-            // A library that lands after this chart is gone must not build it.
+            // A library that lands after this chart is gone must not build it, nor a turn that
+            // comes after it.
             this._stopAwaitingLibrary?.();
             this._stopAwaitingLibrary = null;
+            this._cancelBuild?.();
+            this._cancelBuild = null;
 
             this._stopFollowingServerData?.();
             this._stopFollowingServerData = null;

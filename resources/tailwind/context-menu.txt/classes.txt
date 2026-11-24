@@ -40,6 +40,7 @@ along
 already
 also
 although
+among
 an
 ancestor
 and
@@ -98,6 +99,7 @@ broken
 browser
 bubble
 bubbles
+builds
 but
 button
 by
@@ -116,6 +118,7 @@ cast
 chevron
 chevron-right
 child
+children
 class
 classes
 click
@@ -130,6 +133,8 @@ comes
 compiles
 component
 computed
+conditional
+configuration
 confirming
 contain
 container
@@ -154,6 +159,7 @@ cursor
 cursor-pointer
 cuts
 danger
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-submenu
 data-wk-submenu-panel
@@ -200,6 +206,7 @@ embedding
 emitted
 empty
 end
+ends
 error
 escaped
 escapes
@@ -210,6 +217,7 @@ every
 excess
 exists
 explains
+factory
 faint
 false
 feature
@@ -284,6 +292,7 @@ here
 hidden
 hint
 hold
+holds
 holdsParts
 honors
 horizontally
@@ -334,8 +343,10 @@ labels
 lands
 later
 layout
+lazy
 leading
 leaf
+leave
 leaves
 left
 like
@@ -560,6 +571,7 @@ sibling
 side
 sides
 silently
+since
 single-icon
 site
 sits
@@ -645,6 +657,7 @@ unbreakable
 under
 unknown
 unnamed
+until
 update
 use
 user
@@ -664,6 +677,7 @@ w-4
 w-5
 w-full
 w-max
+waits
 warning
 was
 way

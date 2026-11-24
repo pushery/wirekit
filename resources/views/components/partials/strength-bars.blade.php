@@ -9,11 +9,18 @@
      Params: $count (how many bars), $colors (each bar's color before Alpine starts, a list).
 
      An unlit bar carries an edge in the strong border color, which a muted fill alone does not
-     give it against the page; a lit bar has none. The same pair as strengthBarStyle(). --}}
+     give it against the page; a lit bar has none. The same pair as strengthBarStyle().
+
+     A lit bar also carries `data-wk-lit`, from the first render and then from `barColor(i)`: a
+     forced-colors theme repaints every fill in the page's color and drops the edge, and the
+     stylesheet gives the bars that mode's colors by that attribute, since it cannot read a color
+     written inline. --}}
 @for ($wkBar = 0; $wkBar < $count; $wkBar++)
     @php($wkBarColor = $colors[$wkBar] ?? 'var(--color-wk-bg-muted)')
     <div
-        class="h-1 flex-1 rounded-full transition-colors duration-[var(--transition-wk-duration)]"
+        class="wk-strength-bar h-1 flex-1 rounded-full transition-colors duration-[var(--transition-wk-duration)]"
+        @if($wkBarColor !== 'var(--color-wk-bg-muted)') data-wk-lit @endif
+        x-bind:data-wk-lit="barColor({{ $wkBar }}) !== 'var(--color-wk-bg-muted)' ? '' : null"
         style="background-color: {{ $wkBarColor }}; box-shadow: {{ $wkBarColor === 'var(--color-wk-bg-muted)' ? 'inset 0 0 0 max(1px, var(--border-wk-width)) var(--color-wk-border-strong)' : 'none' }}"
         x-bind:style="barStyle({{ $wkBar }})"
     ></div>

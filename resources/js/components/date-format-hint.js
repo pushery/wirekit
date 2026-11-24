@@ -1,7 +1,7 @@
 /**
  * Says so when the browser writes dates in a different order than the page does.
  *
- * A native `<input type="date">` draws its order from the BROWSER's user-interface language,
+ * A native `<input type="date">` draws its order from the BROWSER's own language settings,
  * never from the language of the page around it, and no author can change that — the format of
  * a native date field is not an authorable property in any shipped browser. So a German page
  * read on an English laptop asks for `mm/dd/yyyy` while every word beside it is German.
@@ -57,14 +57,29 @@ export default function wirekitDateFormatHint(config = {}) {
         },
 
         /**
-         * The browser's own tag, which is what a native date field follows.
+         * The locale the browser draws a native date field in.
          *
-         * `navigator.language` is the UI language and is what the field reads. Not
-         * `Intl.DateTimeFormat().resolvedOptions().locale`, which resolves through the same
-         * negotiation but can land on a region the field does not use.
+         * Read from `Intl`: a formatter built without a locale resolves to the engine's default,
+         * and each engine takes that default from the setting its date fields are drawn in.
+         * Chromium takes both from the language of its interface, Firefox from its regional
+         * preferences, WebKit from the first language the system prefers. Not
+         * `navigator.language`: Chromium and Firefox take it from the first of the languages the
+         * reader prefers for websites, a setting of its own, so a German Chrome with English first
+         * among those languages draws `dd.mm.yyyy` while `navigator.language` says `en-US`.
+         *
+         * A locale set on the context of a browser test (Playwright's `locale`, `withLocale()` in
+         * a Pest browser test) moves this default and `navigator.language` alike, while Chromium
+         * keeps drawing the field in the language of its interface, so under such a test the hint
+         * compares the page with the context's locale.
          */
         browserLocale() {
-            return (typeof navigator !== 'undefined' && navigator.language) || null;
+            try {
+                return new Intl.DateTimeFormat().resolvedOptions().locale || null;
+            } catch {
+                // Every supported browser builds this formatter; one that cannot leaves nothing
+                // to compare, and the hint says nothing.
+                return null;
+            }
         },
 
         resolve() {

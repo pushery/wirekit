@@ -57,6 +57,7 @@
 
         @wirekitLast($multiline)
             <x-wirekit::textarea
+                :align-fields="false"
                 :id="$field['id']"
                 :name="$field['name']"
                 :label="$languageName"
@@ -74,6 +75,7 @@
             >{{ (string) ($field['text'] ?? '') }}</x-wirekit::textarea>
         @else
             <x-wirekit::input
+                :align-fields="false"
                 :id="$field['id']"
                 :name="$field['name']"
                 :label="$languageName"

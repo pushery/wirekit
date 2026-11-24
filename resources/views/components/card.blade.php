@@ -326,7 +326,7 @@
         $triggerId = $idBase.'-trigger';
         $panelId = $idBase.'-panel';
         $hintsId = $idBase.'-hints';
-        $hasHints = isset($hints) && $hints->hasActualContent();
+        $hasHints = \Pushery\WireKit\Support\SlotContent::given($hints ?? null);
 
         // The head: the padding and type of `card.header`, positioned so the trigger can stretch
         // over all of it.
@@ -451,8 +451,10 @@
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     // The new-tab hint stands after the label, so it is an echo rather than a block and Livewire
-    // writes no morph markers around it. Its class goes through CompactClasses, as a class
-    // attribute in the markup does.
+    // writes no morph markers around it. It ends the two branches that can draw a link, after the
+    // chevron where one is drawn: a card that folds is no link and has no hint, so the content
+    // block stands last in the card and needs no markers either. Its class goes through
+    // CompactClasses, as a class attribute in the markup does.
     $newTabHint = $opensNewTab
         ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
         : '';
@@ -522,7 +524,7 @@
     @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
     {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantClasses, $interactiveClasses, 'wk-card-collapsible' => $collapsible])) }}
 >
-    @if($collapsible)
+    @wirekitLast($collapsible)
         {{-- The head. The trigger stands in a heading of the given level and names the folding part
              with `aria-controls`; the hints beside it are its description, read with it; the line
              under the heading stays visible in both states. The chevron's turn is motion, and the
@@ -594,7 +596,9 @@
         <span data-wk-card-chevron aria-hidden="true" class="shrink-0 inline-flex text-[color:var(--color-wk-text-muted)] rtl:-scale-x-100">
             <x-wirekit::icon name="chevron-right" size="sm" />
         </span>
+        {{ $newTabHint }}
     @else
         {{ $slot }}
-    @endif
-    {{ $newTabHint }}</{{ $tag }}>
+        {{ $newTabHint }}
+    @endwirekitLast
+</{{ $tag }}>

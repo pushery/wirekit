@@ -47,10 +47,17 @@
     // the group but neither causes the rejection nor can resolve it says `:group-error="false"`
     // and is then neither announced as invalid nor described by the group's message.
     'groupError' => true,
+    // Hold the busy state of one Livewire action, as a button does: while the action named here
+    // is in flight the control is disabled (`wire:loading.attr` with `wire:target`), so a second
+    // press cannot overtake the first, and an unrelated request leaves it alone.
+    // `disable-on-loading` set to false marks it `aria-busy` instead and keeps the focus on it,
+    // which a disabled control loses the moment it is disabled.
+    'loadingTarget' => null,
+    'disableOnLoading' => true,
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkFieldSet' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkFieldSet' => null, 'wkField' => null, 'requiredMark' => true, 'alignFields' => false])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -60,7 +67,14 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set', 'wkField', 'wk-field', 'requiredMark', 'required-mark', 'alignFields', 'align-fields']);
+
+    // In a row that lines its fields up (`row align-fields`), this control takes no part in the
+    // tracks: its label stands beside it, not above. It stands on the control track whole, and
+    // the marker centers it there, on the midline of the fields beside it. Not inside a `field`,
+    // which takes the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -81,6 +95,8 @@
     // Same trap one level in: an unbound `hideLabel="false"` reaches here as the
     // truthy string 'false' and would hide the label the call site asked to show.
     $hideLabel = BooleanProp::from($hideLabel, false, 'toggle', 'hideLabel');
+    $disableOnLoading = BooleanProp::from($disableOnLoading, true, 'toggle', 'disableOnLoading');
+    $loadingTarget = is_string($loadingTarget) && trim($loadingTarget) !== '' ? trim($loadingTarget) : null;
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -157,7 +173,7 @@
     $helpLabel = (string) ($label ?? '');
     $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     // The control sits inside the label, so the row around it stands whenever the slot is passed,
     // filled or not: a mark that comes and goes between two renders then leaves the markup around
     // the control as it was.
@@ -182,9 +198,9 @@
         //
         // Written out per size rather than assembled, because Tailwind scans source text for
         // class names and a class built at runtime is never generated.
-        'sm' => ['track' => 'w-8 h-4', 'knob' => 'w-3 h-3', 'translate' => 'peer-checked:translate-x-4 rtl:peer-checked:-translate-x-4'],
-        'lg' => ['track' => 'w-12 h-6', 'knob' => 'w-5 h-5', 'translate' => 'peer-checked:translate-x-6 rtl:peer-checked:-translate-x-6'],
-        default => ['track' => 'w-10 h-5', 'knob' => 'w-4 h-4', 'translate' => 'peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5'],
+        'sm' => ['track' => 'w-8 h-4', 'knob' => 'w-3 h-3', 'translate' => 'peer-checked:translate-x-4 rtl:peer-checked:-translate-x-4', 'indent' => 'ps-[calc(2rem+var(--gap-wk-md))]'],
+        'lg' => ['track' => 'w-12 h-6', 'knob' => 'w-5 h-5', 'translate' => 'peer-checked:translate-x-6 rtl:peer-checked:-translate-x-6', 'indent' => 'ps-[calc(3rem+var(--gap-wk-md))]'],
+        default => ['track' => 'w-10 h-5', 'knob' => 'w-4 h-4', 'translate' => 'peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5', 'indent' => 'ps-[calc(2.5rem+var(--gap-wk-md))]'],
     };
 
     // Wrapper styles: fixed-size positioning context for the (absolutely placed) track + knob
@@ -203,24 +219,26 @@
     // The track's color for each state. Literal arms, because Tailwind reads class names as text
     // and never one assembled at runtime.
     //
-    // Neutral fills the track with --color-wk-border-strong, the contrast-bound border of every
-    // form control. The knob shows the state, and WCAG 1.4.11 asks 3:1 for it against the part of
-    // the component it sits on: on the decorative --color-wk-border the white knob stood at 1.3:1
-    // in light and 1.42:1 in dark, on -strong it stands at 3.11:1 and 3.12:1, and the track
-    // itself at 3.11:1 and 3.45:1 against the page.
+    // The fill is the state's color: --color-wk-border-strong for neutral, the contrast-bound
+    // border of every form control, and the intent's fill otherwise. The knob shows the state, and
+    // WCAG 1.4.11 asks 3:1 for it against the part of the component it sits on, so the knob takes
+    // the page color rather than a raised surface's, which some presets tint gray: it stands at
+    // 3.11:1 or more against every fill, in every preset and mode. The edge takes the state's text
+    // tone, the muted text color for neutral, which every surface the kit names holds at 3:1 or
+    // more, so the track stands apart from a muted panel as well as from the page.
     //
     // Each list starts with that state's default: an unknown value falls back to the first entry.
     $offTrack = match (WireKit::validateProp('toggle', 'offIntent', (string) $offIntent, ['neutral', 'accent', 'success', 'danger'])) {
-        'accent' => ['border-[var(--color-wk-accent)]', 'bg-[var(--color-wk-accent)]'],
-        'success' => ['border-[var(--color-wk-success)]', 'bg-[var(--color-wk-success)]'],
-        'danger' => ['border-[var(--color-wk-danger)]', 'bg-[var(--color-wk-danger)]'],
-        default => ['border-[var(--color-wk-border-strong)]', 'bg-[var(--color-wk-border-strong)]'],
+        'accent' => ['border-[var(--color-wk-accent-text)]', 'bg-[var(--color-wk-accent)]'],
+        'success' => ['border-[var(--color-wk-success-text)]', 'bg-[var(--color-wk-success)]'],
+        'danger' => ['border-[var(--color-wk-danger-text)]', 'bg-[var(--color-wk-danger)]'],
+        default => ['border-[var(--color-wk-text-muted)]', 'bg-[var(--color-wk-border-strong)]'],
     };
     $onTrack = match (WireKit::validateProp('toggle', 'onIntent', (string) $onIntent, ['accent', 'success', 'danger', 'neutral'])) {
-        'success' => ['peer-checked:bg-[var(--color-wk-success)]', 'peer-checked:border-[var(--color-wk-success)]'],
-        'danger' => ['peer-checked:bg-[var(--color-wk-danger)]', 'peer-checked:border-[var(--color-wk-danger)]'],
-        'neutral' => ['peer-checked:bg-[var(--color-wk-border-strong)]', 'peer-checked:border-[var(--color-wk-border-strong)]'],
-        default => ['peer-checked:bg-[var(--color-wk-accent)]', 'peer-checked:border-[var(--color-wk-accent)]'],
+        'success' => ['peer-checked:bg-[var(--color-wk-success)]', 'peer-checked:border-[var(--color-wk-success-text)]'],
+        'danger' => ['peer-checked:bg-[var(--color-wk-danger)]', 'peer-checked:border-[var(--color-wk-danger-text)]'],
+        'neutral' => ['peer-checked:bg-[var(--color-wk-border-strong)]', 'peer-checked:border-[var(--color-wk-text-muted)]'],
+        default => ['peer-checked:bg-[var(--color-wk-accent)]', 'peer-checked:border-[var(--color-wk-accent-text)]'],
     };
 
     // The words for the state, when either is given. Where they go is the caller's choice.
@@ -262,7 +280,7 @@
     $knobClasses = implode(' ', [
         'absolute start-0.5 top-1/2 -translate-y-1/2',
         'rounded-full',
-        'bg-[var(--color-wk-bg-elevated)]',
+        'bg-[var(--color-wk-bg)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-transform',
         'duration-[var(--transition-wk-duration)]',
@@ -325,7 +343,7 @@
      full duration for a reader who had asked their operating system for no motion. The
      marker is also what lets an application's own motion setting win, since the
      `data-reduce-motion` escape hatch is written against the same selector. --}}
-<div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif class="wk-toggle relative space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($inAlignedRow) data-wk-label-beside @endif class="wk-toggle relative space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
     @if($helpId || $labelAfterGiven)
@@ -356,6 +374,8 @@
                 {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                      caller's own class became a second class attribute and the browser kept
                      only this one. --}}
+                {{-- The busy state of the one action `loading-target` names, as on a button. --}}
+                @if($loadingTarget !== null) wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" wire:target="{{ $loadingTarget }}" @endif
                 {{ $attributes->except('type')->except(['id', 'name', 'aria-describedby'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['peer', 'sr-only'])) }}
             />
 
@@ -377,9 +397,11 @@
     // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
     // and the bag is what delivers it to the native control. A bare `required` arrives as
     // `true`.
-    $wkRequiredMarker = (bool) $attributes->get('required', false);
+    // The asterisk goes where the control's own `requiredMark` or the form around it leaves it
+    // out; the control stays required through the bag either way.
+    $wkRequiredMarker = (bool) $attributes->get('required', false) && \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
 @endphp
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
+            <span class="[overflow-wrap:anywhere] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
         @endif
 
         @wirekitLast($hasStateText)
@@ -410,9 +432,15 @@
         // The message stands last, after the field and every part with a state of its own, so it
         // is an echo rather than a block and Livewire writes no morph markers around it. It is
         // built right before the echo, so it runs on the path and in the scope the echo does.
+        //
+        // Under a switch with a visible label it begins where the label does, the switch's width
+        // and the gap beside it in, so text that belongs to the label does not run under the
+        // switch. Without a visible label, or with the words of the state before the switch, there
+        // is no such edge, and it begins at the switch.
+        $messageIndent = $label && ! $hideLabel && ! ($hasStateText && $statePosition === 'start') ? ' '.$sizing['indent'] : '';
         $messagePart = $hasError && $errorMessage
-            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
-            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('[overflow-wrap:break-word] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]'.$messageIndent)).'">'.e($errorMessage).'</p>')
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('[overflow-wrap:break-word] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]'.$messageIndent)).'">'.e($hint).'</p>') : '');
     @endphp
     {{ $messagePart }}
 </div>

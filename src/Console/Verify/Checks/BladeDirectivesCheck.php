@@ -8,6 +8,7 @@ use Pushery\WireKit\Console\Verify\VerifyCheck;
 use Pushery\WireKit\Support\AppCss;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\CompactClasses;
+use Pushery\WireKit\Support\KitModuleImport;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -24,9 +25,11 @@ final class BladeDirectivesCheck extends VerifyCheck
     }
 
     /**
-     * Check that @wirekitStyles and @wirekitScripts directives are present in layout files.
-     * Also verifies directive ordering: @wirekitScripts must come before @livewireScripts
-     * so Alpine.js component registrations are available when Livewire initializes.
+     * Check that @wirekitStyles and @wirekitScripts directives are present in layout files, or
+     * their alternatives: an `@import` of wirekit.css in app.css, and a module of the
+     * application's own that registers the components from wirekit.esm.js. Also verifies
+     * directive ordering: @wirekitScripts must come before @livewireScripts so Alpine.js
+     * component registrations are available when Livewire initializes.
      */
     private function checkBladeDirectives(): void
     {
@@ -129,11 +132,19 @@ final class BladeDirectivesCheck extends VerifyCheck
             }
         }
 
+        // The scripts have a second valid path as well: a module of the application imports the
+        // components from `wirekit.esm.js` and registers them itself, and the layout carries no
+        // directive on purpose. The order below is a question of the directive alone.
+        $kitModule = $foundScripts ? null : KitModuleImport::inApplication();
+
         if ($foundScripts) {
             $this->reportPass('@wirekitScripts directive found');
+        } elseif ($kitModule !== null) {
+            $this->reportPass('@wirekitScripts not used (covered by '.$kitModule.', which registers the components from wirekit.esm.js — valid alternative)');
         } else {
             $this->reportFail('@wirekitScripts not found in any Blade file');
             $this->line('  Fix: Add @wirekitScripts in <body> of your layout');
+            $this->line('  Or: import the components from vendor/pushery/wirekit/dist/wirekit.esm.js in a module of your own and register them there');
         }
 
         if ($foundScripts && ! $orderOk) {

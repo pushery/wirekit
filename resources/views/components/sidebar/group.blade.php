@@ -27,6 +27,10 @@
     // Whether the group's heading and the names of its entries are cut with an ellipsis instead of
     // wrapping. Left out, the sidebar's value holds (the argument is at the sidebar's prop).
     'truncate' => null,
+    // With `collapsible`: builds the entries of a group the server draws closed the first time they
+    // are needed, as `sidebar.collapsible`'s `lazy` does. The default comes from the configuration
+    // (`components.sidebar.group.lazy`).
+    'lazy' => config('wirekit.components.sidebar.group.lazy', false),
     'scope' => null,
 ])
 
@@ -55,9 +59,33 @@
     // Blade compiles an unbound attribute to a string, and 'false' is truthy — normalize
     // against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false, 'sidebar.group', 'collapsible');
+
+    // In a sidebar with `mode="selection"` a group does not fold. The column is a listbox, which
+    // holds options and groups: a disclosure button is neither, and its arrows would walk onto the
+    // rows of a closed group, which nobody sees. The group stands open with its name. Both reads
+    // skip this tag, whose own `collapsible` is the group's: the mode is the sidebar's, taken as
+    // the sidebar takes it, so a `collapsible` sidebar, which falls back to navigation, keeps its
+    // groups folding.
+    $inListbox = \Pushery\WireKit\Support\AwareProp::read('mode', ['sidebar'], 'navigation', ownTag: false) === 'selection'
+        && ! BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false, ownTag: false), false);
+
+    if ($inListbox && $collapsible) {
+        $collapsible = false;
+
+        if (config('app.debug')) {
+            $foldInListboxWarning = '[wirekit] sidebar.group: `collapsible` is ignored inside a '
+                .'`mode="selection"` sidebar. The column is a listbox, which holds options and groups, '
+                .'so the group stands open with its name.';
+        }
+    }
+
     $open = BooleanProp::from($open, true, 'sidebar.group', 'open');
     $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.group', 'forceOpen');
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.sidebar.group.lazy', false)), 'sidebar.group', 'lazy');
     $open = $open || $forceOpen;
+
+    // Only a group that folds and that the server draws closed holds its entries back.
+    $lazyEntries = $lazy && $collapsible && ! $open;
 
     // A group clusters related items under an optional label. The label acts
     // as a section heading (via aria-label on a role="group" container) so
@@ -145,6 +173,9 @@
         : null;
 @endphp
 
+@if(isset($foldInListboxWarning))
+    <div x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($foldInListboxWarning) }} })" hidden></div>
+@endif
 @if($collapsible)
     {{-- Collapsible section: the heading is a disclosure button, the children fold via
          x-collapse, and the open state optionally persists to localStorage. The outer
@@ -169,6 +200,8 @@
             {{-- No visible label to name the button? fall back to a generic name so the
                  disclosure control is never nameless (WCAG 4.1.2). --}}
             @unless($label) aria-label="{{ __('wirekit::Section') }}" @endunless
+            {{-- A lazy group builds its entries as the pointer or the focus reaches its heading. --}}
+            @if($lazyEntries) x-on:pointerenter="prepare()" x-on:focus="prepare()" @endif
             {{-- In the collapsed icon rail the button is `hidden` (not sr-only): the group
                  has no icon to show at rail width and its children are hidden too, so a
                  focusable-but-invisible sr-only control would be a keyboard focus trap with
@@ -182,10 +215,11 @@
                 {{-- Turned in the markup when the server renders the section open, so the arrow of an open
                      section points down from the first paint rather than turning once Alpine starts. The
                      object form of the binding removes a class it did not add, so a section that closes
-                     loses the rotation the markup gave it. --}}
+                     loses the rotation the markup gave it; its key is the class as the markup writes
+                     it, short under `compact`. --}}
                 data-wk-disclosure-arrow
                 data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 rtl:-scale-x-100 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90 rtl:-rotate-90' : '' }}"
-                :class="{ 'rotate-90 rtl:-rotate-90': isOpen }"
+                :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map('rotate-90 rtl:-rotate-90')) }}: isOpen }"
                 fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -200,8 +234,14 @@
         {{-- `x-cloak` only on a section the server renders closed. An open one paints with the
              page instead of appearing once Alpine starts; a closed one stays hidden until then,
              so it never shows its entries for a frame. --}}
+        {{-- A lazy group's entries wait in a template, the panel's first element, until the group
+             first shows them (`utils/lazy-entries.js`). --}}
         <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="flex flex-col gap-[2px]">
-            {{ $slot }}
+            @wirekitLast($lazyEntries)
+                <template data-wk-lazy-entries>{{ $slot }}</template>
+            @else
+                {{ $slot }}
+            @endwirekitLast
         </div>
         {{-- Directly after the panel, so the script's previous sibling is this panel. Only with
              `persist`, and not with `force-open`, which opens the section whatever was stored. --}}

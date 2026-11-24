@@ -92,9 +92,11 @@
         ? trim($relAttr.' noopener noreferrer')
         : ($relAttr !== '' ? $relAttr : null);
 
-    // The hint stands last in the badge, after the label, so it is an echo rather than a block and
-    // Livewire writes no morph markers around it: it comes or goes after everything else and moves
-    // nothing. Its class goes through CompactClasses, as a class attribute in the markup does.
+    // The hint stands after the label and its icons, as an echo rather than a block, so Livewire
+    // writes no morph markers around it. Only the dismiss button comes after it, and a badge that
+    // links has none, so in a link the hint is the last thing and moves nothing when it comes or
+    // goes; and the dismiss button stands last in a badge that has one, where it needs no markers
+    // either. Its class goes through CompactClasses, as a class attribute in the markup does.
     $newTabHint = $opensNewTab
         ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'">'.e(__('wirekit::(opens in new tab)')).'</span>')
         : '';
@@ -310,8 +312,10 @@
         ? 'box-shadow: var(--shadow-wk-badge, inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent), 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent));'
         : '';
 
-    // Trailing close button (dismissible). Inherits the badge text color via
-    // currentColor; a focus ring + hover dim make it operable + discoverable.
+    // Trailing close button (dismissible). Its glyph is the badge's text color through
+    // currentColor, at full strength, so it keeps the contrast of the badge's text against the
+    // fill, at least 3:1 in every intent and surface. Under the pointer a circle of that color at
+    // 15% stands behind it, which leaves the glyph above 3:1 as well; a focus ring makes it operable.
     // It is a 24px target, the size WCAG 2.5.8 asks for, around its 12px glyph, and its
     // negative margins hand the 12px back: 3px above and below, so a small badge keeps its
     // height, and 2px before and 6px after, so the glyph keeps its place, 8px after the label and
@@ -319,22 +323,23 @@
     $dismissBtnClasses = implode(' ', [
         'shrink-0 -my-[3px] -ms-0.5 -me-1.5 inline-flex size-[var(--size-wk-target-min)] items-center justify-center',
         'rounded-[var(--radius-wk-full)]',
-        'opacity-70 hover:opacity-100',
-        'transition-opacity duration-[var(--transition-wk-duration)]',
+        'hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]',
+        'transition-colors duration-[var(--transition-wk-duration)]',
         'cursor-pointer',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
     ]);
 
-    // A badge that links answers the pointer and the keyboard as the link component does: the
-    // pointer, the dim on hover and the kit's focus ring. The ring is an outline rather than a
-    // ring utility, since a soft badge draws its depth as an inline box-shadow, which would cover
-    // a ring drawn as one, and an outline also shows in forced colors.
+    // A badge that links answers the pointer and the keyboard as the link component does on a
+    // filled surface: the pointer, an underline under the pointer and the kit's focus ring. A fade
+    // would mix the badge's text and its fill with the page, which for most intents takes the text
+    // below the contrast it needs against its fill; the underline changes no color. The ring is an
+    // outline rather than a ring utility, since a soft badge draws its depth as an inline
+    // box-shadow, which would cover a ring drawn as one, and an outline also shows in forced colors.
     $linkClasses = $tag === 'a' ? implode(' ', [
         'cursor-pointer',
-        'transition-opacity duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
-        'hover:opacity-[var(--opacity-wk-hover)]',
+        'underline-offset-2 hover:underline',
         'focus-visible:outline-[length:var(--ring-wk-width)] focus-visible:outline-[color:var(--color-wk-ring)] focus-visible:outline-offset-[var(--ring-wk-offset)]',
     ]) : '';
 @endphp
@@ -378,12 +383,12 @@
             @if($trailingIcon)
                 <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
             @endif
-            @if($dismissible)
+            {{ $newTabHint }}
+            @wirekitLast($dismissible)
                 <button type="button" x-on:click="dismiss()" data-wk-badge-dismiss aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
                     <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
                 </button>
-            @endif
-            {{ $newTabHint }}
+            @endwirekitLast
         </{{ $tag }}>
     </x-wirekit::tooltip>
 @else
@@ -410,10 +415,10 @@
         @if($trailingIcon)
             <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
         @endif
-        @if($dismissible)
+        {{ $newTabHint }}
+        @wirekitLast($dismissible)
             <button type="button" x-on:click="dismiss()" data-wk-badge-dismiss aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
                 <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
             </button>
-        @endif
-        {{ $newTabHint }}
+        @endwirekitLast
     </{{ $tag }}>@endif

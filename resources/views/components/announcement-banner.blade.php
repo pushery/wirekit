@@ -158,25 +158,33 @@
     // preset, so a control on that fill would draw its ring in the fill's own color. The offset is
     // transparent there, so a ring that stands off its control shows the fill between them rather
     // than a band of the page's offset color.
+    //
+    // The same holds for the words on it. `heading`, `link`, `prose` and `text` write in the page's
+    // text and link colors, which stand on the page and not on this fill: in the default preset a
+    // link's color is the accent fill's own. `--wk-fill-ink` is what they read first, and `currentColor`
+    // gives them the foreground of the nearest element that sets one. `--wk-fill-surface` takes the
+    // page's muted background off the code in a prose, which would carry the fill's foreground onto
+    // a light patch. A button or a badge reads neither and keeps the colors of its own surface, and
+    // a card takes both back for what it holds.
     $intentClasses = match (true) {
-        $hueMode && $surfaceValue === 'solid' => 'bg-[oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))] text-[color:var(--color-wk-banner-hue-fg)] [--color-wk-ring:var(--color-wk-banner-hue-fg)] [--color-wk-ring-offset:transparent]',
+        $hueMode && $surfaceValue === 'solid' => 'bg-[oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))] text-[color:var(--color-wk-banner-hue-fg)] [--color-wk-ring:var(--color-wk-banner-hue-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
         $hueMode => 'bg-[color-mix(in_srgb,oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
         // `solid` is the badge's treatment, pair for pair: the intent's color as the fill and
         // its own contrast-paired foreground. `promo` was always a solid accent fill, so both
         // surfaces render it the same way and nothing about an existing promo bar changes.
         $surfaceValue === 'solid' => match ($intentValue) {
-            'info' => 'bg-[var(--color-wk-info-tone)] text-[color:var(--color-wk-info-fg)] [--color-wk-ring:var(--color-wk-info-fg)] [--color-wk-ring-offset:transparent]',
-            'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)] [--color-wk-ring:var(--color-wk-success-fg)] [--color-wk-ring-offset:transparent]',
-            'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)] [--color-wk-ring:var(--color-wk-warning-fg)] [--color-wk-ring-offset:transparent]',
-            'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)] [--color-wk-ring:var(--color-wk-danger-fg)] [--color-wk-ring-offset:transparent]',
-            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
+            'info' => 'bg-[var(--color-wk-info-tone)] text-[color:var(--color-wk-info-fg)] [--color-wk-ring:var(--color-wk-info-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
+            'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)] [--color-wk-ring:var(--color-wk-success-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
+            'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)] [--color-wk-ring:var(--color-wk-warning-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
+            'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)] [--color-wk-ring:var(--color-wk-danger-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
+            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
         },
         default => match ($intentValue) {
             'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
-            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
+            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
         },
     };
 
@@ -190,6 +198,11 @@
         $isSticky => 'sticky top-[var(--wk-strip-inset,0px)] z-30',
         default => '',
     };
+
+    // `data-wk-fill` marks the bar as a filled surface wherever its classes hand the words their
+    // foreground: inside it, a card or another surface of its own gives the page's focus ring
+    // back to what it holds, and a surface around the bar leaves the bar's own ring alone.
+    $handsItsForeground = str_contains($intentClasses, '[--wk-fill-ink:currentColor]');
 
     // Page-edge component: the inline padding is the content-edge spine
     // (--padding-wk-x-lg), so the banner's text edge lines up with every other
@@ -230,6 +243,8 @@
     @endif
     @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="region" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
     data-wk-announcement-banner
+    @if($handsItsForeground) data-wk-fill @endif
+    @if(str_contains($intentClasses, 'bg-[color-mix(')) data-wk-tint @endif
     @if($strip) data-wk-viewport-strip @endif
     data-position="{{ $positionValue }}"
     data-intent="{{ $intentValue }}"
@@ -244,7 +259,9 @@
     @endif
 
     @wirekitLast($isDismissible)
-        {{-- A real button with a real name — never a bare glyph. --}}
+        {{-- A real button with a real name — never a bare glyph. The glyph is the banner's text
+             color at full strength, so it keeps that text's contrast against the fill; under the
+             pointer a tint of the same color stands behind it. --}}
         <button
             type="button"
             @click="dismiss()"
@@ -253,7 +270,7 @@
                  where there is not: a control always needs a name, even when the banner
                  deliberately is not a landmark. --}}
             aria-label="{{ __('wirekit::Dismiss') }} {{ $callerLabel ?? (filled($label) ? \Pushery\WireKit\Support\SlotContent::textOf($label) : __('wirekit::Announcement')) }}"
-            class="wk-touch-target ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
+            class="wk-touch-target ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] transition-colors duration-[var(--transition-wk-duration)] hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

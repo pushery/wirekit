@@ -244,6 +244,15 @@
         $dayCellSizeClasses,
     ]);
 
+    // The cell around a day, in the grid and in the copy of its weeks the page loads with. A
+    // range's band is drawn on the cell, and its padding is the gap between two days, so the copy
+    // takes the same classes and its band meets the next day's as the grid's does.
+    $dayCellClasses = 'p-0.5 text-center';
+
+    // The name above a month, over the grid the script draws and over the copy of each month the
+    // page loads with, so the two stand in the same place.
+    $monthNameClasses = ($flush ? 'text-start' : 'text-center').' mb-[var(--padding-wk-y-sm)] font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]';
+
     // Native month/year selects (selectableHeader), drawn as pills on the muted surface, so the
     // header reads as part of the calendar rather than as a form above it. Native, so the
     // keyboard and a phone's picker wheel come with them.
@@ -421,6 +430,19 @@
     // prohibits a name, and a reader never hears it.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
+
+    // The months the grid opens on, for the page as it loads (Support\CalendarStart), and the
+    // name of each, as the script writes them: the grid's own rows come from templates, which
+    // render nothing until the script starts. Without a value it opens on the application's day.
+    $startMonths = \Pushery\WireKit\Support\CalendarStart::months((string) $value, $openToDay, \Carbon\CarbonImmutable::today(), $calendarLimits, $wkStart, $months, $fixedWeeks, $range);
+    $startMonthLabels = array_map(static fn (array $month): string => \Pushery\WireKit\Support\LocalizedDate::bySkeleton($month['first'], 'yMMMM', 'F Y', $dateLocale), $startMonths);
+
+    // The arrows and the today button the script starts closed, closed in the markup as well: one
+    // leads to a month the limits leave no day in (Support\CalendarLimits::monthOutside()).
+    $startFirstMonth = $startMonths[0]['first'];
+    $startPrevClosed = \Pushery\WireKit\Support\CalendarLimits::monthOutside($startFirstMonth->subMonthNoOverflow(), $calendarLimits);
+    $startNextClosed = \Pushery\WireKit\Support\CalendarLimits::monthOutside($startFirstMonth->addMonthsNoOverflow($months), $calendarLimits);
+    $startTodayClosed = \Pushery\WireKit\Support\CalendarLimits::monthOutside(\Carbon\CarbonImmutable::today(), $calendarLimits);
 @endphp
 
 <div
@@ -489,7 +511,7 @@
          order of Tab is the order a reader sees. --}}
     <div class="{{ $headerClasses }}">
         @unless($flush)
-            <button type="button" @disabled($disabled) x-on:click="prevMonth()" :aria-disabled="prevDisabled" class="wk-touch-target {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
+            <button type="button" @disabled($disabled) x-on:click="prevMonth()" @if($startPrevClosed) aria-disabled="true" @endif :aria-disabled="prevDisabled" class="wk-touch-target {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
                 <svg class="w-5 h-5 rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg>
@@ -504,8 +526,13 @@
                  both take the 16px text and the 44px target, which a phone column does not hold
                  beside the two arrows. --}}
             <div class="flex flex-wrap items-center justify-center gap-[var(--padding-wk-x-sm)]">
-                <label class="sr-only" for="{{ $monthSelectId }}">{{ __('wirekit::Month') }}</label>
-                <div class="relative">
+                {{-- The month the selects open on, as text, until the script fills them: their
+                     options come from the factory, so before it runs, and on a page that runs none,
+                     both selects would stand empty. They and their labels wait under `x-cloak`, and
+                     the region below names the month to a screen reader meanwhile. --}}
+                <span data-wk-calendar-start x-show="false" aria-hidden="true" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]"@if($datesLang) lang="{{ $datesLang }}"@endif>{{ $startMonthLabels[0] }}</span>
+                <label x-cloak class="sr-only" for="{{ $monthSelectId }}">{{ __('wirekit::Month') }}</label>
+                <div x-cloak class="relative">
                     <select id="{{ $monthSelectId }}" @disabled($disabled) x-model.number="viewMonth" aria-label="{{ __('wirekit::Month') }}" class="wk-field {{ $headerSelectClasses }}">
                         {{-- Same shape as the year `<select>` beside it, and for the same
                              reason the month heading is built in JavaScript: a list written
@@ -523,8 +550,8 @@
                         </svg>
                     </div>
                 </div>
-                <label class="sr-only" for="{{ $yearSelectId }}">{{ __('wirekit::Year') }}</label>
-                <div class="relative">
+                <label x-cloak class="sr-only" for="{{ $yearSelectId }}">{{ __('wirekit::Year') }}</label>
+                <div x-cloak class="relative">
                     <select id="{{ $yearSelectId }}" @disabled($disabled) x-model.number="viewYear" aria-label="{{ __('wirekit::Year') }}" class="wk-field {{ $headerSelectClasses }}">
                         <template x-for="y in yearRange" :key="y">
                             <option :value="y" x-text="y"></option>
@@ -540,14 +567,16 @@
                      carries `monthLabelId(0)`, and a second element with that id makes the first
                      grid's `aria-labelledby` resolve to whichever comes first in the document —
                      the header, not its own month. Two elements, one id, and the wrong one wins. --}}
-                <span @if($months <= 1) :id="monthLabelId(0)" @endif class="sr-only" aria-live="polite" x-text="monthLabel"@if($datesLang) lang="{{ $datesLang }}"@endif></span>
+                <span @if($months <= 1) :id="monthLabelId(0)" @endif class="sr-only" aria-live="polite" x-text="monthLabel"@if($datesLang) lang="{{ $datesLang }}"@endif>{{ $startMonthLabels[0] }}</span>
             </div>
         @else
             {{-- With several grids in view each grid names its own month, so this one hides from the
                  eye and stays the region that announces a change. It follows the months the script
                  shows rather than the prop: a dialog on a phone asks for one grid of a calendar
-                 rendered with several, and there this is the only name in sight. --}}
-            <span @if($months <= 1) :id="monthLabelId(0)" @else :class="{ 'sr-only': months > 1 }" @endif class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"@if($datesLang) lang="{{ $datesLang }}"@endif></span>
+                 rendered with several, and there this is the only name in sight. The server writes
+                 `sr-only` where the script starts with several, as each copy below names its own
+                 month until the script runs, and the binding takes it off where one grid is left. --}}
+            <span @if($months <= 1) :id="monthLabelId(0)" @else :class="{ 'sr-only': months > 1 }" @endif @class(['sr-only' => $months > 1, 'font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]']) x-text="monthLabel" aria-live="polite"@if($datesLang) lang="{{ $datesLang }}"@endif>{{ $startMonthLabels[0] }}</span>
         @endif
 
         @if($flush)
@@ -555,7 +584,7 @@
                  or each hit area would cover the other. `ms-auto` keeps them at the end when the month
                  beside them hides because each grid names its own. --}}
             <div class="ms-auto flex items-center gap-[var(--gap-wk-xs)]">
-                <button type="button" @disabled($disabled) x-on:click="prevMonth()" :aria-disabled="prevDisabled" class="wk-touch-target wk-touch-row {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
+                <button type="button" @disabled($disabled) x-on:click="prevMonth()" @if($startPrevClosed) aria-disabled="true" @endif :aria-disabled="prevDisabled" class="wk-touch-target wk-touch-row {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
                     <svg class="w-5 h-5 rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                     </svg>
@@ -572,14 +601,14 @@
             @unless($flush)
             <div class="flex items-center gap-[var(--gap-wk-xs)]">
             @endunless
-                <button type="button" @disabled($disabled) x-on:click="goToday() && {{ $optimisticConfig ? 'run' : 'selectDate' }}(todayDate)" :aria-disabled="todayDisabled" class="wk-touch-target wk-touch-row {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Today') }}" :aria-label="todayButtonLabel">
+                <button type="button" @disabled($disabled) x-on:click="goToday() && {{ $optimisticConfig ? 'run' : 'selectDate' }}(todayDate)" @if($startTodayClosed) aria-disabled="true" @endif :aria-disabled="todayDisabled" class="wk-touch-target wk-touch-row {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Today') }}" :aria-label="todayButtonLabel">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 7.5h16.5M5.25 5.25h13.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z" />
                         <text x="12" y="17.25" text-anchor="middle" font-size="8" font-weight="600" fill="currentColor" stroke="none" x-text="todayDayOfMonth">{{ now()->day }}</text>
                     </svg>
                 </button>
         @endif
-        <button type="button" @disabled($disabled) x-on:click="nextMonth()" :aria-disabled="nextDisabled" @class(['wk-touch-target', 'wk-touch-row' => $withToday || $flush, $navBtnClasses]) aria-label="{{ __('wirekit::Next month') }}">
+        <button type="button" @disabled($disabled) x-on:click="nextMonth()" @if($startNextClosed) aria-disabled="true" @endif :aria-disabled="nextDisabled" @class(['wk-touch-target', 'wk-touch-row' => $withToday || $flush, $navBtnClasses]) aria-label="{{ __('wirekit::Next month') }}">
             <svg class="w-5 h-5 rtl:-scale-x-100" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
@@ -606,14 +635,14 @@
                          view, as in a picker's dialog on a phone, the header above names
                          that month, so this one stays a name for the grid and hides from
                          the eye. Flush, it starts where the header's month starts. --}}
-                    <div :id="monthLabelId(month.offset)"@if($datesLang) lang="{{ $datesLang }}"@endif class="{{ $flush ? 'text-start' : 'text-center' }} mb-[var(--padding-wk-y-sm)] font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]" :class="{ 'sr-only': months === 1 }" x-text="month.label"></div>
+                    <div :id="monthLabelId(month.offset)"@if($datesLang) lang="{{ $datesLang }}"@endif class="{{ $monthNameClasses }}" :class="{ 'sr-only': months === 1 }" x-text="month.label"></div>
                     <table data-wk-prose-skip role="grid" @if($disabled) aria-disabled="true" @endif @if($readonly) aria-readonly="true" @endif class="w-full border-collapse" :aria-labelledby="monthLabelId(month.offset)"
                         @if($required) aria-required="true" aria-describedby="{{ $requiredMessageId }}" x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null" @endif>
                         <thead>
                             <tr>
                                 @if($weekNumbers)
                                     {{-- The week numbers' column: "#" to the eye, its name to a screen reader. --}}
-                                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col"><span aria-hidden="true">#</span><span class="sr-only">{{ __('wirekit::Week number') }}</span></th>
+                                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col"><span aria-hidden="true">#</span><span class="sr-only">{{ __('wirekit::Week number') }}</span></th>
                                 @endif
                                 @foreach($weekdays as $day)
                                     {{-- Static names as well as the bound ones, the same way the hidden
@@ -623,7 +652,7 @@
                                          WAI-ARIA date-picker example uses to give a column its full name —
                                          the short form is what fits in the cell, not what a screen reader
                                          should have to work from. --}}
-                                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day['long'] }}"@if($datesLang) lang="{{ $datesLang }}"@endif :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day['short'] }}</th>
+                                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day['long'] }}"@if($datesLang) lang="{{ $datesLang }}"@endif :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day['short'] }}</th>
                                 @endforeach
                             </tr>
                         </thead>
@@ -632,10 +661,10 @@
                                 <tr role="row">
                                     @if($weekNumbers)
                                         {{-- A row header, so a screen reader names the week with each day it reads. --}}
-                                        <th data-wk-prose-skip scope="row" class="text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="weekNumber(week)"></th>
+                                        <th scope="row" class="text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="weekNumber(week)"></th>
                                     @endif
                                     <template x-for="day in week" :key="day.date">
-                                        <td data-wk-prose-skip role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'" :data-wk-band="day.band">
+                                        <td role="gridcell" class="{{ $dayCellClasses }}" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'" :data-wk-band="day.band">
                                             <button
                                                 type="button"
                                                 x-on:click="!locked && day.isCurrentMonth && !day.isClosed && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -674,22 +703,36 @@
                     </table>
                 </div>
             </template>
+            {{-- The months as the page loads, each with its name, its weekdays and its weeks; the
+                 template above draws nothing until the script starts, which hides these. They follow
+                 the template, so the grids it draws come first in the document. --}}
+            @foreach($startMonths as $startIndex => $startMonth)
+                <div class="grow" data-wk-calendar-start x-show="false">
+                    <div @if($datesLang) lang="{{ $datesLang }}" @endif class="{{ $monthNameClasses }}">{{ $startMonthLabels[$startIndex] }}</div>
+                    <table data-wk-prose-skip class="w-full border-collapse" aria-label="{{ $startMonthLabels[$startIndex] }}" @if($datesLang) lang="{{ $datesLang }}" @endif>
+                        <tbody>
+                            @include('wirekit::components.partials.calendar-start-weeks', ['startMonth' => $startMonth, 'weekdays' => $weekdays, 'weekNumbers' => $weekNumbers, 'dayBtnClasses' => $dayBtnClasses, 'dayCellClasses' => $dayCellClasses, 'disabled' => $disabled])
+                        </tbody>
+                        @include('wirekit::components.partials.calendar-sizing-row', ['weekNumbers' => $weekNumbers, 'size' => $size])
+                    </table>
+                </div>
+            @endforeach
         </div>
     @else
     {{-- Calendar grid. Collapsed, so no spacing opens between two cells and the band of a range
          runs on from one to the next, also where the page leaves out Tailwind's preflight. --}}
-    <table data-wk-prose-skip role="grid" @if($disabled) aria-disabled="true" @endif @if($readonly) aria-readonly="true" @endif class="w-full border-collapse" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)"
+    <table data-wk-prose-skip role="grid" x-cloak @if($disabled) aria-disabled="true" @endif @if($readonly) aria-readonly="true" @endif class="w-full border-collapse" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)"
         @if($required) aria-required="true" aria-describedby="{{ $requiredMessageId }}" x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null" @endif>
         <thead>
             <tr>
                 @if($weekNumbers)
                     {{-- The week numbers' column: "#" to the eye, its name to a screen reader. --}}
-                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col"><span aria-hidden="true">#</span><span class="sr-only">{{ __('wirekit::Week number') }}</span></th>
+                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col"><span aria-hidden="true">#</span><span class="sr-only">{{ __('wirekit::Week number') }}</span></th>
                 @endif
                 @foreach($weekdays as $day)
                     {{-- See the multi-month header above for why the abbreviation is
                          written twice and what `abbr` is doing here. --}}
-                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day['long'] }}"@if($datesLang) lang="{{ $datesLang }}"@endif :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day['short'] }}</th>
+                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day['long'] }}"@if($datesLang) lang="{{ $datesLang }}"@endif :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day['short'] }}</th>
                 @endforeach
             </tr>
         </thead>
@@ -698,7 +741,7 @@
                 <tr role="row">
                     @if($weekNumbers)
                         {{-- A row header, so a screen reader names the week with each day it reads. --}}
-                        <th data-wk-prose-skip scope="row" class="text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="weekNumber(week)"></th>
+                        <th scope="row" class="text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="weekNumber(week)"></th>
                     @endif
                     <template x-for="day in week" :key="day.date">
                         {{-- aria-selected lives on the gridcell, not the button.
@@ -709,7 +752,7 @@
                              button, also draws the band of a range: drawn across the whole
                              cell, it meets the band of the next cell, which a button inside
                              the cell's padding cannot reach (dist/wirekit.css). --}}
-                        <td data-wk-prose-skip role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'" :data-wk-band="day.band">
+                        <td role="gridcell" class="{{ $dayCellClasses }}" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'" :data-wk-band="day.band">
                             <button
                                 type="button"
                                 x-on:click="!locked && day.isCurrentMonth && !day.isClosed && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -745,6 +788,16 @@
                     </template>
                 </tr>
             </template>
+        </tbody>
+        @include('wirekit::components.partials.calendar-sizing-row', ['weekNumbers' => $weekNumbers, 'size' => $size])
+    </table>
+    {{-- The month as the page loads, for the moment before the script starts and for a page that
+         runs none: the grid above draws its days from a template and waits under `x-cloak` until
+         then. A plain table named by its month, which the script hides as it starts. It follows
+         the grid, so the grid is the first table a script asking the calendar for one finds. --}}
+    <table data-wk-prose-skip data-wk-calendar-start x-show="false" class="w-full border-collapse" aria-label="{{ $startMonthLabels[0] }}" @if($datesLang) lang="{{ $datesLang }}" @endif>
+        <tbody>
+            @include('wirekit::components.partials.calendar-start-weeks', ['startMonth' => $startMonths[0], 'weekdays' => $weekdays, 'weekNumbers' => $weekNumbers, 'dayBtnClasses' => $dayBtnClasses, 'dayCellClasses' => $dayCellClasses, 'disabled' => $disabled])
         </tbody>
         @include('wirekit::components.partials.calendar-sizing-row', ['weekNumbers' => $weekNumbers, 'size' => $size])
     </table>

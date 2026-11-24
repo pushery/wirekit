@@ -15,6 +15,12 @@
     $popoverDisabled = (bool) $attributes->get('disabled', false);
     $popoverRequired = (bool) $attributes->get('required', false);
     $popoverTyped = $timeEntry === 'input';
+    // A typed time has no dialog, and so nothing for `lazy` to hold back.
+    if ($popoverTyped) {
+        $lazy = false;
+        $lazyPanelOpen = '';
+        $lazyPanelClose = '';
+    }
     // `readonly` shows the value and opens nothing, as on the datetime picker: there is no native
     // field to take it, so the trigger, or the button of a typed time's suggestions, says it is
     // disabled, a typed time's segments are read-only, and no button clears the value. The hidden
@@ -122,6 +128,7 @@
 <div
     {{ $outerAttributes }}
     x-data="wirekitTimePicker({{ $popoverConfig }})"
+    @if($lazy) data-wk-lazy-panel-host @endif
     {{-- The hidden field below stands inside this root, where `.parent` would still find our names:
          an `x-model` reaches it as `x-wk-model`, read above this element (CallerModel::onField()). --}}
     @if(\Pushery\WireKit\Support\CallerModel::binds($attributes)) data-wk-ref-scope @endif
@@ -167,7 +174,7 @@
                 aria-haspopup="dialog"
                 aria-expanded="false"
                 x-bind:aria-expanded="isOpen ? 'true' : 'false'"
-                aria-controls="{{ $popoverPanelId }}"
+                @if($lazy) :aria-controls="_panelBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($popoverPanelId) }} : null" @else aria-controls="{{ $popoverPanelId }}" @endif
                 aria-labelledby="{{ $popoverTriggerNameIds }}"
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($hasError) aria-invalid="true" @endif
@@ -183,7 +190,7 @@
                 @if($popoverRequiredWord)
                     <span id="{{ $id }}-required-word" class="sr-only">{{ __('wirekit::(required)') }}</span>
                 @endif
-                <span id="{{ $popoverValueId }}" class="min-w-0 flex-1 truncate">
+                <span id="{{ $popoverValueId }}" class="min-w-0 flex-1 truncate"@if($popoverShown !== '') title="{{ $popoverShown }}"@endif x-bind:title="showsPlaceholder ? '' : shownValue">
                     <span x-show="! showsPlaceholder" x-text="shownValue" @if($popoverShown === '') style="display: none" @endif>{{ $popoverShown }}</span>
                     <span x-show="showsPlaceholder" @if($popoverShown !== '') style="display: none" @endif class="text-[color:var(--color-wk-text-placeholder)]">{{ $popoverPlaceholder }}</span>
                 </span>
@@ -213,7 +220,7 @@
 
         {{-- On a phone the dialog is a modal over the page (utils/picker-dialog.js, `modalMedia`): this
              is its backdrop, which a tap closes as Escape does. --}}
-        <template x-teleport="#wk-overlay-root">
+        {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
             <div
                 x-show="isOpen && dialogModal"
                 x-cloak
@@ -258,7 +265,7 @@
                 <span id="{{ $popoverPanelId }}-title" class="sr-only">{{ __('wirekit::Select a time') }}</span>
                 @include('wirekit::components.partials.time-list', ['timeListId' => $popoverPanelId.'-times', 'timeListHeading' => false, 'timeListLabelledBy' => $popoverNameIds])
             </div>
-        </template>
+        </template>{{ $lazyPanelClose }}
     @endif
 
     {{-- The field a form submits and `wire:model` binds, written by the script with the events a

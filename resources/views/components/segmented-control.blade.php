@@ -38,7 +38,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -53,7 +53,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the control takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -209,8 +215,10 @@
     };
 
     // The options usually come from `pluck('label', 'value')`, which is a Collection; the first
-    // key below and the loop over them take an array. The keys are the values and stay.
-    $options = \Pushery\WireKit\Support\ListProp::from($options, 'segmented-control', 'options');
+    // key below and the loop over them take an array. The keys are the values and stay. An option
+    // that is a model, as from `keyBy('code')`, is read as the array it holds, so its `label`
+    // names the segment: written as text, a model is its JSON.
+    $options = \Pushery\WireKit\Support\ListProp::records($options, 'segmented-control', 'options');
 
     // An option is a label, or the shape `select` takes for one with more to say:
     // `'de' => ['label' => 'Deutsch', 'lang' => 'de']`. `lang` is the language the label is in,
@@ -261,9 +269,14 @@
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
-<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0">
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0">
     @if($label)
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track in a row that lines its fields up, held so that the control stays
+             on the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     {{-- `name` belongs to the hidden field below, which renders it. On this div it is not a
@@ -429,10 +442,17 @@
                      rule selects to frame the selected segment. It sits outside the resolved
                      class lists, so a personalized block cannot take it away. --}}
                 @if($segment['lang'] !== null) lang="{{ $segment['lang'] }}" @endif
-                class="wk-segmented-control-segment wk-touch-row {{ $segmentClasses }} {{ $sizeClasses }}"
-                :class="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }}
-                    ? {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentSelectedClasses) }}
-                    : {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses) }}"
+                {{-- The server writes the classes of the state too, as it writes `aria-checked`, so
+                     the selected segment shows before Alpine starts and on a page without it. The
+                     binding names both sides as an object: Alpine then takes the classes of the
+                     side that is false off, the server's included, where a string only takes off
+                     what Alpine added itself. Two equal sides are one look, and need no binding.
+                     Alpine takes a class off by its name, so the binding names them as the class
+                     attribute writes them, under their short names while compact classes are on. --}}
+                class="wk-segmented-control-segment wk-touch-row {{ $segmentClasses }} {{ $sizeClasses }} {{ (string) $selected === (string) $optValue ? $segmentSelectedClasses : $segmentUnselectedClasses }}"
+                @if($segmentSelectedClasses !== $segmentUnselectedClasses)
+                    :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($segmentSelectedClasses)) }}: selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($segmentUnselectedClasses)) }}: selected !== {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }} }"
+                @endif
             >
                 {{ $segment['label'] }}
             </button>
@@ -461,5 +481,9 @@
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @elseif($inAlignedRow)
+        {{-- Nothing below the control, and the track still ends here, or the row's next field would
+             be pulled up into it. --}}
+        <span data-wk-field-part="message" aria-hidden="true"></span>
     @endwirekitLast
 </div>

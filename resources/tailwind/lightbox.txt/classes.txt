@@ -42,6 +42,7 @@ already
 alt
 altLang
 always-present
+among
 an
 and
 animate-spin
@@ -54,6 +55,7 @@ announces
 anticipate
 anything
 application
+are
 aria-atomic
 aria-disabled
 aria-hidden
@@ -96,6 +98,7 @@ box
 bright
 browser
 build
+builds
 built
 but
 button
@@ -115,6 +118,8 @@ carousel
 carries
 cast
 centers
+change
+children
 clamp
 class
 clears
@@ -123,12 +128,15 @@ client-only
 client-side
 clip
 closed
+closing
 closure
 color
 comes
 compiles
 complete
 component
+conditional
+configuration
 content
 contents
 context
@@ -136,7 +144,6 @@ control
 controls
 convincing
 corner
-count
 covers
 createFocusTrap
 current
@@ -150,9 +157,11 @@ cy
 dark
 darker
 data-driven
+data-wk-lazy-panel-host
 data-wk-lightbox-media
 data-wk-prose-skip
 data-wk-slide-overlay
+data-wk-slides
 data:text/html
 database
 debug
@@ -200,6 +209,7 @@ evaluates
 even
 every
 exactly
+expression
 factory
 fades
 fallback
@@ -293,6 +303,7 @@ layout
 lazily
 lazy
 leading-relaxed
+leave
 leaves
 left
 legible
@@ -318,6 +329,7 @@ lost
 m-0
 makes
 marker
+markers
 markup
 matching
 max-h-[85vh]
@@ -348,6 +360,7 @@ native
 naturalWidth
 navigable
 never
+new
 no
 non-video
 none
@@ -370,6 +383,7 @@ opacity-[var(--opacity-wk-disabled)]
 open
 opened
 opening
+opens
 opposite
 opt
 optimistic-ui
@@ -528,9 +542,11 @@ surface
 swaps
 tab
 tabindex
+tag
 take
 takes
 tall
+teleport
 teleported
 template
 text
@@ -565,6 +581,7 @@ transition
 transition-opacity
 translucent
 trap
+travel
 travels
 treated
 trigger
@@ -580,8 +597,10 @@ under
 unknown
 unlabeled
 unrelated
+until
 up
 update
+updated
 use
 using
 value
@@ -601,6 +620,7 @@ w-8
 w-[90vw]
 w-[var(--size-wk-md)]
 w-auto
+waits
 was
 way
 what

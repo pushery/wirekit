@@ -7,8 +7,9 @@
     // page, and a `<ul>` with no name is announced as "list, 3 items" beside every other
     // one — the name is what tells them apart.
     'label' => __('wirekit::Cart'),
-    // Whether to draw a separator between lines. `divide-y` compiles to a border-BOTTOM on
-    // `:not(:last-child)`, so the rule belongs to the list rather than to the line: a line
+    // Whether to draw a separator between lines. Tailwind's divider on the block axis compiles to
+    // a border-BOTTOM on `:not(:last-child)`, so the rule belongs to the list rather than to the
+    // line. A line
     // cannot know whether it is the last one, and CSS has no previous-sibling combinator to
     // tell it. `cart-item` therefore ships spacing and no border, and the two must stay that
     // way — a border on both would double.
@@ -38,7 +39,7 @@
         // phone, and a media query would call it a desktop.
         '@container/wk-cart-list',
         'flex flex-col',
-        $divided ? 'divide-y divide-[color:var(--color-wk-border)]' : '',
+        $divided ? 'divide-y-[length:var(--border-wk-width)] divide-[color:var(--color-wk-border)]' : '',
     ]), $scope);
 @endphp
 

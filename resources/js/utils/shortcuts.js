@@ -677,7 +677,11 @@ const KEY_DISPLAY_FLAG = '__wirekitKeyDisplayMarked';
  * single-key shortcuts off, which hides the drawn keys of one; a screen that turns them off says
  * so itself, and the stylesheet reads that with `:has()`.
  *
- * Marked again when the reader flips the switch, and after `wire:navigate` brings in a new page.
+ * Marked again when the reader flips the switch, and when `wire:navigate` brings in a new page. A hop
+ * gives the root the new page's attributes and takes both marks away, and `livewire:navigated` comes
+ * once the new page's head scripts have loaded, after a paint when one of them is new. So the marks
+ * go back in the `onSwap` of `livewire:navigating`, which runs in the task that swaps the page in,
+ * before the new page paints, and again at `livewire:navigated`.
  */
 export function markKeyDisplay(doc = typeof document !== 'undefined' ? document : null) {
     const root = doc?.documentElement;
@@ -699,6 +703,13 @@ export function markKeyDisplay(doc = typeof document !== 'undefined' ? document 
 
     window[KEY_DISPLAY_FLAG] = true;
     window.addEventListener(SINGLE_KEYS_EVENT, mark);
+    doc.addEventListener('livewire:navigating', (event) => {
+        const onSwap = event?.detail?.onSwap;
+
+        if (typeof onSwap === 'function') {
+            onSwap(mark);
+        }
+    });
     doc.addEventListener('livewire:navigated', mark);
 }
 

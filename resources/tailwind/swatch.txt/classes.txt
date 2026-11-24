@@ -54,6 +54,7 @@ beside
 bg-[var(--color-wk-surface)]
 bg-center
 bg-cover
+block
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border-strong)]
 broken
@@ -66,6 +67,7 @@ checkbox
 checked
 circle
 class
+closes
 color
 compiles
 component
@@ -87,6 +89,7 @@ drawn
 draws
 each
 edge
+end
 ends
 escaping
 every
@@ -95,6 +98,7 @@ false
 feature
 fill
 fills
+finds
 flags
 flips
 for
@@ -114,6 +118,7 @@ h-[var(--size-wk-sm)]
 h-[var(--size-wk-xs)]
 has
 height
+here
 hex
 hidden
 holds
@@ -126,6 +131,7 @@ imports
 in
 inline-block
 inline-flex
+inserts
 inset-0
 inside
 interactive
@@ -138,9 +144,11 @@ justify-center
 keep
 keeps
 label
+last
 later
 leading-none
 least
+leaves
 lg
 lies
 light
@@ -152,6 +160,8 @@ load
 loaded
 loads
 mark
+marker
+markers
 match
 may
 md
@@ -159,8 +169,10 @@ mean
 min-w-[var(--size-wk-md)]
 min-w-[var(--size-wk-sm)]
 min-w-[var(--size-wk-xs)]
+morph
 name
 names
+needs
 never
 no
 non-scaling-stroke
@@ -170,6 +182,7 @@ nothing
 of
 on
 one
+opening
 opposite
 optimistic-ui
 or
@@ -204,6 +217,7 @@ rejected
 relative
 reported
 result
+right
 role
 round
 rounded-[inherit]
@@ -213,6 +227,7 @@ s
 says
 scheme
 scope
+second
 sets
 shape
 showLabel
@@ -228,6 +243,7 @@ size-[var(--size-wk-xs)]
 size-full
 sm
 so
+span
 square
 sr-only
 stands
@@ -256,11 +272,13 @@ the
 theme
 there
 this
+though
 through
 to
 transparent
 true
 truthy
+two
 unavailable
 unbound
 unknown

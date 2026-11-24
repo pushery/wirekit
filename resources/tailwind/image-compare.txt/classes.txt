@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-bg-elevated
 --color-wk-bg-muted
 --color-wk-border
@@ -14,6 +15,7 @@
 --shadow-wk-md
 --shadow-wk-sm
 --text-wk-xs
+--wk-image-compare-divider-size
 --wk-image-compare-handle-size
 @click
 @else
@@ -32,6 +34,7 @@ after
 after-label
 afterAlt
 afterLabel
+again
 against
 all
 along
@@ -86,10 +89,11 @@ between
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-transparent
+binding
 block
 blocks
 body
-border
+border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
 both
 bottom
@@ -122,6 +126,7 @@ clipped
 collapses
 color
 come
+compact
 compare
 comparison
 compiles
@@ -132,6 +137,7 @@ currentColor
 cursor-col-resize
 cursor-grab
 cursor-row-resize
+cut
 data-wk-prose-skip
 data-wk-server-value
 debug
@@ -205,6 +211,7 @@ form
 from
 fully
 function
+functions
 get
 given
 gives
@@ -303,6 +310,7 @@ none
 not
 nothing
 null
+object
 object-cover
 of
 offset
@@ -335,6 +343,7 @@ percentage
 photo
 pick
 picture
+place
 place-items-center
 plain
 plain-HTML
@@ -384,10 +393,12 @@ rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-sm)]
 rounded-full
 run
+runs
 s
 same
 scanner
 scope
+script
 scrolls
 second
 select-none
@@ -395,8 +406,10 @@ sends
 sentence
 separator
 server
+sets
 shadow-[var(--shadow-wk-md)]
 shadow-[var(--shadow-wk-sm)]
+short
 show
 shows
 side
@@ -467,9 +480,11 @@ touch-action
 toward
 track
 trailing
+transform
 travels
 true
 truthy
+turns
 two
 type
 unbound
@@ -518,6 +533,7 @@ without
 works
 would
 wrapper
+writes
 writing
 written
 wrong

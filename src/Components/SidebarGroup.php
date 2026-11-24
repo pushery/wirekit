@@ -56,6 +56,7 @@ final class SidebarGroup extends Component
         private readonly bool|int|float|string|null $collapsible = false,
         private readonly bool|int|float|string|null $forceOpen = false,
         private readonly Htmlable|string|int|float|null $label = null,
+        private readonly bool|int|float|string|null $lazy = null,
         private readonly bool|int|float|string|null $open = true,
         private readonly bool|int|float|string|null $persist = null,
         private readonly ?string $scope = null,
@@ -102,6 +103,8 @@ final class SidebarGroup extends Component
             'collapsible' => $this->collapsible,
             'forceOpen' => $this->forceOpen,
             'label' => PropText::text($this->label),
+            // Null leaves the view's default in charge, which reads the configuration.
+            'lazy' => $this->lazy,
             'open' => $this->open,
             'persist' => $this->persist,
             'scope' => $this->scope,

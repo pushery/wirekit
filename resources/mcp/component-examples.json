@@ -40,15 +40,15 @@
     "alert-dialog": [
         {
             "title": "Delete Confirmation",
-            "code": "<x-wirekit::button intent=\"danger\"\n    @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'delete-project' })\">\n    Delete Project\n</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"delete-project\">\n    <x-wirekit::alert-dialog.title>Delete Project</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        This will permanently delete the project and all associated data. This action cannot be undone.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::button intent=\"danger\" size=\"sm\" wire:click=\"deleteProject\">Delete Project</x-wirekit::button>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>"
+            "code": "<x-wirekit::button intent=\"danger\"\n    @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'delete-project' })\">\n    Delete Project\n</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"delete-project\">\n    <x-wirekit::alert-dialog.title>Delete Project</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        This will permanently delete the project and all associated data. This action cannot be undone.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::button intent=\"danger\" size=\"sm\" wire:click=\"deleteProject\">Delete Project</x-wirekit::button>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>"
         },
         {
             "title": "Trigger in a stretched stack",
-            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Download recovery codes</x-wirekit::button>\n    <x-wirekit::alert-dialog name=\"disable-two-factor\" class=\"contents\">\n        <x-slot:trigger>\n            <x-wirekit::button intent=\"danger\">Disable two-factor authentication</x-wirekit::button>\n        </x-slot:trigger>\n        <x-wirekit::alert-dialog.title>Disable two-factor authentication?</x-wirekit::alert-dialog.title>\n        <x-wirekit::alert-dialog.description>Your account is then protected by its password alone.</x-wirekit::alert-dialog.description>\n        <x-wirekit::alert-dialog.actions>\n            <x-wirekit::alert-dialog.cancel>\n                <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n            </x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"danger\" size=\"sm\" wire:click=\"disableTwoFactor\">Disable</x-wirekit::button>\n        </x-wirekit::alert-dialog.actions>\n    </x-wirekit::alert-dialog>\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\">Download recovery codes</x-wirekit::button>\n    <x-wirekit::alert-dialog name=\"disable-two-factor\" class=\"contents\">\n        <x-slot:trigger>\n            <x-wirekit::button intent=\"danger\">Disable two-factor authentication</x-wirekit::button>\n        </x-slot:trigger>\n        <x-wirekit::alert-dialog.title>Disable two-factor authentication?</x-wirekit::alert-dialog.title>\n        <x-wirekit::alert-dialog.description>Your account is then protected by its password alone.</x-wirekit::alert-dialog.description>\n        <x-wirekit::alert-dialog.actions>\n            <x-wirekit::alert-dialog.cancel>\n                <x-wirekit::button intent=\"neutral\" size=\"sm\">Cancel</x-wirekit::button>\n            </x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"danger\" size=\"sm\" wire:click=\"disableTwoFactor\">Disable</x-wirekit::button>\n        </x-wirekit::alert-dialog.actions>\n    </x-wirekit::alert-dialog>\n</x-wirekit::stack>"
         },
         {
             "title": "Closing on confirm",
-            "code": "<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'archive-run' })\">Archive Run</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"archive-run\" close-on-confirm>\n    <x-wirekit::alert-dialog.title>Archive this run</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        The run moves out of the active list. You can restore it from the archive for thirty days.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Archive</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>"
+            "code": "<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'archive-run' })\">Archive Run</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"archive-run\" close-on-confirm>\n    <x-wirekit::alert-dialog.title>Archive this run</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        The run moves out of the active list. You can restore it from the archive for thirty days.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Archive</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>"
         }
     ],
     "alert": [
@@ -82,7 +82,7 @@
     "app-rail": [
         {
             "title": "Icon-only, with tooltips",
-            "code": "<x-wirekit::app-rail style=\"height: 18rem;\">\n    <x-slot:brand>\n        <x-wirekit::shell-bar padding=\"none\" align=\"center\">\n            <x-wirekit::avatar initials=\"SW\" size=\"sm\" />\n        </x-wirekit::shell-bar>\n    </x-slot:brand>\n    <x-wirekit::app-rail.item href=\"#\" icon=\"home\" label=\"Overview\" :active=\"true\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Insights\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"credit-card\" label=\"Payments\" badge=\"3\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Settings\" />\n    <x-slot:footer>\n        <x-wirekit::app-rail.item href=\"#\" icon=\"user\" label=\"Account\" />\n    </x-slot:footer>\n</x-wirekit::app-rail>"
+            "code": "<x-wirekit::app-rail style=\"height: 18rem;\">\n    <x-slot:brand>\n        <x-wirekit::shell-bar padding=\"none\" align=\"center\">\n            <x-wirekit::avatar initials=\"SW\" size=\"sm\" />\n        </x-wirekit::shell-bar>\n    </x-slot:brand>\n    <x-wirekit::app-rail.item href=\"#\" icon=\"home\" label=\"Overview\" :active=\"true\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Insights\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"credit-card\" label=\"Payments\" badge=\"3\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Settings\" />\n    <x-slot:footer>\n        <x-wirekit::app-rail.item href=\"#\" label=\"Account\">\n            <x-slot:icon><x-wirekit::avatar initials=\"MK\" size=\"xs\" /></x-slot:icon>\n        </x-wirekit::app-rail.item>\n    </x-slot:footer>\n</x-wirekit::app-rail>"
         },
         {
             "title": "Captions under the icons",
@@ -188,7 +188,7 @@
         },
         {
             "title": "A footer band on a subtle surface",
-            "code": "<x-wirekit::stack gap=\"none\">\n    <x-wirekit::band edge=\"none\" padding=\"md\">\n        <x-wirekit::text>Draft saved a moment ago.</x-wirekit::text>\n    </x-wirekit::band>\n    <x-wirekit::band edge=\"top\" padding=\"md\" surface=\"subtle\">\n        <x-wirekit::row justify=\"end\" gap=\"sm\">\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Discard</x-wirekit::button>\n            <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n        </x-wirekit::row>\n    </x-wirekit::band>\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack gap=\"none\">\n    <x-wirekit::band edge=\"none\" padding=\"md\">\n        <x-wirekit::text>Draft saved a moment ago.</x-wirekit::text>\n    </x-wirekit::band>\n    <x-wirekit::band edge=\"top\" padding=\"md\" surface=\"subtle\">\n        <x-wirekit::row justify=\"end\" gap=\"sm\">\n            <x-wirekit::button intent=\"neutral\" size=\"sm\">Discard</x-wirekit::button>\n            <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n        </x-wirekit::row>\n    </x-wirekit::band>\n</x-wirekit::stack>"
         }
     ],
     "bento-grid": [
@@ -198,7 +198,7 @@
         },
         {
             "title": "Drag the divider — the bento reflows to fit its panel",
-            "code": "<x-wirekit::resizable style=\"height: 24rem;\">\n    <x-wirekit::resizable.panel :defaultSize=\"70\" :minSize=\"28\" :maxSize=\"88\">\n        <x-wirekit::bento-grid label=\"Platform features\" gap=\"sm\" style=\"width: 100%; height: 100%; grid-auto-rows: minmax(0, 1fr);\">\n            <x-wirekit::bento-cell span=\"2x1\" emphasis>\n                <x-wirekit::heading level=\"3\" size=\"md\">Reflows to its own width</x-wirekit::heading>\n                <x-wirekit::text intent=\"muted\" size=\"sm\">One column when narrow — whatever the window does.</x-wirekit::text>\n            </x-wirekit::bento-cell>\n            <x-wirekit::bento-cell>\n                <x-wirekit::heading level=\"3\" size=\"md\">Container query</x-wirekit::heading>\n                <x-wirekit::text intent=\"muted\" size=\"sm\">Not the viewport.</x-wirekit::text>\n            </x-wirekit::bento-cell>\n            <x-wirekit::bento-cell>\n                <x-wirekit::heading level=\"3\" size=\"md\">Pure CSS</x-wirekit::heading>\n                <x-wirekit::text intent=\"muted\" size=\"sm\">No JavaScript reflow.</x-wirekit::text>\n            </x-wirekit::bento-cell>\n            <x-wirekit::bento-cell span=\"2x1\">\n                <x-wirekit::heading level=\"3\" size=\"md\">Any container</x-wirekit::heading>\n                <x-wirekit::text intent=\"muted\" size=\"sm\">A sidebar, a card, a split view — it adapts to the room it has.</x-wirekit::text>\n            </x-wirekit::bento-cell>\n        </x-wirekit::bento-grid>\n    </x-wirekit::resizable.panel>\n    <x-wirekit::resizable.handle />\n    <x-wirekit::resizable.panel>\n        <x-wirekit::stack gap=\"sm\" style=\"height: 100%; justify-content: center; padding: var(--padding-wk-x-md);\">\n            <x-wirekit::text weight=\"medium\">Drag the divider ←</x-wirekit::text>\n            <x-wirekit::text intent=\"muted\" size=\"sm\">Widen or narrow the bento and watch it reflow.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::resizable.panel>\n</x-wirekit::resizable>"
+            "code": "<x-wirekit::resizable style=\"height: 24rem;\">\n    <x-wirekit::resizable.panel :defaultSize=\"70\" :minSize=\"28\" :maxSize=\"88\">\n        <x-wirekit::scroll-area style=\"height: 100%;\">\n            <x-wirekit::bento-grid label=\"Platform features\" gap=\"sm\" style=\"width: 100%; height: 100%; grid-auto-rows: minmax(min-content, 1fr);\">\n                <x-wirekit::bento-cell span=\"2x1\" emphasis>\n                    <x-wirekit::heading level=\"3\" size=\"md\">Reflows to its own width</x-wirekit::heading>\n                    <x-wirekit::text intent=\"muted\" size=\"sm\">One column when narrow — whatever the window does.</x-wirekit::text>\n                </x-wirekit::bento-cell>\n                <x-wirekit::bento-cell>\n                    <x-wirekit::heading level=\"3\" size=\"md\">Container query</x-wirekit::heading>\n                    <x-wirekit::text intent=\"muted\" size=\"sm\">Not the viewport.</x-wirekit::text>\n                </x-wirekit::bento-cell>\n                <x-wirekit::bento-cell>\n                    <x-wirekit::heading level=\"3\" size=\"md\">Pure CSS</x-wirekit::heading>\n                    <x-wirekit::text intent=\"muted\" size=\"sm\">No JavaScript reflow.</x-wirekit::text>\n                </x-wirekit::bento-cell>\n                <x-wirekit::bento-cell span=\"2x1\">\n                    <x-wirekit::heading level=\"3\" size=\"md\">Any container</x-wirekit::heading>\n                    <x-wirekit::text intent=\"muted\" size=\"sm\">A sidebar, a card, a split view — it adapts to the room it has.</x-wirekit::text>\n                </x-wirekit::bento-cell>\n            </x-wirekit::bento-grid>\n        </x-wirekit::scroll-area>\n    </x-wirekit::resizable.panel>\n    <x-wirekit::resizable.handle />\n    <x-wirekit::resizable.panel>\n        <x-wirekit::stack gap=\"sm\" style=\"height: 100%; justify-content: center; padding: var(--padding-wk-x-md);\">\n            <x-wirekit::text weight=\"medium\">Drag the divider ←</x-wirekit::text>\n            <x-wirekit::text intent=\"muted\" size=\"sm\">Widen or narrow the bento and watch it reflow.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::resizable.panel>\n</x-wirekit::resizable>"
         }
     ],
     "blockquote": [
@@ -282,7 +282,7 @@
     "button-group": [
         {
             "title": "Attached actions",
-            "code": "<x-wirekit::button-group label=\"Week\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\" aria-label=\"Previous week\">\n        <x-wirekit::icon name=\"chevron-left\" size=\"sm\" />\n    </x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Today</x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\" aria-label=\"Next week\">\n        <x-wirekit::icon name=\"chevron-right\" size=\"sm\" />\n    </x-wirekit::button>\n</x-wirekit::button-group>"
+            "code": "<x-wirekit::button-group label=\"Week\">\n    <x-wirekit::button intent=\"neutral\" aria-label=\"Previous week\">\n        <x-wirekit::icon name=\"chevron-left\" size=\"sm\" />\n    </x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\">Today</x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\" aria-label=\"Next week\">\n        <x-wirekit::icon name=\"chevron-right\" size=\"sm\" />\n    </x-wirekit::button>\n</x-wirekit::button-group>"
         },
         {
             "title": "A split button",
@@ -290,7 +290,7 @@
         },
         {
             "title": "A search field",
-            "code": "<x-wirekit::button-group label=\"Search\">\n    <x-wirekit::input name=\"q\" type=\"search\" label=\"Search invoices\" hide-label placeholder=\"Search invoices\" />\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Search</x-wirekit::button>\n</x-wirekit::button-group>"
+            "code": "<x-wirekit::button-group label=\"Search\">\n    <x-wirekit::input name=\"q\" type=\"search\" label=\"Search invoices\" hide-label placeholder=\"Search invoices\" />\n    <x-wirekit::button intent=\"neutral\">Search</x-wirekit::button>\n</x-wirekit::button-group>"
         }
     ],
     "button": [
@@ -335,6 +335,16 @@
             "code": "<x-wirekit::callout title=\"Sizes\" :level=\"2\">\n    Measure a garment you own and compare it with the table below.\n</x-wirekit::callout>"
         }
     ],
+    "captcha": [
+        {
+            "title": "A Turnstile check with Cloudflare's test key",
+            "code": "<x-wirekit::form style=\"max-width: 24rem;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::input name=\"email\" type=\"email\" label=\"Email\" />\n        <x-wirekit::captcha site-key=\"1x00000000000000000000AA\" label=\"Confirm you are a person\" hint=\"The check runs in your browser and takes a moment.\" defer />\n    </x-wirekit::stack>\n</x-wirekit::form>"
+        },
+        {
+            "title": "Error state",
+            "code": "<x-wirekit::form style=\"max-width: 24rem;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::input name=\"email\" type=\"email\" label=\"Email\" />\n        <x-wirekit::captcha site-key=\"1x00000000000000000000AA\" label=\"Confirm you are a person\" error=\"Please confirm you are a person.\" defer />\n    </x-wirekit::stack>\n</x-wirekit::form>"
+        }
+    ],
     "card-stack": [
         {
             "title": "The cards of a product in a remembered order",
@@ -352,7 +362,7 @@
         },
         {
             "title": "A card header with buttons and a sentence under the heading",
-            "code": "<x-wirekit::card class=\"max-w-xl\">\n    <x-wirekit::card.header description=\"Who can see the orders of this branch.\">\n        <x-wirekit::heading level=\"2\" size=\"lg\">Team</x-wirekit::heading>\n        <x-slot:actions>\n            <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\">Export</x-wirekit::button>\n            <x-wirekit::button size=\"sm\">Invite</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::card.header>\n    <x-wirekit::card.body>\n        Three members, two of them admins.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
+            "code": "<x-wirekit::card class=\"max-w-xl\">\n    <x-wirekit::card.header description=\"Who can see the orders of this branch.\">\n        <x-wirekit::heading level=\"2\" size=\"lg\">Team</x-wirekit::heading>\n        <x-slot:actions>\n            <x-wirekit::button size=\"sm\" intent=\"neutral\">Export</x-wirekit::button>\n            <x-wirekit::button size=\"sm\">Invite</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::card.header>\n    <x-wirekit::card.body>\n        Three members, two of them admins.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
         }
     ],
     "carousel": [
@@ -428,7 +438,7 @@
     "chart": [
         {
             "title": "Latency tooltip rounded to 2 dp with a unit suffix",
-            "code": "<x-wirekit-chart\n    library=\"apexcharts\"\n    type=\"line\"\n    valueDecimals=\"2\"\n    valueSuffix=\" ms\"\n    :labels=\"['10:00','10:01','10:02','10:03','10:04','10:05']\"\n    :datasets=\"[['label' => 'p95 latency', 'data' => [50.523626895740676, 61.20891, 47.8881241, 72.4410067, 58.91002, 65.337781]]]\"\n    aria-label=\"Line chart of p95 latency over six minutes; hover a point to see the value rounded to two decimal places with a millisecond suffix\"\n/>"
+            "code": "<x-wirekit-chart\n    library=\"apexcharts\"\n    type=\"line\"\n    valueDecimals=\"2\"\n    valueSuffix=\" ms\"\n    :labels=\"['10:00','10:01','10:02','10:03','10:04','10:05']\"\n    :datasets=\"[['label' => 'p95 latency', 'data' => [50.523626895740676, 61.20891, 47.8881241, 72.4410067, 58.91002, 65.337781]]]\"\n    :options=\"['yaxis' => ['title' => ['text' => 'p95 latency (ms)']]]\"\n    aria-label=\"Line chart of p95 latency over six minutes; hover a point to see the value rounded to two decimal places with a millisecond suffix\"\n/>"
         },
         {
             "title": "The receipts of a day in the tooltip",
@@ -560,7 +570,7 @@
     "command-palette": [
         {
             "title": "Command Palette",
-            "code": "{{-- The preview above is boxed into a fixed-height frame and opts out of\n     teleporting so it can render inside the page. Yours needs neither: the\n     defaults teleport the panel to the body and lock background scroll. --}}\n<x-wirekit::command-palette>\n    <x-wirekit::command-palette.group heading=\"Navigation\">\n        <x-wirekit::command-palette.item href=\"/dashboard\" icon=\"dashboard\">Dashboard</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/projects\" icon=\"layout\">Projects</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n    <x-wirekit::command-palette.group heading=\"Settings\">\n        <x-wirekit::command-palette.item href=\"/settings/profile\" icon=\"user\">Profile</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/settings/appearance\" icon=\"sun\">Appearance</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n</x-wirekit::command-palette>\n\n<x-wirekit::button intent=\"neutral\" surface=\"outline\"\n    @click=\"$dispatch('wirekit-command-palette-show')\">\n    Open Command Palette\n</x-wirekit::button>"
+            "code": "{{-- The preview above is boxed into a fixed-height frame and opts out of\n     teleporting so it can render inside the page. Yours needs neither: the\n     defaults teleport the panel to the body and lock background scroll. --}}\n<x-wirekit::command-palette>\n    <x-wirekit::command-palette.group heading=\"Navigation\">\n        <x-wirekit::command-palette.item href=\"/dashboard\" icon=\"dashboard\">Dashboard</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/projects\" icon=\"layout\">Projects</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n    <x-wirekit::command-palette.group heading=\"Settings\">\n        <x-wirekit::command-palette.item href=\"/settings/profile\" icon=\"user\">Profile</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/settings/appearance\" icon=\"sun\">Appearance</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n</x-wirekit::command-palette>\n\n<x-wirekit::button intent=\"neutral\"\n    @click=\"$dispatch('wirekit-command-palette-show')\">\n    Open Command Palette\n</x-wirekit::button>"
         },
         {
             "title": "An entry that opens a page of statuses",
@@ -662,7 +672,7 @@
         },
         {
             "title": "Selectable rows with a bulk-action bar",
-            "code": "<x-wirekit::data-table\n    selectable\n    caption=\"Subscribers\"\n    bulk-actions-label=\"Subscriber bulk actions\"\n    :columns=\"[\n        ['key' => 'name', 'label' => 'Name'],\n        ['key' => 'email', 'label' => 'Email'],\n        ['key' => 'status', 'label' => 'Status', 'cellType' => 'badge'],\n    ]\"\n    :rows=\"[\n        ['id' => 1, 'name' => 'Dana Lee', 'email' => 'dana@example.com', 'status' => 'active'],\n        ['id' => 2, 'name' => 'Sam Ray', 'email' => 'sam@example.com', 'status' => 'active'],\n        ['id' => 3, 'name' => 'Kim Vo', 'email' => 'kim@example.com', 'status' => 'inactive'],\n    ]\"\n>\n    <x-slot:bulkActions>\n        <x-wirekit::button intent=\"danger\" surface=\"outline\" size=\"sm\">Delete</x-wirekit::button>\n    </x-slot:bulkActions>\n</x-wirekit::data-table>"
+            "code": "<x-wirekit::data-table\n    selectable\n    caption=\"Subscribers\"\n    bulk-actions-label=\"Subscriber bulk actions\"\n    :columns=\"[\n        ['key' => 'name', 'label' => 'Name'],\n        ['key' => 'email', 'label' => 'Email'],\n        ['key' => 'status', 'label' => 'Status', 'cellType' => 'badge'],\n    ]\"\n    :rows=\"[\n        ['id' => 1, 'name' => 'Dana Lee', 'email' => 'dana@example.com', 'status' => 'active'],\n        ['id' => 2, 'name' => 'Sam Ray', 'email' => 'sam@example.com', 'status' => 'active'],\n        ['id' => 3, 'name' => 'Kim Vo', 'email' => 'kim@example.com', 'status' => 'inactive'],\n    ]\"\n>\n    <x-slot:bulkActions>\n        <x-wirekit::button intent=\"danger\" size=\"sm\">Delete</x-wirekit::button>\n    </x-slot:bulkActions>\n</x-wirekit::data-table>"
         }
     ],
     "date-picker": [
@@ -724,11 +734,11 @@
     "drawer": [
         {
             "title": "Drawer Panel",
-            "code": "<x-wirekit::drawer.trigger for=\"settings-drawer\">Open Drawer</x-wirekit::drawer.trigger>\n\n<x-wirekit::drawer name=\"settings-drawer\">\n    <x-wirekit::drawer.header>Settings</x-wirekit::drawer.header>\n    <x-wirekit::drawer.body>\n        <x-wirekit::stack gap=\"md\">\n            <x-wirekit::input name=\"display-name\" label=\"Display name\" value=\"Dana Ortiz\" />\n            <x-wirekit::checkbox name=\"mention-mail\" label=\"Email me when someone mentions me\" checked />\n        </x-wirekit::stack>\n    </x-wirekit::drawer.body>\n    <x-wirekit::drawer.footer>\n        <x-wirekit::drawer.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::drawer.close>\n        <x-wirekit::button size=\"sm\" wire:click=\"save\">Save</x-wirekit::button>\n    </x-wirekit::drawer.footer>\n</x-wirekit::drawer>"
+            "code": "<x-wirekit::drawer.trigger for=\"settings-drawer\">Open Drawer</x-wirekit::drawer.trigger>\n\n<x-wirekit::drawer name=\"settings-drawer\">\n    <x-wirekit::drawer.header>Settings</x-wirekit::drawer.header>\n    <x-wirekit::drawer.body>\n        <x-wirekit::stack gap=\"md\">\n            <x-wirekit::input name=\"display-name\" label=\"Display name\" value=\"Dana Ortiz\" />\n            <x-wirekit::checkbox name=\"mention-mail\" label=\"Email me when someone mentions me\" checked />\n        </x-wirekit::stack>\n    </x-wirekit::drawer.body>\n    <x-wirekit::drawer.footer>\n        <x-wirekit::drawer.close>\n            <x-wirekit::button intent=\"neutral\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::drawer.close>\n        <x-wirekit::button size=\"sm\" wire:click=\"save\">Save</x-wirekit::button>\n    </x-wirekit::drawer.footer>\n</x-wirekit::drawer>"
         },
         {
             "title": "Filters in a drawer from the bottom",
-            "code": "<x-wirekit::drawer.trigger for=\"filters-preview\" intent=\"neutral\" surface=\"outline\">Filters</x-wirekit::drawer.trigger>\n\n<x-wirekit::drawer name=\"filters-preview\" position=\"bottom\">\n    <x-wirekit::drawer.header>Filters</x-wirekit::drawer.header>\n\n    <x-wirekit::drawer.body>\n        <x-wirekit::checkbox name=\"in-stock\" label=\"In stock only\" />\n    </x-wirekit::drawer.body>\n</x-wirekit::drawer>"
+            "code": "<x-wirekit::drawer.trigger for=\"filters-preview\" intent=\"neutral\">Filters</x-wirekit::drawer.trigger>\n\n<x-wirekit::drawer name=\"filters-preview\" position=\"bottom\">\n    <x-wirekit::drawer.header>Filters</x-wirekit::drawer.header>\n\n    <x-wirekit::drawer.body>\n        <x-wirekit::checkbox name=\"in-stock\" label=\"In stock only\" />\n    </x-wirekit::drawer.body>\n</x-wirekit::drawer>"
         }
     ],
     "dropdown": [
@@ -770,7 +780,7 @@
         },
         {
             "title": "Custom SVG via iconSlot",
-            "code": "<x-wirekit::empty-state title=\"Nothing here\" description=\"Add your first project to get started.\">\n    <x-slot:iconSlot>\n        <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\" style=\"height: 3rem; width: 3rem;\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\" /></svg>\n    </x-slot:iconSlot>\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Create Project</x-wirekit::button>\n</x-wirekit::empty-state>"
+            "code": "<x-wirekit::empty-state title=\"Nothing here\" description=\"Add your first project to get started.\">\n    <x-slot:iconSlot>\n        <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\" style=\"height: 3rem; width: 3rem;\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\" /></svg>\n    </x-slot:iconSlot>\n    <x-wirekit::button intent=\"neutral\">Create Project</x-wirekit::button>\n</x-wirekit::empty-state>"
         }
     ],
     "energy-label": [
@@ -801,6 +811,12 @@
             "code": "<x-wirekit::event-calendar\n    view=\"week\"\n    date=\"2026-06-08\"\n    aria-label=\"Weekly schedule with events that span days\"\n    :events=\"[\n        ['id' => 1, 'title' => 'Conference', 'start' => '2026-06-08T09:00:00', 'end' => '2026-06-10T17:00:00', 'intent' => 'accent'],\n        ['id' => 2, 'title' => 'Lunch', 'start' => '2026-06-09T12:00:00', 'end' => '2026-06-09T13:00:00'],\n        ['id' => 3, 'title' => 'Night shift', 'start' => '2026-06-12T22:00:00', 'end' => '2026-06-13T02:00:00', 'intent' => 'warning'],\n        ['id' => 4, 'title' => 'Vacation', 'start' => '2026-06-08', 'end' => '2026-06-12', 'allDay' => true, 'intent' => 'success'],\n    ]\"\n/>"
         }
     ],
+    "external-link-question": [
+        {
+            "title": "A link to another site asks first",
+            "code": "<x-wirekit::external-link-question :trusted=\"['wirekit.app']\" />\n<x-wirekit::stack gap=\"sm\">\n<x-wirekit::link href=\"https://laravel.com/docs/eloquent-relationships#eager-loading\" external>The Laravel documentation asks first</x-wirekit::link>\n<x-wirekit::link href=\"https://wirekit.app\" external>The WireKit website, a trusted host, opens without a question</x-wirekit::link>\n</x-wirekit::stack>"
+        }
+    ],
     "fab": [
         {
             "title": "A speed dial with three actions",
@@ -808,7 +824,7 @@
         },
         {
             "title": "A single-action FAB that opens a dialog",
-            "code": "<x-wirekit::modal name=\"feedback\">\n    <x-slot:trigger>\n        <x-wirekit::fab.button label=\"Send feedback\" icon=\"message\" />\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Send feedback</x-wirekit::modal.header>\n    <x-wirekit::modal.body>\n        <x-wirekit::textarea name=\"feedback\" label=\"What went wrong?\" rows=\"3\" />\n    </x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::modal.close>\n        <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
+            "code": "<x-wirekit::modal name=\"feedback\">\n    <x-slot:trigger>\n        <x-wirekit::fab.button label=\"Send feedback\" icon=\"message\" />\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Send feedback</x-wirekit::modal.header>\n    <x-wirekit::modal.body>\n        <x-wirekit::textarea name=\"feedback\" label=\"What went wrong?\" rows=\"3\" />\n    </x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button intent=\"neutral\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::modal.close>\n        <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
         },
         {
             "title": "With names on hover (default) and with hideLabel",
@@ -949,12 +965,12 @@
             "code": "<x-wirekit::form style=\"max-width: 24rem;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::input name=\"email\" label=\"Email\" placeholder=\"Your email address\" />\n        <x-wirekit::input name=\"password\" type=\"password\" label=\"Password\" />\n        <x-wirekit::button type=\"submit\">Sign in</x-wirekit::button>\n    </x-wirekit::stack>\n</x-wirekit::form>"
         },
         {
-            "title": "A rating that joins a form from outside it",
-            "code": "<x-wirekit::stack gap=\"md\" style=\"max-width: 24rem;\">\n    <x-wirekit::rating name=\"service\" label=\"How was the service?\" form=\"service-feedback\" />\n    <x-wirekit::form id=\"service-feedback\">\n        <x-wirekit::button type=\"submit\">Send feedback</x-wirekit::button>\n    </x-wirekit::form>\n</x-wirekit::stack>"
+            "title": "A form that says what its asterisk means",
+            "code": "<x-wirekit::form required-note>\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::input name=\"email\" type=\"email\" label=\"Email\" required />\n        <x-wirekit::input name=\"company\" label=\"Company\" />\n        <x-wirekit::button type=\"submit\">Create account</x-wirekit::button>\n    </x-wirekit::stack>\n</x-wirekit::form>"
         },
         {
-            "title": "Change the score or the view, then undo both",
-            "code": "<x-wirekit::form style=\"max-width: 24rem;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::rating name=\"score\" label=\"Score\" :value=\"3\" />\n        <x-wirekit::segmented-control name=\"view\" label=\"View\" :options=\"['grid' => 'Grid', 'list' => 'List']\" value=\"grid\" />\n        <x-wirekit::button type=\"reset\" intent=\"neutral\" surface=\"outline\">Undo changes</x-wirekit::button>\n    </x-wirekit::stack>\n</x-wirekit::form>"
+            "title": "A rating that joins a form from outside it",
+            "code": "<x-wirekit::stack gap=\"md\" style=\"max-width: 24rem;\">\n    <x-wirekit::rating name=\"service\" label=\"How was the service?\" form=\"service-feedback\" />\n    <x-wirekit::form id=\"service-feedback\">\n        <x-wirekit::button type=\"submit\">Send feedback</x-wirekit::button>\n    </x-wirekit::form>\n</x-wirekit::stack>"
         }
     ],
     "grid": [
@@ -977,12 +993,12 @@
             "code": "<x-wirekit::header>\n    <x-wirekit::brand name=\"Acme\" />\n    <x-wirekit::spacer />\n    <x-wirekit::profile name=\"Dana Ortiz\" />\n</x-wirekit::header>"
         },
         {
-            "title": "Sticky header",
-            "code": "<x-wirekit::header :sticky=\"true\">\n    <x-wirekit::brand name=\"Sticky\" />\n    <x-wirekit::spacer />\n    <x-wirekit::badge intent=\"success\" surface=\"soft\">Live</x-wirekit::badge>\n</x-wirekit::header>"
+            "title": "A long brand name that gives way on a phone",
+            "code": "<x-wirekit::header>\n    <x-wirekit::brand name=\"Northwind Traders International\" truncate />\n    <x-wirekit::spacer />\n    <x-wirekit::profile name=\"Dana Ortiz\" />\n</x-wirekit::header>"
         },
         {
-            "title": "Contained header with active nav link",
-            "code": "<x-wirekit::header :container=\"true\">\n    <x-wirekit::brand name=\"Contained\" />\n    <x-wirekit::row wrap gap=\"lg\" class=\"ms-auto\">\n        <x-wirekit::row as=\"nav\" aria-label=\"Main\" wrap gap=\"md\">\n            <x-wirekit::link href=\"#\" size=\"sm\" underline=\"hover\" style=\"font-weight: 600;\" aria-current=\"page\">Projects</x-wirekit::link>\n            <x-wirekit::link href=\"#\" size=\"sm\" variant=\"muted\" underline=\"hover\">Team</x-wirekit::link>\n            <x-wirekit::link href=\"#\" size=\"sm\" variant=\"muted\" underline=\"hover\">Reports</x-wirekit::link>\n        </x-wirekit::row>\n        <x-wirekit::profile name=\"Admin\" />\n    </x-wirekit::row>\n</x-wirekit::header>"
+            "title": "Sticky header",
+            "code": "<x-wirekit::header :sticky=\"true\">\n    <x-wirekit::brand name=\"Sticky\" />\n    <x-wirekit::spacer />\n    <x-wirekit::badge intent=\"success\" surface=\"soft\">Live</x-wirekit::badge>\n</x-wirekit::header>"
         }
     ],
     "heading": [
@@ -1006,7 +1022,7 @@
         },
         {
             "title": "Hero with eyebrow badge",
-            "code": "<x-wirekit::hero>\n    <x-slot:eyebrow><x-wirekit::badge>Open Source</x-wirekit::badge></x-slot:eyebrow>\n    <x-slot:title>UI components for Laravel.</x-slot:title>\n    <x-slot:lede>Styled with Tailwind CSS v4 and Alpine.js.</x-slot:lede>\n    <x-slot:actions>\n        <x-wirekit::button>Docs</x-wirekit::button>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\">GitHub</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::hero>"
+            "code": "<x-wirekit::hero>\n    <x-slot:eyebrow><x-wirekit::badge>Open Source</x-wirekit::badge></x-slot:eyebrow>\n    <x-slot:title>UI components for Laravel.</x-slot:title>\n    <x-slot:lede>Styled with Tailwind CSS v4 and Alpine.js.</x-slot:lede>\n    <x-slot:actions>\n        <x-wirekit::button>Docs</x-wirekit::button>\n        <x-wirekit::button intent=\"neutral\">GitHub</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::hero>"
         },
         {
             "title": "Dark hero section",
@@ -1030,7 +1046,7 @@
     "hover-card": [
         {
             "title": "User Profile Hover Card",
-            "code": "<x-wirekit::hover-card>\n    <x-slot:trigger>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">@kevin</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::row align=\"start\" gap=\"sm\">\n        <x-wirekit::avatar initials=\"KS\" size=\"lg\" />\n        <x-wirekit::stack gap=\"xs\">\n            <x-wirekit::text weight=\"semibold\">Kevin Smith</x-wirekit::text>\n            <x-wirekit::text size=\"sm\" intent=\"muted\">Senior Developer</x-wirekit::text>\n            <x-wirekit::text size=\"sm\">Building things with Laravel &amp; Livewire.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::row>\n</x-wirekit::hover-card>"
+            "code": "<x-wirekit::hover-card>\n    <x-slot:trigger>\n        <x-wirekit::button intent=\"neutral\" size=\"sm\">@kevin</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::row align=\"start\" gap=\"sm\">\n        <x-wirekit::avatar initials=\"KS\" size=\"lg\" />\n        <x-wirekit::stack gap=\"xs\">\n            <x-wirekit::text weight=\"semibold\">Kevin Smith</x-wirekit::text>\n            <x-wirekit::text size=\"sm\" intent=\"muted\">Senior Developer</x-wirekit::text>\n            <x-wirekit::text size=\"sm\">Building things with Laravel &amp; Livewire.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::row>\n</x-wirekit::hover-card>"
         },
         {
             "title": "Bold word inside a sentence triggers a profile card",
@@ -1038,7 +1054,7 @@
         },
         {
             "title": "Top placement",
-            "code": "<x-wirekit::hover-card placement=\"top\">\n    <x-slot:trigger>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\" size=\"sm\">Hover me (top)</x-wirekit::button>\n    </x-slot:trigger>\n    <div>This card appears above the trigger.</div>\n</x-wirekit::hover-card>"
+            "code": "<x-wirekit::hover-card placement=\"top\">\n    <x-slot:trigger>\n        <x-wirekit::button intent=\"neutral\" size=\"sm\">Hover me (top)</x-wirekit::button>\n    </x-slot:trigger>\n    <div>This card appears above the trigger.</div>\n</x-wirekit::hover-card>"
         }
     ],
     "icon-tile": [
@@ -1091,6 +1107,10 @@
         {
             "title": "A Phone's Crop of a Desktop Image",
             "code": "<x-wirekit::image-editor\n    src=\"/placeholder/1600x1000?bg=fde68a&fg=78350f&label=Living+room&gradient=none\"\n    alt=\"A living room with a sofa, a floor lamp and a rug\"\n    width=\"1600\"\n    height=\"1000\"\n    ratio=\"9/16\"\n/>"
+        },
+        {
+            "title": "Marks on a Screenshot",
+            "code": "<x-wirekit::image-editor\n    src=\"/placeholder/1600x1000?bg=e2e8f0&fg=334155&label=Checkout+page&gradient=none\"\n    alt=\"The checkout page the report is about\"\n    width=\"1600\"\n    height=\"1000\"\n    :tools=\"true\"\n    :value=\"['x' => 0, 'y' => 0, 'w' => 100, 'h' => 100, 'marks' => [\n        ['type' => 'arrow', 'color' => '#e11d48', 'width' => 0.8, 'x1' => 20, 'y1' => 75, 'x2' => 42, 'y2' => 55],\n        ['type' => 'ellipse', 'color' => '#e11d48', 'width' => 0.8, 'x' => 42, 'y' => 40, 'w' => 22, 'h' => 20],\n    ]]\"\n/>"
         }
     ],
     "image-gallery": [
@@ -1148,7 +1168,7 @@
     "indicator": [
         {
             "title": "An unread count on a bell",
-            "code": "<x-wirekit::indicator>\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\" aria-label=\"Notifications\">\n        <x-wirekit::icon name=\"bell\" size=\"md\" />\n    </x-wirekit::button>\n    <x-slot:badge>\n        <x-wirekit::badge intent=\"danger\" size=\"sm\">\n            <span aria-hidden=\"true\">3</span>\n            <span class=\"sr-only\">3 unread notifications</span>\n        </x-wirekit::badge>\n    </x-slot:badge>\n</x-wirekit::indicator>"
+            "code": "<x-wirekit::indicator>\n    <x-wirekit::button intent=\"neutral\" aria-label=\"Notifications\">\n        <x-wirekit::icon name=\"bell\" size=\"md\" />\n    </x-wirekit::button>\n    <x-slot:badge>\n        <x-wirekit::badge intent=\"danger\" size=\"sm\">\n            <span aria-hidden=\"true\">3</span>\n            <span class=\"sr-only\">3 unread notifications</span>\n        </x-wirekit::badge>\n    </x-slot:badge>\n</x-wirekit::indicator>"
         },
         {
             "title": "Every corner",
@@ -1396,11 +1416,11 @@
     "modal": [
         {
             "title": "Modal with Trigger",
-            "code": "<x-wirekit::modal name=\"invite-teammate\">\n    <x-slot:trigger>\n        <x-wirekit::button>Invite a teammate</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Invite a teammate</x-wirekit::modal.header>\n    <x-wirekit::modal.body>\n        <x-wirekit::input name=\"invite-email\" type=\"email\" label=\"Email\" autocomplete=\"email\" />\n    </x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::modal.close>\n        <x-wirekit::button size=\"sm\">Send invite</x-wirekit::button>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
+            "code": "<x-wirekit::modal name=\"invite-teammate\">\n    <x-slot:trigger>\n        <x-wirekit::button>Invite a teammate</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Invite a teammate</x-wirekit::modal.header>\n    <x-wirekit::modal.body>\n        <x-wirekit::input name=\"invite-email\" type=\"email\" label=\"Email\" autocomplete=\"email\" />\n    </x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button intent=\"neutral\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::modal.close>\n        <x-wirekit::button size=\"sm\">Send invite</x-wirekit::button>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
         },
         {
             "title": "Trigger in a stretched stack",
-            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Download recovery codes</x-wirekit::button>\n    <x-wirekit::modal name=\"regenerate-codes\" class=\"contents\">\n        <x-slot:trigger>\n            <x-wirekit::button intent=\"danger\">Regenerate recovery codes</x-wirekit::button>\n        </x-slot:trigger>\n        <x-wirekit::modal.header>Regenerate recovery codes?</x-wirekit::modal.header>\n        <x-wirekit::modal.body>The codes you saved before stop working.</x-wirekit::modal.body>\n    </x-wirekit::modal>\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\">Download recovery codes</x-wirekit::button>\n    <x-wirekit::modal name=\"regenerate-codes\" class=\"contents\">\n        <x-slot:trigger>\n            <x-wirekit::button intent=\"danger\">Regenerate recovery codes</x-wirekit::button>\n        </x-slot:trigger>\n        <x-wirekit::modal.header>Regenerate recovery codes?</x-wirekit::modal.header>\n        <x-wirekit::modal.body>The codes you saved before stop working.</x-wirekit::modal.body>\n    </x-wirekit::modal>\n</x-wirekit::stack>"
         },
         {
             "title": "Non-Dismissible Modal",
@@ -1484,7 +1504,7 @@
         },
         {
             "title": "4-Digit Code",
-            "code": "<x-wirekit::otp-input label=\"PIN\" name=\"pin\" :length=\"4\" />"
+            "code": "<x-wirekit::otp-input label=\"Code\" name=\"code\" :length=\"4\" />"
         },
         {
             "title": "Masked Characters",
@@ -1516,7 +1536,7 @@
         },
         {
             "title": "Actions beside a title without a description",
-            "code": "<x-wirekit::page-header title=\"Open items\">\n    <x-slot:actions>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\">Columns</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\">New entry</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::page-header>"
+            "code": "<x-wirekit::page-header title=\"Open items\">\n    <x-slot:actions>\n        <x-wirekit::button intent=\"neutral\">Columns</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\">New entry</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::page-header>"
         }
     ],
     "page-progress": [
@@ -1546,7 +1566,7 @@
         },
         {
             "title": "Toggle Disabled",
-            "code": "<x-wirekit::password-input label=\"Secret key\" name=\"secret\" :toggle=\"false\" />"
+            "code": "<x-wirekit::password-input label=\"Password\" name=\"password\" :toggle=\"false\" />"
         },
         {
             "title": "Strength Meter Enabled",
@@ -1598,7 +1618,7 @@
     "pricing-table": [
         {
             "title": "Three plans",
-            "code": "<x-wirekit::pricing-table label=\"Plans\">\n    <x-wirekit::pricing-tier name=\"Free\" :price=\"0\" currency=\"EUR\" period=\"mo\" description=\"For trying things out\">\n        <x-slot:features>\n            <x-wirekit::list spacing=\"sm\">\n                <li>1 project</li>\n                <li>Community support</li>\n            </x-wirekit::list>\n        </x-slot:features>\n        <x-slot:action>\n            <x-wirekit::button intent=\"neutral\" surface=\"outline\" class=\"w-full\">Start free</x-wirekit::button>\n        </x-slot:action>\n    </x-wirekit::pricing-tier>\n\n    <x-wirekit::pricing-tier name=\"Pro\" :price=\"29\" currency=\"EUR\" period=\"mo\" description=\"For growing teams\" featured>\n        <x-slot:features>\n            <x-wirekit::list spacing=\"sm\">\n                <li>Unlimited projects</li>\n                <li>Priority support</li>\n                <li>Audit log</li>\n            </x-wirekit::list>\n        </x-slot:features>\n        <x-slot:action>\n            <x-wirekit::button intent=\"primary\" class=\"w-full\">Choose Pro</x-wirekit::button>\n        </x-slot:action>\n    </x-wirekit::pricing-tier>\n\n    <x-wirekit::pricing-tier name=\"Enterprise\" price-label=\"Let us talk\" description=\"For the whole company\">\n        <x-slot:features>\n            <x-wirekit::list spacing=\"sm\">\n                <li>Everything in Pro</li>\n                <li>SSO and SCIM</li>\n                <li>A named contact</li>\n            </x-wirekit::list>\n        </x-slot:features>\n        <x-slot:action>\n            <x-wirekit::button intent=\"neutral\" surface=\"outline\" class=\"w-full\">Contact sales</x-wirekit::button>\n        </x-slot:action>\n    </x-wirekit::pricing-tier>\n</x-wirekit::pricing-table>"
+            "code": "<x-wirekit::pricing-table label=\"Plans\">\n    <x-wirekit::pricing-tier name=\"Free\" :price=\"0\" currency=\"EUR\" period=\"mo\" description=\"For trying things out\">\n        <x-slot:features>\n            <x-wirekit::list spacing=\"sm\">\n                <li>1 project</li>\n                <li>Community support</li>\n            </x-wirekit::list>\n        </x-slot:features>\n        <x-slot:action>\n            <x-wirekit::button intent=\"neutral\" class=\"w-full\">Start free</x-wirekit::button>\n        </x-slot:action>\n    </x-wirekit::pricing-tier>\n\n    <x-wirekit::pricing-tier name=\"Pro\" :price=\"29\" currency=\"EUR\" period=\"mo\" description=\"For growing teams\" featured>\n        <x-slot:features>\n            <x-wirekit::list spacing=\"sm\">\n                <li>Unlimited projects</li>\n                <li>Priority support</li>\n                <li>Audit log</li>\n            </x-wirekit::list>\n        </x-slot:features>\n        <x-slot:action>\n            <x-wirekit::button intent=\"primary\" class=\"w-full\">Choose Pro</x-wirekit::button>\n        </x-slot:action>\n    </x-wirekit::pricing-tier>\n\n    <x-wirekit::pricing-tier name=\"Enterprise\" price-label=\"Let us talk\" description=\"For the whole company\">\n        <x-slot:features>\n            <x-wirekit::list spacing=\"sm\">\n                <li>Everything in Pro</li>\n                <li>SSO and SCIM</li>\n                <li>A named contact</li>\n            </x-wirekit::list>\n        </x-slot:features>\n        <x-slot:action>\n            <x-wirekit::button intent=\"neutral\" class=\"w-full\">Contact sales</x-wirekit::button>\n        </x-slot:action>\n    </x-wirekit::pricing-tier>\n</x-wirekit::pricing-table>"
         },
         {
             "title": "Monthly / annual toggle",
@@ -1657,8 +1677,8 @@
             "code": "<x-wirekit::prose>\n    <p>This paragraph is capped at a readable line length by default, so long-form text stays comfortable to read on a wide screen instead of running the full width of its container. Set <code>measure=\"none\"</code> to opt out and fill the container, or <code>measure=\"wide\"</code> for a slightly roomier column.</p>\n</x-wirekit::prose>"
         },
         {
-            "title": "Prose with components inside",
-            "code": "<x-wirekit::prose>\n    <h2>Publish the assets</h2>\n    <p>Run the command once after installing and again after every upgrade. The\n       <a href=\"#\">integration guide</a> explains when you can skip it.</p>\n    <x-wirekit::code-block language=\"bash\">php artisan vendor:publish --tag=wirekit-assets</x-wirekit::code-block>\n    <p>The code block above and the button below keep their own spacing, color and radius.</p>\n    <x-wirekit::button href=\"#\">Read the integration guide</x-wirekit::button>\n</x-wirekit::prose>"
+            "title": "A table of four columns, read on a phone",
+            "code": "<x-wirekit::prose>\n    <table>\n        <thead>\n            <tr><th>Subprocessor</th><th>Purpose</th><th>Place of processing</th><th>Safeguards</th></tr>\n        </thead>\n        <tbody>\n            <tr><td>Kestrel Hosting</td><td>Running the servers the application stores its data on</td><td>Germany (EU region)</td><td>Standard contractual clauses</td></tr>\n            <tr><td>Larkspur Mail</td><td>Sending the messages an account asks for</td><td>United States</td><td>EU-U.S. Data Privacy Framework</td></tr>\n        </tbody>\n    </table>\n</x-wirekit::prose>"
         }
     ],
     "qr-code": [
@@ -1828,7 +1848,7 @@
         },
         {
             "title": "With the statement on how reviews are checked",
-            "code": "<x-wirekit::review-summary :average=\"4.2\" :distribution=\"[5 => 12, 4 => 8, 3 => 2, 2 => 1, 1 => 1]\">\n    <x-slot:notice>Reviews marked as a verified purchase come from customers who bought the product in this shop. Other reviews are not checked.</x-slot:notice>\n    <x-slot:actions>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\">Write a review</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::review-summary>"
+            "code": "<x-wirekit::review-summary :average=\"4.2\" :distribution=\"[5 => 12, 4 => 8, 3 => 2, 2 => 1, 1 => 1]\">\n    <x-slot:notice>Reviews marked as a verified purchase come from customers who bought the product in this shop. Other reviews are not checked.</x-slot:notice>\n    <x-slot:actions>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\">Write a review</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::review-summary>"
         }
     ],
     "review": [
@@ -1842,7 +1862,7 @@
         },
         {
             "title": "A review with actions",
-            "code": "<x-wirekit::review :rating=\"5\" title=\"Exactly as described\" author=\"Ana S.\" date=\"2026-10-02\">\n    Fits well, and the color matches the photos.\n    <x-slot:actions>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"ghost\">Helpful</x-wirekit::button>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"ghost\">Report</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::review>"
+            "code": "<x-wirekit::review :rating=\"5\" title=\"Exactly as described\" author=\"Ana S.\" date=\"2026-10-02\">\n    Fits well, and the color matches the photos.\n    <x-slot:actions>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\">Helpful</x-wirekit::button>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\">Report</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::review>"
         }
     ],
     "row": [
@@ -1948,7 +1968,7 @@
     "shell-bar": [
         {
             "title": "A title and its actions",
-            "code": "<x-wirekit::shell-bar>\n    <x-wirekit::heading level=\"2\" size=\"md\">Transactions</x-wirekit::heading>\n    <x-slot:end>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\">Export</x-wirekit::button>\n        <x-wirekit::button size=\"sm\">New payment</x-wirekit::button>\n    </x-slot:end>\n</x-wirekit::shell-bar>"
+            "code": "<x-wirekit::shell-bar>\n    <x-wirekit::heading level=\"2\" size=\"md\">Transactions</x-wirekit::heading>\n    <x-slot:end>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\">Export</x-wirekit::button>\n        <x-wirekit::button size=\"sm\">New payment</x-wirekit::button>\n    </x-slot:end>\n</x-wirekit::shell-bar>"
         },
         {
             "title": "One rule across three columns",
@@ -1976,7 +1996,7 @@
     "shortcuts": [
         {
             "title": "Shortcuts on a page",
-            "code": "{{-- In the layout, once --}}\n<x-wirekit::shortcuts />\n\n{{-- On the page --}}\n<x-wirekit::input label=\"Search\" name=\"q\" x-wk-shortcut.focus=\"/\" />\n<x-wirekit::button x-wk-shortcut=\"cmd+s\" wire:click=\"save\">Save</x-wirekit::button>\n<a href=\"/orders\" x-wk-shortcut=\"g o\">Orders</a>\n<x-wirekit::shortcuts.trigger intent=\"neutral\" surface=\"outline\" />"
+            "code": "{{-- In the layout, once --}}\n<x-wirekit::shortcuts />\n\n{{-- On the page --}}\n<x-wirekit::input label=\"Search\" name=\"q\" x-wk-shortcut.focus=\"/\" />\n<x-wirekit::button x-wk-shortcut=\"cmd+s\" wire:click=\"save\">Save</x-wirekit::button>\n<a href=\"/orders\" x-wk-shortcut=\"g o\">Orders</a>\n<x-wirekit::shortcuts.trigger intent=\"neutral\" />"
         }
     ],
     "sidebar": [
@@ -1985,12 +2005,12 @@
             "code": "<x-wirekit::sidebar style=\"width: 16rem;\">\n    <x-wirekit::sidebar.group label=\"Main\">\n        <x-wirekit::sidebar.item href=\"#\" :active=\"true\">Dashboard</x-wirekit::sidebar.item>\n        <x-wirekit::sidebar.item href=\"#\">Projects</x-wirekit::sidebar.item>\n        <x-wirekit::sidebar.item href=\"#\">Team</x-wirekit::sidebar.item>\n    </x-wirekit::sidebar.group>\n    <x-wirekit::sidebar.group label=\"Account\">\n        <x-wirekit::sidebar.item href=\"#\">Settings</x-wirekit::sidebar.item>\n        <x-wirekit::sidebar.item href=\"#\">Billing</x-wirekit::sidebar.item>\n    </x-wirekit::sidebar.group>\n</x-wirekit::sidebar>"
         },
         {
-            "title": "Flat Sidebar",
-            "code": "<x-wirekit::sidebar style=\"width: 16rem;\">\n    <x-wirekit::sidebar.item href=\"#\">Inbox</x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\" :active=\"true\">Drafts</x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">Sent</x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">Archive</x-wirekit::sidebar.item>\n</x-wirekit::sidebar>"
+            "title": "A sidebar in an app shell, a drawer on a phone",
+            "code": "<x-wirekit::app-shell style=\"min-height: auto; height: 22rem;\">\n    <x-slot:header>\n        <x-wirekit::header>\n            <x-wirekit::sidebar.toggle class=\"lg:hidden\" />\n            <x-wirekit::brand name=\"Acme\" />\n        </x-wirekit::header>\n    </x-slot:header>\n    <x-slot:sidebar>\n        <x-wirekit::sidebar>\n            <x-wirekit::sidebar.group label=\"Main\">\n                <x-wirekit::sidebar.item href=\"#\" :active=\"true\">Dashboard</x-wirekit::sidebar.item>\n                <x-wirekit::sidebar.item href=\"#\">Projects</x-wirekit::sidebar.item>\n                <x-wirekit::sidebar.item href=\"#\">Team</x-wirekit::sidebar.item>\n            </x-wirekit::sidebar.group>\n            <x-wirekit::sidebar.group label=\"Account\">\n                <x-wirekit::sidebar.item href=\"#\">Settings</x-wirekit::sidebar.item>\n                <x-wirekit::sidebar.item href=\"#\">Billing</x-wirekit::sidebar.item>\n            </x-wirekit::sidebar.group>\n        </x-wirekit::sidebar>\n    </x-slot:sidebar>\n    <x-wirekit::main>\n        <x-wirekit::heading level=\"1\">Dashboard</x-wirekit::heading>\n    </x-wirekit::main>\n</x-wirekit::app-shell>"
         },
         {
-            "title": "Sidebar with Icons",
-            "code": "<x-wirekit::sidebar style=\"width: 16rem;\">\n    <x-wirekit::sidebar.item href=\"#\" :active=\"true\">\n        <x-slot:icon>\n            <x-wirekit::icon name=\"dashboard\" />\n        </x-slot:icon>\n        Dashboard\n    </x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">\n        <x-slot:icon>\n            <x-wirekit::icon name=\"user\" />\n        </x-slot:icon>\n        Team\n    </x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">\n        <x-slot:icon>\n            <x-wirekit::icon name=\"settings\" />\n        </x-slot:icon>\n        Settings\n    </x-wirekit::sidebar.item>\n</x-wirekit::sidebar>"
+            "title": "Flat Sidebar",
+            "code": "<x-wirekit::sidebar style=\"width: 16rem;\">\n    <x-wirekit::sidebar.item href=\"#\">Inbox</x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\" :active=\"true\">Drafts</x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">Sent</x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">Archive</x-wirekit::sidebar.item>\n</x-wirekit::sidebar>"
         }
     ],
     "sign-in-button": [
@@ -2048,7 +2068,7 @@
         },
         {
             "title": "Brand left, actions right",
-            "code": "<x-wirekit::row wrap>\n    <x-wirekit::badge intent=\"primary\" size=\"lg\">MyApp</x-wirekit::badge>\n    <x-wirekit::spacer />\n    <x-wirekit::row gap=\"sm\" wrap>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Docs</x-wirekit::button>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Pricing</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\" size=\"sm\">Sign Up</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::row>"
+            "code": "<x-wirekit::row wrap>\n    <x-wirekit::badge intent=\"primary\" size=\"lg\">MyApp</x-wirekit::badge>\n    <x-wirekit::spacer />\n    <x-wirekit::row gap=\"sm\" wrap>\n        <x-wirekit::button intent=\"neutral\" size=\"sm\">Docs</x-wirekit::button>\n        <x-wirekit::button intent=\"neutral\" size=\"sm\">Pricing</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\" size=\"sm\">Sign Up</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::row>"
         },
         {
             "title": "Spacer pushing footer to bottom",
@@ -2240,7 +2260,7 @@
         },
         {
             "title": "Stream with stop / retry controls",
-            "code": "<x-wirekit::stream\n    simulate=\"The quarterly report is ready. Revenue grew 12 percent quarter over quarter, driven by the new self-serve tier.\"\n>\n    <x-wirekit::row gap=\"sm\">\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\" x-show=\"isStreaming\" x-on:click=\"stop()\">Stop</x-wirekit::button>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\" x-show=\"isTerminal\" x-on:click=\"restart()\">Regenerate</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::stream>"
+            "code": "<x-wirekit::stream\n    simulate=\"The quarterly report is ready. Revenue grew 12 percent quarter over quarter, driven by the new self-serve tier.\"\n>\n    <x-wirekit::row gap=\"sm\">\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" x-show=\"isStreaming\" x-on:click=\"stop()\">Stop</x-wirekit::button>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" x-show=\"isTerminal\" x-on:click=\"restart()\">Regenerate</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::stream>"
         },
         {
             "title": "Status-only announcement",
@@ -2303,12 +2323,12 @@
             "code": "<x-wirekit::table>\n    <x-wirekit::table.head>\n        <x-wirekit::table.row>\n            <x-wirekit::table.th>Name</x-wirekit::table.th>\n            <x-wirekit::table.th>Role</x-wirekit::table.th>\n            <x-wirekit::table.th align=\"right\">Balance</x-wirekit::table.th>\n        </x-wirekit::table.row>\n    </x-wirekit::table.head>\n    <x-wirekit::table.body>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Jane Doe</x-wirekit::table.td>\n            <x-wirekit::table.td>Administrator</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">€1,250.00</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>John Smith</x-wirekit::table.td>\n            <x-wirekit::table.td>Editor</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">€840.00</x-wirekit::table.td>\n        </x-wirekit::table.row>\n    </x-wirekit::table.body>\n</x-wirekit::table>"
         },
         {
-            "title": "Striped + hoverable + compact",
-            "code": "<x-wirekit::table striped hoverable compact>\n    <x-wirekit::table.head>\n        <x-wirekit::table.row>\n            <x-wirekit::table.th>Product</x-wirekit::table.th>\n            <x-wirekit::table.th>SKU</x-wirekit::table.th>\n            <x-wirekit::table.th align=\"right\">Stock</x-wirekit::table.th>\n        </x-wirekit::table.row>\n    </x-wirekit::table.head>\n    <x-wirekit::table.body>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Keyboard</x-wirekit::table.td>\n            <x-wirekit::table.td>KB-001</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">42</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Mouse</x-wirekit::table.td>\n            <x-wirekit::table.td>MS-014</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">128</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Monitor</x-wirekit::table.td>\n            <x-wirekit::table.td>MN-220</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">7</x-wirekit::table.td>\n        </x-wirekit::table.row>\n    </x-wirekit::table.body>\n</x-wirekit::table>"
+            "title": "A muted cell",
+            "code": "<x-wirekit::table>\n    <x-wirekit::table.head>\n        <x-wirekit::table.row>\n            <x-wirekit::table.th>Item</x-wirekit::table.th>\n            <x-wirekit::table.th align=\"right\">Sold this week</x-wirekit::table.th>\n        </x-wirekit::table.row>\n    </x-wirekit::table.head>\n    <x-wirekit::table.body>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Espresso beans, 1 kg</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">24</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Oat milk, 1 l</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\" intent=\"muted\" size=\"sm\">None yet</x-wirekit::table.td>\n        </x-wirekit::table.row>\n    </x-wirekit::table.body>\n</x-wirekit::table>"
         },
         {
-            "title": "Sortable headers (Alpine — interactive)",
-            "code": "<x-wirekit::table alpine-sort hoverable>\n    <x-wirekit::table.head>\n        <x-wirekit::table.row>\n            <x-wirekit::table.th sortable column=\"name\">Name</x-wirekit::table.th>\n            <x-wirekit::table.th sortable column=\"created\">Created</x-wirekit::table.th>\n            <x-wirekit::table.th sortable column=\"status\">Status</x-wirekit::table.th>\n        </x-wirekit::table.row>\n    </x-wirekit::table.head>\n    <x-wirekit::table.body>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Alpha</x-wirekit::table.td>\n            <x-wirekit::table.td>2025-01-15</x-wirekit::table.td>\n            <x-wirekit::table.td>Active</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Beta</x-wirekit::table.td>\n            <x-wirekit::table.td>2025-03-08</x-wirekit::table.td>\n            <x-wirekit::table.td>Draft</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Gamma</x-wirekit::table.td>\n            <x-wirekit::table.td>2025-02-22</x-wirekit::table.td>\n            <x-wirekit::table.td>Active</x-wirekit::table.td>\n        </x-wirekit::table.row>\n    </x-wirekit::table.body>\n</x-wirekit::table>"
+            "title": "Striped + hoverable + compact",
+            "code": "<x-wirekit::table striped hoverable compact>\n    <x-wirekit::table.head>\n        <x-wirekit::table.row>\n            <x-wirekit::table.th>Product</x-wirekit::table.th>\n            <x-wirekit::table.th>SKU</x-wirekit::table.th>\n            <x-wirekit::table.th align=\"right\">Stock</x-wirekit::table.th>\n        </x-wirekit::table.row>\n    </x-wirekit::table.head>\n    <x-wirekit::table.body>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Keyboard</x-wirekit::table.td>\n            <x-wirekit::table.td>KB-001</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">42</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Mouse</x-wirekit::table.td>\n            <x-wirekit::table.td>MS-014</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">128</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Monitor</x-wirekit::table.td>\n            <x-wirekit::table.td>MN-220</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">7</x-wirekit::table.td>\n        </x-wirekit::table.row>\n    </x-wirekit::table.body>\n</x-wirekit::table>"
         }
     ],
     "tabs": [
@@ -2390,7 +2410,7 @@
         },
         {
             "title": "A theme toggle as tall as the labeled buttons beside it",
-            "code": "<x-wirekit::row gap=\"sm\" align=\"center\" data-wk-touch>\n    <x-wirekit::button size=\"sm\" surface=\"ghost\">Docs</x-wirekit::button>\n    <x-wirekit::button size=\"sm\" surface=\"ghost\">GitHub</x-wirekit::button>\n    <x-wirekit::theme-controller size=\"sm\" surface=\"ghost\" touch-floor />\n</x-wirekit::row>"
+            "code": "<x-wirekit::row gap=\"sm\" align=\"center\" data-wk-touch>\n    <x-wirekit::button intent=\"neutral\" size=\"sm\">Docs</x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\" size=\"sm\">GitHub</x-wirekit::button>\n    <x-wirekit::theme-controller size=\"sm\" surface=\"ghost\" touch-floor />\n</x-wirekit::row>"
         }
     ],
     "ticker": [
@@ -2526,7 +2546,7 @@
         },
         {
             "title": "Rich Content",
-            "code": "<x-wirekit::tooltip placement=\"right\">\n    <x-slot:content>\n        Pro Tip: Use Ctrl+S to save.\n    </x-slot:content>\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Keyboard Shortcuts</x-wirekit::button>\n</x-wirekit::tooltip>"
+            "code": "<x-wirekit::tooltip placement=\"right\">\n    <x-slot:content>\n        Pro Tip: Use Ctrl+S to save.\n    </x-slot:content>\n    <x-wirekit::button intent=\"neutral\" size=\"sm\">Keyboard Shortcuts</x-wirekit::button>\n</x-wirekit::tooltip>"
         },
         {
             "title": "Inside a Paragraph",
@@ -2536,7 +2556,7 @@
     "tour": [
         {
             "title": "Tour Setup",
-            "code": "<div data-tour-demo=\"header\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Dashboard</div>\n<div data-tour-demo=\"create\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">+ Create</div>\n<div data-tour-demo=\"settings\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Settings</div>\n<x-wirekit::button x-on:click=\"$dispatch('wirekit-tour-start-onboarding')\" intent=\"neutral\" surface=\"outline\" size=\"sm\">Start Tour</x-wirekit::button>\n<x-wirekit::tour name=\"onboarding\">\n<x-wirekit::tour.step :index=\"0\" target=\"[data-tour-demo='header']\" placement=\"bottom\">\n<x-slot:title>Welcome</x-slot:title>\nThis is the dashboard. Here you can manage all your projects.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"1\" target=\"[data-tour-demo='create']\" placement=\"bottom-start\">\n<x-slot:title>Create a Project</x-slot:title>\nClick here to create your first project.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"2\" target=\"[data-tour-demo='settings']\" placement=\"bottom-end\">\n<x-slot:title>Settings</x-slot:title>\nCustomize your workspace in the settings panel.\n</x-wirekit::tour.step>\n</x-wirekit::tour>"
+            "code": "<div data-tour-demo=\"header\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Dashboard</div>\n<div data-tour-demo=\"create\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">+ Create</div>\n<div data-tour-demo=\"settings\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Settings</div>\n<x-wirekit::button x-on:click=\"$dispatch('wirekit-tour-start-onboarding')\" intent=\"neutral\" size=\"sm\">Start Tour</x-wirekit::button>\n<x-wirekit::tour name=\"onboarding\">\n<x-wirekit::tour.step :index=\"0\" target=\"[data-tour-demo='header']\" placement=\"bottom\">\n<x-slot:title>Welcome</x-slot:title>\nThis is the dashboard. Here you can manage all your projects.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"1\" target=\"[data-tour-demo='create']\" placement=\"bottom-start\">\n<x-slot:title>Create a Project</x-slot:title>\nClick here to create your first project.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"2\" target=\"[data-tour-demo='settings']\" placement=\"bottom-end\">\n<x-slot:title>Settings</x-slot:title>\nCustomize your workspace in the settings panel.\n</x-wirekit::tour.step>\n</x-wirekit::tour>"
         }
     ],
     "translatable-input": [
@@ -2612,11 +2632,11 @@
     "visually-hidden": [
         {
             "title": "Visually hidden text with visible button",
-            "code": "<x-wirekit::button intent=\"neutral\" surface=\"ghost\">\n    <x-wirekit::icon name=\"close\" size=\"md\" />\n    <x-wirekit::visually-hidden>Close dialog</x-wirekit::visually-hidden>\n</x-wirekit::button>"
+            "code": "<x-wirekit::button intent=\"neutral\">\n    <x-wirekit::icon name=\"close\" size=\"md\" />\n    <x-wirekit::visually-hidden>Close dialog</x-wirekit::visually-hidden>\n</x-wirekit::button>"
         },
         {
             "title": "Icon button with hidden label",
-            "code": "<x-wirekit::row gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\">\n        <x-wirekit::icon name=\"edit\" size=\"md\" />\n        <x-wirekit::visually-hidden>Edit</x-wirekit::visually-hidden>\n    </x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\">\n        <x-wirekit::icon name=\"info\" size=\"md\" />\n        <x-wirekit::visually-hidden>Help</x-wirekit::visually-hidden>\n    </x-wirekit::button>\n</x-wirekit::row>"
+            "code": "<x-wirekit::row gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\">\n        <x-wirekit::icon name=\"edit\" size=\"md\" />\n        <x-wirekit::visually-hidden>Edit</x-wirekit::visually-hidden>\n    </x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\">\n        <x-wirekit::icon name=\"info\" size=\"md\" />\n        <x-wirekit::visually-hidden>Help</x-wirekit::visually-hidden>\n    </x-wirekit::button>\n</x-wirekit::row>"
         }
     ],
     "wizard": [

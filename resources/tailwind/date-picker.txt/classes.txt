@@ -57,6 +57,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-dropdown
 --z-wk-modal
 --z-wk-tooltip
@@ -75,8 +76,10 @@
 -required
 -required-word
 -title
+-tooltip
 -translate-y-1/2
 -value
+-words
 -year
 @aware
 @else
@@ -93,6 +96,7 @@
 @php
 @props
 [&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]
+[overflow-wrap:anywhere]
 a
 abbr
 abbreviation
@@ -101,6 +105,7 @@ about
 above
 absence
 absolute
+accent
 accepts
 accessibility
 accessible
@@ -112,12 +117,16 @@ actually
 add
 added
 additive
+address
 adds
 after
 again
 against
 agree
 alias
+align-fields
+alignFields
+aligned
 all
 allTime
 allowed
@@ -181,6 +190,7 @@ aria-readonly
 aria-required
 aria-selected
 ariaDisabled
+ariables
 arm
 arms
 around
@@ -192,6 +202,7 @@ arrow
 arrows
 as
 ask
+asking
 asks
 aspect-square
 assembled
@@ -265,6 +276,7 @@ both
 bottom-[var(--padding-wk-y-xs)]
 bound
 boundary
+bounds
 box
 brand
 break
@@ -281,9 +293,11 @@ but
 button
 buttons
 by
+cache
 calendar
 calendar-presets
 calendar-sizing-row
+calendar-start-weeks
 calendars
 call
 caller
@@ -334,6 +348,7 @@ clips
 clock
 clone
 close
+closed
 closes
 code
 col
@@ -344,6 +359,7 @@ colors
 column
 columns
 combined
+combobox
 come
 comes
 comment
@@ -359,10 +375,12 @@ composed
 computed
 conditional
 config/wirekit.php
+configuration
 configured
 consecutive
 console
 constrain
+contain-inline-size
 container
 content
 content-width
@@ -378,6 +396,7 @@ copy
 corner
 costs
 could
+count
 counted
 counterpart
 counts
@@ -394,22 +413,31 @@ custom
 cut
 cuts
 d
+danger
 danger-text
 dark
+data-wk-band
 data-wk-calendar-preset-list
 data-wk-calendar-preset-select
 data-wk-calendar-presets
 data-wk-calendar-presets-layout
+data-wk-calendar-start
 data-wk-fallback-clear
 data-wk-fallback-name
+data-wk-field
 data-wk-field-label
+data-wk-field-messages
+data-wk-field-part
+data-wk-fill
 data-wk-format-hint
+data-wk-in-range
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-max
 data-wk-max-range
 data-wk-min
@@ -424,6 +452,12 @@ data-wk-required-check
 data-wk-required-message
 data-wk-server-value
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-today
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -431,6 +465,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 data-wk-unavailable
 date
 date-picker
@@ -438,11 +473,14 @@ date-picker-popover
 dates
 datetime
 day
+dayBtnClasses
+dayCellClasses
 dayOfMonth
 days
 debug
 decided
 decides
+declarations
 declared
 decodes
 decorative
@@ -452,9 +490,11 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 demos
+depends
 derive
 derives
 descendant
@@ -473,6 +513,7 @@ dialogModal
 dialogOpenings
 dies
 different
+differs
 direction
 directive
 directives
@@ -626,9 +667,10 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-inset
 focus-within
-focus:border-[var(--color-wk-accent)]
+focus:border-[var(--color-wk-accent-text)]
 focus:outline-hidden
 focus:ring-[length:var(--ring-wk-width)]
+focus:ring-[var(--color-wk-danger-text)]
 focus:ring-[var(--color-wk-ring)]
 focusOffset
 focusable
@@ -780,6 +822,8 @@ immediately
 imports
 in
 in-between
+inMonth
+inRange
 include
 included
 includes
@@ -862,6 +906,7 @@ last7Days
 later
 layer
 layout
+lazy
 leading-none
 leads
 leave
@@ -873,6 +918,7 @@ legitimately
 less
 let
 lets
+level
 lg
 lies
 light
@@ -880,6 +926,7 @@ like
 limits
 line
 lines
+link
 linked
 list
 list-none
@@ -892,6 +939,7 @@ literal
 literals
 live
 lives
+loads
 locale
 localized
 locks
@@ -1043,6 +1091,7 @@ on
 on-screen
 once
 one
+ones
 only
 onmouseover
 onto
@@ -1112,6 +1161,7 @@ parsing
 part
 partial
 partials/calendar-sizing-row
+parts
 pass
 passed
 passes
@@ -1192,6 +1242,7 @@ prop
 properties
 property
 props
+prose
 provides
 proxy
 ps-[var(--padding-wk-x-md)]
@@ -1207,9 +1258,11 @@ px-[var(--padding-wk-x-xs)]
 py-0.5
 py-[var(--padding-wk-y-xs)]
 qualified
+query
 question
 quoted
 quotes
+race
 racing
 raises
 range
@@ -1243,6 +1296,7 @@ record
 red
 ref
 reference
+refuse
 refused
 refuses
 region
@@ -1267,9 +1321,11 @@ reports
 request
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageId
 requiredValue
@@ -1286,6 +1342,7 @@ restyles
 result
 reverted
 rewritten
+ride
 right
 ring
 role
@@ -1305,9 +1362,11 @@ rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 rounded-full
 row
+rows
 rtl:-scale-x-100
 rule
 run
+running
 runs
 runtime
 s
@@ -1327,6 +1386,7 @@ scope
 screen
 script
 scroll
+search
 second
 see
 seed
@@ -1433,6 +1493,7 @@ standalone
 stands
 start
 start/end
+startMonth
 starting
 starts
 state
@@ -1506,6 +1567,7 @@ target
 technology
 teleport
 teleported
+teleports
 tell
 tells
 template
@@ -1531,6 +1593,7 @@ texts
 than
 that
 the
+thead
 their
 theirs
 them
@@ -1540,10 +1603,12 @@ there
 therefore
 these
 they
+thing
 third
 this
 thisMonth
 those
+though
 threaded
 three
 through
@@ -1553,6 +1618,7 @@ time-picker
 timer
 tiny
 tip
+title
 to
 today
 todayButtonLabel
@@ -1570,13 +1636,17 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-1/2
 top-left
 touch
 towards
+track
 tracking-[var(--font-wk-letter-spacing)]
+tracks
 trade
 trailing
 transformed
@@ -1621,6 +1691,7 @@ unrelated
 unsteady
 until
 up
+update
 usable
 use
 user
@@ -1656,6 +1727,7 @@ w-[calc((var(--size-wk-sm)+0.25rem)/2)]
 w-[var(--size-wk-target-min)]
 w-full
 w-max
+wait
 waits
 walk
 want
@@ -1735,6 +1807,7 @@ working
 works
 worth
 would
+wrap
 wrapper
 wrapping
 wraps
@@ -1755,6 +1828,7 @@ x-bind:data-wk-server-value
 x-bind:data-wk-tooltip-disabled
 x-bind:disabled
 x-bind:selected
+x-bind:title
 x-bind:value
 x-cloak
 x-data
@@ -1790,6 +1864,7 @@ x-wk-ref
 x-wk-shortcut
 xmlns
 y
+yMMMM
 yMMMd
 year
 yearRange

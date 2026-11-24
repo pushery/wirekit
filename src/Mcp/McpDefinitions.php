@@ -67,7 +67,7 @@ final class McpDefinitions
             ],
             [
                 'name' => 'get_component_accessibility',
-                'description' => 'Get what one WireKit component has ALREADY wired for accessibility — the roles and ARIA attributes its markup emits, the keys its behavior handles, and the names it waits for the caller to supply. Ask for this before adding any role, aria-* attribute or key handler of your own: a role added on top of one the component already carries is two competing contracts on one element, and a name it waits for and never receives is an announced landmark that says nothing. Derived from the shipped sources, never from a list.',
+                'description' => 'Get what one WireKit component has ALREADY wired for accessibility — the roles and ARIA attributes its markup emits, with the roles it picks between at render time from its props under role_choices (its page says which applies when), the keys its behavior handles, and the names it waits for the caller to supply. Ask for this before adding any role, aria-* attribute or key handler of your own: a role added on top of one the component already carries is two competing contracts on one element, and a name it waits for and never receives is an announced landmark that says nothing. Derived from the shipped sources, never from a list.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [

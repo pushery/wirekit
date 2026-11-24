@@ -34,6 +34,7 @@ import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
 import { assignHeadingIds } from '../utils/heading-ids.js';
+import { headingLang } from '../utils/heading-lang.js';
 import { HEADING_CHANGES, changesOutside, sameHeadings, indexInFresh } from '../utils/heading-changes.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
@@ -54,8 +55,13 @@ export default (options = {}) => ({
     // would not do: a long smooth scroll outlasts it on a busy machine, and the wrong line would
     // light up on the way.
     _held: false,
+    // The strip's own element, kept from init(). Alpine binds `$el` to the element an expression
+    // runs on, so `scrollTo()` from an entry would read the link: its height and no position. A
+    // name no other scope declares, as the object is returned without a closure around it.
+    _tocElement: null,
 
     init() {
+        this._tocElement = this.$el ?? null;
         this.items = this.collectHeadings();
         this.assignIds(this.items);
         this.observeActive();
@@ -137,6 +143,8 @@ export default (options = {}) => ({
         return Array.from(container.querySelectorAll(sel)).map((el, idx) => ({
             id: el.id || '',
             text: accessibleText(el),
+            // The heading's language where it differs from the strip's (utils/heading-lang.js).
+            lang: headingLang(el, this.$root),
             level: parseInt(el.tagName.slice(1), 10),
             el,
             index: idx,
@@ -233,8 +241,9 @@ export default (options = {}) => ({
      */
     _line(root) {
         const top = root ? root.getBoundingClientRect().top : 0;
-        const atTop = this.$el?.dataset?.position !== 'bottom';
-        const strip = atTop ? this.offset + (this.$el ? this.$el.offsetHeight : 0) : 0;
+        const own = this._tocElement ?? this.$el;
+        const atTop = own?.dataset?.position !== 'bottom';
+        const strip = atTop ? this.offset + (own ? own.offsetHeight : 0) : 0;
 
         return top + strip + 24;
     },

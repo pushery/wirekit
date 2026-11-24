@@ -25,9 +25,9 @@
 
     $edgeClasses = match (WireKit::validateProp('band', 'edge', $edge, ['none', 'top', 'bottom', 'both'])) {
         'none' => '',
-        'top' => 'border-t border-[color:var(--color-wk-border)]',
-        'bottom' => 'border-b border-[color:var(--color-wk-border)]',
-        'both' => 'border-y border-[color:var(--color-wk-border)]',
+        'top' => 'border-t-[length:var(--border-wk-width)] border-[color:var(--color-wk-border)]',
+        'bottom' => 'border-b-[length:var(--border-wk-width)] border-[color:var(--color-wk-border)]',
+        'both' => 'border-y-[length:var(--border-wk-width)] border-[color:var(--color-wk-border)]',
     };
 
     $paddingClasses = match (WireKit::validateProp('band', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg'])) {

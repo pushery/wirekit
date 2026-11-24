@@ -1,6 +1,7 @@
 --border-wk-width
 --color-wk-accent
 --color-wk-accent-fg
+--color-wk-accent-text
 --color-wk-bg-hover
 --color-wk-bg-input
 --color-wk-bg-muted
@@ -39,6 +40,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -help
@@ -46,6 +48,8 @@
 -label
 -my-1
 -strong
+-tooltip
+-words
 @aware
 @else
 @endforeach
@@ -54,6 +58,8 @@
 @endwirekitLast
 @php
 @props
+[overflow-wrap:anywhere]
+[overflow-wrap:break-word]
 a
 able
 about
@@ -69,6 +75,7 @@ activating
 acts
 actually
 added
+address
 adds
 after
 afterwards
@@ -77,7 +84,9 @@ against
 agree
 agreed
 alias
+align-fields
 align-top
+alignFields
 aligned
 all
 alone
@@ -113,6 +122,7 @@ areas
 args
 arguments
 aria-atomic
+aria-busy
 aria-describedby
 aria-disabled
 aria-hidden
@@ -135,6 +145,7 @@ assistive
 association
 asterisk
 at
+attr
 attribute
 attributes
 auto-derived
@@ -153,6 +164,7 @@ becomes
 becoming
 been
 before
+begin
 behind
 being
 belongs
@@ -169,6 +181,7 @@ binds
 block
 block-level
 body
+bool
 boolean
 border
 border-[length:var(--border-wk-width)]
@@ -189,12 +202,15 @@ brings
 browser
 bubble
 bug
+build
 builds
 built
+busy
 but
 button
 buttons
 by
+cache
 call
 caller
 caller-supplied
@@ -208,6 +224,7 @@ capture
 card
 cards
 carries
+carry
 case
 cases
 cast
@@ -215,6 +232,7 @@ causes
 cell
 center
 centered
+centers
 change
 changes
 changing
@@ -260,6 +278,7 @@ compound
 condition
 conditional
 config/wirekit.php
+configuration
 consent
 console
 consume
@@ -290,24 +309,35 @@ dash
 data-wk-choice
 data-wk-choice-description
 data-wk-choice-trailing
+data-wk-fill
 data-wk-indeterminate
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
+data-wk-label-beside
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 data-wk-touch
 debug
+declarations
 declared
 decline
 declining
@@ -317,10 +347,12 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 delivers
 dense
+depends
 descendant
 descendants
 described
@@ -330,8 +362,11 @@ desk
 detection
 developer
 different
+differs
 direction
 directives
+disable-on-loading
+disableOnLoading
 disabled
 disables
 dismiss
@@ -349,6 +384,7 @@ drawer
 drawing
 drawn
 draws
+drives
 drop
 dropped
 drops
@@ -393,6 +429,7 @@ explains
 explanation
 explicit
 expression
+factory
 fade
 false
 far
@@ -417,8 +454,10 @@ flex-1
 flex-centered
 flex-col
 flex-wrap
+flight
 flipped
 flips
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -428,6 +467,7 @@ focusable
 focusable-trigger
 focusableTrigger
 folding
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -494,7 +534,7 @@ hands
 hangs
 has
 has-[:checked]:bg-[var(--color-wk-bg-hover)]
-has-[:checked]:border-[var(--color-wk-accent)]
+has-[:checked]:border-[var(--color-wk-accent-text)]
 has-[:focus-visible]:ring-[length:var(--ring-wk-width)]
 has-[:focus-visible]:ring-[var(--color-wk-ring)]
 hatch
@@ -521,6 +561,7 @@ hint
 hint/error
 hit
 hoists
+hold
 holds
 host
 hover
@@ -594,6 +635,7 @@ last
 later
 layer
 layout
+lazy
 leading-none
 leading-tight
 leads
@@ -612,6 +654,7 @@ like
 line
 line-box
 lines
+link
 linked
 list
 listener
@@ -619,6 +662,8 @@ listens
 lists
 live
 lives
+loading-target
+loadingTarget
 logs
 lone
 long
@@ -626,6 +671,7 @@ longer
 look
 looks
 lose
+loses
 mac
 make
 makes
@@ -658,6 +704,7 @@ messages
 method
 middle
 middles
+midline
 min-h-[24px]
 min-w-0
 min-w-5
@@ -723,6 +770,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -756,6 +804,7 @@ overflow
 overlay
 overlays
 override
+overtake
 overview
 own
 owns
@@ -772,6 +821,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 past
 patches
@@ -832,7 +882,11 @@ project
 prop
 property
 props
+prose
 proxy
+ps-[calc(1.25rem+var(--gap-wk-sm))]
+ps-[calc(1.5rem+var(--gap-wk-sm))]
+ps-[calc(1rem+var(--gap-wk-sm))]
 pt-[max(0px,calc((1.25rem_-_1lh)_/_2))]
 pt-[max(0px,calc((1.5rem_-_1lh)_/_2))]
 pt-[max(0px,calc((1rem_-_1lh)_/_2))]
@@ -851,6 +905,7 @@ py-[var(--padding-wk-y-md)]
 py-[var(--padding-wk-y-xs)]
 qualified
 question
+race
 racing
 radio
 raises
@@ -891,6 +946,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 reserve
 resolve
@@ -903,6 +960,7 @@ restyles
 result
 reverted
 rich
+ride
 rides
 right
 ring
@@ -921,6 +979,7 @@ row
 rows
 rule
 run
+running
 runs
 s
 safe
@@ -934,6 +993,7 @@ screen
 script
 scroll
 seam
+search
 second
 see
 sees
@@ -961,6 +1021,7 @@ shares
 shift
 shifts
 ships
+short
 shortcut
 shortcuts
 should
@@ -974,6 +1035,7 @@ side
 sidebar
 silently
 simply
+since
 single
 single-key
 sit
@@ -1083,6 +1145,7 @@ theme-controller
 then
 there
 therefore
+these
 they
 third
 this
@@ -1104,11 +1167,15 @@ too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
 touch
 towards
+track
+tracks
 trailing
 transformed
 transition
@@ -1137,7 +1204,9 @@ unique
 unknown
 unless
 unlike
+unrelated
 unsteady
+until
 up
 upper
 usable
@@ -1163,6 +1232,7 @@ w-5
 w-6
 w-full
 w-max
+waits
 walk
 wants
 warning
@@ -1189,10 +1259,12 @@ wider
 width
 will
 window
+wins
 wire:id
 wire:key
 wire:model
 wire:show
+wire:target
 wire:text
 wirekit:field-help
 wirekitOptimistic
@@ -1212,6 +1284,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 write

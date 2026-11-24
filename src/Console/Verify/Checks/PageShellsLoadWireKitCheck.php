@@ -48,10 +48,11 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
         $shells = LayoutShells::forApplication();
         $stylesCovered = ! $this->context->stylesFoundAnywhere || $this->hasWirekitCssImportInAppCss();
 
-        // The scripts directive writes the symbols of the icon sprite, so while the sprite is on
-        // every shell needs it, in an application that loads no other script of the kit as well:
-        // without it the glyphs of a checkbox or a select point at nothing.
-        $sprite = KitIcons::sprite();
+        // The scripts directive writes the symbols of the icon sprite, so while a sprite is on
+        // every shell needs it, or @wirekitIconSprite in an application that loads the components
+        // through a module of its own: without either the glyphs of a checkbox or a select, and
+        // the icons of a sidebar's rows, point at nothing.
+        $sprite = KitIcons::sheetNeeded();
         $scriptsNeeded = $this->context->scriptsFoundAnywhere || $sprite;
         $missing = [];
         $inspected = 0;
@@ -61,6 +62,11 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
         // head that loads the application's stylesheet first hands those ties to the kit.
         $compact = CompactClasses::enabled();
         $late = [];
+
+        // Both directives write the glyphs, so a page with the two carries the id of every glyph
+        // twice. The icons of navigation rows are written once, by whichever of them comes first.
+        $glyphs = KitIcons::sprite();
+        $twice = [];
 
         foreach (array_filter([$shells->appLayout(), $shells->authLayout()]) as $layout) {
             $found = $shells->shellsOf($layout);
@@ -80,9 +86,21 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
             foreach ($found['body'] as $file) {
                 $inspected++;
 
-                if ($scriptsNeeded && ! $shells->carries($file, 'wirekitScripts')) {
+                if ($glyphs && $shells->carries($file, 'wirekitScripts') && $shells->carries($file, 'wirekitIconSprite')) {
+                    $twice[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file);
+                }
+
+                if (! $scriptsNeeded || $shells->carries($file, 'wirekitScripts')) {
+                    continue;
+                }
+
+                // Without the directive anywhere, the application loads the components itself, and
+                // only the glyphs are asked for: @wirekitIconSprite writes them without the scripts.
+                if ($this->context->scriptsFoundAnywhere) {
                     $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitScripts before its </body>'
                         .($sprite ? ', which writes the glyphs of the icon sprite' : '');
+                } elseif (! $shells->carries($file, 'wirekitIconSprite')) {
+                    $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitScripts or @wirekitIconSprite before its </body>, one of which writes the glyphs of the icon sprite';
                 }
             }
         }
@@ -94,6 +112,7 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
         }
 
         $this->reportStylesheetOrder($compact, array_values(array_unique($late)));
+        $this->reportSpriteWrittenTwice(array_values(array_unique($twice)));
 
         if ($missing === []) {
             $this->reportPass('Every page shell your layouts render loads WireKit');
@@ -108,6 +127,28 @@ final class PageShellsLoadWireKitCheck extends VerifyCheck
         }
 
         $this->line('  Fix: php artisan wirekit:install — it follows each layout to these files. Loading WireKit through a @stack or a section instead is fine; this check cannot see those.');
+    }
+
+    /**
+     * A page shell that carries @wirekitScripts and @wirekitIconSprite while the sprite is on
+     * writes its sheet twice, and every symbol id stands twice in the page. Said only where it
+     * happens: one directive is the setup.
+     *
+     * @param  list<string>  $twice  the page shells that carry both directives
+     */
+    private function reportSpriteWrittenTwice(array $twice): void
+    {
+        if ($twice === []) {
+            return;
+        }
+
+        $this->reportWarn('A page shell writes the glyphs of the icon sprite twice: @wirekitScripts writes them, and so does @wirekitIconSprite');
+
+        foreach ($twice as $file) {
+            $this->line('  '.$file);
+        }
+
+        $this->line('  Fix: remove @wirekitIconSprite where @wirekitScripts stands');
     }
 
     /**

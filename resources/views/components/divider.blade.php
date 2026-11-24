@@ -26,6 +26,8 @@
         default => WireKit::validateProp('divider', 'variant', $variant, ['default', 'subtle', 'bold']),
     };
 
+    // The line is the divider's content, so it keeps Tailwind's 1px where a preset sets the theme's
+    // border width to 0px: the edges of a box follow `--border-wk-width`, and a rule stays a rule.
     $borderColor = match ($variantValue) {
         'subtle' => 'border-[var(--color-wk-border-subtle)]',
         'bold' => 'border-[var(--color-wk-border-strong,var(--color-wk-border))]',

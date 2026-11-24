@@ -85,6 +85,7 @@
     {{-- `list` ties a one-line field to the suggestions of a datalist, and `min`, `max` and `step` bound
          a number; a textarea takes none of them. --}}
     <x-wirekit::textarea
+        :align-fields="false"
         :attributes="($fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([]))->except(['list', 'min', 'max', 'step'])"
         :required="$required ?? false"
         :disabled="$disabled ?? false"
@@ -112,6 +113,7 @@
          the binding a click anywhere else left the editor open with an uncommitted draft;
          in a table of inline-edit cells, several of them at once. --}}
     <x-wirekit::select
+        :align-fields="false"
         :required="$required ?? false"
         :disabled="$disabled ?? false"
         x-bind:disabled="!editing"
@@ -137,6 +139,7 @@
          deliberately does not claim them — taking ArrowUp here would stop the
          control doing the one thing it exists for. --}}
     <x-wirekit::number-input
+        :align-fields="false"
         :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
         :required="$required ?? false"
         :disabled="$disabled ?? false"
@@ -158,6 +161,7 @@
 @else
     {{-- `min`, `max` and `step` bound a number, and a text field takes none of them. --}}
     <x-wirekit::input
+        :align-fields="false"
         :attributes="($fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([]))->except(['min', 'max', 'step'])"
         :required="$required ?? false"
         :disabled="$disabled ?? false"

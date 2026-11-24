@@ -18,10 +18,12 @@ use Illuminate\Support\HtmlString;
  * later finds its symbol too. Off by default: a page without `@wirekitScripts`, where a checkbox and a
  * select still work, would have no symbol to point at.
  *
- * A symbol carries its glyph's `viewBox` and presentation attributes, and `currentColor` resolves
- * against the instance's text color, in forced colors as well. The spinner's two shades are
- * `opacity` attributes rather than classes: a class from the page's stylesheet does not reliably
- * reach the copy a `<use>` draws.
+ * A symbol carries its glyph's `viewBox` and paths, and the instance keeps the glyph's presentation
+ * attributes. What a `<use>` draws inherits them from the instance's `<svg>`, so a rule of the
+ * page's stylesheet on that `<svg>`, a thinner stroke for the check, applies as it does to the
+ * whole drawing, and `currentColor` resolves against the instance's text color, in forced colors
+ * as well. The spinner's two shades are `opacity` attributes rather than classes: a class from the
+ * page's stylesheet does not reliably reach the copy a `<use>` draws.
  */
 final class KitIcons
 {
@@ -70,6 +72,16 @@ final class KitIcons
     }
 
     /**
+     * Whether something on a page points into the sheet the directives write: a glyph while the
+     * sprite is on, or the icon of a navigation row while `wirekit.icons.navigation_sprite` is on
+     * (NavigationIcons). A page then needs @wirekitScripts or @wirekitIconSprite.
+     */
+    public static function sheetNeeded(): bool
+    {
+        return self::sprite() || NavigationIcons::sprite();
+    }
+
+    /**
      * One glyph for one instance. The classes and the attribute text are the instance's own and
      * stay on its `<svg>`: what shows and hides it, its `aria-hidden`, its Alpine and Livewire
      * attributes. The classes go through the compact table like every class the kit writes; the
@@ -81,7 +93,7 @@ final class KitIcons
         $open = '<svg class="'.e(CompactClasses::map($classes)).'" '.$attributes;
 
         if (self::sprite()) {
-            return new HtmlString($open.' viewBox="'.$glyph['viewBox'].'"><use href="#'.self::ID_PREFIX.$name.'"/></svg>');
+            return new HtmlString($open.' viewBox="'.$glyph['viewBox'].'" '.$glyph['attributes'].'><use href="#'.self::ID_PREFIX.$name.'"/></svg>');
         }
 
         return new HtmlString($open.' xmlns="http://www.w3.org/2000/svg" viewBox="'.$glyph['viewBox'].'" '.$glyph['attributes'].'>'.$glyph['body'].'</svg>');
@@ -102,7 +114,7 @@ final class KitIcons
         $symbols = '';
 
         foreach (self::GLYPHS as $name => $glyph) {
-            $symbols .= '<symbol id="'.self::ID_PREFIX.$name.'" viewBox="'.$glyph['viewBox'].'" '.$glyph['attributes'].'>'.$glyph['body'].'</symbol>';
+            $symbols .= '<symbol id="'.self::ID_PREFIX.$name.'" viewBox="'.$glyph['viewBox'].'">'.$glyph['body'].'</symbol>';
         }
 
         return new HtmlString('<svg aria-hidden="true" focusable="false" width="0" height="0" class="absolute overflow-hidden" data-wk-glyphs>'.$symbols.'</svg>');

@@ -50,6 +50,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-dropdown
 --z-wk-tooltip
 -desc
@@ -63,7 +64,9 @@
 -my-[3px]
 -required
 -results
+-tooltip
 -translate-y-1
+-words
 @aware
 @change
 @click
@@ -95,6 +98,7 @@ active
 activeDescendantId
 acts
 actually
+address
 adds
 affordances
 after
@@ -102,6 +106,8 @@ again
 against
 agree
 alias
+align-fields
+alignFields
 all
 alone
 alongside
@@ -257,11 +263,14 @@ brings
 browser
 bubble
 bug
+build
+builds
 built
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -327,6 +336,7 @@ composing
 computed
 conditional
 config/wirekit.php
+configuration
 confirm
 conflicting
 console
@@ -366,7 +376,10 @@ d
 danger-text
 dark
 data-active
+data-wk-field
 data-wk-field-label
+data-wk-field-part
+data-wk-fill
 data-wk-flag
 data-wk-kbd-guess
 data-wk-kbd-platform
@@ -374,9 +387,11 @@ data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-multi-select-layout
 data-wk-multi-select-option
 data-wk-multi-select-remove
+data-wk-multi-select-start
 data-wk-optimistic-announcer
 data-wk-options
 data-wk-pill-remove
@@ -386,15 +401,23 @@ data-wk-required-check
 data-wk-required-message
 data-wk-server-options
 data-wk-server-value
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
 decided
 deciding
+declarations
 declared
 decode
 decoration
@@ -404,10 +427,12 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 delegates
 deliberately
 delivered
 denylist
+depends
 derived
 descendant
 descendants
@@ -420,6 +445,7 @@ design
 destroys
 developer
 different
+differs
 direction
 directives
 disabled
@@ -445,6 +471,7 @@ drawing
 drawn
 draws
 drift
+drives
 dropdown
 dropdownOpen
 dropped
@@ -526,6 +553,7 @@ filter
 filterInput
 filteredOptions
 filters
+find
 finds
 finger
 finish
@@ -559,6 +587,7 @@ focusable-trigger
 focusableTrigger
 focuses
 fold
+follow
 followed
 follows
 font
@@ -571,6 +600,7 @@ font-size
 for
 forced-colors
 forces
+foreach
 form
 forms
 found
@@ -584,6 +614,7 @@ from
 front
 frozen
 full
+function
 function-valued
 further
 g
@@ -638,6 +669,7 @@ hear
 heard
 hears
 height
+held
 help
 helpButton
 helpField
@@ -813,7 +845,9 @@ loading
 logs
 long
 look
+looked
 looks
+lookup
 lose
 m-0
 mac
@@ -944,6 +978,7 @@ on-screen
 once
 one
 one-item
+ones
 only
 onmouseover
 onto
@@ -1081,6 +1116,7 @@ prop
 properties
 property
 props
+prose
 provides
 proxy
 ps-[var(--padding-wk-x-sm)]
@@ -1101,6 +1137,7 @@ py-y-sm
 qualified
 question
 quiet
+race
 racing
 raises
 ramework-agnostic
@@ -1149,9 +1186,11 @@ reports
 request
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageId
 requiredValue
@@ -1179,6 +1218,7 @@ return
 returns
 reverted
 rich
+ride
 right
 role
 roll
@@ -1338,6 +1378,7 @@ stem
 step
 steps
 still
+stood
 stop
 stopped
 stops
@@ -1446,6 +1487,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1454,6 +1497,7 @@ touch
 towards
 track
 tracking-[var(--font-wk-letter-spacing)]
+tracks
 transformed
 transition
 transition-colors
@@ -1583,6 +1627,7 @@ work
 working
 works
 would
+wrap
 wrapped
 wrapper
 wrapping
@@ -1616,6 +1661,7 @@ x-on:invalid
 x-on:mouseenter
 x-on:mouseleave
 x-on:pointerdown
+x-on:pointerenter
 x-on:pointerleave
 x-on:pointerup
 x-ref

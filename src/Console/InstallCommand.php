@@ -13,6 +13,8 @@ use Pushery\WireKit\Support\AppCss;
 use Pushery\WireKit\Support\ComponentManifest;
 use Pushery\WireKit\Support\FileWrite;
 use Pushery\WireKit\Support\InstallLog;
+use Pushery\WireKit\Support\KitIcons;
+use Pushery\WireKit\Support\KitModuleImport;
 use Pushery\WireKit\Support\LayoutShells;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\TailwindVersion;
@@ -775,11 +777,18 @@ class InstallCommand extends Command
         // uses — or, when no layout exists yet, the full candidate list it probes. A dry run
         // that names a different file than the install then touches is worse than none.
         $layout = $this->resolveLayoutFile();
+        // A module of the application's own that registers the components stands in for
+        // @wirekitScripts, and the install leaves that directive out (KitModuleImport).
+        $kitModule = KitModuleImport::inApplication();
+        $leftOut = $kitModule === null ? '' : '; '.$kitModule.' registers the components, so no @wirekitScripts';
+        // The symbols of the icon sprite come with @wirekitScripts, and without it from their own directive.
+        $withModule = KitIcons::sheetNeeded() ? '@wirekitStyles + @wirekitIconSprite' : '@wirekitStyles';
+
         if ($layout !== null) {
             $targets = $this->directiveTargets($layout, LayoutShells::forApplication());
 
             foreach (array_values(array_unique([...$targets['head'], ...$targets['body']])) as $file) {
-                $this->line('    <fg=cyan>~</> '.$this->projectRelativePath($file).' (would inject @wirekitStyles + @wirekitScripts if missing)');
+                $this->line('    <fg=cyan>~</> '.$this->projectRelativePath($file).' (would inject '.($kitModule === null ? '@wirekitStyles + @wirekitScripts' : $withModule).' if missing'.$leftOut.')');
             }
 
             foreach ($targets['unplaced'] as $unplaced) {
@@ -793,7 +802,8 @@ class InstallCommand extends Command
                 fn (string $p): string => str_replace(base_path().DIRECTORY_SEPARATOR, '', $p),
                 $this->layoutCandidates()
             ));
-            $this->line("    <fg=cyan>~</> layout: none of the probed candidates exist yet ({$candidates}) — would create one via Livewire (livewire:layout) and inject @wirekitStyles + @wirekitScripts (before @livewireScripts)");
+            $this->line("    <fg=cyan>~</> layout: none of the probed candidates exist yet ({$candidates}) — would create one via Livewire (livewire:layout) and inject "
+                .($kitModule === null ? '@wirekitStyles + @wirekitScripts (before @livewireScripts)' : $withModule.$leftOut));
         }
 
         // public/vendor/wirekit/ — assets.
@@ -1503,11 +1513,20 @@ CSS;
         $shells = LayoutShells::forApplication();
         $targets = $this->directiveTargets($layoutFile, $shells);
 
+        // An application whose own module registers the components from wirekit.esm.js keeps
+        // @wirekitScripts out of its layouts on purpose: the directive would load the full bundle
+        // on every page beside that module.
+        $kitModule = KitModuleImport::inApplication();
+
         foreach ($targets['unplaced'] as $layout) {
             // Never "already present" for a file this could not read. That sentence is the one
             // a developer believes, and here it would be false.
             $this->line('  <fg=yellow>!</> '.$this->projectRelativePath($layout).' renders no <head> or </body> this install can find.');
-            $this->line('    Add <fg=cyan>@wirekitStyles</> inside the <head> your pages render and <fg=cyan>@wirekitScripts</> just before its </body>, then run <fg=cyan>wirekit:doctor</>.');
+            $this->line($kitModule === null
+                ? '    Add <fg=cyan>@wirekitStyles</> inside the <head> your pages render and <fg=cyan>@wirekitScripts</> just before its </body>, then run <fg=cyan>wirekit:doctor</>.'
+                : '    Add <fg=cyan>@wirekitStyles</> inside the <head> your pages render'
+                    .(KitIcons::sheetNeeded() ? ' and <fg=cyan>@wirekitIconSprite</> just before its </body>' : '')
+                    .', then run <fg=cyan>wirekit:doctor</>.');
         }
 
         foreach (array_values(array_unique([...$targets['head'], ...$targets['body']])) as $file) {
@@ -1516,6 +1535,7 @@ CSS;
                 in_array($file, $targets['head'], true),
                 in_array($file, $targets['body'], true),
                 $shells,
+                $kitModule,
             );
         }
     }
@@ -1559,9 +1579,10 @@ CSS;
     /**
      * Add whichever directive `$file` is missing: the stylesheet where it closes a `<head>`, the
      * script where it closes a `<body>`. "Missing" counts what the file includes — a stylesheet
-     * the starter kit's `partials/head` already carries is in every head.
+     * the starter kit's `partials/head` already carries is in every head. The script stays out
+     * where `$kitModule`, a module of the application's own, registers the components.
      */
-    private function wireDirectivesInto(string $file, bool $closesHead, bool $closesBody, LayoutShells $shells): void
+    private function wireDirectivesInto(string $file, bool $closesHead, bool $closesBody, LayoutShells $shells, ?string $kitModule = null): void
     {
         $contentBefore = (string) file_get_contents($file);
         $content = $contentBefore;
@@ -1585,7 +1606,9 @@ CSS;
             }
         }
 
-        if ($closesBody && ! $shells->carries($file, 'wirekitScripts')) {
+        $leftToTheModule = $closesBody && $kitModule !== null && ! $shells->carries($file, 'wirekitScripts');
+
+        if ($closesBody && $kitModule === null && ! $shells->carries($file, 'wirekitScripts')) {
             // Critical order: @wirekitScripts registers WireKit's Alpine plugins on the
             // alpine:init event, which must run before Livewire boots Alpine. Where the layout
             // emits @livewireScripts, the directive goes immediately before it. Otherwise just
@@ -1597,8 +1620,21 @@ CSS;
             $added[] = '@wirekitScripts';
         }
 
+        // The module brings the components and not the symbols of the icon sprite, which the
+        // directive would have written: while a sprite is on, they get their own directive.
+        if ($leftToTheModule && KitIcons::sheetNeeded() && ! $shells->carries($file, 'wirekitIconSprite')) {
+            $content = self::insertDirectiveBefore($content, '</body>', '@wirekitIconSprite', nested: true);
+            $added[] = '@wirekitIconSprite';
+        }
+
+        if ($leftToTheModule) {
+            $this->line('  <fg=green>✓</> '.$kitModule.' registers WireKit\'s components, so '.$this->projectRelativePath($file).' gets no @wirekitScripts');
+        }
+
         if ($added === []) {
-            $this->line('  <fg=yellow>!</> Blade directives already present in '.$this->projectRelativePath($file));
+            if (! $leftToTheModule) {
+                $this->line('  <fg=yellow>!</> Blade directives already present in '.$this->projectRelativePath($file));
+            }
 
             return;
         }

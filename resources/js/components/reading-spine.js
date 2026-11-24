@@ -45,6 +45,7 @@ import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
 import { assignHeadingIds } from '../utils/heading-ids.js';
+import { headingLang } from '../utils/heading-lang.js';
 import { foldForSearch } from '../utils/search-fold.js';
 import { isComposing } from '../utils/ime.js';
 import { HEADING_CHANGES, changesOutside, sameHeadings, indexInFresh } from '../utils/heading-changes.js';
@@ -500,6 +501,8 @@ export default (options = {}) => ({
         return kept.map((el, idx) => ({
             id: el.id || '',
             text: accessibleText(el),
+            // The heading's language where it differs from the spine's (utils/heading-lang.js).
+            lang: headingLang(el, this.$root),
             level: parseInt(el.tagName.slice(1), 10),
             label: '', // populated by computeNumbering when numbered=true
             fill: 0,   // populated by updateSectionFills when fillSections=true

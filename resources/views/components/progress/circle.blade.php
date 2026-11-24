@@ -193,10 +193,12 @@
             @endwirekitLast
         </svg>
 
-        {{-- Center value text (only when showValue and determinate) --}}
+        {{-- Center value text (only when showValue and determinate). The whole percent is rounded
+             down after nine places, as usage-meter writes it, so 29 of 100 reads 29 %: 29 / 100 *
+             100 is a float just under 29. --}}
         @wirekitLast($showValue && ! $isIndeterminate)
             <div class="absolute inset-0 flex items-center justify-center {{ $textSize }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums" aria-hidden="true">
-                {{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) (int) $percent, 0) }}
+                {{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) \Pushery\WireKit\Support\WholePercent::of($clamped, (float) $max), 0) }}
             </div>
         @endwirekitLast
     </div>

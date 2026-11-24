@@ -20,10 +20,10 @@
         {{ $emptySlot }}
     @else
         {{ $emptyText }}
-        @if(filled($emptyHref) && $emptyNavigates)
+        @wirekitLast(filled($emptyHref) && $emptyNavigates)
             <x-wirekit::link :href="$emptyHref" wire:navigate>{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
         @elseif(filled($emptyHref))
             <x-wirekit::link :href="$emptyHref">{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
-        @endif
+        @endwirekitLast
     @endwirekitLast
 </div>

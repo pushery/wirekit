@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.73.0 — MIT License
+ * WireKit CSS v2.74.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -382,8 +382,11 @@
     --color-wk-ring: oklch(14.5% 0 0);
     --color-wk-ring-offset: #fff;
 
-    /* ─── Radius — single base value, everything else scales ─── */
+    /* ─── Radius — one base value; every step between none and full scales with it ─── */
     --radius-wk: 0.5rem;
+    /* A square corner in any theme. A length rather than a bare 0, so it stays valid inside a
+       calc() that adds a length to it. */
+    --radius-wk-none: 0px;
     --radius-wk-sm: calc(var(--radius-wk) * 0.75);
     --radius-wk-md: var(--radius-wk);
     --radius-wk-lg: calc(var(--radius-wk) * 1.25);
@@ -555,6 +558,11 @@
     --gap-wk-xl: 1.5rem;
     --gap-wk-2xl: 2rem;
 
+    /* The space between the icon of a card's head and its heading and sentence, a step wider than
+       the small gap between the head's other parts, so the words stand clear of the icon. A token of
+       its own, so an application sets it without moving every other small gap. */
+    --gap-wk-card-header-icon: var(--gap-wk-md);
+
     /* ─── Spacing Scale (Stack, Row, Grid, Section, Container) ─── */
     --space-wk-xs: 0.25rem;
     --space-wk-sm: 0.5rem;
@@ -577,6 +585,13 @@
        name where the padding puts them. */
     --space-wk-nav-icon-gap: var(--padding-wk-x-sm);
     --space-wk-nav-indent: var(--padding-wk-x-sm);
+
+    /* The icon in the head of a sidebar section, and how far the entries of a section with an icon
+       stand in: their guide line runs through the middle of that icon. A theme that draws section
+       icons at another size sets the size, and the line follows it. A section without an icon
+       keeps `--space-wk-nav-indent`, where its name begins. */
+    --size-wk-nav-icon: 1.25rem;
+    --space-wk-nav-icon-indent: calc(var(--space-wk-nav-indent) + var(--size-wk-nav-icon) / 2 - var(--border-wk-width) / 2);
 
     /* Section-level vertical spacing — used by hero/cta/footer for the
        outer block padding. Sized for marketing pages: tighter on small
@@ -843,13 +858,37 @@
    <html> for the page, or a box it marks data-wk-scroll-inset-box. A strip alone needs no script,
    since its inset is a token.
 
-   :where() on both, so a scroll-padding the developer sets wins. */
-:where(:root) {
+   A scroll-padding the developer sets wins, one edge at a time. This sheet is unlayered and
+   Tailwind's utilities live in `@layer utilities`, so the rules would outrank a utility whatever
+   their weight: each edge's `:not()` names the utilities that set that edge, as a substring so
+   that every value and every variant (`md:scroll-pt-20`) counts, and an arbitrary
+   `[scroll-padding…]` as well. `scroll-pt-*` and the logical `scroll-pbs-*` take the top edge,
+   `scroll-pb-*` and `scroll-pbe-*` the bottom one, `scroll-py-*` and `scroll-p-*` both. Behind a
+   variant the edge is left at every width, so below the variant it has no padding of the kit's.
+   `:where()` keeps the rules at zero specificity, so an unlayered rule of the developer's own
+   wins too; a rule inside a cascade layer does not. */
+:where(:root:not([class*="scroll-p-"], [class*="scroll-py-"], [class*="scroll-pt-"], [class*="scroll-pbs-"], [class*="scroll-padding"])) {
     scroll-padding-top: max(var(--wk-strip-inset, 0px), var(--wk-scroll-inset-top, 0px));
+}
+
+:where(:root:not([class*="scroll-p-"], [class*="scroll-py-"], [class*="scroll-pb-"], [class*="scroll-pbe-"], [class*="scroll-padding"])) {
     scroll-padding-bottom: var(--wk-scroll-inset-bottom, 0px);
 }
 
-:where([data-wk-scroll-inset-box]) {
+:where([data-wk-scroll-inset-box]:not([class*="scroll-p-"], [class*="scroll-py-"], [class*="scroll-pt-"], [class*="scroll-pbs-"], [class*="scroll-padding"])) {
+    scroll-padding-top: var(--wk-scroll-inset-top, 0px);
+}
+
+:where([data-wk-scroll-inset-box]:not([class*="scroll-p-"], [class*="scroll-py-"], [class*="scroll-pb-"], [class*="scroll-pbe-"], [class*="scroll-padding"])) {
+    scroll-padding-bottom: var(--wk-scroll-inset-bottom, 0px);
+}
+
+/* The kit's own scrollers keep a focus ring clear of their edge with a scroll-padding the width
+   of the ring, and each writes it with one of these two utilities: a conversation's viewport, a
+   kanban column, the zones of a sidebar, a shell bar and the items of a navigation menu. That
+   padding is the kit's, not the developer's, so on such a scroller marked as a box, as a
+   conversation is under a sticky date separator, the band takes its place on both edges. */
+:where([data-wk-scroll-inset-box]:is([class*="scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]"], [class*="scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]"])) {
     scroll-padding-top: var(--wk-scroll-inset-top, 0px);
     scroll-padding-bottom: var(--wk-scroll-inset-bottom, 0px);
 }
@@ -1408,9 +1447,12 @@
 }
 
 /* The derived tokens, word for word, in both scopes. A custom property is computed
-   where it is declared, so each is declared again to resolve against the subtree. */
+   where it is declared, so each is declared again to resolve against the subtree.
+   `data-wk-tokens` asks the same of an element that sets the base colors itself:
+   only the derived tokens are declared there, so the colors it sets stay its own. */
 :where(.light),
-:where(.dark) {
+:where(.dark),
+:where([data-wk-tokens]) {
     --color-wk-info-text: var(--color-wk-accent-content);
     --color-wk-accent-text: var(--color-wk-accent-content);
     --color-wk-info-tone: var(--color-wk-accent);
@@ -1463,7 +1505,7 @@
     --reading-minimap-block-bg: color-mix(in srgb, var(--reading-minimap-color-idle) 25%, transparent);
     --reading-minimap-rendered-placeholder-bg: var(--color-wk-bg-elevated);
     --reading-minimap-preview-bg: var(--color-wk-bg-elevated);
-    --reading-minimap-preview-border: 1px solid var(--color-wk-border);
+    --reading-minimap-preview-border: var(--border-wk-width) solid var(--color-wk-border);
     --reading-minimap-preview-shadow: var(--shadow-wk-md);
     --reading-minimap-bookmark-marker-color: var(--color-wk-accent);
     --reading-minimap-anchor-text-color: var(--color-wk-text-muted);
@@ -1482,6 +1524,34 @@
 [data-wk-tooltip-surface="elevated"] {
     --color-wk-tooltip-bg: var(--color-wk-bg-elevated);
     --color-wk-tooltip-text: var(--color-wk-text);
+}
+
+/* An inverted panel hands its text color on, as a filled surface does: a `text`, `heading`, `link`
+   or `prose` in rich content reads `--wk-fill-ink` before the page's color, which on this panel is
+   its background. The elevated panel is a surface of the page and carries no such marker. */
+.wk-tooltip-panel[data-wk-fill] {
+    --wk-fill-ink: currentColor;
+    --wk-fill-surface: transparent;
+}
+
+/* The page's shared tooltip panel in its default look. A shared tooltip whose trigger is one
+   element writes its panel's classes only where they differ from the default, and the panel then
+   carries this marker instead of the class list: the declarations are those of the default panel's
+   utilities, so the panel looks the same either way. */
+#wk-tooltip-shared[data-wk-tooltip-default] {
+    position: fixed;
+    width: max-content;
+    z-index: var(--z-wk-tooltip);
+    max-width: var(--size-wk-tooltip-max);
+    overflow-wrap: anywhere;
+    padding-inline: var(--padding-wk-x-sm);
+    padding-block: var(--padding-wk-y-xs);
+    background-color: var(--color-wk-tooltip-bg);
+    color: var(--color-wk-tooltip-text);
+    font-size: var(--text-wk-sm);
+    font-family: var(--font-wk-sans);
+    border-radius: var(--radius-wk-sm);
+    box-shadow: var(--shadow-wk-md);
 }
 
 /* ─── Scrollbar Utility ────────────────────────────────────── */
@@ -1653,6 +1723,14 @@
         align-self: stretch;
     }
 
+    /* A checkbox, a radio or a toggle sets its label beside its control, so it takes no part in */
+    /* the tracks and stands on the control track whole, centered: its control and label stand  */
+    /* on the midline of the fields beside it, whatever height those take. In a row that wraps,  */
+    /* such a child sits at the bottom of its line, as every child that is not a field does.     */
+    .wk-form-row:not([data-wk-form-row-wrap]) > [data-wk-label-beside] {
+        align-self: center;
+    }
+
     /* Above the support baseline, so it is additive polish behind a feature test.      */
     /* `subgrid` is Chrome 117 / Safari 16 / Firefox 71 against a floor of Chrome 111,  */
     /* so a reader on an older Chromium gets the row without it: the controls           */
@@ -1664,6 +1742,24 @@
             grid-row: 1 / -1;
             grid-template-rows: subgrid;
             align-self: stretch;
+        }
+
+        /* A field whose control and messages stand in one element, the scope of its script as */
+        /* in a combobox: that element spans the control track and the message track and hands  */
+        /* them on, one to each of its children.                                                  */
+        .wk-form-row > [data-wk-field] > [data-wk-field-body] {
+            display: grid;
+            grid-row: span 2;
+            grid-template-rows: subgrid;
+        }
+
+        /* A field drawn inside an element that holds it alone, as the one language of a         */
+        /* translatable input is an input inside that component's element: the inner field spans */
+        /* the outer one's tracks and takes them as its own.                                       */
+        .wk-form-row > [data-wk-field] > [data-wk-field] {
+            display: grid;
+            grid-row: 1 / -1;
+            grid-template-rows: subgrid;
         }
     }
 }
@@ -1719,12 +1815,14 @@
 /* The spacers exist to keep three fields' controls on one line. Stacked, there is no line */
 /* to keep — and an empty label span above a field that has no label is a gap the reader   */
 /* reads as a missing word. They come back with the columns.                                */
-.wk-form-row > [data-wk-field] > [data-wk-field-part] {
+.wk-form-row > [data-wk-field] > [data-wk-field-part],
+.wk-form-row > [data-wk-field] > [data-wk-field] > [data-wk-field-part] {
     display: none;
 }
 
 @media (min-width: 48rem) {
-    .wk-form-row > [data-wk-field] > [data-wk-field-part] {
+    .wk-form-row > [data-wk-field] > [data-wk-field-part],
+    .wk-form-row > [data-wk-field] > [data-wk-field] > [data-wk-field-part] {
         display: block;
     }
 }
@@ -1793,6 +1891,17 @@
 /* to make the entry taller, and it already sets its own tighter leading.         */
 [data-wk-rail][data-labels='inline'] [data-wk-rail-label] {
     line-height: var(--size-wk-rail-icon);
+}
+
+/* The last footer row of an expanded rail ends before the toggle that shares its line: a width  */
+/* cap of the toggle's size and the list's gap, outside the row, so an entry's link and the area */
+/* that answers the pointer end where the toggle begins. A cap rather than a margin, because an  */
+/* entry in a tooltip stands in a full-width wrapper, which a margin would push past the column. */
+/* An entry with a `wire:key` or an `x-show` stands in a wrapper without a box of its own, so    */
+/* the cap reaches through that wrapper to its child. Only a rail that can expand marks its rows. */
+[data-wk-rail][data-expanded] [data-wk-rail-foot-rows] > :last-child,
+[data-wk-rail][data-expanded] [data-wk-rail-foot-rows] > [data-wk-rail-item-outer]:last-child > * {
+    max-width: calc(100% - var(--size-wk-sm, 2rem) - var(--space-wk-nav-gap));
 }
 
 [data-wk-rail-scroller] {
@@ -2110,32 +2219,66 @@
     background: linear-gradient(to right, var(--wk-scroll-shadow-color), transparent);
 }
 
+/* A frame that reads left to right inside a right-to-left page, a code block's or a table's with
+   `dir="ltr"`, places the pair left to right, and the gradients follow it back. The rules above
+   match an element under any right-to-left ancestor, however near a left-to-right one stands. */
+[dir="rtl"] [dir="ltr"] .wk-scroll-shadow-start {
+    background: linear-gradient(to right, var(--wk-scroll-shadow-color), transparent);
+}
+
+[dir="rtl"] [dir="ltr"] .wk-scroll-shadow-end {
+    background: linear-gradient(to left, var(--wk-scroll-shadow-color), transparent);
+}
+
 /* ─── Hero / CTA muted-text-on-dark contrast fix ───────────── */
-/* When a hero or cta runs variant="dark" / "accent", a nested
-   <x-wirekit::text variant="muted"> would otherwise read a --color-wk-text-muted
-   that's wrong for the variant's surface. Scope it to a translucent mix of the
-   variant's own foreground so it stays legible on any theme.
-   Note: variant="dark" now also carries the bare `dark` class (a full dark token
-   context — see hero/cta blade), so its foreground is --color-wk-text (light
-   under `.dark`), not --color-wk-text-inverse (which flips to near-black under
-   `.dark` and would make muted text invisible). accent has no `.dark`, so it
-   mixes accent-fg. :where() keeps specificity 0 so a developer override wins. */
+/* When a hero or cta runs variant="dark", a nested <x-wirekit::text variant="muted">
+   would otherwise read a --color-wk-text-muted that's wrong for the variant's surface.
+   Scope it to a translucent mix of the variant's own foreground so it stays legible on
+   any theme. variant="dark" carries the bare `dark` class (a full dark token context —
+   see hero/cta blade), so its foreground is --color-wk-text (light under `.dark`), and a
+   card inside it is dark as well. :where() keeps specificity 0 so a developer override
+   wins.
+
+   variant="accent" has no token of its own here. The hero and the CTA set
+   `--wk-fill-ink` to `currentColor` on the accent, and a heading, a text, a link and a prose read it
+   before their page tokens, so muted words on the accent stand in the accent's own
+   foreground: a colored accent has no room for a muted tone that still clears 4.5:1. The
+   token itself stays the page's, so a card on the accent writes its muted words in the
+   page's muted color on its own light surface. */
 :where(.wk-hero, .wk-cta)[data-variant="dark"] {
     --color-wk-text-muted: color-mix(in oklab, var(--color-wk-text) 72%, transparent);
 }
 
-:where(.wk-hero, .wk-cta)[data-variant="accent"] {
-    /* Muted text on a colored accent surface == the full accent-fg. On a
-       medium-lightness accent (Aurora L=0.55, plus Soft / Material / Cupertino)
-       the accent-fg <-> accent contrast headroom is only ~4.8-5.3:1, so any
-       transparency mix drops muted text below the 4.5:1 WCAG AA floor — the
-       previous 72% mix landed Aurora/Cupertino at ~3.5:1. Colored surfaces
-       don't have AA-safe muting room, so muted == foreground here (guaranteed
-       AA: identical to the accent-fg-on-accent pair the preset-contrast check
-       already verifies). The variant="dark" rule above still mutes for real —
-       its --color-wk-text base has the contrast headroom that a colored
-       accent lacks. */
-    --color-wk-text-muted: var(--color-wk-accent-fg);
+/* A surface of its own takes the page back for what it holds. A filled surface (a filled
+   announcement banner, a hero or CTA on the accent, a section on the accent or the inverse
+   background) hands its foreground to the words on it through `--wk-fill-ink` and points the
+   focus ring at it through `--color-wk-ring`. A card is a surface of its own, and so is every
+   element that paints one of the page's four gray surfaces, or a tint of its own: a tinted
+   alert, callout, banner or message names that with `data-wk-tint`.
+
+   The words take the page's colors on the surface itself. The ring comes back one level down,
+   on what the surface holds: a control that paints a surface of its own, a neutral button or a
+   field, draws its ring outside itself, on the fill around it, where the fill's color is the
+   one that shows. A filled surface inside a surface keeps its own ring (`data-wk-fill`), and an
+   element that switches mode states its ring from its own tokens, so naming the held ring on it
+   would refer the two to each other. The ring comes back only inside a filled surface, so a ring
+   you set on a part of the page yourself stays yours everywhere else.
+
+   `--wk-page-ring` holds the ring where the theme sets it: on the root and on every element that
+   switches mode. */
+:where(:root, .dark, .light) {
+    --wk-page-ring: var(--color-wk-ring);
+    --wk-page-ring-offset: var(--color-wk-ring-offset);
+}
+
+:where([data-wk-card], [data-wk-tint], .bg-\[var\(--color-wk-bg\)\], .bg-\[var\(--color-wk-bg-elevated\)\], .bg-\[var\(--color-wk-bg-subtle\)\], .bg-\[var\(--color-wk-bg-muted\)\], .bg-\[color\:var\(--color-wk-bg\)\], .bg-\[color\:var\(--color-wk-bg-elevated\)\], .bg-\[color\:var\(--color-wk-bg-subtle\)\], .bg-\[color\:var\(--color-wk-bg-muted\)\]) {
+    --wk-fill-ink: initial;
+    --wk-fill-surface: initial;
+}
+
+:where([data-wk-fill]) :where([data-wk-card], [data-wk-tint], .bg-\[var\(--color-wk-bg\)\], .bg-\[var\(--color-wk-bg-elevated\)\], .bg-\[var\(--color-wk-bg-subtle\)\], .bg-\[var\(--color-wk-bg-muted\)\], .bg-\[color\:var\(--color-wk-bg\)\], .bg-\[color\:var\(--color-wk-bg-elevated\)\], .bg-\[color\:var\(--color-wk-bg-subtle\)\], .bg-\[color\:var\(--color-wk-bg-muted\)\]) > :where(:not([data-wk-fill], .light, .dark)) {
+    --color-wk-ring: var(--wk-page-ring);
+    --color-wk-ring-offset: var(--wk-page-ring-offset);
 }
 
 /* ─── Range-slider thumb sizing + touch handling ───────────── */
@@ -2340,8 +2483,8 @@ input.wk-field::-webkit-search-cancel-button {
     }
 }
 
-/* Where the words would move the field, or run past the label's edge beside a last word that stands
-   alone on its line, `x-wk-unsaved` measures the label and draws less: a dot in the color of the
+/* Where the words would move the field, or run past the edge of the label's line beside a last word
+   that stands alone on it, `x-wk-unsaved` measures the label and draws less: a dot in the color of the
    unsaved line, with the words as the label's title, and where even the dot does not fit, nothing,
    and the line says it alone. A label beside its control, the one around a
    switch or a single checkbox or one in a toolbar, takes nothing either, since words in its line
@@ -3696,6 +3839,8 @@ input.wk-field::-webkit-search-cancel-button {
 
 :where(
     .aria-\[current\=page\]\:bg-\[var\(--color-wk-bg-active\)\][aria-current=page],
+    .aria-checked\:bg-\[var\(--color-wk-bg-active\)\][aria-checked=true],
+    .aria-pressed\:bg-\[var\(--color-wk-bg-active\)\][aria-pressed=true],
     .data-\[active\]\:bg-\[var\(--color-wk-bg-active\)\][data-active]
 ) {
     --color-wk-surface: var(--color-wk-bg-active);
@@ -4331,6 +4476,35 @@ input.wk-field::-webkit-search-cancel-button {
     );
 }
 
+/* ─── ALTCHA widget of a captcha, in the kit's tokens ───────── */
+/* <x-wirekit::captcha provider="altcha"> renders ALTCHA's `altcha-widget`. ALTCHA declares the
+   custom properties of its look on `:root`, and the widget inherits them, so declaring them on
+   the widget gives it the page's surface, text, edge and accent instead, in both modes. */
+:where([data-wk-captcha]) altcha-widget {
+    --altcha-border-color: var(--color-wk-border);
+    --altcha-border-width: var(--border-wk-width);
+    --altcha-border-radius: var(--radius-wk-md);
+    --altcha-color-base: var(--color-wk-bg-elevated);
+    --altcha-color-base-content: var(--color-wk-text);
+    --altcha-color-primary: var(--color-wk-accent);
+    --altcha-color-primary-content: var(--color-wk-accent-fg);
+    --altcha-transition-duration: var(--transition-wk-duration);
+}
+
+/* The widget's own transitions take a millisecond for a reader who reduces motion, by the
+   system's setting or by the page's: the duration the kit quiets its own motion with, which
+   still fires `transitionend` where a zero duration may not. */
+@media (prefers-reduced-motion: reduce) {
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-captcha] altcha-widget {
+        --altcha-transition-duration: 1ms;
+    }
+}
+
+/* The forced twin, keyed on the attribute alone: the page says reduce and the system does not. */
+:root[data-reduce-motion="reduce"] [data-wk-captcha] altcha-widget {
+    --altcha-transition-duration: 1ms;
+}
+
 /* ─── Leaflet intent-colored marker pin ─────────────────────── */
 /* <x-wirekit::map> with the Leaflet provider renders each marker as an
    inline-SVG divIcon (map.js _leafletIcon) so the pin can be filled with the
@@ -4843,7 +5017,8 @@ tr:has(> th .wk-sideways) > th {
 }
 
 /* ─── Data-list row separators ─────────────────────────────── */
-/* Horizontal data-list items carry a 1px bottom rule between rows.
+/* Horizontal data-list items carry a bottom rule between rows, at the
+   theme's border width like every other edge of the list.
    The separator lives here (not as an inline style on the item) so the
    last item omits it via :not(:last-child) — an inline border-bottom
    can't express that and produced a doubled 2px seam where the list's
@@ -4851,7 +5026,44 @@ tr:has(> th .wk-sideways) > th {
    Loaded via @wirekitStyles, so it resolves in the same preview-iframe /
    SSR-without-Tailwind contexts the item's inline layout styles target. */
 .wk-data-list-item:not(:last-child) {
-    border-bottom: 1px solid var(--color-wk-border-subtle);
+    border-bottom: var(--border-wk-width) solid var(--color-wk-border-subtle);
+}
+
+/* A stacked or a grid data list rules the line between two rows in the middle of the gap between
+   them, so the space above the line is the space below it. As the item's own bottom border the
+   line stood at the top of the gap, with only the item's padding above it and the gap and the next
+   item's padding below. The items keep their padding and the list its gap; the line is drawn half
+   the gap under each item instead, centered on its own width. */
+dl[data-layout="stacked"] > .wk-data-list-item,
+dl[data-layout="grid"] > .wk-data-list-item {
+    position: relative;
+}
+
+dl[data-layout="stacked"] > .wk-data-list-item:not(:last-child),
+dl[data-layout="grid"] > .wk-data-list-item:not(:last-child) {
+    border-bottom: 0;
+}
+
+dl[data-layout="stacked"] > .wk-data-list-item:not(:last-child)::after,
+dl[data-layout="grid"] > .wk-data-list-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: calc(var(--gap-wk-lg, 1rem) / -2 - var(--border-wk-width) / 2);
+    border-bottom: var(--border-wk-width) solid var(--color-wk-border-subtle);
+    pointer-events: none;
+}
+
+/* In two columns the last row holds the last item and, after an even count, the one before it:
+   neither has a row below it to rule off. In one column that item has. */
+dl[data-layout="grid"] > .wk-data-list-item:nth-last-child(2):nth-child(odd)::after {
+    content: none;
+}
+
+@media (max-width: 40rem) {
+    dl[data-layout="grid"] > .wk-data-list-item:nth-last-child(2):nth-child(odd)::after {
+        content: "";
+    }
 }
 
 /* A `grid` data list sets its items in two columns, and in one on a narrow screen. The columns
@@ -5017,6 +5229,14 @@ dl[data-layout="grid"] {
     .wk-prose li:not(:where(.not-wk-prose, .not-wk-prose *:not(.not-wk-prose .wk-prose *), .not-wk-prose .wk-prose .not-wk-prose *:not(.not-wk-prose .wk-prose .not-wk-prose .wk-prose *), [data-wk-prose-skip])) {
         text-wrap: pretty;
     }
+
+    /* The same on a component's own running text, where a single word left on the last line
+       stands out: the centered description of an empty state. Below the support, the text wraps
+       normally. A class rather than Tailwind's utility, because the utility is written without
+       the detection. */
+    .wk-lines-pretty {
+        text-wrap: pretty;
+    }
 }
 
 @supports (text-wrap: balance) {
@@ -5028,12 +5248,55 @@ dl[data-layout="grid"] {
     }
 
     /* The same polish on a component's own short text: a column head that breaks between its
-       words (`table.th wrap="words"`), a lightbox caption. Below the support, the text wraps
+       words (`table.th wrap="words"`), a lightbox caption, the centered title of an empty state,
+       where a single word left on the last line stands out. Below the support, the text wraps
        normally and only the last line is not evened up. A class rather than Tailwind's
        utility, because the utility is written without the detection. */
     .wk-lines-balanced {
         text-wrap: balance;
     }
+}
+
+/* A heading that wraps evens out its lines, so its last line does not hold a single word. The
+   longhand sets how the lines break and leaves whether they break: a heading kept on one line,
+   by `truncate` on it or by a row that does not wrap, stays on one line, where the `text-wrap`
+   shorthand would wrap it again. Below the support the lines break as in any text.
+
+   A `text-wrap` utility on the heading takes the place of the balanced lines, and weight is not
+   what decides it: this stylesheet is unlayered and Tailwind's utilities live in
+   `@layer utilities`, so an unlayered rule wins over a utility whatever its specificity. The
+   `:not()` list therefore names each of the four utilities with its variants (`md:text-pretty`),
+   as the positioned root of `data-wk-sr-host` does: a heading that carries one is left to the
+   caller at every width, and below the width of a variant it breaks as any text. */
+@supports (text-wrap-style: balance) {
+    :where(.wk-heading:not(.text-wrap, .text-nowrap, .text-balance, .text-pretty, [class*=":text-wrap"], [class*=":text-nowrap"], [class*=":text-balance"], [class*=":text-pretty"])) {
+        text-wrap-style: balance;
+    }
+}
+
+/* A long line of code that wraps carries its continuation two columns in, so the rest does not
+   read as a line of its own: in a `robots.txt`, an `.env` or a shell command the line is the
+   unit. `hanging each-line` indents exactly the lines after a soft wrap, never the first line of
+   the block or one after a line break of the source, so a line that fits stays at the edge. The
+   indent counts from the edge of the block, not from the indentation of its line. A column is
+   the zero advance of the monospace face, `--ch-wk-mono` where a WireKit font sheet declares it,
+   so the indent keeps its width when the web font replaces its fallback. Above-baseline
+   progressive enhancement, with the same exclusion as every prose rule above: in a browser
+   without the keywords the rest of a wrapped line starts at the edge of the block. */
+@supports (text-indent: 1em hanging each-line) {
+    .wk-prose pre:not(:where(.not-wk-prose, .not-wk-prose *:not(.not-wk-prose .wk-prose *), .not-wk-prose .wk-prose .not-wk-prose *:not(.not-wk-prose .wk-prose .not-wk-prose .wk-prose *), [data-wk-prose-skip])),
+    [data-wk-code-block] code[data-wk-wrap] {
+        text-indent: calc(2 * var(--ch-wk-mono, 1ch)) hanging each-line;
+    }
+}
+
+/* A run of hyphens inside a token of code stays with the character after it, so `->` or `--force`
+   never ends one line and starts the next: the line breaks at a space, or anywhere in a token
+   longer than the line. `Support\CodeWrapJoins` writes the element only where code wraps: a code
+   block with `wrap`, a code block of a prose body, and the operators of inline code; and
+   `Support\AddressBreaks` writes it after each hyphen of an address, which breaks before it. */
+[data-wk-join] {
+    white-space: nowrap;
 }
 
 /* ─── Fit text ───
@@ -5347,7 +5610,7 @@ dl[data-layout="grid"] {
 /* inline on the element, so a developer overrides it through   */
 /* the `style` attribute, or from a stylesheet with             */
 /* `!important`.                                                */
-:root {
+:where(:root) {
     /* The size a skipped skeleton reserves while it is off screen. Declared here so the
        drift inventory can trace the reference; every skeleton variant overrides it inline
        with a value tuned to its shape, which is why a stylesheet override needs `!important`. */
@@ -5502,7 +5765,7 @@ dl[data-layout="grid"] {
    outlining it as well would double the mark on every labeled field. */
 [data-wk-optimistic-state="rejected"] > *:not([data-wk-optimistic-announcer]):not(:empty):not(label),
 [data-wk-optimistic-state="rolled-back"] > *:not([data-wk-optimistic-announcer]):not(:empty):not(label) {
-    outline: 2px solid var(--color-wk-warning-text);
+    outline: var(--ring-wk-width) solid var(--color-wk-warning-text);
     outline-offset: 2px;
 }
 
@@ -5665,10 +5928,10 @@ dl[data-layout="grid"] {
     background-image:
         linear-gradient(
             var(--shimmer-wk-angle, 105deg),
-            transparent calc(50% - var(--shimmer-wk-band, 3ch)),
-            var(--color-wk-text) calc(50% - var(--shimmer-wk-band, 3ch) / 2),
-            var(--color-wk-text) calc(50% + var(--shimmer-wk-band, 3ch) / 2),
-            transparent calc(50% + var(--shimmer-wk-band, 3ch))
+            transparent calc(50% - var(--shimmer-wk-band, calc(3 * var(--ch-wk-sans, 1ch)))),
+            var(--color-wk-text) calc(50% - var(--shimmer-wk-band, calc(3 * var(--ch-wk-sans, 1ch))) / 2),
+            var(--color-wk-text) calc(50% + var(--shimmer-wk-band, calc(3 * var(--ch-wk-sans, 1ch))) / 2),
+            transparent calc(50% + var(--shimmer-wk-band, calc(3 * var(--ch-wk-sans, 1ch))))
         ),
         linear-gradient(
             color-mix(in oklab, var(--color-wk-text-muted) 88%, var(--color-wk-bg)),
@@ -7066,7 +7329,8 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    text (WCAG 1.4.1) — this line says "you are here" without relying on hue.
 
    It sits on the item's top edge, against the bar's own border, so it reads as a
-   marker rather than as a second border. */
+   marker rather than as a second border, in the accent's text color, the tone a
+   graphic of the accent takes so it stands apart from the bar in any theme. */
 .wk-bottom-nav-item[data-active="true"]::before {
     content: "";
     position: absolute;
@@ -7074,16 +7338,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     inset-block-start: 0;
     block-size: 2px;
     border-radius: var(--radius-wk-full);
-    background: var(--color-wk-accent);
+    background: var(--color-wk-accent-text);
 }
 
-/* Active-tab text (accent color + the selected weight) follows data-active, like the
-   marker line above — so the look tracks the state from any source: the server
+/* Active-tab text (the accent's text tone + the selected weight) follows data-active, like
+   the marker line above — so the look tracks the state from any source: the server
    `active` prop, or the interactive client-active mode's Alpine binding. The marker
    line carries the state on its own, so a theme may set the selected weight to the
-   body weight. */
+   body weight. The words take the text tone, not the fill the marker is drawn in: a
+   saturated brand accent is a fill color and can fall below 4.5:1 as text. */
 .wk-bottom-nav-item[data-active="true"] {
-    color: var(--color-wk-accent);
+    color: var(--color-wk-accent-text);
     font-weight: var(--font-wk-selected-weight);
 }
 
@@ -7160,9 +7425,12 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    separate those two and leave every application to keep them in step by hand.
 
    Same threshold as `.wk-fab-above-nav` below — 48rem is the 768px that rule uses — so the
-   component has one breakpoint: at md the bottom nav goes away and the FAB takes its full size. */
+   component has one breakpoint: at md the bottom nav goes away and the FAB takes its full size.
+
+   Under `:where(:root)` like every other default, so an application's own `:root` override of
+   the token wins on a narrow viewport too, wherever this stylesheet loads. */
 @media (width < 48rem) {
-    :root {
+    :where(:root) {
         --size-wk-fab: 3rem;
     }
 }
@@ -7928,6 +8196,40 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         background: Highlight;
     }
 
+    /* A reading bar, the page bar and the lit bars of a strength meter are fills like the
+       progress fill, each with its color written inline by its component, so the selection
+       color needs the weight to win over that declaration. The reading and page bars run the
+       width of the page and need no track; the unlit strength bars get the edge below. */
+    .wk-reading-progress__fill,
+    .wk-page-progress__fill,
+    .wk-strength-bar[data-wk-lit] {
+        forced-color-adjust: none;
+        background-color: Highlight !important;
+    }
+
+    /* An unlit strength bar is a muted fill with an inset shadow for its edge, and this mode
+       takes both away, so it gets the edge the progress track has here. */
+    .wk-strength-bar {
+        border: max(1px, var(--border-wk-width)) solid CanvasText;
+    }
+
+    .wk-strength-bar[data-wk-lit] {
+        border-color: Highlight;
+    }
+
+    /* The reading dot draws its track and its progress as two strokes, which this mode paints in
+       one color, so the ring read as full at every point of the page. The track takes the
+       disabled text color and the progress the selection color, as the reading spine's rail. */
+    .wk-reading-progress__track {
+        forced-color-adjust: none;
+        stroke: GrayText;
+    }
+
+    .wk-reading-progress__arc {
+        forced-color-adjust: none;
+        stroke: Highlight;
+    }
+
     /* The range slider's track and the range between its handles are two backgrounds, as the
        progress track and fill are, so the mode left two handle outlines with no line between them
        and nothing to say which part is chosen. They get the same pair: an edge for the track, the
@@ -8315,12 +8617,13 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /* Countdown "segments" text-flash change style (the alternative to the box
-   pulse). Only the changing number flashes: its color starts at the accent and
-   eases back to its inherited resting color (theme / state aware). Applied to a
+   pulse). Only the changing number flashes: its color starts at the accent's text
+   tone, which stays readable on the page where the fill of a brand accent may not,
+   and eases back to its inherited resting color (theme / state aware). Applied to a
    keyed node that re-mounts on each value change, so it replays every tick.
    Gated for prefers-reduced-motion below. */
 @keyframes wk-countdown-text-flash {
-    0%   { color: var(--color-wk-accent); }
+    0%   { color: var(--color-wk-accent-text); }
     100% { color: inherit; }
 }
 .wk-countdown-text-flash {
@@ -8557,14 +8860,14 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 [data-wk-resizable] > [data-wk-resizable-handle]:hover,
 [data-wk-resizable] > [data-wk-resizable-handle][data-dragging="true"] {
-    background-color: var(--color-wk-accent);
+    background-color: var(--color-wk-accent-text);
 }
 [data-wk-resizable] > [data-wk-resizable-handle]:focus-visible {
-    /* Accent outline for keyboard users — matches the rest of    */
-    /* WireKit's focus-ring treatment (2 px outline + offset).   */
-    outline: 2px solid var(--color-wk-ring);
-    outline-offset: 2px;
-    background-color: var(--color-wk-accent);
+    /* The kit's focus ring for keyboard users, at the width and the */
+    /* offset the theme gives every other ring.                      */
+    outline: var(--ring-wk-width) solid var(--color-wk-ring);
+    outline-offset: var(--ring-wk-offset);
+    background-color: var(--color-wk-accent-text);
 }
 [data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] {
     width: 4px;
@@ -8593,7 +8896,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     top: 50%;
     transform: translate(-50%, -50%);
     background-color: var(--color-wk-bg);
-    border: 1px solid var(--color-wk-border);
+    border: var(--border-wk-width) solid var(--color-wk-border);
     border-radius: var(--radius-wk-sm);
     background-image:
         radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px),
@@ -8686,7 +8989,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     content: '';
     position: absolute;
     inset: 0.125rem;
-    border: 1px solid var(--color-wk-border);
+    border: var(--border-wk-width) solid var(--color-wk-border);
     border-radius: var(--radius-wk-full);
     background-color: var(--color-wk-bg);
     transition: border-color var(--transition-wk-duration) ease;
@@ -8867,14 +9170,14 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     border-radius: 9999px;
     background: var(--color-wk-accent);
     border: 2px solid var(--color-wk-bg);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-wk-sm);
     margin-top: -0.375rem; /* center thumb on track: (track-h - thumb-h) / 2 */
     cursor: pointer;
 }
 
 .wk-slider:focus-visible::-webkit-slider-thumb {
-    outline: 2px solid var(--color-wk-ring);
-    outline-offset: 2px;
+    outline: var(--ring-wk-width) solid var(--color-wk-ring);
+    outline-offset: var(--ring-wk-offset);
 }
 
 /* Firefox */
@@ -8892,13 +9195,13 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     border-radius: 9999px;
     background: var(--color-wk-accent);
     border: 2px solid var(--color-wk-bg);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-wk-sm);
     cursor: pointer;
 }
 
 .wk-slider:focus-visible::-moz-range-thumb {
-    outline: 2px solid var(--color-wk-ring);
-    outline-offset: 2px;
+    outline: var(--ring-wk-width) solid var(--color-wk-ring);
+    outline-offset: var(--ring-wk-offset);
 }
 
 /* Forced colors repaint the track's background in the page's own color, and the knob was then a
@@ -8985,16 +9288,16 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     /* The line under the row belongs to the current step and spans every column: moved back by
-       its own index and as wide as all of them together. `0.5rem` is the list's `gap-2`. It is
-       hidden from assistive technology, which reads the step's own label and `aria-current`.
-       Past the last step no step is current, and the last one shows its line that every step is
-       done. */
+       its own index and as wide as all of them together, the gaps between them included, which
+       are the list's own `--gap-wk-sm`. It is hidden from assistive technology, which reads the
+       step's own label and `aria-current`. Past the last step no step is current, and the last
+       one shows its line that every step is done. */
     [data-wk-stepper-step][aria-current="step"] > [data-wk-stepper-caption]:not([data-wk-stepper-caption-done]),
     [data-wk-stepper-step][data-wk-stepper-done] > [data-wk-stepper-caption-done] {
         display: block;
         align-self: flex-start;
-        inline-size: calc(var(--wk-stepper-count, 1) * (100% + 0.5rem) - 0.5rem);
-        margin-inline-start: calc(var(--wk-stepper-index, 0) * -1 * (100% + 0.5rem));
+        inline-size: calc(var(--wk-stepper-count, 1) * (100% + var(--gap-wk-sm)) - var(--gap-wk-sm));
+        margin-inline-start: calc(var(--wk-stepper-index, 0) * -1 * (100% + var(--gap-wk-sm)));
         margin-block-start: var(--padding-wk-y-xs);
         text-align: start;
         font-size: var(--text-wk-sm);
@@ -9125,7 +9428,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    explicitly, using the house emphasis weight for bold. */
 .wk-editor-content strong, .wk-editor-content b { font-weight: var(--font-wk-heading-weight); }
 .wk-editor-content em, .wk-editor-content i { font-style: italic; }
-.wk-editor-content a { color: var(--color-wk-accent); text-decoration: underline; }
+.wk-editor-content a { color: var(--color-wk-accent-text); text-decoration: underline; }
 .wk-editor-content ul { list-style: disc; padding-inline-start: 1.5em; }
 .wk-editor-content ol { list-style: decimal; padding-inline-start: 1.5em; }
 .wk-editor-content blockquote {
@@ -9133,14 +9436,14 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     padding-inline-start: 1em;
     color: var(--color-wk-text-muted);
 }
-/* Horizontal rule (the toolbar "Divider" command runs setHorizontalRule(),    */
-/* which inserts a bare <hr>). Its 1px default border is flattened by the host  */
-/* reset cascade — exactly like the bold/em marks above — so the line rendered  */
-/* invisible. Paint it explicitly as a themed full-width divider (matches the   */
-/* <x-wirekit::divider> border treatment).                                      */
+/* Horizontal rule: the toolbar's Divider command runs setHorizontalRule(), which inserts a bare
+   <hr>, and the host's reset takes its default border away, as it takes the weight of the marks
+   above. The line is content the writer put there, as a divider's line is, so it keeps 1px where a
+   preset sets the theme's border width to 0px: the edges of a box follow that width, and a rule
+   stays a rule. */
 .wk-editor-content hr {
     border: 0;
-    border-top: var(--border-wk-width) solid var(--color-wk-border);
+    border-top: 1px solid var(--color-wk-border);
     margin-block: 1.25em;
 }
 .wk-editor-content code {
@@ -9434,7 +9737,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     --reading-minimap-preview-scale: 0.25;
     --reading-minimap-preview-size: 200px;
     --reading-minimap-preview-bg: var(--color-wk-bg-elevated);
-    --reading-minimap-preview-border: 1px solid var(--color-wk-border);
+    --reading-minimap-preview-border: var(--border-wk-width) solid var(--color-wk-border);
     --reading-minimap-preview-shadow: var(--shadow-wk-md);
 
     /* Bookmark marker on the minimap */
@@ -9665,7 +9968,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        semi-transparent strip. Developers who want a flat surface set
        `--reading-spine-edge-gradient: none` in their `:root {}`. */
     background: var(--reading-spine-edge-gradient, none), var(--reading-spine-bg);
-    border-left: 1px solid var(--color-wk-border);
+    border-left: var(--border-wk-width) solid var(--color-wk-border);
     border-top-left-radius: var(--radius-wk-md);
     border-bottom-left-radius: var(--radius-wk-md);
 }
@@ -9685,7 +9988,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         color-mix(in srgb, var(--color-wk-bg-elevated) 65%, transparent)
     ), var(--reading-spine-bg);
     border-left: 0;
-    border-right: 1px solid var(--color-wk-border);
+    border-right: var(--border-wk-width) solid var(--color-wk-border);
     border-radius: 0;
     border-top-right-radius: var(--radius-wk-md);
     border-bottom-right-radius: var(--radius-wk-md);
@@ -9694,7 +9997,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 [dir="rtl"] .wk-reading-spine[data-side="start"] {
     background: var(--reading-spine-edge-gradient, none), var(--reading-spine-bg);
     border-right: 0;
-    border-left: 1px solid var(--color-wk-border);
+    border-left: var(--border-wk-width) solid var(--color-wk-border);
     border-radius: 0;
     border-top-left-radius: var(--radius-wk-md);
     border-bottom-left-radius: var(--radius-wk-md);
@@ -10290,7 +10593,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     top: var(--reading-toc-offset, 0);
     z-index: var(--z-wk-sticky);
     background: var(--reading-toc-bg);
-    border-bottom: 1px solid var(--color-wk-border);
+    border-bottom: var(--border-wk-width) solid var(--color-wk-border);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
@@ -10420,7 +10723,19 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    the row's actions, `data-wk-cell-actions`, stands as the card's footer: by default a cell aligned
    to the end without a label of its own, or the one `actions` on `table.td` names. The head stays
    in the document for a screen reader and leaves the eye; the table keeps its roles, which it
-   writes out, since a table whose display changes stops being one to some browsers. */
+   writes out, since a table whose display changes stops being one to some browsers. A head that
+   holds sort controls stands in sight above the cards as a row of them, each the head's own
+   button, so a table that sorts on a desktop sorts on a phone, and only the heads that do not sort
+   leave the eye. A control in a head that leaves the eye leaves the tab order with it. */
+
+/* A column that `hide-below` or `hide-below-container` takes off the screen carries Tailwind's
+   `hidden` on its cells, and a details row of `table.row` carries it outside its range. Tailwind's
+   utilities live in `@layer utilities` and this stylesheet is unlayered, so the display a stacked
+   block gives every row and cell would win over that `hidden`. Such a cell or row also sets one of
+   these two properties to `none` under the same variant, and the blocks below read their display
+   from it. Neither is inherited, so a table inside such a cell keeps the display of its own rows. */
+@property --wk-table-row-display { syntax: "*"; inherits: false; }
+@property --wk-table-cell-display { syntax: "*"; inherits: false; }
 
 @media (width < 40rem) {
     table[data-wk-table-stack="sm"] {
@@ -10429,13 +10744,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack="sm"] > thead {
+    table[data-wk-table-stack="sm"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack="sm"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="sm"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="sm"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack="sm"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="sm"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack="sm"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack="sm"] > :is(tbody, tfoot) {
@@ -10445,25 +10788,39 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* `label-above` on a cell: its name on a line of its own above the value, which takes the
+       card's whole width. */
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10473,8 +10830,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10502,13 +10868,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack="md"] > thead {
+    table[data-wk-table-stack="md"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack="md"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="md"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="md"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack="md"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="md"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack="md"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack="md"] > :is(tbody, tfoot) {
@@ -10518,25 +10912,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10546,8 +10952,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10575,13 +10990,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack="lg"] > thead {
+    table[data-wk-table-stack="lg"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack="lg"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="lg"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="lg"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack="lg"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="lg"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack="lg"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack="lg"] > :is(tbody, tfoot) {
@@ -10591,25 +11034,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10619,8 +11074,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10648,13 +11112,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack="xl"] > thead {
+    table[data-wk-table-stack="xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack="xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack="xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack="xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack="xl"] > :is(tbody, tfoot) {
@@ -10664,25 +11156,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10692,8 +11196,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10721,13 +11234,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack="2xl"] > thead {
+    table[data-wk-table-stack="2xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack="2xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="2xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="2xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack="2xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack="2xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack="2xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) {
@@ -10737,25 +11278,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10765,8 +11318,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10801,13 +11363,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="sm"] > thead {
+    table[data-wk-table-stack-container="sm"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="sm"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="sm"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="sm"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="sm"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="sm"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="sm"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) {
@@ -10817,25 +11407,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10845,8 +11447,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="sm"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10874,13 +11485,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="md"] > thead {
+    table[data-wk-table-stack-container="md"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="md"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="md"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="md"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="md"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="md"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="md"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) {
@@ -10890,25 +11529,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10918,8 +11569,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="md"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -10947,13 +11607,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="lg"] > thead {
+    table[data-wk-table-stack-container="lg"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="lg"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="lg"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="lg"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="lg"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="lg"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="lg"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) {
@@ -10963,25 +11651,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -10991,8 +11691,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="lg"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -11020,13 +11729,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="xl"] > thead {
+    table[data-wk-table-stack-container="xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) {
@@ -11036,25 +11773,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -11064,8 +11813,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -11093,13 +11851,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="2xl"] > thead {
+    table[data-wk-table-stack-container="2xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="2xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="2xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="2xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="2xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="2xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="2xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) {
@@ -11109,25 +11895,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -11137,8 +11935,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="2xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -11166,13 +11973,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="3xl"] > thead {
+    table[data-wk-table-stack-container="3xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="3xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="3xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="3xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="3xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="3xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="3xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) {
@@ -11182,25 +12017,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -11210,8 +12057,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="3xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -11239,13 +12095,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="4xl"] > thead {
+    table[data-wk-table-stack-container="4xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="4xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="4xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="4xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="4xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="4xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="4xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) {
@@ -11255,25 +12139,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -11283,8 +12179,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="4xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -11312,13 +12217,41 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         min-width: 0;
     }
 
-    table[data-wk-table-stack-container="5xl"] > thead {
+    table[data-wk-table-stack-container="5xl"] > thead:not(:has(.wk-table-sort)),
+    table[data-wk-table-stack-container="5xl"] > thead > tr > :not(:has(.wk-table-sort)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    table[data-wk-table-stack-container="5xl"] > thead:has(.wk-table-sort) {
+        display: block;
+        margin-block-end: var(--gap-wk-sm);
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="5xl"] > thead:has(.wk-table-sort) > tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-wk-xs);
+    }
+
+    table[data-wk-table-stack-container="5xl"] > thead:has(.wk-table-sort) > tr > * {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    table[data-wk-table-stack-container="5xl"] > thead > tr > :not(:has(.wk-table-sort)) :is(a[href], button, input, select, textarea, [tabindex]) {
+        visibility: hidden;
+    }
+
+    table[data-wk-table-stack-container="5xl"] > thead .wk-table-sort {
+        width: auto;
     }
 
     table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) {
@@ -11328,25 +12261,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
 
     table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr {
-        display: block;
+        display: var(--wk-table-row-display, block);
         border: var(--border-wk-width) solid var(--color-wk-border);
         border-radius: var(--radius-wk-md);
         padding-block: var(--padding-wk-y-sm);
     }
 
     table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
-        display: grid;
+        display: var(--wk-table-cell-display, grid);
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
         column-gap: var(--gap-wk-md);
         align-items: baseline;
+        /* An item of a line, a badge or a code, keeps the width of its content, as it does in
+           a row of the table; a block and a field fill the column (the rule below). */
+        justify-items: start;
         text-align: start;
         /* A value that is one long word, an address or an identifier, breaks inside its column
            rather than running past the card. */
         overflow-wrap: anywhere;
     }
 
+    :where(table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > :is(td, th) > :is(div, p, ul, ol, dl, table, form, figure, section, input, select, textarea)) {
+        justify-self: stretch;
+    }
+
     table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-wk-label-above] {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--gap-wk-xs);
     }
 
     table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions])::before {
@@ -11356,8 +12301,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-weight: var(--font-wk-heading-weight);
     }
 
+    /* A cell of several parts, a second element or a text beside an element, keeps each part
+       beside its name: the first column below the name is taken, so every part after the first
+       stands under the one before it. A cell of text alone is one part and stays as it was. */
+    table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-actions]):not([data-wk-label-above]):has(> *)::after {
+        content: "";
+        grid-column: 1;
+        grid-row: 2 / span 30;
+    }
+
     table[data-wk-table-stack-container="5xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-actions] {
-        display: flex;
+        display: var(--wk-table-cell-display, flex);
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: var(--gap-wk-sm);
@@ -11508,8 +12462,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         -webkit-mask-image: none !important;
         mask-image: none !important;
     }
+    /* The shadows across go as well. Their state is the screen's:   */
+    /* no script runs between the layout of a sheet and its print,   */
+    /* and on paper a table wraps its cells to fit (section 7) and a */
+    /* code block breaks its lines, so a shadow kept from the screen */
+    /* would mark more of a table or a line where there is none. A   */
+    /* table still wider than the sheet shows its cut in the column  */
+    /* it cuts.                                                      */
     .wk-scroll-shadow-top,
-    .wk-scroll-shadow-bottom {
+    .wk-scroll-shadow-bottom,
+    .wk-scroll-shadow-start,
+    .wk-scroll-shadow-end {
         display: none !important;
     }
     /* Below `lg` the navigation of an app shell is a drawer, and a  */
@@ -11621,7 +12584,9 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* is hidden by the `hidden` attribute, by `x-show`'s inline     */
     /* `display: none` or, where the engine reveals hidden content   */
     /* on find in page, by `content-visibility`, and all three are   */
-    /* undone. The chevron says nothing on paper.                   */
+    /* undone; a region `x-collapse` hid takes the layered rule at  */
+    /* the end of section 10 as well. The chevron says nothing on   */
+    /* paper.                                                       */
     [data-wk-card-region] {
         display: block !important;
         height: auto !important;
@@ -11634,6 +12599,47 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
     .wk-card-chevron,
     [data-wk-card-chevron-frame] {
+        display: none !important;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* 10 — An accordion item and a collapsible print open.          */
+    /*                                                              */
+    /* The reason of section 9 holds for every part that folds:     */
+    /* paper has no button to open it with, so the panel of an      */
+    /* `accordion.item` (and of every `faq-item`, which draws one)  */
+    /* and the region of a `collapsible` print open, however the    */
+    /* reader left them. They carry `data-wk-print-open`, and the   */
+    /* `hidden` attribute, the inline `display: none` of `x-show`,  */
+    /* the height `x-collapse` writes and the `content-visibility`  */
+    /* of a closed findable panel are all undone. The arrow beside  */
+    /* the trigger says nothing on paper.                           */
+    [data-wk-print-open] {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    @supports (content-visibility: visible) {
+        [data-wk-print-open] {
+            content-visibility: visible !important;
+        }
+    }
+    /* A closed part that `x-collapse` hid, here or in section 9,   */
+    /* carries `hidden` as well, and the preflight of Tailwind      */
+    /* hides every `[hidden]` that is not until-found with          */
+    /* `display: none !important` in its `base` layer. An important */
+    /* declaration in a layer outranks every unlayered one, so the  */
+    /* rules above cannot open that part; the same declaration in   */
+    /* `base`, on a more specific selector, can. Declared inside    */
+    /* this print block, the layer joins the layer order only on    */
+    /* paper.                                                       */
+    @layer base {
+        [data-wk-card-region][hidden],
+        [data-wk-print-open][hidden] {
+            display: block !important;
+        }
+    }
+    [data-wk-fold-chevron] {
         display: none !important;
     }
 }
@@ -12425,13 +13431,37 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * More above than below, deliberately: the gap above separates two regions, the gap
  * below is one region's padding.
  *
- * `:where()` keeps this at zero specificity, so any utility on the footer wins without
- * an `!important`, and it is scoped to a footer inside a main region — a standalone
+ * This sheet stands outside every cascade layer, so the rule beats a Tailwind utility on
+ * the footer whatever its specificity. A footer whose caller sets its own margin or padding
+ * at the top carries `data-wk-footer-own-margin` or `data-wk-footer-own-padding`, and the
+ * rule leaves that side alone: `mt-auto` on the footer of a column that grows keeps it at
+ * the bottom of a short page. It is scoped to a footer inside a main region — a standalone
  * marketing footer, where the section padding is correct as it stands, is untouched.
  */
-:where(.wk-main) :where(.wk-footer) {
+:where(.wk-main) :where(.wk-footer:not([data-wk-footer-own-margin])) {
     margin-block-start: var(--space-wk-xl);
+}
+
+:where(.wk-main) :where(.wk-footer:not([data-wk-footer-own-padding])) {
     padding-block-start: var(--space-wk-lg);
+}
+
+/* A main region insets and caps its column already, so the footer inside it takes no inline
+ * padding and no surface of its own, and its content spans that column rather than a narrower
+ * width centered in it: its text lines up with the column above, and no background ends short
+ * of the screen's edges. A caller's own inline padding, background color or `max` marks the
+ * footer (`data-wk-footer-own-inline-padding`, `data-wk-footer-own-background`,
+ * `data-wk-footer-own-max`), and the rule leaves that part to the caller. */
+:where(.wk-main) :where(.wk-footer:not([data-wk-footer-own-inline-padding])) {
+    padding-inline: 0;
+}
+
+:where(.wk-main) :where(.wk-footer:not([data-wk-footer-own-background])) {
+    background-color: transparent;
+}
+
+:where(.wk-main) :where(.wk-footer:not([data-wk-footer-own-max]) > div) {
+    max-width: none;
 }
 
 /*
@@ -12552,6 +13582,22 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /*
+ * `data-wk-sidebar-slot-icon` — the box around markup in the icon slot of a sidebar entry. Open, it
+ * keeps the size of what it holds, since an avatar beside a name and a line of preview is larger
+ * than a glyph by design. Folded, the column is as wide as the rail's glyph and its padding, so the
+ * box takes that glyph's size and holds a larger child to it, while a smaller one keeps its own.
+ */
+.wk-sidebar[data-collapsed] [data-wk-sidebar-slot-icon] {
+    width: var(--size-wk-rail-icon);
+    height: var(--size-wk-rail-icon);
+}
+
+.wk-sidebar[data-collapsed] [data-wk-sidebar-slot-icon] > * {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/*
  * `data-wk-icon-nudge` — an icon beside a label, moved up by `--font-wk-icon-nudge` so it
  * centers on the label's letters rather than on its line box. It keeps the offset while a
  * collapsed sidebar hides the label: a column that folds moves none of its icons, and an icon a
@@ -12562,17 +13608,13 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /*
- * `--wk-shell-foot-h` — one line under two columns.
+ * `--wk-shell-foot-h` — a floor for the foot of every column in a shell. Deprecated: each foot
+ * is as tall as what it holds, and the shell blueprints no longer set it. A shell that states
+ * it still gets the floor, with what each foot holds centered in it.
  *
- * A shell is columns side by side, and the rule above each column's foot is meant to read
- * as one line crossing the window. Each foot sizes itself to its own content, so two feet
- * holding different things start at different heights — a rail foot of two stacked
- * controls beside a sidebar foot of one bar — and the line would break by the difference.
- *
- * CSS cannot take the maximum across two independent flex columns, and the mechanism that
- * could — subgrid — sits above this project's browser baseline, where the fallback would be
- * exactly the broken line this is meant to remove. So the shell states the height instead:
- * one custom property, set once on the shell, read by every foot in it.
+ * It put the rules above two columns' feet on one line. CSS cannot take the maximum height
+ * across two independent flex columns, so the shell had to state the height, and every foot
+ * shorter than that gained empty room around what it held.
  *
  * Unset, a foot is as tall as its content.
  */
@@ -12581,7 +13623,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
      * The floor is opt-in: `auto` unless the shell states the property. A floor of the
      * shell-bar height suits a foot holding a single bar and nothing else; a foot
      * holding a nav item is shorter than that band, and the remainder would land
-     * underneath it. A shell that wants the shared line states it.
+     * underneath it.
      */
     min-height: var(--wk-shell-foot-h, auto);
 
@@ -12719,6 +13761,23 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /*
+ * Open, a band whose bar draws its rule on top carries that rule itself, across its whole width.
+ * The bar and the fold control stand side by side, so a rule drawn as the bar's top border ended
+ * where the bar ends, and over the gap, the control and the band's inset beside it the line was
+ * missing, short of the column's edge. The band reaches both edges of the column, and so does a
+ * border it draws. The bar gives up its own top border, and its floor the border's width, so the
+ * bar's content and the band's height stay where they were.
+ */
+.wk-sidebar:not([data-collapsed]):not([data-settling]) .wk-shell-foot:has([data-wk-sidebar-collapse]):has(> [data-wk-shell-bar][data-wk-rule-top]:first-child) {
+    border-block-start: var(--border-wk-width) solid var(--color-wk-rail-border, var(--color-wk-border));
+}
+
+.wk-sidebar:not([data-collapsed]):not([data-settling]) .wk-shell-foot:has([data-wk-sidebar-collapse]) > [data-wk-shell-bar][data-wk-rule-top]:first-child {
+    border-block-start-width: 0;
+    min-height: calc(var(--size-wk-shell-bar, 3.5rem) - var(--border-wk-width));
+}
+
+/*
  * The half that `align-items: center` was really for. The control is a button beside a
  * full-height bar, so it centers itself rather than stretching to the band's height —
  * a stretched button is an 81px hit target with a 20px glyph adrift in it.
@@ -12798,6 +13857,28 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /*
+ * Folded, a bar in the foot is as tall as what it still shows. Its words hide with the fold, and
+ * often everything else in it does too, yet it kept its own height of 56px: an empty band above
+ * the control that unfolds the column. Now a bar with nothing left to show keeps only its rule,
+ * and one that keeps a badge or an avatar is as tall as that.
+ */
+.wk-sidebar[data-collapsed] .wk-shell-foot:has([data-wk-sidebar-collapse]) > [data-wk-shell-bar],
+.wk-sidebar[data-settling] .wk-shell-foot:has([data-wk-sidebar-collapse]) > [data-wk-shell-bar] {
+    height: auto;
+}
+
+/*
+ * And a band that bleeds keeps the column's padding below it. Open, the bar is the bottom of the
+ * column and reaches its edge. Folded, the control stands under the bar, and pulled down with the
+ * band it stood on the column's bottom edge, while the last row of a rail beside it keeps the
+ * rail's padding. Without the pull the control keeps the column's own padding, the same token.
+ */
+.wk-sidebar[data-collapsed] > .wk-shell-foot:has(> [data-wk-shell-bar][data-wk-bleed][data-wk-rule-top]):has([data-wk-sidebar-collapse]),
+.wk-sidebar[data-settling] > .wk-shell-foot:has(> [data-wk-shell-bar][data-wk-bleed][data-wk-rule-top]):has([data-wk-sidebar-collapse]) {
+    margin-block-end: 0;
+}
+
+/*
  * Folded, the column stands beside an app rail as a second rail, and the rows of its foot keep
  * the rail's lines: each row as tall as a row of the rail, its icon with the row's padding above
  * and below it, the control that unfolds the column included. An entry takes its height from its
@@ -12850,4 +13931,270 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 .wk-shell-foot :has(> [data-wk-sidebar-collapse]) {
     display: flex;
     align-items: center;
+}
+
+/*
+ * A form in the foot that holds a sidebar entry, such as a sign-out form, holds it as a block. The
+ * entry's tooltip wrapper is an inline box, and a form, a block itself, sets an inline box on a
+ * line of text with that line's descender space under it, so a folded entry stood that much higher
+ * than the rail's row beside it. As a flex column the form makes the wrapper a block.
+ */
+.wk-shell-foot form:has(.wk-sidebar-item) {
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+ * The lines of a cart list share their columns: the picture, what the line is, its own actions,
+ * the remove control, the quantity and the total. The remove control stands beside the − rather
+ * than at the end of the line, where it would draw the eye before the quantity does. The
+ * quantities stand above each other and the totals end on one edge, as in a table, and a cell a
+ * line leaves empty keeps its column. Each
+ * line takes the list's tracks through subgrid. The space between cells is a margin on each cell
+ * rather than a gap, so a column no line fills takes no room at all.
+ *
+ * Above the support baseline, so it is additive polish behind a feature test: `subgrid` is
+ * Chrome 117, Safari 16 and Firefox 71 against a floor of Chrome 111. Without it every line keeps
+ * its own row, with every control there, in the same order.
+ */
+@supports (grid-template-columns: subgrid) {
+    [data-wk-cart-list]:has(> [data-wk-cart-item]) {
+        display: grid;
+        grid-template-columns:
+            [media-start] auto
+            [media-end info-start] minmax(0, 1fr)
+            [info-end actions-start] auto
+            [actions-end remove-start] auto
+            [remove-end quantity-start] auto
+            [quantity-end total-start] auto
+            [total-end];
+    }
+
+    [data-wk-cart-list]:has(> [data-wk-cart-item]) > * {
+        grid-column: media-start / total-end;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] {
+        display: grid;
+        grid-template-columns: subgrid;
+        gap: 0;
+        align-items: center;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] > [data-wk-cart-item-media] {
+        grid-column: media;
+        margin-inline-end: var(--gap-wk-md);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] > [data-wk-cart-item-info] {
+        grid-column: info;
+    }
+
+    /* A line without a picture starts what it is at the edge, not after an empty column. */
+    [data-wk-cart-list] > [data-wk-cart-item]:not(:has(> [data-wk-cart-item-media])) > [data-wk-cart-item-info] {
+        grid-column: media-start / info-end;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] [data-wk-cart-item-controls] {
+        display: contents;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] [data-wk-cart-item-controls] > [data-wk-cart-item-actions] {
+        grid-column: actions;
+        justify-self: end;
+        margin-inline-start: var(--gap-wk-md);
+    }
+
+    /* A stepper starts at the column's edge, so its fields stand above each other even where */
+    /* one carries a unit after its +. A quantity that is only text ends at the column's end,  */
+    /* so a short one and a long one with its unit end on one edge.                            */
+    [data-wk-cart-list] > [data-wk-cart-item] [data-wk-cart-item-controls] > [data-wk-cart-item-quantity-cell] {
+        grid-column: quantity;
+        justify-self: start;
+        margin-inline-start: var(--gap-wk-md);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] [data-wk-cart-item-controls] > [data-wk-cart-item-quantity-cell][data-wk-cart-item-quantity] {
+        justify-self: end;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] [data-wk-cart-item-controls] > [data-wk-cart-item-total] {
+        grid-column: total;
+        justify-self: end;
+        margin-inline-start: var(--gap-wk-md);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item] [data-wk-cart-item-controls] > [data-wk-cart-item-remove] {
+        grid-column: remove;
+        justify-self: end;
+        margin-inline-start: var(--gap-wk-md);
+    }
+
+    /* A narrow list sets what a line is on a row of its own and the controls under it, still */
+    /* in their columns. A picture stands in front of what the line is, in the same cells, so  */
+    /* no column is kept for it in the rows under it: the controls would otherwise need that   */
+    /* column's width too, more than a phone's list has beside a stepper, a total and the      */
+    /* remove control.                                                                         */
+    @container wk-cart-list (width < 32rem) {
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) {
+            row-gap: var(--gap-wk-sm);
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) > [data-wk-cart-item-info] {
+            grid-column: media-start / total-end;
+            grid-row: 1;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) > [data-wk-cart-item-media] {
+            grid-column: media-start / total-end;
+            grid-row: 1;
+            justify-self: start;
+        }
+
+        /* What the line is moves past its picture by the picture's width and the gap. The      */
+        /* picture of a line in this layout is `w-16`, which Tailwind writes as 16 steps of its */
+        /* spacing, so the shift is written the same way and follows a theme that changes it.   */
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]):has(> [data-wk-cart-item-media]) > [data-wk-cart-item-info] {
+            margin-inline-start: calc(var(--spacing, 0.25rem) * 16 + var(--gap-wk-md));
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) [data-wk-cart-item-controls] > * {
+            grid-row: 2;
+        }
+
+        /* A line's own actions take that row alone, from where the line's name starts, and its */
+        /* quantity, total and remove control the row under them: beside the three, the actions */
+        /* would run past a phone's list. The order on screen stays the order of the markup.  */
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) [data-wk-cart-item-controls] > [data-wk-cart-item-actions] {
+            grid-column: media-start / total-end;
+            justify-self: start;
+            margin-inline-start: 0;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]):has(> [data-wk-cart-item-media]) [data-wk-cart-item-controls] > [data-wk-cart-item-actions] {
+            margin-inline-start: calc(var(--spacing, 0.25rem) * 16 + var(--gap-wk-md));
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]):has([data-wk-cart-item-actions]) [data-wk-cart-item-controls] > :not([data-wk-cart-item-actions]) {
+            grid-row: 3;
+        }
+
+        /* The remove control opens the row of the controls, after the column of what the line  */
+        /* is, which stays empty in that row: a margin before it would only take width there.   */
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) [data-wk-cart-item-controls] > [data-wk-cart-item-remove] {
+            margin-inline-start: 0;
+        }
+    }
+
+    /* A list too narrow for the remove control, a stepper and a total side by side, such as   */
+    /* on a phone of 320px, sets the total at the end of the first row, beside what the line   */
+    /* is, and the remove control and the quantity on the row under it, the remove control     */
+    /* beside the − as in a wider list. The quantity stands across its own column and the      */
+    /* total's, so the total's column is no wider than the total, and what the line is takes   */
+    /* every column but that one. The columns are shared by every row of the list, so a cell   */
+    /* that stood across the quantity's column in the first row would leave the name only      */
+    /* what the stepper and the total of the row under it do not take.                         */
+    @container wk-cart-list (width < 20rem) {
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) > [data-wk-cart-item-info] {
+            grid-column: media-start / quantity-end;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) [data-wk-cart-item-controls] > [data-wk-cart-item-quantity-cell] {
+            grid-column: quantity-start / total-end;
+        }
+
+        /* The second selector is as specific as the rule that sends every cell of a line with  */
+        /* actions of its own a row down, and comes after it.                                   */
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]) [data-wk-cart-item-controls] > [data-wk-cart-item-total],
+        [data-wk-cart-list] > [data-wk-cart-item]:not([data-wk-cart-item-layout="compact"]):has([data-wk-cart-item-actions]) [data-wk-cart-item-controls] > [data-wk-cart-item-total] {
+            grid-row: 1;
+            align-self: start;
+        }
+    }
+
+    /* The compact line: the name and the total on the first row, across every column; what */
+    /* the line is and its controls on the second, the controls in their columns.             */
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] {
+        align-items: start;
+        row-gap: var(--gap-wk-xs);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] > [data-wk-cart-item-media] {
+        grid-row: 1 / span 2;
+        margin-inline-end: var(--gap-wk-sm);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] > [data-wk-cart-item-main],
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-row] {
+        display: contents;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-head] {
+        grid-column: info-start / total-end;
+        grid-row: 1;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-row] > [data-wk-cart-item-info] {
+        grid-column: info;
+        grid-row: 2;
+        align-self: center;
+        padding-inline-end: var(--gap-wk-xs);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-controls] > * {
+        grid-row: 2;
+        align-self: center;
+        margin-inline-start: var(--gap-wk-xs);
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-details] {
+        grid-column: info-start / total-end;
+        grid-row: 3;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"]:not(:has(> [data-wk-cart-item-media])) [data-wk-cart-item-head],
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"]:not(:has(> [data-wk-cart-item-media])) [data-wk-cart-item-details] {
+        grid-column: media-start / total-end;
+    }
+
+    [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"]:not(:has(> [data-wk-cart-item-media])) [data-wk-cart-item-row] > [data-wk-cart-item-info] {
+        grid-column: media-start / info-end;
+    }
+
+    /* A compact line too narrow for what it is and its controls side by side sets the */
+    /* controls on a row of their own, under it, still in their columns.               */
+    @container wk-cart-list (width < 20rem) {
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-row] > [data-wk-cart-item-info] {
+            grid-column: info-start / total-end;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"]:not(:has(> [data-wk-cart-item-media])) [data-wk-cart-item-row] > [data-wk-cart-item-info] {
+            grid-column: media-start / total-end;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-controls] > * {
+            grid-row: 3;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-details] {
+            grid-row: 4;
+        }
+
+        /* A compact line's own actions stand at the end of the row of what it is, so the row of */
+        /* its controls holds the remove control and the stepper: beside the two, the actions    */
+        /* would run past a phone's list.                                                         */
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"]:has([data-wk-cart-item-actions]) [data-wk-cart-item-row] > [data-wk-cart-item-info] {
+            grid-column: info-start / remove-end;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"]:has([data-wk-cart-item-actions]):not(:has(> [data-wk-cart-item-media])) [data-wk-cart-item-row] > [data-wk-cart-item-info] {
+            grid-column: media-start / remove-end;
+        }
+
+        [data-wk-cart-list] > [data-wk-cart-item][data-wk-cart-item-layout="compact"] [data-wk-cart-item-controls] > [data-wk-cart-item-actions] {
+            grid-column: quantity-start / total-end;
+            grid-row: 2;
+            justify-self: end;
+        }
+    }
 }

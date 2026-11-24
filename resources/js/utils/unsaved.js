@@ -73,6 +73,7 @@
  * reading the scopes that are registered.
  */
 
+import { clickedLink, windowTheLinkOpens } from './link-window.js';
 import { prefersReducedMotion, scrollBehavior } from './motion.js';
 import { pluralizeGrouped } from './plural.js';
 import { belongsThroughTeleports, closestThroughTeleports, teleportedClonesOf } from './teleport.js';
@@ -81,6 +82,13 @@ export const WK_UNSAVED_ATTRIBUTE = 'data-wk-unsaved';
 export const WK_HAS_UNSAVED_ATTRIBUTE = 'data-wk-has-unsaved';
 export const WK_UNSAVED_SCOPE_ATTRIBUTE = 'data-wk-unsaved-scope';
 export const WK_UNSAVED_HINT_ATTRIBUTE = 'data-wk-unsaved-hint';
+
+/**
+ * On a hint, the property paths of the fields it speaks for, as a JSON list. Such a hint shows while
+ * one of those fields is unsaved, wherever the field stands on the page, rather than while its own
+ * scope holds an unsaved field; a path names everything under it, as in `wirekit:saved`.
+ */
+export const WK_UNSAVED_PATHS_ATTRIBUTE = 'data-wk-unsaved-paths';
 export const WK_UNSAVED_SHOWN_ATTRIBUTE = 'data-wk-unsaved-shown';
 export const WK_UNSAVED_OFF_ATTRIBUTE = 'data-wk-unsaved-off';
 // A part of a scope that one button saves, where it is neither a form nor a card: a `wirekit:saved`
@@ -163,6 +171,7 @@ const DESCRIPTIONS_KEY = '__wirekitUnsavedDescriptions';
 const TITLED_KEY = '__wirekitUnsavedTitled';
 const PAGE_KEY = '__wirekitUnsavedPage';
 const QUESTION_IDS_KEY = '__wirekitUnsavedQuestionIds';
+const UNSAVED_PATHS_KEY = '__wirekitUnsavedPaths';
 
 /** How long a submit or a click waits for the request it starts before it is taken for something else. */
 const SUBMIT_WINDOW_MS = 2000;
@@ -718,6 +727,8 @@ export function nameOf(field) {
  * Where an unsaved field stands, from the outermost: the tab of each tab panel around it, the
  * heading of each card around it, the header of each accordion item around it, and each part
  * marked `data-wk-unsaved-area` with a name. Empty where nothing around the field names a place.
+ * A part named like the part right around it is named once: a card "Variants" in the tab panel
+ * "Variants" tells the reader nothing the tab has not, and "Variants › Variants" reads as a slip.
  *
  * @param {{el: Element}} field
  * @returns {string}
@@ -747,7 +758,8 @@ export function placeOf(field) {
             name = String(at.getAttribute(WK_UNSAVED_AREA_ATTRIBUTE)).trim();
         }
 
-        if (name !== '') {
+        // The walk goes outward, so the part collected last is the one right inside this one.
+        if (name !== '' && name !== parts[0]) {
             parts.unshift(name);
         }
     }
@@ -1108,8 +1120,9 @@ function untitle(label) {
  * stays where it is and the label holds them, else a dot with the words as the label's title,
  * else nothing. A label that does not stand above its control, around a switch or beside a field
  * in a toolbar, shows nothing, since words in its line push what stands beside it. Each form is
- * measured against the place the field has without a note and the width the label's content
- * takes without one; on a page without layout to measure, the words stay.
+ * measured against the place the field has without a note and the width the content of the
+ * label's line takes without one, the label's own or that of the row it shares with its help; on
+ * a page without layout to measure, the words stay.
  *
  * @param {Element} label
  * @param {string} words
@@ -1137,12 +1150,16 @@ export function placeNote(label, words) {
     const top = control.getBoundingClientRect().top;
 
     // The note follows the label's last word with no space between, so where that word stands
-    // alone on its line the two cannot part: the note runs out of the label sideways instead of
-    // onto a line of its own, and the field stays where it is. The label's content then grows wider
-    // than it was without the note.
-    const measurable = typeof label.scrollWidth === 'number' && typeof label.clientWidth === 'number' && label.clientWidth > 0;
-    const width = measurable ? Math.max(label.scrollWidth, label.clientWidth) : 0;
-    const fits = () => Math.abs(control.getBoundingClientRect().top - top) < 0.5 && (! measurable || label.scrollWidth <= width + 1);
+    // alone on its line the two cannot part: the note runs out of its line sideways instead of
+    // onto a line of its own, and the field stays where it is. What grows wider than it was
+    // without the note is then the content of the box that sets the line's width: the label where
+    // it is a block of its own, and the row where it shares one with its help or a mark after it.
+    // A label in such a row is as wide as its words, so it grows with the note wherever the row has
+    // room for it, and nothing runs out.
+    const line = typeof label.closest === 'function' ? (label.closest('[data-wk-label-row]') ?? label) : label;
+    const measurable = typeof line.scrollWidth === 'number' && typeof line.clientWidth === 'number' && line.clientWidth > 0;
+    const width = measurable ? Math.max(line.scrollWidth, line.clientWidth) : 0;
+    const fits = () => Math.abs(control.getBoundingClientRect().top - top) < 0.5 && (! measurable || line.scrollWidth <= width + 1);
 
     show('words');
 
@@ -1220,6 +1237,8 @@ export function refreshScope(scope) {
     const labels = new Set();
     const controls = new Set();
 
+    const unsavedFields = [];
+
     // Every field is compared and marked, no early exit: an effect that calls this reads each
     // field's value, and that read is what makes it run again when the field changes.
     for (const field of trackedFields(scope)) {
@@ -1229,6 +1248,8 @@ export function refreshScope(scope) {
         unsaved = unsaved || differs;
 
         if (differs) {
+            unsavedFields.push({ path: field.path, component: field.component });
+
             const control = speakingControl(field);
 
             if (control) {
@@ -1245,7 +1266,12 @@ export function refreshScope(scope) {
     writeDescriptions(scope, controls);
     flag(scope, WK_HAS_UNSAVED_ATTRIBUTE, unsaved);
 
+    // A hint that names its fields by their paths follows those fields, not this scope.
     for (const hint of hintsOf(scope)) {
+        if (hint.hasAttribute(WK_UNSAVED_PATHS_ATTRIBUTE)) {
+            continue;
+        }
+
         const wasShown = hint.hasAttribute(WK_UNSAVED_SHOWN_ATTRIBUTE);
 
         flag(hint, WK_UNSAVED_SHOWN_ATTRIBUTE, unsaved);
@@ -1255,7 +1281,60 @@ export function refreshScope(scope) {
         }
     }
 
+    shared(UNSAVED_PATHS_KEY, () => new Map()).set(scope, unsavedFields);
+    refreshPathHints();
+
     return unsaved;
+}
+
+/** The paths a hint speaks for, from its attribute; an attribute that is no list names none. */
+function pathsOfHint(hint) {
+    try {
+        const list = JSON.parse(hint.getAttribute(WK_UNSAVED_PATHS_ATTRIBUTE) ?? '[]');
+
+        return Array.isArray(list) ? list.filter((path) => typeof path === 'string' && path !== '') : [];
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Show each hint that names its fields by their paths while one of those fields is unsaved, in
+ * any scope of the page: a path names everything under it, so `variants` speaks for
+ * `variants.3.sku`. A hint inside a Livewire component speaks for that component's fields only, so
+ * two components that both hold a `name` keep their hints apart.
+ */
+export function refreshPathHints() {
+    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') {
+        return;
+    }
+
+    // Kept per scope by refreshScope(), and let go when a scope goes; a scope a morph took out of
+    // the page without its cleanup is let go here.
+    const kept = shared(UNSAVED_PATHS_KEY, () => new Map());
+    const unsaved = [];
+
+    for (const [scope, fields] of kept) {
+        if (scope.isConnected === false) {
+            kept.delete(scope);
+        } else {
+            unsaved.push(...fields);
+        }
+    }
+
+    for (const hint of document.querySelectorAll(`[${WK_UNSAVED_HINT_ATTRIBUTE}][${WK_UNSAVED_PATHS_ATTRIBUTE}]`)) {
+        const named = pathsOfHint(hint);
+        const own = componentOf(hint);
+        const shown = unsaved.some((field) => (own === null || field.component === own)
+            && named.some((path) => field.path === path || field.path.startsWith(`${path}.`)));
+        const wasShown = hint.hasAttribute(WK_UNSAVED_SHOWN_ATTRIBUTE);
+
+        flag(hint, WK_UNSAVED_SHOWN_ATTRIBUTE, shown);
+
+        if (shown && ! wasShown) {
+            announce(hint);
+        }
+    }
 }
 
 /** The question asked before leaving: the scope's own, a hint's, or the English default. */
@@ -1478,18 +1557,10 @@ export function leavesForAnotherPage(link) {
         return false;
     }
 
-    // A link without a `target` of its own opens where the page's first `<base target>` says, as the
-    // browser reads it: under `<base target="_blank">` it leaves this page standing. An empty
-    // `target=""` of its own is this window.
-    const own = link.getAttribute('target');
-    const base = own === null && typeof document.querySelector === 'function' ? document.querySelector('base[target]') : null;
-    const target = String(own ?? base?.getAttribute('target') ?? '').trim().toLowerCase();
-    // `_top` and `_parent` name this window on a page no frame holds, as `_self` does.
-    const thisWindow = target === '' || target === '_self'
-        || (target === '_top' && window.top === window)
-        || (target === '_parent' && window.parent === window);
-
-    if (! thisWindow) {
+    // A link that opens another window leaves this page standing: under `<base target="_blank">`, to
+    // a window it names, or to `_top` or `_parent` in a frame. The browser's reading of the target
+    // is `windowTheLinkOpens()`, which `fragment.js` and `external-link-question.js` ask as well.
+    if (windowTheLinkOpens(link) !== '_self') {
         return false;
     }
 
@@ -1731,7 +1802,7 @@ function install() {
             return;
         }
 
-        const link = event.target && typeof event.target.closest === 'function' ? event.target.closest('a[href]') : null;
+        const link = clickedLink(event.target);
 
         if (! leavesForAnotherPage(link)) {
             return;
@@ -1918,6 +1989,8 @@ export function registerUnsavedDirective(Alpine) {
 
         cleanup(() => {
             registry().delete(entry);
+            shared(UNSAVED_PATHS_KEY, () => new Map()).delete(el);
+            refreshPathHints();
             announcePageState();
             shared(ENTRIES_KEY, () => new WeakMap()).delete(el);
             // The words go with the scope that wrote them, from the labels and the descriptions.

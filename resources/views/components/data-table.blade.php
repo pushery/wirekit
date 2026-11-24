@@ -269,7 +269,9 @@
     // one, or a paginator, which hands over the items of its page. Cast with `(array)`, such an
     // object would be read as its own properties.
     $rowsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($rows, 'data-table', 'rows');
-    $colsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($columns, 'data-table', 'columns');
+    // A column handed over as a model, one read from a table of columns, is read as the array it
+    // holds, so the checks and the reading of `sortable` below take it as they take an array.
+    $colsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::records($columns, 'data-table', 'columns'));
 
     // A column's `align`, `cellType` and `sortStart` are fixed lists the table's script reads, where
     // an unknown value aligns to the start, draws as text or sorts ascending first. `start` and `end`
@@ -296,7 +298,9 @@
     }
     // A single column key written as text, `hidden="email"`, is a list of one through the cast,
     // so a text is no error here.
-    $hiddenArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($hidden);
+    // A text with commas names several columns, `hidden="email,phone"`.
+    // An enum as a column's key is read as its value, the way the column's own key is.
+    $hiddenArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::records(\Pushery\WireKit\Support\ListProp::splitAtCommas($hidden)));
 
     // Avatar tints are resolved here, in PHP, and that is the whole reason an
     // avatar cell is expressible at all. `AvatarPalette` hashes a key with crc32
@@ -427,7 +431,8 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'hover:opacity-[var(--opacity-wk-hover)]',
-        'text-[color:var(--color-wk-accent-text)]',
+        // As the link reads it: the fill's foreground first, on a filled surface.
+        'text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]',
         'underline underline-offset-2',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
     ]), $scope);
@@ -492,6 +497,22 @@
     // longer one as none.
     \Pushery\WireKit\Support\NumericProp::check($searchDebounce, 'data-table', 'searchDebounce', whole: true);
     $searchDebounceMs = min(\Pushery\WireKit\Support\NumericProp::cast($searchDebounce) ?? 0, 2147483647);
+
+    // The head and the rows the script starts with, in its order, for the copy below the table
+    // that stands before the script runs and on a page that runs none (Support\DataTableStart).
+    // Where the server cannot give that order, null shows the head alone there.
+    $startAllColumns = array_values(array_filter((array) \Pushery\WireKit\Support\ListProp::records($colsArr), 'is_array'));
+    $startColumns = \Pushery\WireKit\Support\DataTableStart::visibleColumns($startAllColumns, array_values($hiddenArr));
+    $startRows = \Pushery\WireKit\Support\DataTableStart::rows(array_values(array_filter($rowsPayload, 'is_array')), $startAllColumns, $mode === 'server', $sortKey, $sortDir, $search, \Pushery\WireKit\Support\IcuLocale::tag());
+    $startAlign = static fn (array $column): string => match ($column['align'] ?? null) {
+        'end' => 'text-end',
+        'right' => 'text-right',
+        'center' => 'text-center',
+        'left' => 'text-left',
+        default => 'text-start',
+    };
+    $startPadding = $density === 'compact' ? 'py-[var(--padding-wk-y-xs)]' : 'py-[var(--padding-wk-y-sm)]';
+    $startProminence = static fn (array $column): string => is_string($column['prominence'] ?? null) ? ($prominenceClasses[$column['prominence']] ?? '') : '';
 @endphp
 
 <div
@@ -529,9 +550,13 @@
         <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 @wirekitLast($searchable)
+                    {{-- The filter the server applied stands in the field from the first render,
+                         as the script fills it from `search` as it starts, so the rows below are
+                         never filtered under an empty field. --}}
                     <input
                         type="search"
                         x-model="search"
+                        @if($search !== null && $search !== '') value="{{ $search }}" @endif
                         @input{{ $searchDebounceMs > 0 ? '.debounce.'.$searchDebounceMs.'ms' : '' }}="onSearch()"
                         placeholder="{{ $searchPlaceholder }}"
                         aria-label="{{ $searchPlaceholder }}"
@@ -546,13 +571,17 @@
                  column holds beside each other. --}}
             <div class="flex flex-wrap items-center gap-[var(--space-wk-sm)]">
                 {{ $toolbar ?? '' }}
-                {{-- Density toggle. The pressed option is a tint and an inner edge in the muted text
-                     color, which holds 3:1 against the tint where the tint alone did not. Forced colors
-                     paints neither, so `wk-state-button` is the marker the stylesheet frames it by
-                     in that mode. --}}
+                {{-- Density toggle. The pressed option is tinted in the active color and shows a check
+                     before its name. The check, in the option's text color, holds 3:1 against every
+                     fill the tint takes, where the tint alone did not. Only the pressed option makes
+                     room for the check. The tint and the check both follow `aria-pressed`, which the
+                     server writes, so both are right before the script starts. One option is always pressed, so the
+                     group keeps its width when the choice changes. Forced colors paints no tint, so
+                     `wk-state-button` is the marker the stylesheet frames the pressed option by in
+                     that mode. --}}
                 <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="group" aria-label="{{ __('wirekit::Row density') }}">
-                    <button type="button" @click="setDensity('comfortable')" aria-pressed="{{ $density === 'comfortable' ? 'true' : 'false' }}" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Comfortable') }}</button>
-                    <button type="button" @click="setDensity('compact')" aria-pressed="{{ $density === 'compact' ? 'true' : 'false' }}" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Compact') }}</button>
+                    <button type="button" @click="setDensity('comfortable')" aria-pressed="{{ $density === 'comfortable' ? 'true' : 'false' }}" :aria-pressed="density === 'comfortable'" class="wk-state-button group/wk-choice wk-touch-row inline-flex items-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset text-[color:var(--color-wk-text-muted)] aria-pressed:bg-[var(--color-wk-bg-active)] aria-pressed:text-[color:var(--color-wk-text)]"><span data-wk-chosen-check class="hidden group-aria-pressed/wk-choice:inline-flex shrink-0">{{ \Pushery\WireKit\Support\KitIcons::svg('check', 'h-4 w-4') }}</span>{{ __('wirekit::Comfortable') }}</button>
+                    <button type="button" @click="setDensity('compact')" aria-pressed="{{ $density === 'compact' ? 'true' : 'false' }}" :aria-pressed="density === 'compact'" class="wk-state-button group/wk-choice wk-touch-row inline-flex items-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset text-[color:var(--color-wk-text-muted)] aria-pressed:bg-[var(--color-wk-bg-active)] aria-pressed:text-[color:var(--color-wk-text)]"><span data-wk-chosen-check class="hidden group-aria-pressed/wk-choice:inline-flex shrink-0">{{ \Pushery\WireKit\Support\KitIcons::svg('check', 'h-4 w-4') }}</span>{{ __('wirekit::Compact') }}</button>
                 </div>
                 @wirekitLast($columnManager)
                     {{-- Column manager — a self-contained popover (nested scope; inherits
@@ -627,7 +656,9 @@
             <span aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="selectionSummary"></span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
-                <button type="button" data-wk-clear-selection @click="clearSelection()" class="wk-touch-row text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear selection') }}</button>
+                {{-- A labeled action beside the caller's bulk actions, so it is a button of the kit and
+                     filled, its rank in `intent`, as the caller's own actions are. --}}
+                <x-wirekit::button intent="neutral" size="sm" data-wk-clear-selection x-on:click="clearSelection()">{{ __('wirekit::Clear selection') }}</x-wirekit::button>
             </div>
             @wirekitLast($server)
                 {{-- Every match of a server list, offered once the page is selected and `total`
@@ -679,14 +710,14 @@
         {{-- `w-max` under `stickyColumn`, and it is the difference between the feature working and
              merely rendering: at `w-full` the table squeezes itself into the scroller, nothing
              ever overflows, and a frozen column freezes against an edge that never moves. --}}
-        <table data-wk-prose-skip class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column data-wk-data-table @endif @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) aria-label="{{ $callerLabel }}" @endif>
+        <table data-wk-prose-skip x-cloak class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column data-wk-data-table @endif @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) aria-label="{{ $callerLabel }}" @endif>
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
             @endif
             <thead>
                 <tr class="border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                     @if($selectable)
-                        <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)] {{ $stickyHeadSelection }}" @if($stickyColumn) data-wk-frozen @endif>
+                        <th scope="col" class="w-10 px-[var(--padding-wk-x-md)] {{ $stickyHeadSelection }}" @if($stickyColumn) data-wk-frozen @endif>
                             {{-- Tri-state header selection. The state is bound to `data-wk-indeterminate`, and
                                  `x-wk-indeterminate` sets the property from it, since the CSP build's evaluator
                                  assigns no property of an element. --}}
@@ -694,7 +725,7 @@
                         </th>
                     @endif
                     <template x-for="col in visibleColumns" :key="col.key">
-                        <th data-wk-prose-skip
+                        <th
                             scope="col"
                             @if($stickyColumn) :data-wk-frozen="isFrozenColumn(col)" @endif
                             :aria-sort="ariaSort(col.key)"
@@ -720,7 +751,7 @@
                         </th>
                     </template>
                     @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($rowActions ?? null))
-                        <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('wirekit::Actions') }}</span></th>
+                        <th scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('wirekit::Actions') }}</span></th>
                     @endwirekitLast
                 </tr>
             </thead>
@@ -735,7 +766,7 @@
                          selected nor hovered. --}}
                     <tr :class="isSelected(row) ? 'bg-[var(--color-wk-bg-active)]' : 'hover:bg-[var(--color-wk-bg-hover)]'" class="group border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors">
                         @if($selectable)
-                            <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] {{ $stickySelectionCell }}" @if($stickyColumn) data-wk-frozen @endif :class="(density === 'compact' ? 'py-[var(--padding-wk-y-xs)]' : 'py-[var(--padding-wk-y-sm)]') + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedBlock) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyCellBase) }})">
+                            <td class="px-[var(--padding-wk-x-md)] {{ $stickySelectionCell }}" @if($stickyColumn) data-wk-frozen @endif :class="(density === 'compact' ? 'py-[var(--padding-wk-y-xs)]' : 'py-[var(--padding-wk-y-sm)]') + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedBlock) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyCellBase) }})">
                                 {{-- Unique accessible name per row: prefix with the first
                                      column's value so a screen reader doesn't hear "Select
                                      row" N identical times (WCAG name uniqueness). --}}
@@ -743,7 +774,7 @@
                             </td>
                         @endif
                         <template x-for="col in visibleColumns" :key="col.key">
-                            <td data-wk-prose-skip
+                            <td
                                 @if($stickyColumn) :data-wk-frozen="isFrozenColumn(col)" @endif
                                 :class="(col.align === 'end' ? 'text-end' : col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : col.align === 'left' ? 'text-left' : 'text-start') + (density === 'compact' ? ' py-[var(--padding-wk-y-xs)]' : ' py-[var(--padding-wk-y-sm)]') + (isFrozenColumn(col) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyFirstDataCell) }} + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedBlock) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyCellBase) }}) : ' whitespace-nowrap')"
                                 class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)]"
@@ -869,7 +900,7 @@
                             </td>
                         </template>
                         @if(\Pushery\WireKit\Support\SlotContent::given($rowActions ?? null))
-                            <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] text-end" :class="density === 'compact' ? 'py-[var(--padding-wk-y-xs)]' : 'py-[var(--padding-wk-y-sm)]'">
+                            <td class="px-[var(--padding-wk-x-md)] text-end" :class="density === 'compact' ? 'py-[var(--padding-wk-y-xs)]' : 'py-[var(--padding-wk-y-sm)]'">
                                 {{ $rowActions }}
                             </td>
                         @endif
@@ -877,6 +908,94 @@
                 </template>
             </tbody>
         </table>
+        {{-- The head and the rows as the page loads, for the moment before the script starts and
+             for a page that runs none: the table above draws both from templates and waits under
+             `x-cloak` until then. Each cell is the text and the pill the script starts with
+             (Support\DataTableStart). The copy is laid out as a table without being one, so a
+             script that asks the component for its table, its rows or its cells finds the one the
+             script draws, and it follows that table, as a hidden copy stays in the page. Controls
+             stay out of it, since without the script they do nothing. --}}
+        <div data-wk-data-table-start x-show="false" role="table" data-wk-prose-skip class="table shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) aria-label="{{ $callerLabel }}" @elseif($caption) aria-labelledby="{{ $captionId }}" @endif>
+            <div role="rowgroup" class="table-header-group">
+                <div role="row" class="table-row border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+                    @if($selectable)
+                        <div role="columnheader" class="table-cell w-10 px-[var(--padding-wk-x-md)]"></div>
+                    @endif
+                    @foreach($startColumns as $startColumn)
+                        @php
+                            $startSorted = $sortKey !== null && $sortKey === ($startColumn['key'] ?? null);
+                            $startLabel = $startColumn['label'] ?? null;
+                        @endphp
+                        <div role="columnheader" aria-sort="{{ $startSorted ? ($sortDir === 'asc' ? 'ascending' : 'descending') : 'none' }}" class="table-cell px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] whitespace-nowrap {{ $startAlign($startColumn) }} {{ $startPadding }}">
+                            @wirekitLast(($startColumn['sortable'] ?? true) !== false)
+                                <span class="wk-table-sort inline-flex items-center gap-[var(--gap-wk-xs)] rounded-[var(--radius-wk-sm)]">
+                                    <span>{{ $startLabel === null ? '' : \Pushery\WireKit\Support\ScriptText::of($startLabel) }}</span>
+                                    @wirekitLast($startSorted && $sortDir === 'asc')
+                                        <svg aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3l3 4H3z"/></svg>
+                                    @elseif($startSorted)
+                                        <svg aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L3 5h6z"/></svg>
+                                    @else
+                                        <svg aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l2.5 3h-5zM6 10L3.5 7h5z"/></svg>
+                                    @endwirekitLast
+                                </span>
+                            @else
+                                <span>{{ $startLabel === null ? '' : \Pushery\WireKit\Support\ScriptText::of($startLabel) }}</span>
+                            @endwirekitLast
+                        </div>
+                    @endforeach
+                    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($rowActions ?? null))
+                        <div role="columnheader" class="table-cell w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('wirekit::Actions') }}</span></div>
+                    @endwirekitLast
+                </div>
+            </div>
+            @wirekitLast($startRows !== null)
+                <div role="rowgroup" class="table-row-group">
+                    @foreach($startRows as $startRow)
+                        <div role="row" class="table-row border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+                            @if($selectable)
+                                <div role="cell" class="table-cell px-[var(--padding-wk-x-md)] {{ $startPadding }}"></div>
+                            @endif
+                            @foreach($startColumns as $startColumn)
+                                @php
+                                    $startCell = \Pushery\WireKit\Support\DataTableStart::cell($startRow, $startColumn);
+                                    $startTint = $startCell['avatar'] !== '' ? ($avatarTints[$startCell['avatar']] ?? null) : null;
+                                @endphp
+                                <div role="cell" class="table-cell px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)] whitespace-nowrap {{ $startAlign($startColumn) }} {{ $startPadding }}">
+                                    @wirekitLast($startCell['kind'] === 'badge' || $startCell['kind'] === 'intent')
+                                        <span class="{{ $pillClass }} {{ $badgeClasses[$startCell['intent']] }}">{{ $startCell['text'] }}</span>
+                                    @elseif($startCell['kind'] === 'badges')
+                                        <span class="inline-flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+                                            @foreach($startCell['items'] as $startItem)
+                                                <span class="{{ $pillClass }} {{ $badgeClasses[$startItem['intent']] }}">{{ $startItem['text'] }}</span>
+                                            @endforeach
+                                        </span>
+                                    @else
+                                        <span @if($startCell['avatar'] !== '') class="inline-flex items-center gap-[var(--gap-wk-sm)]" @endif>
+                                            @if($startCell['avatar'] !== '')
+                                                <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" @if(is_array($startTint)) style="background-color: {{ $startTint['bg'] }}; color: {{ $startTint['fg'] }}" @endif>{{ $startCell['avatar'] }}</span>
+                                            @endif
+                                            <span>
+                                                @if($startCell['kind'] === 'link')
+                                                    <a data-wk-prose-skip href="{{ $startCell['href'] }}" class="block w-fit {{ $linkClass }}">{{ $startCell['text'] }}</a>
+                                                @else
+                                                    <span @class(['block', 'tabular-nums' => $startCell['kind'] === 'number', 'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]' => $startCell['kind'] === 'code', $startProminence($startColumn)])>{{ $startCell['text'] }}</span>
+                                                @endif
+                                                @wirekitLast($startCell['sub'] !== '')
+                                                    <span @class(['block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]', 'tabular-nums' => $startCell['kind'] === 'number', 'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]' => $startCell['kind'] === 'code'])>{{ $startCell['sub'] }}</span>
+                                                @endwirekitLast
+                                            </span>
+                                        </span>
+                                    @endwirekitLast
+                                </div>
+                            @endforeach
+                            @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($rowActions ?? null))
+                                <div role="cell" class="table-cell px-[var(--padding-wk-x-md)] {{ $startPadding }}"></div>
+                            @endwirekitLast
+                        </div>
+                    @endforeach
+                </div>
+            @endwirekitLast
+        </div>
         <div x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -ms-px"></div>
         </div>
 
@@ -890,7 +1009,7 @@
              The container keeps its own centering and padding either way, so a slot holding
              an `<x-wirekit::empty-state>` lands where the sentence does rather than needing
              the caller to re-center it. --}}
-        <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
+        <div x-show="isEmpty" @if($startRows !== []) x-cloak @endif class="flex flex-col items-center justify-center gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
             @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
                 {{ $empty }}
             @else

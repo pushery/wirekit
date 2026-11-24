@@ -34,6 +34,8 @@ import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { belongsThroughTeleports } from '../utils/teleport.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { isRendered } from '../utils/rendered.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { watchCurrent } from '../utils/watch-current.js';
@@ -46,6 +48,13 @@ import { watchCurrent } from '../utils/watch-current.js';
 const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function wirekitNavigationMenu() {
+    // The menu's own element, kept from init(). Alpine resolves `$root` where an expression runs, so
+    // a handler of an item inside a nested `x-data`, such as a tooltip around the item, would find
+    // that scope's root and no other item in it. A variable of this closure belongs to this menu
+    // alone, and no scope can stand in front of it. Before init(), as in a harness that calls a
+    // method directly, `$root` answers.
+    let menu = null;
+
     return {
         activeItem: null,
         // The menu's name as a landmark, bound to its `aria-label` where the menu has no name of the
@@ -68,8 +77,13 @@ export default function wirekitNavigationMenu() {
         // Disconnects the observer that puts the placement back after a framework update erases
         // it. See the note beside `repairErasure` in open().
         _stopRepair: null,
+        // How many panels a lazy menu has built, which a trigger's `aria-controls` binding reads so
+        // it names its panel from the build on. See controlsFor().
+        _lazyBuilds: 0,
 
         init() {
+            menu = this.$root;
+
             // A menu named by default inside a navigation landmark of the same name, a navbar the
             // usual one, takes the name it was given for that place. Two nested landmarks of one
             // name read the same twice in a screen reader's list of them, and axe reports them.
@@ -148,6 +162,50 @@ export default function wirekitNavigationMenu() {
                 root: this.$root,
                 onOther: () => this.closeAll(),
             });
+
+            // A render of the Livewire component around a lazy navigation menu must neither remove a
+            // panel it built nor keep a panel the server no longer draws. A panel opened by markup
+            // writing `activeItem` still finds its panel: it is built a tick after the write.
+            if (typeof this.$root?.querySelector === 'function' && this.$root.querySelector('[data-wk-lazy-panel-host] > template[data-wk-lazy-panel]')) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'activeItem', (name) => {
+                    if (name) this.preparePanel(name);
+                });
+            }
+        },
+
+        /** The template a lazy menu holds the panel `name` in, among the children of its trigger's wrapper. */
+        _lazyTemplateFor(name) {
+            const host = this._getTrigger(name)?.parentElement;
+
+            return host && typeof host.hasAttribute === 'function' && host.hasAttribute('data-wk-lazy-panel-host')
+                ? lazyPanelTemplate(host)
+                : null;
+        },
+
+        /**
+         * Build the panel `name` of a lazy navigation menu before it first opens. A panel that is
+         * built, or one of a menu that is not lazy, is left alone.
+         */
+        preparePanel(name) {
+            if (buildLazyPanel(this._lazyTemplateFor(name))) {
+                this._lazyBuilds += 1;
+            }
+        },
+
+        /**
+         * What a trigger's `aria-controls` names: its panel's id, or nothing while a lazy menu has
+         * not built that panel yet. Read again after each build.
+         */
+        controlsFor(name, id) {
+            // The count is read so the binding follows each build.
+            if (this._lazyBuilds < 0) {
+                return null;
+            }
+
+            const template = this._lazyTemplateFor(name);
+
+            return template && template._wkBuilt !== true ? null : id;
         },
 
         destroy() {
@@ -188,6 +246,8 @@ export default function wirekitNavigationMenu() {
             focusClicked(clicked);
             clearTimeout(this._hideTimer);
             this._pointerMovedInPanel = false;
+            // A lazy panel is built before it opens, so it is there to place and to enter.
+            this.preparePanel(name);
             this.activeItem = name;
             this._anchorAt = anchorSnapshot(this._getTrigger(name));
             this._coordination?.announce();
@@ -200,7 +260,7 @@ export default function wirekitNavigationMenu() {
             // event element rather than the nav root, so $el.querySelector
             // would miss the trigger and positioning would never run. The panel is
             // teleported to the overlay root → resolve it via the teleport-safe ref.
-            const trigger = this.$root.querySelector(`[data-wk-nav-trigger="${name}"]`);
+            const trigger = (menu ?? this.$root).querySelector(`[data-wk-nav-trigger="${name}"]`);
             const panel = this.$refs[`panel-${name}`];
 
             if (trigger && panel) {
@@ -315,7 +375,7 @@ export default function wirekitNavigationMenu() {
          * without a marker attribute on every link.
          */
         _getTopLevelItems() {
-            return [...this.$root.querySelectorAll('[data-wk-nav-trigger], a[href]')];
+            return [...(menu ?? this.$root).querySelectorAll('[data-wk-nav-trigger], a[href]')];
         },
 
         /**
@@ -339,7 +399,7 @@ export default function wirekitNavigationMenu() {
          * The trigger button that owns a panel. It stays in the bar.
          */
         _getTrigger(name) {
-            return this.$root.querySelector(`[data-wk-nav-trigger="${name}"]`);
+            return (menu ?? this.$root).querySelector(`[data-wk-nav-trigger="${name}"]`);
         },
 
         /**
@@ -405,7 +465,7 @@ export default function wirekitNavigationMenu() {
             const focused = document.activeElement;
             const panel = this.$refs[`panel-${this.activeItem}`];
 
-            if (focused && (this.$root.contains(focused) || (panel && belongsThroughTeleports(focused, panel)))) return;
+            if (focused && ((menu ?? this.$root).contains(focused) || (panel && belongsThroughTeleports(focused, panel)))) return;
 
             event.preventDefault();
             this.closeAll();
@@ -545,7 +605,7 @@ export default function wirekitNavigationMenu() {
             // a panel the reader is still working in, so only a focus that landed
             // on another element counts.
             if (!(next instanceof Node)) return;
-            if (this.$root.contains(next)) return;
+            if ((menu ?? this.$root).contains(next)) return;
 
             // The panel, or a panel opened from inside it.
             const panel = this.$refs[`panel-${name}`];

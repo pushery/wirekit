@@ -94,6 +94,10 @@
     // whole at the scroller's edge without moving the content.
     $panelScrollClasses = 'wk-scrollbar '.WireKit::resolveClasses('navigation-menu.item', 'panel-scroll', implode(' ', [
         'relative min-h-0 overflow-y-auto overscroll-contain',
+        // A token with no break point, an email address or a URL, breaks inside the panel rather
+        // than scrolling it sideways; `break-word` leaves every min-content width alone, so the
+        // rows inside keep their layout.
+        '[overflow-wrap:break-word]',
         '-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]',
     ]), $scope);
 
@@ -130,6 +134,10 @@
         // element that carries it.
         [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
     }
+    // Where a lazy navigation menu's template for this panel opens and closes, and the mark of the
+    // wrapper the template stands in; the navigation menu resolves them (Support\LazyPanel).
+    $lazyPanelOpen = new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\LazyPanel::OPEN);
+    $lazyPanelClose = new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\LazyPanel::CLOSE);
 @endphp
 
 @if($href !== null)
@@ -157,7 +165,7 @@
         {{ $newTabHint }}</a>
 @else
     {{-- Trigger + flyout panel --}}
-    <div
+    <div {{ \Pushery\WireKit\Support\LazyPanel::HOST }}
         x-on:mouseenter="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         x-on:mouseleave="scheduleClose()"
         {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'relative')) }}
@@ -178,6 +186,9 @@
                  what actually opens just as firmly as they forbid the generic
                  "true". --}}
             aria-controls="{{ $panelId }}"
+            {{-- A panel a lazy menu has not built yet is no element to name: the binding names it from
+                 the build on, and Alpine's clone of the incoming trigger keeps it through an update. --}}
+            :aria-controls="controlsFor({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }})"
             data-wk-nav-trigger="{{ $name }}"
             class="wk-touch-row {{ $triggerClasses }}"
         >
@@ -203,7 +214,7 @@
              The `before:` hover-bridge is positioned relative to the panel, so
              it still covers the trigger→panel offset gap at the panel's fixed
              location. --}}
-        <template x-teleport="#wk-overlay-root">
+        {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
             <div
                 {{-- The morph key, and writing the id above is what makes it necessary.
                      Livewire resolves a node's identity as `wire:id`, then `wire:key`,
@@ -252,6 +263,6 @@
                     {{ $slot }}
                 </div>
             </div>
-        </template>
+        </template>{{ $lazyPanelClose }}
     </div>
 @endif

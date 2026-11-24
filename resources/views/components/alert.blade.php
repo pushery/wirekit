@@ -171,6 +171,10 @@
          occurrence of an attribute, so emitting it before the bag silently beat
          a caller-supplied role while leaving both in the markup. `data-intent`
          names the intent for a rule of the application's own. --}}
+    {{-- `data-wk-tint`: a tinted alert is a surface of its own, so on a filled surface it gives
+         the page's focus ring and word colors back to what it holds. A neutral or default alert
+         paints a gray surface, which the stylesheet follows by its class. --}}
+    @if(str_contains($variantColors['bg'], 'bg-[color-mix(')) data-wk-tint @endif
     {{ $attributes->merge(['role' => $role, 'data-intent' => $variantValue])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantColors['border'], $variantColors['bg']])) }}
 >
     {{-- Visually hidden variant prefix for screen readers ("Warning: ...") --}}
@@ -178,7 +182,7 @@
 
     {{-- — iconSlot named slot wins over variant-derived auto
          icon. The bool $icon prop continues to toggle the auto path off. --}}
-    @php $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent(); @endphp
+    @php $hasIconSlot = \Pushery\WireKit\Support\SlotContent::given($iconSlot ?? null); @endphp
     @if($hasIconSlot)
         <div class="shrink-0 mt-0.5">{{ $iconSlot }}</div>
     @elseif($icon !== false)

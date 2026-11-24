@@ -72,8 +72,9 @@
     // Edge offset — keeps the toast stack clear of a fixed app header / nav
     // (or a bottom bar) and of the device safe-area (notch / home indicator).
     // The region is pinned flush to its edge (top-0 / bottom-0); we add the
-    // offset as padding on the active edge so the toasts sit inside it without
-    // disturbing the other three sides' base `p-4`. Developers set the nav
+    // offset as padding on the active edge, on top of `--space-wk-md`, the base
+    // padding of the other three sides, so the toasts sit inside it at the
+    // same distance plus the offset. Developers set the nav
     // height once via `--space-wk-toast-offset` (default 0px) on their app
     // shell / :root; `env(safe-area-inset-*)` is folded in automatically so a
     // top toast clears the notch and a bottom toast clears the home indicator.
@@ -81,13 +82,13 @@
     // nested calc()/env() expression.
     $isTopEdge = str_starts_with($position, 'top');
     $offsetStyle = $isTopEdge
-        ? 'padding-top: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-top, 0px));'
-        : 'padding-bottom: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-bottom, 0px));';
+        ? 'padding-top: calc(var(--space-wk-md) + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-top, 0px));'
+        : 'padding-bottom: calc(var(--space-wk-md) + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-bottom, 0px));';
 
     // The inline gap takes the scrollbar term too, and here the need hides one level deeper.
     //
-    // The region is pinned flush to its edge and the 1rem gap comes from the base padding inside
-    // the box. The document's own scrollbar is outside the viewport box a `position: fixed` box
+    // The region is pinned flush to its edge and the gap of `--space-wk-md` comes from the base
+    // padding inside the box. The document's own scrollbar is outside the viewport box a `position: fixed` box
     // is laid out against, but two gutters are not: the one the scroll lock takes away while an
     // overlay is open, and a scrollbar drawn by an inner scroll container. `--wk-scrollbar-inset`
     // carries either, and without the term the region would overlap that gutter and a toast would
@@ -109,7 +110,7 @@
     // to the scan that holds the compiled stylesheet to the views.
     $offsetStyle .= match ($position) {
         'top-center', 'bottom-center' => '',
-        default => ' padding-inline-end: calc(1rem + var(--wk-scrollbar-inset, 0px));',
+        default => ' padding-inline-end: calc(var(--space-wk-md) + var(--wk-scrollbar-inset, 0px));',
     };
 
     // Container: fixed portal, stacks toasts vertically with gap
@@ -142,36 +143,44 @@
 
     // Variant color tokens — controls border, background, and icon color.
     // "default" style: light tinted background (10%) like Alert.
-    // "filled" style: strong variant background color, white text + icon.
+    // "filled" style: strong variant background color, in its own foreground.
     if ($filled) {
+        // A filled toast writes in its fill's own foreground, the pair the theme holds at 4.5:1,
+        // and at full strength: at 80% the description falls below that on the danger, success
+        // and info fills. The surface hands the foreground to the toast's text color, which the
+        // close button draws in, and points the focus ring at it, as a filled banner does.
         $variantMap = [
             'success' => [
                 'border' => 'border-[var(--color-wk-success)]',
                 'bg' => 'bg-[var(--color-wk-success)]',
-                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
-                'text' => 'text-[color:var(--color-wk-accent-fg)]',
-                'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
+                'surface' => 'text-[color:var(--color-wk-success-fg)] [--color-wk-ring:var(--color-wk-success-fg)] [--color-wk-ring-offset:transparent]',
+                'icon' => 'text-[color:var(--color-wk-success-fg)]',
+                'text' => 'text-[color:var(--color-wk-success-fg)]',
+                'muted' => 'text-[color:var(--color-wk-success-fg)]',
             ],
             'warning' => [
                 'border' => 'border-[var(--color-wk-warning)]',
                 'bg' => 'bg-[var(--color-wk-warning)]',
-                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
-                'text' => 'text-[color:var(--color-wk-accent-fg)]',
-                'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
+                'surface' => 'text-[color:var(--color-wk-warning-fg)] [--color-wk-ring:var(--color-wk-warning-fg)] [--color-wk-ring-offset:transparent]',
+                'icon' => 'text-[color:var(--color-wk-warning-fg)]',
+                'text' => 'text-[color:var(--color-wk-warning-fg)]',
+                'muted' => 'text-[color:var(--color-wk-warning-fg)]',
             ],
             'danger' => [
                 'border' => 'border-[var(--color-wk-danger)]',
                 'bg' => 'bg-[var(--color-wk-danger)]',
-                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
-                'text' => 'text-[color:var(--color-wk-accent-fg)]',
-                'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
+                'surface' => 'text-[color:var(--color-wk-danger-fg)] [--color-wk-ring:var(--color-wk-danger-fg)] [--color-wk-ring-offset:transparent]',
+                'icon' => 'text-[color:var(--color-wk-danger-fg)]',
+                'text' => 'text-[color:var(--color-wk-danger-fg)]',
+                'muted' => 'text-[color:var(--color-wk-danger-fg)]',
             ],
             'info' => [
                 'border' => 'border-[var(--color-wk-info-tone)]',
                 'bg' => 'bg-[var(--color-wk-info-tone)]',
+                'surface' => 'text-[color:var(--color-wk-info-fg)] [--color-wk-ring:var(--color-wk-info-fg)] [--color-wk-ring-offset:transparent]',
                 'icon' => 'text-[color:var(--color-wk-info-fg)]',
                 'text' => 'text-[color:var(--color-wk-info-fg)]',
-                'muted' => 'text-[color-mix(in_srgb,var(--color-wk-info-fg)_80%,transparent)]',
+                'muted' => 'text-[color:var(--color-wk-info-fg)]',
             ],
         ];
     } else {
@@ -179,6 +188,7 @@
             'success' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_10%,var(--color-wk-bg-elevated))]',
+                'surface' => '',
                 'icon' => 'text-[color:var(--color-wk-success-text)]',
                 'text' => 'text-[color:var(--color-wk-text)]',
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
@@ -186,6 +196,7 @@
             'warning' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_10%,var(--color-wk-bg-elevated))]',
+                'surface' => '',
                 'icon' => 'text-[color:var(--color-wk-warning-text)]',
                 'text' => 'text-[color:var(--color-wk-text)]',
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
@@ -193,6 +204,7 @@
             'danger' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_10%,var(--color-wk-bg-elevated))]',
+                'surface' => '',
                 'icon' => 'text-[color:var(--color-wk-danger-text)]',
                 'text' => 'text-[color:var(--color-wk-text)]',
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
@@ -200,6 +212,7 @@
             'info' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_10%,var(--color-wk-bg-elevated))]',
+                'surface' => '',
                 'icon' => 'text-[color:var(--color-wk-info-text)]',
                 'text' => 'text-[color:var(--color-wk-text)]',
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
@@ -306,10 +319,10 @@
             @focusout="resume(toast.id)"
             :class="[
                 {{ \Pushery\WireKit\Support\AlpinePayload::string($toastClasses) }},
-                toast.variant === 'success' ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['success']['border'].' '.$variantMap['success']['bg']) }} : '',
-                toast.variant === 'warning' ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['border'].' '.$variantMap['warning']['bg']) }} : '',
-                toast.variant === 'danger' ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['danger']['border'].' '.$variantMap['danger']['bg']) }} : '',
-                toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['info']['border'].' '.$variantMap['info']['bg']) }} : '',
+                toast.variant === 'success' ? {{ \Pushery\WireKit\Support\AlpinePayload::string(trim($variantMap['success']['border'].' '.$variantMap['success']['bg'].' '.$variantMap['success']['surface'])) }} : '',
+                toast.variant === 'warning' ? {{ \Pushery\WireKit\Support\AlpinePayload::string(trim($variantMap['warning']['border'].' '.$variantMap['warning']['bg'].' '.$variantMap['warning']['surface'])) }} : '',
+                toast.variant === 'danger' ? {{ \Pushery\WireKit\Support\AlpinePayload::string(trim($variantMap['danger']['border'].' '.$variantMap['danger']['bg'].' '.$variantMap['danger']['surface'])) }} : '',
+                toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(trim($variantMap['info']['border'].' '.$variantMap['info']['bg'].' '.$variantMap['info']['surface'])) }} : '',
             ]"
         >
             {{-- Variant icon --}}
@@ -371,7 +384,7 @@
                 type="button"
                 @click="remove(toast.id)"
                 aria-label="{{ __('wirekit::Dismiss notification') }}"
-                class="wk-touch-target shrink-0 p-[var(--space-wk-xs)] -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-[var(--opacity-wk-hover)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-touch-target shrink-0 p-[var(--space-wk-xs)] -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-current hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

@@ -106,6 +106,10 @@
         // room beside the target, and the step scrolls its excess instead of standing past the edge.
         'w-80 max-w-[calc(100vw-1rem)]',
         'overflow-y-auto overscroll-contain',
+        // A token with no break point, an email address or a URL, breaks inside the panel rather
+        // than scrolling it sideways; `break-word` leaves every min-content width alone, so the
+        // rows inside keep their layout.
+        '[overflow-wrap:break-word]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
@@ -166,25 +170,17 @@
     <div class="flex items-center justify-between">
         <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="progressText"></span>
         <div class="flex items-center gap-[var(--gap-wk-sm)]">
-            <button
-                type="button"
-                x-show="currentStep > 0"
-                x-on:click="prev()"
-                class="wk-touch-row p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-            >{{ __('wirekit::Back') }}</button>
-            <button
-                type="button"
-                x-on:click="next()"
-                class="wk-touch-row p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Next')) }}"
-            {{-- A literal opening label, because x-text is the button's only content: until
-                 Alpine evaluates it the element is empty, so the control has no accessible
-                 name at all — and a server-side accessibility check sees nothing else, ever.
-                 x-text overwrites this text node on its first evaluation.
-                 "Next" rather than "Finish": which one is right depends on the step index,
-                 which lives in Alpine and not on the server, and every step but the last
-                 opens on "Next". --}}
-            >{{ __('wirekit::Next') }}</button>
+            {{-- Labeled actions, so buttons of the kit and filled, each with its rank in `intent`:
+                 Back in `neutral`, the action that goes on in the accent, both of one size. --}}
+            <x-wirekit::button intent="neutral" size="sm" x-show="currentStep > 0" x-on:click="prev()">{{ __('wirekit::Back') }}</x-wirekit::button>
+            <x-wirekit::button size="sm" x-on:click="next()">
+                {{-- A literal opening label in the span x-text writes: until Alpine evaluates it the
+                     control already has its name, and so does a server-side accessibility check,
+                     which sees nothing else. "Next" rather than "Finish": which one is right depends
+                     on the step index, which lives in Alpine and not on the server, and every step
+                     but the last opens on "Next". --}}
+                <span x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Next')) }}">{{ __('wirekit::Next') }}</span>
+            </x-wirekit::button>
         </div>
     </div>
 </div>

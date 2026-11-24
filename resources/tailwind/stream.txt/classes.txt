@@ -1,3 +1,4 @@
+--ch-wk-sans
 --color-wk-danger-text
 --color-wk-text
 --color-wk-text-muted
@@ -335,6 +336,7 @@ role
 room
 root
 route
+runs
 s
 same
 sayable
@@ -342,7 +344,9 @@ says
 scope
 screen
 screen-reader
+script
 see
+seed
 selecting
 settles
 several
@@ -363,6 +367,7 @@ span
 spoke
 sr-only
 sse
+stands
 start
 startMessage
 starts
@@ -439,7 +444,7 @@ user
 via
 view
 visible
-w-[0.5ch]
+w-[calc(0.5*var(--ch-wk-sans,1ch))]
 wanted
 was
 watching
@@ -461,6 +466,7 @@ wk-stream-caret
 wk-stream-output
 would
 wrapper
+writes
 wrong
 x-cloak
 x-data

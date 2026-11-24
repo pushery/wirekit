@@ -46,6 +46,12 @@ export default function wirekitBulkSelection(config = {}) {
     const filterCleared = typeof config.filterClearedText === 'string' ? config.filterClearedText : '';
     const locale = typeof config.locale === 'string' && config.locale !== '' ? config.locale : 'en';
     const marks = config.separators && typeof config.separators === 'object' ? config.separators : null;
+    // The block's own element, kept from init(). Alpine resolves `$root` where an expression runs,
+    // and a name read through `this` in the innermost scope that declares it, so `toggle()` from
+    // inside a nested `x-data`, such as a tooltip around the header checkbox, would find that
+    // scope's root, or a `_root` of its own, and no row in it. A variable of this closure belongs
+    // to this block alone, and no scope can stand in front of it.
+    let block = null;
 
     return {
         // Whether every match on every page is selected. `x-modelable` makes it the value a
@@ -77,17 +83,18 @@ export default function wirekitBulkSelection(config = {}) {
         _modelEvents: null,
 
         init() {
+            block = this.$root;
             this._readAttributes(true);
             this._count(true);
 
             // `x-modelable` puts the binding on the root, a <div>, which no choice sends a `change`
             // and nothing blurs, so `wire:model.change` or `.blur` would never hear every match.
             // Both carry the value as their detail, which `x-model` reads from a CustomEvent.
-            const root = this.$root;
+            const root = block;
             this._modelEvents = watchModelEvents(root, () => root, { detail: () => this.allMatches });
 
             this._onChange = (event) => this._changed(event);
-            this.$root.addEventListener('change', this._onChange);
+            root.addEventListener('change', this._onChange);
 
             // Every match written by the binding, a toolbar's "select all" or a state the page
             // loads with: the rows of the page follow, as on a page the reader turns to. A write
@@ -108,7 +115,7 @@ export default function wirekitBulkSelection(config = {}) {
             // A render: other rows, another total, another filter.
             if (typeof MutationObserver !== 'undefined') {
                 this._observer = new MutationObserver(() => this._rendered());
-                this._observer.observe(this.$root, {
+                this._observer.observe(root, {
                     childList: true,
                     subtree: true,
                     attributes: true,
@@ -126,7 +133,7 @@ export default function wirekitBulkSelection(config = {}) {
         },
 
         destroy() {
-            this.$root?.removeEventListener?.('change', this._onChange);
+            block?.removeEventListener?.('change', this._onChange);
             this._onChange = null;
             this._observer?.disconnect();
             this._observer = null;
@@ -142,7 +149,7 @@ export default function wirekitBulkSelection(config = {}) {
 
         /** The row boxes: every checkbox in the block that is a row's choice (_isRow()). */
         _boxes() {
-            const root = this.$root;
+            const root = block;
 
             if (typeof root?.querySelectorAll !== 'function') {
                 return [];
@@ -222,7 +229,7 @@ export default function wirekitBulkSelection(config = {}) {
          * @returns {boolean} whether the filter is another than at the last render
          */
         _readAttributes(first = false) {
-            const root = this.$root;
+            const root = block;
             const filter = root?.getAttribute?.('data-wk-bulk-filter') ?? '';
 
             this.total = matchCount(root?.getAttribute?.('data-wk-bulk-total'));

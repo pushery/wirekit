@@ -16,6 +16,7 @@
 --font-wk-body-weight
 --font-wk-heading-weight
 --font-wk-sans
+--gap-wk-card-header-icon
 --gap-wk-sm
 --gap-wk-xs
 --padding-wk-x-lg
@@ -183,6 +184,7 @@ bottom
 bound
 box
 branch
+branches
 break
 break-word
 breaks
@@ -443,6 +445,7 @@ full
 full-bleed
 function
 further
+gap-[var(--gap-wk-card-header-icon)]
 gap-[var(--gap-wk-sm)]
 gap-[var(--gap-wk-xs)]
 gap-x-[var(--gap-wk-sm)]
@@ -554,6 +557,7 @@ kind
 kit
 know
 lands
+last
 later
 layout
 lays

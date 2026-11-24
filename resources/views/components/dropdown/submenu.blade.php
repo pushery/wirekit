@@ -68,6 +68,8 @@
     // per-scope overrides a developer may have set for dropdown.item.
     $itemClasses = WireKit::resolveClasses('dropdown.item', 'base', implode(' ', [
         'flex items-center gap-x-[var(--gap-wk-sm)] w-full',
+        // A long token breaks inside the row, as in dropdown/item.blade.php.
+        '[overflow-wrap:anywhere]',
         'px-[var(--padding-wk-x-md)]',
         'py-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)]',
@@ -114,6 +116,12 @@
         // fitViewport caps the height to the window; the panel scrolls its excess instead of
         // clipping it.
         'overflow-y-auto overscroll-contain',
+        // Capped at the screen, as a popover is, so the positioning can keep the panel inside it;
+        // a token with no break point, an email address or a URL, then breaks at the cap rather
+        // than widening the panel past it. `break-word` leaves every min-content width alone, so
+        // the rows inside keep their layout.
+        'max-w-[calc(100vw-1rem)]',
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole

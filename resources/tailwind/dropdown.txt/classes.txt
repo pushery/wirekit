@@ -43,6 +43,8 @@
 @php
 @props
 [[aria-expanded=true]:not(:has([aria-expanded]_[data-wk-dropdown-indicator]))_&]:rotate-180
+[overflow-wrap:anywhere]
+[overflow-wrap:break-word]
 a
 abel
 about
@@ -58,6 +60,7 @@ activating
 active
 add
 additive
+address
 after
 again
 against
@@ -97,11 +100,13 @@ applied
 applies
 applying
 are
+area
 areful
 args
 arguments
 aria-allowed-attr
 aria-atomic
+aria-busy
 aria-checked
 aria-controls
 aria-current
@@ -128,6 +133,7 @@ assertions
 assertive
 assistive
 at
+attr
 attribute
 attributes
 auto
@@ -184,6 +190,8 @@ bound
 boundary
 box
 break
+break-word
+breaks
 brings
 browser
 bubble
@@ -191,7 +199,9 @@ bubbled
 bubbles
 bubbling
 build
+builds
 built
+busy
 but
 button
 by
@@ -203,7 +213,9 @@ can
 candidate
 cannot
 canonical
+cap
 caps
+captured
 caret
 carried
 carries
@@ -250,6 +262,7 @@ composes
 composition
 computed
 concentric
+configuration
 confirming
 conflicting
 consequence
@@ -257,6 +270,7 @@ construction
 contain
 container
 containers
+content
 contents
 context
 context-menu
@@ -286,6 +300,7 @@ dark
 data-wk-dropdown-indicator
 data-wk-dropdown-panel
 data-wk-dropdown-trigger
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-panel-id
 data-wk-prose-skip
@@ -317,6 +332,8 @@ different
 direct
 direction
 directive
+disable-on-loading
+disableOnLoading
 disabled
 disables
 disappears
@@ -369,6 +386,7 @@ elements
 elevated
 else
 elseif
+email
 empty
 empty-name
 enabled
@@ -519,6 +537,7 @@ holding
 holds
 holdsParts
 honors
+hook
 host
 hover
 hover-card
@@ -538,6 +557,7 @@ in
 incoming
 indicator
 indistinguishable
+inert
 inherits
 inject
 inline
@@ -591,6 +611,7 @@ layer
 layers
 layout
 layouts
+lazy
 leading
 leads
 leaking
@@ -600,6 +621,7 @@ leaving
 left
 legible
 less
+lets
 level
 library
 light
@@ -607,6 +629,7 @@ lightbox
 like
 line
 lines
+link
 list
 listener
 listens
@@ -615,6 +638,8 @@ literal
 little
 live
 lives
+loading-target
+loadingTarget
 local
 locale
 logic
@@ -622,8 +647,10 @@ logout
 logs
 long
 longer
+longest
 look
 looks
+loses
 loud
 m19.5
 made
@@ -642,6 +669,7 @@ match
 matches
 matching
 matters
+max-w-[calc(100vw-1rem)]
 may
 mean
 means
@@ -657,6 +685,7 @@ menuitems
 messages
 method
 microsecond
+min-content
 min-w-[12rem]
 min-width
 mint
@@ -690,10 +719,12 @@ named
 names
 naming
 narrow
+narrower
 native
 nav
 navigation
 nearest
+needed
 needs
 neither
 nest
@@ -762,6 +793,7 @@ overlay
 overrides
 overriding
 overscroll-contain
+overtake
 own
 owned
 ownership
@@ -819,6 +851,7 @@ present
 presentation
 presentational
 preset
+press
 prev
 prevailing
 preview
@@ -898,6 +931,7 @@ repeats
 replacement
 reported
 repository
+request
 requires
 resets
 resolve
@@ -1118,6 +1152,7 @@ though
 three
 through
 throws
+time
 to
 together
 toggle-button
@@ -1138,6 +1173,7 @@ transitions
 translated
 trap
 travels
+treatment
 treats
 tree
 trigger
@@ -1162,6 +1198,8 @@ undo
 unknown
 unless
 unnamed
+unrelated
+until
 up
 update
 use
@@ -1188,6 +1226,7 @@ w-3.5
 w-4
 w-5
 w-full
+waits
 walk
 walls
 warning
@@ -1212,6 +1251,7 @@ who
 whole
 whose
 why
+widening
 width
 win
 window
@@ -1220,6 +1260,7 @@ wire:id
 wire:key
 wire:poll
 wire:show
+wire:target
 wirekitOptimistic
 wiring
 with
@@ -1257,9 +1298,11 @@ x-data
 x-effect
 x-init
 x-on:click
+x-on:focusin
 x-on:keydown
 x-on:mouseenter
 x-on:mouseleave
+x-on:pointerenter
 x-ref
 x-show
 x-teleport

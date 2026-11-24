@@ -37,10 +37,13 @@ import { inlineStep } from '../utils/inline-direction.js';
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { focusIsWithin, position } from '../utils/floating.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
 import { belongsThroughTeleports, outOfReachBeside } from '../utils/teleport.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * What the browser would consider a tab stop outside this bar.
  *
@@ -53,6 +56,13 @@ import { belongsThroughTeleports, outOfReachBeside } from '../utils/teleport.js'
 const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function wirekitMenubar() {
+    // The bar's own element, kept from init(). Alpine resolves `$root` where an expression runs, so
+    // a handler of a menu inside a nested `x-data`, such as a tooltip around a menu that shows only
+    // an icon, would find that scope's root and no other trigger in it. A variable of this closure
+    // belongs to this bar alone, and no scope can stand in front of it. Before init(), as in a
+    // harness that calls a method directly, `$root` answers.
+    let bar = null;
+
     return {
         activeMenu: null,
 
@@ -82,6 +92,7 @@ export default function wirekitMenubar() {
         _coordination: null,
 
         init() {
+            bar = this.$root;
             this._navCleanup = () => { this.activeMenu = null; };
             // Not `once`: a component inside `@persist` is carried to the next page without a new
             // `init()`, and still has to close on every page change after the first.
@@ -110,6 +121,29 @@ export default function wirekitMenubar() {
                 root: this.$root,
                 onOther: () => this.closeAll(),
             });
+
+            // A render of the Livewire component around a lazy menubar must neither remove a menu
+            // it built nor keep a menu the server no longer draws. A menu opened by markup writing
+            // `activeMenu` still finds its panel: it is built a tick after the write.
+            if (typeof this.$root?.querySelector === 'function' && this.$root.querySelector('[data-wk-lazy-panel-host] > template[data-wk-lazy-panel]')) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'activeMenu', (name) => {
+                    if (name) this.preparePanel(name);
+                });
+            }
+        },
+
+        /**
+         * Build the panel of the menu `name` in a lazy menubar, before it first opens: its template
+         * stands in the menu's wrapper, the parent of its trigger. A menu that is built, or one of a
+         * menubar that is not lazy, is left alone.
+         */
+        preparePanel(name) {
+            const host = this._triggerFor(name)?.parentElement;
+
+            if (host && typeof host.hasAttribute === 'function' && host.hasAttribute('data-wk-lazy-panel-host')) {
+                buildLazyPanel(lazyPanelTemplate(host));
+            }
         },
 
         destroy() {
@@ -137,6 +171,8 @@ export default function wirekitMenubar() {
                 this._stopAutoUpdate?.();
                 this._stopAutoUpdate = null;
             } else {
+                // A lazy menu is built before it opens, so its items are there to focus.
+                this.preparePanel(name);
                 this.activeMenu = name;
                 this.rovingTrigger = name;
                 this._coordination?.announce();
@@ -150,6 +186,7 @@ export default function wirekitMenubar() {
         async openMenu(name) {
             if (this.activeMenu && this.activeMenu !== name) {
                 this._resetTypeAhead();
+                this.preparePanel(name);
                 this.activeMenu = name;
                 this.rovingTrigger = name;
                 this._coordination?.announce();
@@ -217,7 +254,7 @@ export default function wirekitMenubar() {
          * @returns {Element|null}
          */
         _tabStopBesideBar(forward) {
-            const root = this.$root;
+            const root = bar ?? this.$root;
 
             if (! root || typeof root.compareDocumentPosition !== 'function') return null;
 
@@ -252,7 +289,7 @@ export default function wirekitMenubar() {
             // (no trigger descendants), so $el.querySelector would miss and
             // positioning would silently never run. The panel is teleported to the
             // overlay root → resolve it via the teleport-safe ref.
-            const trigger = this.$root.querySelector(`[data-wk-menubar-trigger="${name}"]`);
+            const trigger = (bar ?? this.$root).querySelector(`[data-wk-menubar-trigger="${name}"]`);
             const panel = this.$refs[`panel-${name}`];
 
             if (trigger && panel) {
@@ -291,7 +328,7 @@ export default function wirekitMenubar() {
         _getTriggers() {
             // $root, not $el — see _positionActiveMenu for why ($el can be a
             // clicked menuitem button rather than the menubar root).
-            return [...this.$root.querySelectorAll('[data-wk-menubar-trigger]')];
+            return [...(bar ?? this.$root).querySelectorAll('[data-wk-menubar-trigger]')];
         },
 
         /**
@@ -300,7 +337,7 @@ export default function wirekitMenubar() {
         _triggerFor(name) {
             if (! name) return null;
 
-            return this.$root.querySelector(`[data-wk-menubar-trigger="${name}"]`);
+            return (bar ?? this.$root).querySelector(`[data-wk-menubar-trigger="${name}"]`);
         },
 
         /**
@@ -322,7 +359,7 @@ export default function wirekitMenubar() {
 
             const trigger = target.closest('[data-wk-menubar-trigger]');
 
-            return trigger && this.$root.contains(trigger) ? trigger : null;
+            return trigger && (bar ?? this.$root).contains(trigger) ? trigger : null;
         },
 
         /**

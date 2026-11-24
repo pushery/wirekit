@@ -38,6 +38,13 @@
     // Without them the buttons are named from the label.
     'decreaseLabel' => null,
     'increaseLabel' => null,
+    // What − does at `min`, where it is otherwise disabled: the name of an event it dispatches
+    // instead of stepping, as a cart line asks there whether the line goes. With it, − keeps its
+    // place at the bound, takes `minActionLabel` as its name and draws `minActionIcon`, an icon
+    // alias. Null keeps − disabled at `min`.
+    'minAction' => null,
+    'minActionLabel' => null,
+    'minActionIcon' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
     // field's description (partials/field-help).
@@ -52,7 +59,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -62,7 +69,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -168,15 +181,18 @@
 
     // Base input classes — same foundation as standard input
     $inputClasses = WireKit::resolveClasses('number-input', 'base', implode(' ', [
-        'block w-16',
+        // The field keeps its width in a narrow row; the prefix and suffix beside it give way.
+        'block w-16 shrink-0',
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
         'text-[color:var(--color-wk-text)]',
         'text-center tabular-nums',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
-        'border-y-[length:var(--border-wk-width)]',
-        'border-x-0',
+        // All four sides. The lines beside the field are the field's: a button at its bound is
+        // disabled, and a disabled button fades with its opacity, which took the line between it
+        // and the field along while the field stayed active. The buttons draw their outer sides only.
+        'border-[length:var(--border-wk-width)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
@@ -194,14 +210,13 @@
         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
     ]), $scope);
 
-    // Border color switches between normal and error state. Only the top/bottom
-    // border is colored on the input itself because the stepper buttons sit
-    // flush against it and provide the left/right border — see $buttonBorder
-    // below for the matching error-aware color on those buttons.
+    // Border color switches between normal and error state. The field draws all four sides,
+    // and the stepper buttons sit flush against it with their outer three sides — see
+    // $buttonBorderColor below for the matching error-aware color on those buttons.
     // The focus-ring color is chosen here as well: a second one in the base list would be
     // decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = $hasError
-        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
+        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]'
         : 'border-[var(--color-wk-border-strong)] focus-visible:ring-[var(--color-wk-ring)]';
 
     // Size classes
@@ -229,10 +244,13 @@
 
     // Stepper button classes — shared for both decrease/increase
     $buttonClasses = implode(' ', [
-        'inline-flex items-center justify-center',
+        // A stepper keeps its size in a narrow row, so it never drops below its target size.
+        'inline-flex shrink-0 items-center justify-center',
         'bg-[var(--color-wk-bg-subtle)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'border-[length:var(--border-wk-width)]',
+        // Top and bottom here, the outer side on each button below: the side toward the field
+        // is the field's own line.
+        'border-y-[length:var(--border-wk-width)]',
         $buttonBorderColor,
         'hover:bg-[var(--color-wk-bg-active)]',
         'hover:text-[color:var(--color-wk-text)]',
@@ -273,8 +291,14 @@
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
     // What leaving the field did to a typed value, read again whenever the field is focused.
     // The region is always present and empty until something was changed, so the reference
-    // always resolves.
-    $describedBy = trim($id.'-adjusted '.$describedBy);
+    // always resolves. The text before and after the value belongs to it (a currency, a unit),
+    // so it describes the field next, before the field's message.
+    $describedBy = trim(implode(' ', array_filter([
+        $id.'-adjusted',
+        $prefix ? $id.'-prefix' : '',
+        $suffix ? $id.'-suffix' : '',
+        $describedBy,
+    ], static fn (string $part): bool => $part !== '')));
     // A caller's aria-describedby joins this list, because the control is what it describes
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
@@ -334,6 +358,9 @@
     $decreaseLabel = filled($decreaseLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($decreaseLabel) : ($stepperField !== ''
         ? __('wirekit::Decrease :field', ['field' => $stepperField])
         : __('wirekit::Decrease'));
+    // What − does at `min`: an event of the caller's, dispatched where − is otherwise disabled.
+    $hasMinAction = is_string($minAction) && trim($minAction) !== '';
+
     $increaseLabel = filled($increaseLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($increaseLabel) : ($stepperField !== ''
         ? __('wirekit::Increase :field', ['field' => $stepperField])
         : __('wirekit::Increase'));
@@ -376,10 +403,11 @@
      the answer to a `wire:model.live` change would take away the sentence about a corrected
      value as it appeared. --}}
 <div {{ $outerAttributes }}
+    @if($inAlignedRow) data-wk-field @endif
     class="relative space-y-1.5 min-w-0"
     @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif
     data-wk-server-value="{{ $startValue }}"
-    x-data="wirekitNumberInput({ min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
+    x-data="wirekitNumberInput({ min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, minAction: {{ \Pushery\WireKit\Support\AlpinePayload::from(is_string($minAction) && trim($minAction) !== '' ? trim($minAction) : null) }}, minActionLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($minActionLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($minActionLabel) : '') }}, decreaseLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from($decreaseLabel) }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
 >
 @if($optimisticConfig)
     {{-- The layer nests inside the component that owns the value: a nested Alpine
@@ -397,6 +425,11 @@
              `true`, so this reads it without consuming it. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one: a label hidden from the eye is out of the flow. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
+    @endif
 
     {{-- The field row and, once leaving the field changed a typed value, the sentence saying so
          (WCAG 3.3.1, 3.3.3). One element in the stack either way: the stack spaces every child
@@ -408,9 +441,11 @@
              empty, because a live region that arrives with its text announces nothing. It is
              out of flow, so the row keeps its layout. --}}
         <span id="{{ $id }}-adjusted" class="sr-only" role="status" x-text="adjustment"></span>
-        {{-- Prefix — inline before the stepper group --}}
+        {{-- Prefix — inline before the stepper group. In a row too narrow for all of it, the
+             prefix and suffix are cut with an ellipsis, and the steppers and the field keep
+             their size. --}}
         @if($prefix)
-            <span class="shrink-0 pe-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
+            <span id="{{ $id }}-prefix" class="min-w-0 truncate pe-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $prefix }}</span>
         @endif
 
         {{-- Decrease button — disabled at min boundary.
@@ -426,15 +461,23 @@
         <button
             type="button"
             tabindex="-1"
-            class="wk-touch-row {{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusStart }} {{ $sizeClasses }}"
+            class="wk-touch-row {{ $buttonClasses }} border-s-[length:var(--border-wk-width)] {{ $buttonPadding }} {{ $radiusStart }} {{ $sizeClasses }}"
             aria-label="{{ $decreaseLabel }}"
             aria-controls="{{ $id }}"
             @if($fieldLocked) disabled aria-disabled="true" @endif
-            :disabled="atMin || locked"
-            :aria-disabled="atMin || locked"
-            @click="decrease()"
+            :disabled="decreaseOff"
+            :aria-disabled="decreaseOff"
+            @if($hasMinAction) :aria-label="decreaseName" @endif
+            @click="pressDecrease()"
         >
-            <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" @if($hasMinAction) x-show="showsMinus" @endif><path d="M3 8h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            {{-- At `min` with an action of its own, − draws that action's glyph in place of the
+                 minus, and takes its name; everywhere else it steps. --}}
+            @wirekitLast($hasMinAction && filled($minActionIcon))
+                <span x-show="minActs" x-cloak class="inline-flex">
+                    <x-wirekit::icon :name="$minActionIcon" size="sm" aria-hidden="true" />
+                </span>
+            @endwirekitLast
         </button>
 
         {{-- Number input. Unbound, x-model keeps Alpine state and the native input in sync.
@@ -474,7 +517,7 @@
         <button
             type="button"
             tabindex="-1"
-            class="wk-touch-row {{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusEnd }} {{ $sizeClasses }}"
+            class="wk-touch-row {{ $buttonClasses }} border-e-[length:var(--border-wk-width)] {{ $buttonPadding }} {{ $radiusEnd }} {{ $sizeClasses }}"
             aria-label="{{ $increaseLabel }}"
             aria-controls="{{ $id }}"
             @if($fieldLocked) disabled aria-disabled="true" @endif
@@ -487,7 +530,7 @@
 
         {{-- Suffix — inline after the stepper group --}}
         @wirekitLast($suffix)
-            <span class="shrink-0 ps-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $suffix }}</span>
+            <span id="{{ $id }}-suffix" class="min-w-0 truncate ps-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $suffix }}</span>
         @endwirekitLast
     </div>
     {{-- The same sentence for the eye, there only while it says something. Hidden from
@@ -497,6 +540,11 @@
     </template>
     </div>
 
+    @if($inAlignedRow && ! ($hasError && $errorMessage) && ! $hint)
+        {{-- Nothing below the field, and the track still ends here, or the row's next field would
+             be pulled up into it. --}}
+        <span data-wk-field-part="message" aria-hidden="true"></span>
+    @endif
     @if($hasError && $errorMessage)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)

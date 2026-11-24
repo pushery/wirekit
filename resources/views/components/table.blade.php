@@ -165,17 +165,33 @@
     // containment the table takes its width from its columns there. What reads the width:
     // `stackBelowContainer`; a column, a details row or a stand-in on the container scale, each
     // marked `data-wk-table-measures`, since their own classes may reach the page compacted; the
-    // caption and a frozen column, which cap themselves at `100cqi`; and container units written
-    // into the slot, as the recipe that holds a control in view while the table scrolls sideways.
-    // Read once and shared with the plain-markup check below. It only looks for markers, and a
-    // morph comment Livewire writes around a control structure is no marker.
+    // caption and a frozen column, which cap themselves at `100cqi`; container units written into
+    // the slot, as the recipe that holds a control in view while the table scrolls sideways; and a
+    // variant of the frame's container written into the slot, such as `@max-lg/wk-table:hidden`,
+    // which asks the frame's width just as a unit does and matches nothing while the frame is no
+    // container. Read once and shared with the plain-markup check below. It only looks for markers,
+    // and a morph comment Livewire writes around a control structure is no marker.
     $rawSlot = (string) $slot;
     $measured = $stackBelowContainer !== null
         || $stickyColumn
         || str_contains($rawSlot, 'data-wk-table-measures')
         || str_contains($rawSlot, '<caption')
-        || preg_match('/\dcq(?:i|w|b|h|min|max)\b/', $rawSlot) === 1;
+        || preg_match('/\dcq(?:i|w|b|h|min|max)\b/', $rawSlot) === 1
+        || str_contains($rawSlot, '/wk-table:');
     $frameContainer = $measured ? '@container/wk-table ' : '';
+
+    // A head with `sortable` and `column` sorts through the state only a table with `alpine-sort`
+    // sets. The heads render before this view and cannot tell which table they land in, since a
+    // slot a caller's own component passes on renders outside it, so the table finds them here, by
+    // the marker each of them carries. A sorting table inside this one brings heads of its own.
+    if (! $alpineSort && str_contains($rawSlot, 'data-wk-alpine-sort') && ! str_contains($rawSlot, 'wirekitTableSort(')) {
+        \Pushery\WireKit\Support\StrictnessGate::warnSlotPartInAModeWithoutOne(
+            'table',
+            'a `table.th` with `sortable` and `column` sorts',
+            'with `alpine-sort`',
+            'Here its button does nothing. Give the table `alpine-sort`, or sort through Livewire with `sort-action`.'
+        );
+    }
 
     // Base table classes — full width, collapse borders, use design tokens for typography
     $classes = WireKit::resolveClasses('table', 'base', implode(' ', [
@@ -257,12 +273,19 @@
     // table's, so the markup of every nested table is taken out first,
     // innermost first. Should that replacement fail, the markup is read as it
     // stands. `$rawSlot` is the slot's markup, read above.
+    //
+    // The pattern reads a nested table's text in runs, and a bracket on its
+    // own only where it neither opens nor closes a table, and keeps no way
+    // back. A pattern that steps one character at a time keeps one for each,
+    // and on a long table, a calendar's month of days among them, it can run
+    // out of the regex engine's stack; the rows would then be read as this
+    // table's.
     $hasPlainHtmlDescendants = false;
     if (config('app.debug') && $rawSlot !== '') {
         $ownMarkup = $rawSlot;
         do {
             $before = $ownMarkup;
-            $ownMarkup = preg_replace('/<table\b[^>]*>(?:(?!<table\b).)*?<\/table>/is', '', $ownMarkup) ?? $before;
+            $ownMarkup = preg_replace('/<table\b[^>]*>(?:[^<]++|<(?!table\b|\/table>))*+<\/table>/i', '', $ownMarkup) ?? $before;
         } while ($ownMarkup !== $before);
 
         if (preg_match_all('/<(?:thead|tbody|tr|th|td)(?=[\s>\/])[^>]*>/i', $ownMarkup, $openingTags) > 0) {
@@ -320,9 +343,10 @@
      explicit minimum resolves `min-width: auto` to that content width, so a wide
      table would push this whole wrapper past a phone-width column. --}}
 {{-- `@container/wk-table` makes this frame the thing a column's `hide-below-container`
-     measures against. Named on purpose: an anonymous container would also become the
-     measuring context for every `@`-variant a caller nests inside the table, and
-     retarget it without anybody asking. --}}
+     measures against. Named, so the columns and a caller's `@…/wk-table:` variants find this
+     frame past any container a caller sets inside a cell. A name hides the frame from no
+     variant without one: inside the table such a variant asks the nearest container, which is
+     this frame whenever it is one. --}}
 {{-- The scroller's focus ring is drawn by this frame, on an `::after` laid over the table while
      the scroller has the keyboard focus. A ring the scroller drew itself, as an inset shadow,
      would be painted beneath its own cells: a header cell with a background would cover its top

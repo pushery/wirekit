@@ -122,16 +122,22 @@
 <div
     {{ $outerAttributes }}
     x-data="wirekitDatePicker({{ $popoverConfig }})"
+    @if($lazy) data-wk-lazy-panel-host @endif
     data-wk-server-value="{{ $popoverValue }}"
     x-bind:data-open="isOpen ? '' : null"
     {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->except(['aria-label', 'aria-labelledby', 'aria-describedby', 'form', 'readonly'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['relative w-full space-y-1.5'])) }}
     @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif
+    @if($inAlignedRow) data-wk-field @endif
     data-wk-sr-host
 >
     @if($label)
         <x-wirekit::label :id="$popoverLabelId" for="{{ $dateId }}" :required="$required" :help="$help" :help-id="$helpId" :help-field="(string) ($name ?? $dateId)">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($popoverHiddenName !== null)
         <span id="{{ $popoverLabelId }}" class="sr-only" @if($popoverCallerLabel === null) data-wk-fallback-name="{{ $dateId }}" @endif>{{ $popoverHiddenName }}</span>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track in a row that lines its fields up (date-picker.blade.php). --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <div class="relative">
@@ -144,7 +150,7 @@
             aria-haspopup="dialog"
             aria-expanded="false"
             x-bind:aria-expanded="isOpen ? 'true' : 'false'"
-            aria-controls="{{ $popoverPanelId }}"
+            @if($lazy) :aria-controls="_panelBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($popoverPanelId) }} : null" @else aria-controls="{{ $popoverPanelId }}" @endif
             aria-labelledby="{{ $popoverTriggerNameIds }}"
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($hasError) aria-invalid="true" @endif
@@ -161,7 +167,7 @@
             @if($popoverRequiredWord)
                 <span id="{{ $dateId }}-required-word" class="sr-only">{{ __('wirekit::(required)') }}</span>
             @endif
-            <span id="{{ $popoverValueId }}" class="min-w-0 flex-1 truncate">
+            <span id="{{ $popoverValueId }}" class="min-w-0 flex-1 truncate"@if($popoverShown !== '') title="{{ $popoverShown }}"@endif x-bind:title="showsPlaceholder ? '' : shownValue">
                 <span x-show="! showsPlaceholder" x-text="shownValue" @if($popoverShown === '') style="display: none" @endif>{{ $popoverShown }}</span>
                 <span x-show="showsPlaceholder" @if($popoverShown !== '') style="display: none" @endif class="text-[color:var(--color-wk-text-placeholder)]">{{ $popoverPlaceholder }}</span>
             </span>
@@ -209,7 +215,7 @@
 
     {{-- On a phone the dialog is a modal over the page (utils/picker-dialog.js, `modalMedia`): this
          is its backdrop, which a tap closes as Escape does. --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div
             x-show="isOpen && dialogModal"
             x-cloak
@@ -279,13 +285,25 @@
                 />
             </div>
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 
+    {{-- In an aligned row every message stands in one element, the row's third track
+         (date-picker.blade.php). --}}
+    @if($inAlignedRow)
+        <div data-wk-field-messages class="space-y-1.5 min-w-0">
+    @endif
     @if($hint && ! $hasError)
-        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @wirekitLast($showsError)
-        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    {{-- A block with markers, though nothing renders after it outside an aligned row: the block
+         that closes the row's track stands after it on its level. --}}
+    @if($showsError)
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @endif
+    {{-- Last in the element, so it takes no morph markers and the error above stays the last
+         thing a morph sees outside an aligned row. --}}
+    @wirekitLast($inAlignedRow)
+        </div>
     @endwirekitLast
 </div>

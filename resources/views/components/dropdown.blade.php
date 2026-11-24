@@ -25,6 +25,10 @@
     // at all. In the explicit form the caller writes the panel and gives it `label` there;
     // the note above the panel's @props says why there is no generic fallback.
     'label' => null,
+    // Whether the panel waits out of the page until the pointer or the focus reaches the trigger,
+    // or the menu opens. The panel reads it through @aware, in both forms. The default comes from
+    // the configuration (`components.dropdown.lazy`).
+    'lazy' => config('wirekit.components.dropdown.lazy', false),
     'scope' => null,
 ])
 
@@ -68,6 +72,10 @@
 
     // Blade compiles an unbound attribute to a string, and 'false' is truthy.
     $block = BooleanProp::from($block, false, 'dropdown', 'block');
+    // A lazy dropdown builds its panel the first time it is needed (utils/lazy-panel.js). The root
+    // names itself to the render hook and builds on the pointer or the focus: the panel is
+    // teleported out, so the root's area is the trigger's.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.dropdown.lazy', false)), 'dropdown', 'lazy');
 
     // Base wrapper classes — relative positioning context for floating panel
     $classes = WireKit::resolveClasses(
@@ -129,6 +137,7 @@
          regression, so all three roles are named. --}}
     x-on:click="$event.target.closest('[role=menuitem]:not([aria-disabled=true]), [role=menuitemradio]:not([aria-disabled=true]), [role=menuitemcheckbox]:not([aria-disabled=true])') && close()"
     data-wk-panel-id="{{ $panelId }}"
+    @if($lazy) data-wk-lazy-panel-host x-on:pointerenter="preparePanel()" x-on:focusin="preparePanel()" @endif
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
@@ -156,11 +165,16 @@
             @endphp
         @endif
         <x-wirekit::dropdown.trigger>{{ $trigger }}</x-wirekit::dropdown.trigger>
+        {{-- The panel marks where a lazy dropdown's template opens and closes, and this dropdown
+             writes it there or nothing, from its own `lazy` (Support\LazyPanel). The composed
+             panel is captured for that, as the slot is read as a string. --}}
         @if($slotCarriesPanel)
             {{-- Already a panel. Wrapping it again is the defect. --}}
-            {!! $slotHtml !!}
+            {!! \Pushery\WireKit\Support\LazyPanel::resolve($slotHtml, $lazy) !!}
         @else
+            @php ob_start(); @endphp
             <x-wirekit::dropdown.panel :label="$callerLabelledBy === null ? ($callerLabel ?? $label) : null" :aria-labelledby="$callerLabelledBy">{!! $slotHtml !!}</x-wirekit::dropdown.panel>
+            {!! \Pushery\WireKit\Support\LazyPanel::resolve((string) ob_get_clean(), $lazy) !!}
         @endif
     @else
         {{-- Explicit form: developer nests <x-wirekit::dropdown.trigger>
@@ -175,6 +189,7 @@
                 logger()->warning('[wirekit] dropdown: `label` names the menu only in the quick form. This call site nests its own <x-wirekit::dropdown.panel>, which the dropdown cannot reach — put `label` on that panel instead.');
             @endphp
         @endif
-        {{ $slot }}
+        {{-- The caller's panel marks where a lazy dropdown's template opens and closes, as above. --}}
+        {!! \Pushery\WireKit\Support\LazyPanel::resolve($slot->toHtml(), $lazy) !!}
     @endwirekitLast
 </div>

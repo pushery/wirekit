@@ -38,6 +38,7 @@ aria-expanded
 aria-hidden
 aria-label
 aria-labelledby
+arrow
 as
 at
 attribute
@@ -51,6 +52,7 @@ belongs
 below
 between
 bind
+binding
 block
 both
 box
@@ -85,6 +87,7 @@ collapse
 collapsible
 collapsing
 comes
+compact
 compiles
 component
 content
@@ -93,6 +96,8 @@ coordination
 crammed
 currentColor
 cursor-pointer
+data-wk-fold-chevron
+data-wk-print-open
 data-wk-touch
 debug
 deduper
@@ -137,6 +142,7 @@ follow
 font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-body-weight)]
 for
+form
 found
 from
 full-catalog
@@ -155,6 +161,7 @@ heights
 hidden
 hides
 holding
+however
 id
 identity
 imbalance
@@ -179,6 +186,7 @@ its
 justify-between
 keep
 keeps
+key
 keyboard-operable
 keys
 label
@@ -197,6 +205,7 @@ lookup
 m19.5
 makes
 marker
+markup
 match
 matches
 may
@@ -218,6 +227,7 @@ none
 not
 nothing
 null
+object
 of
 off
 on
@@ -241,6 +251,7 @@ padding
 page
 paints
 panel
+paper
 pass
 pattern
 per-render
@@ -250,6 +261,8 @@ plain-text
 pointed
 pointer
 pointing
+points
+prints
 prohibits
 prop
 properties
@@ -288,12 +301,15 @@ scope
 scoped
 seam
 second
+section
 seeded
 seeds
 server
 server-rendered
 sets
 share
+sheet
+short
 shrink-0
 since
 single
@@ -306,6 +322,7 @@ so
 stable
 stack
 standalone
+stands
 start
 starts
 state
@@ -371,6 +388,7 @@ visual
 w-4
 w-full
 was
+way
 we
 what
 when
@@ -387,6 +405,7 @@ wk-collapsible-trigger
 wk-touch-target
 works
 would
+writes
 x-cloak
 x-collapse
 x-data

@@ -423,6 +423,22 @@ export default function wirekitDatetimePicker(config = {}) {
             return range ? this.shownRange === '' : this.shownDay === '';
         },
 
+        /**
+         * The whole value as the trigger writes it, '' while it shows its placeholder. The trigger
+         * cuts a value it has no room for, and a reader who widens the text spacing (WCAG 1.4.12)
+         * takes that room, so the value's `title` holds it whole.
+         */
+        get shownText() {
+            if (range) {
+                return this.shownRange;
+            }
+
+            const day = this.shownDay;
+            const time = this.shownTime;
+
+            return day === '' ? '' : day + (time === '' ? '' : ' ' + this.atWord + ' ' + time);
+        },
+
         // ── The dialog (utils/picker-dialog.js) ──────────────────────────
 
         /**

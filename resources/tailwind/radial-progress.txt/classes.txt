@@ -14,6 +14,7 @@
 @php
 @property
 a
+above
 accent
 accessible
 action
@@ -26,6 +27,7 @@ and
 animate
 animated
 animation
+announced
 announces
 app
 arc
@@ -48,6 +50,7 @@ bare
 base
 baseline
 be
+because
 both
 brand
 browser
@@ -138,6 +141,7 @@ into
 is
 it
 its
+judge
 keeps
 keyframe
 label
@@ -221,6 +225,7 @@ restarts
 result
 ring
 role
+rounded
 s
 same
 say
@@ -229,6 +234,7 @@ scope
 screen
 second
 see
+share
 ship
 should
 shown
@@ -263,6 +269,7 @@ these
 thing
 this
 threshold
+thresholds
 to
 token
 translatable
@@ -303,6 +310,7 @@ wk-radial-md
 wk-radial-sm
 wk-radial-xl
 would
+writes
 wrong
 xl
 z-10

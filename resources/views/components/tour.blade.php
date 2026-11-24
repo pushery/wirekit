@@ -3,6 +3,9 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'name' => 'tour',
+    // Whether the tour's overlay, its steps included, waits out of the page until the tour first
+    // starts. The default comes from the configuration (`components.tour.lazy`).
+    'lazy' => config('wirekit.components.tour.lazy', false),
     'scope' => null,
 ])
 
@@ -40,9 +43,17 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A lazy tour holds the teleport of its overlay in a template of its own among the children of
+    // its root, which the browser keeps out of the page until the factory builds it as the tour first
+    // starts (utils/lazy-panel.js). The wrapper is an echo, since a conditional around a tag's two
+    // ends would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.tour.lazy', false)), 'tour', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <div
+    @if($lazy) data-wk-lazy-panel-host @endif
     {{-- The progress sentence is handed in as a template rather than built in the plugin,
          because it has to be translatable — a sentence assembled from fragments in
          JavaScript cannot be, and word order is not the same in every language. It is the
@@ -58,7 +69,7 @@
     {{-- Teleported to the overlay root — escapes any ancestor containing blocks
          (e.g. transform: translateZ(0) in docs PreviewRenderer) so
          fixed positioning resolves against the viewport. --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div x-show="active" x-cloak x-ref="overlay" class="relative">
             {{-- Overlay backdrop --}}
             <div
@@ -77,5 +88,5 @@
                 <span x-text="progressText"></span>
             </div>
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 </div>

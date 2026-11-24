@@ -32,10 +32,17 @@
     // the group but neither causes the rejection nor can resolve it says `:group-error="false"`
     // and is then neither announced as invalid nor described by the group's message.
     'groupError' => true,
+    // Hold the busy state of one Livewire action, as a button does: while the action named here
+    // is in flight the control is disabled (`wire:loading.attr` with `wire:target`), so a second
+    // press cannot overtake the first, and an unrelated request leaves it alone.
+    // `disable-on-loading` set to false marks it `aria-busy` instead and keeps the focus on it,
+    // which a disabled control loses the moment it is disabled.
+    'loadingTarget' => null,
+    'disableOnLoading' => true,
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkFieldSet' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkFieldSet' => null, 'wkField' => null, 'requiredMark' => true, 'alignFields' => false])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -49,7 +56,14 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set', 'wkField', 'wk-field', 'requiredMark', 'required-mark', 'alignFields', 'align-fields']);
+
+    // In a row that lines its fields up (`row align-fields`), this control takes no part in the
+    // tracks: its label stands beside it, not above. It stands on the control track whole, and
+    // the marker centers it there, on the midline of the fields beside it. Not inside a `field`,
+    // which takes the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -136,7 +150,7 @@
     // stylesheet draws that ring once for the page, on a card that carries `data-wk-arrow-ring`
     // (utils/arrow-focus.js).
     $labelClasses = WireKit::resolveClasses('radio', 'label', $variantValue === 'card'
-        ? 'group flex items-start gap-[var(--gap-wk-md)] cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
+        ? 'group flex items-start gap-[var(--gap-wk-md)] cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent-text)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
         : 'group inline-flex items-start gap-[var(--gap-wk-sm)] cursor-pointer relative align-top', $scope);
 
     // The visible label text, under `radio.text` as on the checkbox: the surface a row layout
@@ -161,6 +175,14 @@
     // finger through the hit area of `wk-touch-target`.
     // The condition is the one the text below renders under.
     $rowMarkers = $variantValue !== 'card' && $label ? 'wk-choice-row ' : '';
+    // The hint and the error under a box with its label begin where the label does, the box's
+    // width and the gap beside it in, so text that belongs to the label does not run under the
+    // box. A card holds its hint inside.
+    $messageIndent = $rowMarkers === '' ? '' : ' '.match ($size) {
+        'sm' => 'ps-[calc(1rem+var(--gap-wk-sm))]',
+        'lg' => 'ps-[calc(1.5rem+var(--gap-wk-sm))]',
+        default => 'ps-[calc(1.25rem+var(--gap-wk-sm))]',
+    };
 
     // Auto-generate ID: a radio set shares one `name` by definition, so the default
     // folds the value in — that part was always right and is unchanged.
@@ -207,6 +229,8 @@
     // sentence that selecting it will not satisfy. `covers()` is not gated on this, so a
     // declining control does not start printing the group's message under itself.
     $groupError = BooleanProp::from($groupError, true, 'radio', 'groupError');
+    $disableOnLoading = BooleanProp::from($disableOnLoading, true, 'radio', 'disableOnLoading');
+    $loadingTarget = is_string($loadingTarget) && trim($loadingTarget) !== '' ? trim($loadingTarget) : null;
     $isInvalid = $hasError || ($groupError && ($fieldGroup?->isInvalid($errors ?? null) ?? false));
 
     // One description list for the control: its own message, the group's, then a caller's
@@ -225,7 +249,7 @@
     $helpLabel = (string) ($label ?? '');
     $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
-    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    $hasLabelAfter = \Pushery\WireKit\Support\SlotContent::given($labelAfter ?? null);
     // The control sits inside the label, so the row around it stands whenever the slot is passed,
     // filled or not: a mark that comes and goes between two renders then leaves the markup around
     // the control as it was.
@@ -244,7 +268,7 @@
     // whose whole text would be the radio's name, so with either of them the radio takes its name
     // from the label's text alone, through `aria-labelledby`, unless the caller names it.
     $cardHint = $variantValue === 'card' && filled($hint);
-    $hasTrailing = isset($trailing) && $trailing->hasActualContent();
+    $hasTrailing = \Pushery\WireKit\Support\SlotContent::given($trailing ?? null);
     if ($hasTrailing && $variantValue !== 'card') {
         \Pushery\WireKit\Support\StrictnessGate::reject('radio', 'trailing', 'a slot outside a card', 'the slot on a radio with variant="card"', 'not rendered');
         $hasTrailing = false;
@@ -281,12 +305,12 @@
             ? 'border-[var(--color-wk-border-error)]'
             : 'border-[var(--color-wk-border-strong)] peer-hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-input)]',
-        'peer-checked:border-[var(--color-wk-accent)]',
+        'peer-checked:border-[var(--color-wk-accent-text)]',
         // A selected radio keeps its accent ring under the pointer. The hover border above is a
         // later rule of the same specificity, so on its own it turned the ring of a selected radio
         // gray, and the circle that marks "this one" did so only while the pointer was elsewhere.
         // The compound variant outranks it exactly when both states hold, as in checkbox.
-        'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
+        'peer-checked:peer-hover:border-[var(--color-wk-accent-text)]',
         'peer-focus-visible:ring-[length:var(--ring-wk-width)]',
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',
@@ -306,7 +330,7 @@
 {{-- `data-wk-choice` marks a radio whose label is a row, which the stylesheet reads in a field
      set: under a coarse pointer the hit areas of two such rows meet halfway between them, and on a
      touch surface the two rows need no gap. --}}
-<div {{ $outerAttributes }} @if($rowMarkers !== '') data-wk-choice @endif class="space-y-1.5 min-w-0">
+<div {{ $outerAttributes }} @if($rowMarkers !== '') data-wk-choice @endif @if($inAlignedRow) data-wk-label-beside @endif class="space-y-1.5 min-w-0">
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
     @if($helpId || $labelAfterGiven)
@@ -325,6 +349,8 @@
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                  caller's own class became a second class attribute and the browser kept only
                  this one. --}}
+            {{-- The busy state of the one action `loading-target` names, as on a button. --}}
+            @if($loadingTarget !== null) wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" wire:target="{{ $loadingTarget }}" @endif
             {{ $attributes->except('type')->except(['id', 'aria-describedby'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['peer', 'sr-only'])) }}
         />
 
@@ -341,14 +367,16 @@
             {{-- `wk-radio-dot` is the marker the stylesheet's forced-colors rule selects: the
                  dot's fill is the selected state, and a background is the one paint that
                  mode takes away — so selected and empty render identically without it. --}}
-            <span class="wk-radio-dot hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent)]"></span>
+            <span class="wk-radio-dot hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent-text)]"></span>
         </span>
 
 @php
     // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
     // and the bag is what delivers it to the native control. A bare `required` arrives as
     // `true`.
-    $wkRequiredMarker = (bool) $attributes->get('required', false);
+    // The asterisk goes where the control's own `requiredMark` or the form around it leaves it
+    // out; the control stays required through the bag either way.
+    $wkRequiredMarker = (bool) $attributes->get('required', false) && \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
 @endphp
         {{-- A card with a description holds the name above it in one column. Each branch holds its
              whole element: one that opened the column and left it to a later branch to close would
@@ -356,12 +384,12 @@
         @if($cardHint)
         <span class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
             @if($label)
-                <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
+                <span class="wk-choice-text [overflow-wrap:anywhere] {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
             @endif
-            <span data-wk-choice-description id="{{ $id }}-hint" class="{{ $descriptionClasses }}">{{ $hint }}</span>
+            <span data-wk-choice-description id="{{ $id }}-hint" class="[overflow-wrap:anywhere] {{ $descriptionClasses }}">{{ $hint }}</span>
         </span>
         @elseif($label)
-            <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
+            <span class="wk-choice-text [overflow-wrap:anywhere] {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@wirekitLast($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endwirekitLast</span>
         @endif
         @wirekitLast($hasTrailing)
             <span data-wk-choice-trailing class="{{ $trailingClasses }}">{{ $trailing }}</span>
@@ -381,8 +409,8 @@
         // is an echo rather than a block and Livewire writes no morph markers around it. It is
         // built right before the echo, so it runs on the path and in the scope the echo does.
         $messagePart = $hasError && $errorMessage
-            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
-            : ($hint && ! $cardHint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+            ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('[overflow-wrap:break-word] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]'.$messageIndent)).'">'.e($errorMessage).'</p>')
+            : ($hint && ! $cardHint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('[overflow-wrap:break-word] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]'.$messageIndent)).'">'.e($hint).'</p>') : '');
     @endphp
     {{ $messagePart }}
 </div>

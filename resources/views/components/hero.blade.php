@@ -74,8 +74,7 @@
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
     // Validate `size` against the three-tier enum. An off-enum value is reported through the
-    // strictness gate, and where the gate does not throw it renders the first allowed value,
-    // which is why `lg`, the default, leads the list.
+    // strictness gate, and where the gate does not throw it renders the default, `lg`.
     $validSize = in_array($size, ['sm', 'md', 'lg'], true)
         ? $size
         : WireKit::validateProp('hero', 'size', $size, ['lg', 'md', 'sm']);
@@ -140,10 +139,16 @@
         'default' => 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         // The accent fill sets the focus ring to its foreground for what sits on it, as a filled
-        // banner does: the page ring is the accent's own color in the default preset.
-        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
+        // banner does: the page ring is the accent's own color in the default preset. A heading, a
+        // link, a prose and a text on it take that foreground too, through `--wk-fill-ink` (see
+        // announcement-banner.blade.php).
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
         'muted' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
     };
+
+    // The accent is a filled surface: `data-wk-fill` says so wherever the classes hand the words
+    // their foreground (see announcement-banner.blade.php).
+    $handsItsForeground = str_contains($variantClasses, '[--wk-fill-ink:currentColor]');
 
     // Layout map: drives outer flex direction, copy/aside column flex factors, and text alignment.
     //   balanced — 50/50 split at lg+.
@@ -211,17 +216,27 @@
     //     as a subtle vignette darkening.
     //   - muted (subtle-tinted surface): same as default — a touch of black
     //     adds depth without competing.
-    //   - dark / accent (saturated or near-black surface in WireKit's neutral
-    //     default theme): black-on-near-black is invisible. Switch to a 30 %
-    //     white overlay so the corner lightens instead, producing a
+    //   - dark (a near-black surface): black-on-near-black is invisible. Switch
+    //     to a 30 % white overlay so the corner lightens instead, producing a
     //     comparable depth cue against dark backgrounds.
+    //   - accent: the corner shades toward the accent's hover color, which the
+    //     theme pairs with the accent's foreground at 4.5:1, so every point of
+    //     the run keeps the text's contrast; a white overlay on a colored accent
+    //     would not.
     //
     // The two figures are the `/20` and `/30` in the classes directly below.
     $gradientOverlayClass = match ($variant) {
-        'dark', 'accent' => 'bg-gradient-to-br from-transparent to-white/30',
+        'dark' => 'bg-gradient-to-br from-transparent to-white/30',
+        'accent' => 'bg-gradient-to-br from-transparent to-[var(--color-wk-accent-hover)]',
         default => 'bg-gradient-to-br from-transparent to-black/20',
     };
     $gradientClasses = $gradient ? $gradientOverlayClass : '';
+
+    // The lede steps back from the title at 80% where the step keeps 4.5:1 against everything
+    // behind it: on the page, the muted band and the dark band at rest. On a filled surface the
+    // step would take it below that against the fill, and over the dark band's gradient against
+    // the lightened corner, so there it keeps the section's text at full strength.
+    $ledeStepsBack = ! $handsItsForeground && ! ($gradient && $variant === 'dark');
 
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a
     // did-you-mean, and where the gate does not throw it renders the default level, which
@@ -232,7 +247,7 @@
     }
 @endphp
 
-<section data-variant="{{ $variant }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $variantClasses])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<section data-variant="{{ $variant }}" @if($handsItsForeground) data-wk-fill @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $variantClasses])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     @if($gradient)
         {{-- Gradient overlay is anchored to the outer <section> so it
              fills the section edge-to-edge (visually clean across the
@@ -270,7 +285,8 @@
                 @endif
 
                 @if(\Pushery\WireKit\Support\SlotContent::given($lede ?? null))
-                    <p data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 max-w-[40rem] mb-[var(--space-wk-lg,1.5rem)] {{ $ledeAlignClasses }}">
+                    {{-- The step back is `$ledeStepsBack`, decided above with the gradient. --}}
+                    <p data-wk-prose-skip @class(['text-[length:var(--text-wk-lg)]', 'opacity-80' => $ledeStepsBack, 'max-w-[40rem] mb-[var(--space-wk-lg,1.5rem)]', $ledeAlignClasses])>
                         {{ $lede }}
                     </p>
                 @endif

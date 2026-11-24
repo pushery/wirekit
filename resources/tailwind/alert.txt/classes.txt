@@ -114,6 +114,7 @@ classes
 clip-rule
 color
 color-mix
+colors
 compiles
 component
 components
@@ -132,6 +133,7 @@ data-wk-alert-text
 data-wk-alert-title
 data-wk-alert-toast
 data-wk-prose-skip
+data-wk-tint
 debug
 default
 developer
@@ -155,6 +157,7 @@ false
 feature
 fill
 fill-rule
+filled
 finds
 first
 fix
@@ -162,9 +165,11 @@ flags
 flex
 flex-1
 flips
+focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
+follows
 font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-heading-weight)]
 for
@@ -256,6 +261,7 @@ over
 own
 p-[var(--space-wk-xs)]
 page
+paints
 parts
 passthrough
 path
@@ -292,6 +298,7 @@ replay-button
 reported
 restore
 reveal
+ring
 role
 round
 rounded-[var(--radius-wk-md)]
@@ -332,8 +339,10 @@ stroke-linecap
 stroke-linejoin
 stroke-width
 styles
+stylesheet
 subtle
 success
+surface
 table
 tag
 takes
@@ -400,6 +409,7 @@ wins
 with
 without
 wk-touch-target
+word
 would
 wrap
 wrong-signpost

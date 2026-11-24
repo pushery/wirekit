@@ -17,6 +17,12 @@
  * nothing when used, and a screen reader hears the reason. The reader's own
  * choice stays stored and comes back the moment the attribute goes.
  *
+ * A page can name the mode a reader without a choice gets, with
+ * `data-wk-theme-default="light|dark"` on the root element, as the head script reads
+ * it. "system" then stands for that default rather than for the operating system:
+ * it is still the absence of a choice, stored as nothing, and the three-valued
+ * controls call it "Default (light)" or "Default (dark)".
+ *
  * Lifecycle resources held on `this`:
  *   - _media + _onSystemChange (MediaQueryList listener) — removed in destroy().
  *   - _onPeerChange (window listener) — removed in destroy().
@@ -36,6 +42,11 @@ export default function wirekitThemeController(config = {}) {
         // The mode the page fixes, or null, and why. Read from the root element.
         fixed: null,
         fixedReason: '',
+        // The mode a reader without a choice gets: 'light' or 'dark' where the root element names
+        // one in data-wk-theme-default, 'system' (the operating system's) otherwise.
+        pageDefault: 'system',
+        // What the "system" option is called while the page names a default, per default.
+        defaultLabels: config.defaultLabels || {},
         // What a screen reader hears while the page fixes the mode and names no reason.
         defaultFixedReason: config.fixedReason || 'This page sets the mode.',
         // The menu trigger's name is built from these two; see triggerName.
@@ -49,6 +60,7 @@ export default function wirekitThemeController(config = {}) {
         init() {
             this.theme = this._read() ?? 'system';
             this._readFixed();
+            this._readDefault();
             this._apply();
 
             // Follow the page fixing the mode, and letting go of it, while it runs.
@@ -58,6 +70,7 @@ export default function wirekitThemeController(config = {}) {
                     if (! this._fixedObserver) return;
 
                     this._readFixed();
+                    this._readDefault();
 
                     if (this._apply()) {
                         this._announce();
@@ -66,7 +79,7 @@ export default function wirekitThemeController(config = {}) {
 
                 this._fixedObserver.observe(document.documentElement, {
                     attributes: true,
-                    attributeFilter: ['data-wk-theme-fixed', 'data-wk-theme-fixed-reason'],
+                    attributeFilter: ['data-wk-theme-fixed', 'data-wk-theme-fixed-reason', 'data-wk-theme-default'],
                 });
             }
 
@@ -92,10 +105,16 @@ export default function wirekitThemeController(config = {}) {
             // Follow the OS while the reader has no explicit preference. Without
             // this, "system" would only mean "whatever the OS said when the page
             // loaded" and the page would stay light through the reader's sunset.
+            // The change is told to the page like a choice, so app code with its
+            // own colors follows the sunset too. Only the control whose _apply()
+            // changed the page tells it: the others find the class already set,
+            // so a page with several controls hears the change once.
             if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
                 this._media = window.matchMedia('(prefers-color-scheme: dark)');
                 this._onSystemChange = () => {
-                    if (this.theme === 'system') this._apply();
+                    if (this.theme === 'system' && this._apply()) {
+                        this._announce();
+                    }
                 };
 
                 // addEventListener over the deprecated addListener: Safari has
@@ -130,8 +149,24 @@ export default function wirekitThemeController(config = {}) {
                 return this.fixed === 'dark';
             }
 
-            return this.theme === 'dark'
-                || (this.theme === 'system' && this._systemPrefersDark());
+            if (this.theme !== 'system') {
+                return this.theme === 'dark';
+            }
+
+            // No choice: the page's default, and without one the operating system.
+            return this.pageDefault === 'system' ? this._systemPrefersDark() : this.pageDefault === 'dark';
+        },
+
+        /**
+         * What the "system" option is called: the default the page names, where it names one, so
+         * the control says what a reader without a choice gets.
+         */
+        get systemLabel() {
+            if (this.pageDefault !== 'system' && typeof this.defaultLabels[this.pageDefault] === 'string') {
+                return this.defaultLabels[this.pageDefault];
+            }
+
+            return this.optionLabels.system ?? 'system';
         },
 
         /** The mode the control shows as on: the page's while it fixes one, the reader's otherwise. */
@@ -147,7 +182,7 @@ export default function wirekitThemeController(config = {}) {
          * a screen reader, since a name replaces the content it would otherwise be read from.
          */
         get triggerName() {
-            const shown = this.optionLabels[this.mode] ?? this.mode;
+            const shown = this.mode === 'system' ? this.systemLabel : (this.optionLabels[this.mode] ?? this.mode);
 
             return this.controlName !== '' ? `${this.controlName}, ${shown}` : shown;
         },
@@ -222,6 +257,13 @@ export default function wirekitThemeController(config = {}) {
 
             this.fixed = fixed === 'light' || fixed === 'dark' ? fixed : null;
             this.fixedReason = this.fixed === null ? '' : (root?.getAttribute('data-wk-theme-fixed-reason') || '');
+        },
+
+        _readDefault() {
+            const root = typeof document !== 'undefined' ? document.documentElement : null;
+            const pageDefault = root?.getAttribute('data-wk-theme-default');
+
+            this.pageDefault = pageDefault === 'light' || pageDefault === 'dark' ? pageDefault : 'system';
         },
 
         _systemPrefersDark() {

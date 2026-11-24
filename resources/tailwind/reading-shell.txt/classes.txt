@@ -1,5 +1,6 @@
 !important
 --active
+--border-wk-width
 --cjk-chars-per-minute
 --color-wk-accent
 --color-wk-accent-fg
@@ -279,7 +280,7 @@ bookmarks
 bool
 boolean
 border-[var(--color-wk-border)]
-border-b
+border-b-[length:var(--border-wk-width)]
 both
 bottom
 bottom-0
@@ -418,6 +419,8 @@ corner
 correctly
 costs
 could
+count
+counted
 counting
 counts
 covered
@@ -492,6 +495,7 @@ device
 did
 differ
 different
+differs
 digits
 dir
 direct
@@ -677,6 +681,7 @@ for
 force
 forceExpanded
 forceExpandedMd
+forced-colors
 forces
 foreach
 form
@@ -885,6 +890,8 @@ landmark
 landmark-unique
 landmarks
 lands
+lang
+language
 languages
 last
 later
@@ -1374,6 +1381,7 @@ right
 right-0
 right-[var(--reading-spine-edge-offset,1rem)]
 ring
+rings
 role
 roll
 room
@@ -1587,6 +1595,7 @@ stroke-linecap
 stroke-linejoin
 stroke-width
 structure
+stuck
 style
 style-src
 style-src-attr
@@ -1631,6 +1640,7 @@ target
 targeted
 taught
 technology
+tell
 template
 test
 text
@@ -1856,7 +1866,9 @@ wk-reading-minimap__tooltip
 wk-reading-minimap__viewport
 wk-reading-progress
 wk-reading-progress--dot
+wk-reading-progress__arc
 wk-reading-progress__fill
+wk-reading-progress__track
 wk-reading-shell
 wk-reading-spine
 wk-reading-spine__back-to-top
@@ -1883,6 +1895,7 @@ wk-touch-row
 wk-touch-target
 won
 word
+words
 work
 works
 workspace

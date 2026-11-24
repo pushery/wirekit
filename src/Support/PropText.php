@@ -250,7 +250,10 @@ final class PropText
      * An enum is read as the value of a field is (Support\FieldValue): a backed enum as its value,
      * which is how `e()` writes one, and a pure one, which `e()` cannot write, as its name. A model
      * attribute cast to an enum hands one over, and the views compare a prop with strings and write
-     * it as text, where an enum does not cast.
+     * it as text, where an enum does not cast. An enum in an attribute that is no prop is read the
+     * same way in the attribute bag, where the view writes it: the bag writes each value through
+     * `trim()`, which an enum ends with a type error, and the data of an anonymous component holds
+     * only a copy of the attribute, read above.
      *
      * A list, something iterated as one, or an object without a text of its own given to a text
      * prop cannot be written as text, and a view that writes it ends the page with a type error. It
@@ -305,10 +308,19 @@ final class PropText
         // reads it as its name. A text given there as a list is reported and dropped, as it is
         // from an anonymous component, whose data carries a copy of every attribute.
         $bagLists = [];
+        $bagEnums = [];
 
         if ($attributes instanceof ComponentAttributeBag) {
             foreach ($attributes->getAttributes() as $name => $value) {
                 $key = Str::camel((string) $name);
+
+                // The bag writes each value through trim(), which an enum does not pass, so the bag
+                // holds it as its text, as the data does.
+                if ($value instanceof UnitEnum) {
+                    $bagEnums[(string) $name] = self::enum($value);
+
+                    continue;
+                }
 
                 if ((is_array($value) || is_object($value)) && ! array_key_exists($key, $data)) {
                     $shown = self::unwritable($component, $key, $value);
@@ -320,8 +332,12 @@ final class PropText
             }
         }
 
-        if (($escaped === [] && $fluent === [] && $none === [] && $lists === [] && $bagLists === []) || ! $attributes instanceof ComponentAttributeBag) {
+        if (($escaped === [] && $fluent === [] && $none === [] && $lists === [] && $bagLists === [] && $bagEnums === []) || ! $attributes instanceof ComponentAttributeBag) {
             return;
+        }
+
+        if ($bagEnums !== []) {
+            $attributes->setAttributes(array_replace($attributes->getAttributes(), $bagEnums));
         }
 
         foreach ($bagLists as [$key, $shown]) {

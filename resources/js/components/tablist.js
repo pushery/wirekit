@@ -26,9 +26,19 @@
  * chose is selected there, so the focus goes back to it, unless the new page focused
  * something itself.
  *
- * Lifecycle resources held on `this`: none. The first list of a page installs the page-wide
- * listeners for that focus once (`installTabLinkFocus()`), and every later page reuses them.
+ * A bar that scrolls sideways brings its selected tab into view: when it starts, when it or a
+ * tab changes size (a phone turned, a web font that lands after the first pass), and when a
+ * Livewire render moves `aria-selected`. A page opened directly, from a bookmark or a link in a
+ * mail, would otherwise show the bar from its first tab with the selected one cut off at the
+ * edge. Only the bar scrolls, never the page, and the focus stays where it is
+ * (utils/reveal-in-track.js). A selected tab already in full view leaves the bar where it is.
+ *
+ * Lifecycle resources held on `this`: a ResizeObserver on the bar and its tabs (`_resize`) and a
+ * MutationObserver on the selection (`_selection`), both released in `destroy()`. The first list
+ * of a page installs the page-wide listeners for the focus after a visit once
+ * (`installTabLinkFocus()`), and every later page reuses them.
  */
+import { revealInTrack } from '../utils/reveal-in-track.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
 
 /** Remembered on `window`, so a second copy of this module on the page installs nothing. */
@@ -129,8 +139,47 @@ export function installTabLinkFocus(win = globalThis.window, doc = globalThis.do
 
 export default function wirekitTablist() {
     return {
+        _resize: null,
+        _selection: null,
+
         init() {
             installTabLinkFocus();
+
+            const reveal = () => this.revealSelected();
+
+            // Both guarded because a plain unit harness has neither; the bar then reveals once.
+            if (typeof ResizeObserver === 'function') {
+                this._resize = new ResizeObserver(reveal);
+                this._resize.observe(this.$root);
+                Array.from(this.$root?.children ?? []).forEach((tab) => this._resize.observe(tab));
+            }
+
+            // A Livewire render that selects another tab changes `aria-selected` in place, and
+            // the bar keeps its size, so only this notices.
+            if (typeof MutationObserver === 'function') {
+                this._selection = new MutationObserver(reveal);
+                this._selection.observe(this.$root, { subtree: true, attributes: true, attributeFilter: ['aria-selected'] });
+            }
+
+            reveal();
+        },
+
+        destroy() {
+            this._resize?.disconnect();
+            this._selection?.disconnect();
+            this._resize = null;
+            this._selection = null;
+        },
+
+        /** Bring the selected tab of a bar that scrolls sideways into the visible part of the bar. */
+        revealSelected() {
+            const list = this.$root;
+
+            if (typeof list?.querySelector !== 'function') {
+                return;
+            }
+
+            revealInTrack(list, list.querySelector('[role="tab"][aria-selected="true"]'));
         },
 
         /**

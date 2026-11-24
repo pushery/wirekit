@@ -128,7 +128,6 @@
         <x-wirekit::row justify="between">
             <x-wirekit::button
                 intent="neutral"
-                surface="ghost"
                 type="button"
                 x-on:click="prev()"
                 x-bind:aria-disabled="isFirst ? 'true' : null"

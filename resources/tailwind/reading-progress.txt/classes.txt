@@ -32,6 +32,7 @@ a
 above
 accent
 accept
+accessibility
 across
 action
 actual
@@ -78,6 +79,7 @@ bag
 bar
 bar/dot
 base
+be
 beats
 because
 becomes
@@ -221,6 +223,7 @@ fn
 folding
 follows
 for
+forced-colors
 foreach
 form
 fractional
@@ -322,6 +325,7 @@ neutral
 never
 no
 nodes
+noise
 non-empty
 non-scrolling
 none
@@ -426,6 +430,7 @@ retinting
 reuse
 right
 ring
+rings
 role
 roll
 root
@@ -444,6 +449,7 @@ scan
 scanner
 scans
 scope
+script
 scroll
 scroll-to-top
 scrolling
@@ -502,6 +508,7 @@ stroke-dasharray
 stroke-dashoffset
 stroke-linecap
 stroke-width
+stuck
 style
 styles
 stylesheet
@@ -515,10 +522,12 @@ swap
 symptom
 system
 t
+take
 takes
 tall
 target
 targeted
+tell
 template
 test
 text
@@ -526,6 +535,7 @@ than
 that
 the
 their
+them
 theme
 theme-wide
 then
@@ -550,6 +560,7 @@ transitions
 translucent
 transparent
 travels
+tree
 true
 truthy
 typography
@@ -604,7 +615,9 @@ with
 without
 wk-reading-progress
 wk-reading-progress--dot
+wk-reading-progress__arc
 wk-reading-progress__fill
+wk-reading-progress__track
 wk-scroll-fade
 would
 wrapper

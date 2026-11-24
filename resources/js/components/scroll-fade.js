@@ -39,6 +39,8 @@
  *   - _ticking (rAF coalescing flag) — the frame is deliberately not canceled:
  *     its callback reads the DOM and writes one attribute, both inert once the
  *     element is detached.
+ *   - _stopTheFirstMeasure — takes back the measure that waits for the end of
+ *     the start's task (utils/measure-once-started.js). Called in destroy().
  *
  * `safeObserver` carries the null-guard, so neither callback can fire into a
  * torn-down component.
@@ -50,6 +52,7 @@
  * scroll or resize.
  */
 import { safeObserver } from '../utils/safe-observer.js';
+import { measureOnceStarted } from '../utils/measure-once-started.js';
 
 /**
  * Slack in pixels before an edge counts as reached.
@@ -66,6 +69,7 @@ export default function wirekitScrollFade() {
         _resizeObserver: null,
         _mutationObserver: null,
         _ticking: false,
+        _stopTheFirstMeasure: null,
 
         init() {
             this._onScroll = () => this._schedule();
@@ -88,12 +92,17 @@ export default function wirekitScrollFade() {
                 this._mutationObserver.observe(this.$root, { childList: true, subtree: true });
             }
 
-            // Measure once now, synchronously: the first paint should already
-            // carry the right answer rather than the wrong one for a frame.
-            this.measure();
+            // The first measure runs with the other components started in this task,
+            // once it is done: the first paint still carries the right answer rather
+            // than the wrong one for a frame, and a page of many scroll areas lays
+            // itself out once, not once per area.
+            this._stopTheFirstMeasure = measureOnceStarted(() => this.measure());
         },
 
         destroy() {
+            this._stopTheFirstMeasure?.();
+            this._stopTheFirstMeasure = null;
+
             if (this._onScroll) {
                 this.$root.removeEventListener('scroll', this._onScroll);
                 this._onScroll = null;

@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-border
 --color-wk-text
 --color-wk-text-muted
@@ -67,7 +68,7 @@ become
 becomes
 before:block
 before:border-[color:var(--color-wk-border)]
-before:border-t
+before:border-t-[length:var(--border-wk-width)]
 before:col-span-full
 before:content-['']
 before:my-[var(--space-wk-xs,0.25rem)]

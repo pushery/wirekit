@@ -52,7 +52,7 @@
     };
 
     $variantClass = match ($variantValue) {
-        'border' => 'border-b border-[var(--color-wk-border)] pb-[var(--space-wk-sm)]',
+        'border' => 'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] pb-[var(--space-wk-sm)]',
         default => '',
     };
 

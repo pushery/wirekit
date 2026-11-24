@@ -22,6 +22,8 @@ import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { pageScrollBehavior } from '../utils/motion.js';
 import { position } from '../utils/floating.js';
 import { onFormReset } from '../utils/form-reset.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelHost, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { requiredCheckState } from '../utils/required-check.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
 import { optionPressState } from '../utils/option-press.js';
@@ -88,6 +90,10 @@ export default function wirekitMultiSelect(config = {}) {
         ...serverSearchState(config),
         filter: '',
         dropdownOpen: false,
+        // A lazy multi-select's host of its list (lazyPanelHost()), and whether the list is built: the
+        // field names the list with `aria-controls` only from then on. See preparePanel().
+        _lazyHost: null,
+        _listBuilt: false,
         // Where the keyboard is standing, as an index into `filteredOptions`.
         // Focus stays on the filter input for the whole interaction — that is
         // what a combobox is — so this index, published through
@@ -152,8 +158,22 @@ export default function wirekitMultiSelect(config = {}) {
             // Position the panel each time it opens. It is `fixed` (to escape a
             // clipping card) and therefore needs an explicit anchor + width; see
             // _place(). $nextTick so the panel is in the DOM before measuring.
+            // A render of the Livewire component around a lazy multi-select must neither remove the
+            // list it built nor keep a list the server no longer draws. One started again over a list
+            // it built before, as a component carried by `@persist` is, names its list.
+            this._lazyHost = lazyPanelHost(this.$root);
+            const lazyTemplate = lazyPanelTemplate(this._lazyHost);
+
+            if (lazyTemplate) {
+                this._listBuilt = lazyTemplate._wkBuilt === true;
+                keepLazyEntriesThroughRenders();
+            }
+
             watchCurrent(this, 'dropdownOpen', (open) => {
                 if (open) {
+                    // An opening that came before the pointer or the focus reached the field still
+                    // finds its list, built before the tick below places it.
+                    this.preparePanel();
                     this.$nextTick(() => this._place());
                 } else {
                     this._stopAutoUpdate?.();
@@ -985,6 +1005,17 @@ export default function wirekitMultiSelect(config = {}) {
 
         _fieldElement() {
             return this.$refs?.field ?? this.$root?.querySelector?.('[x-ref="field"]') ?? null;
+        },
+
+        /**
+         * Build the list of a lazy multi-select before it is needed, on the pointer or the focus on
+         * the field and on the first opening, and let the field name the list from then on. A
+         * multi-select that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            if (buildLazyPanel(lazyPanelTemplate(this._lazyHost))) {
+                this._listBuilt = true;
+            }
         },
 
         /**

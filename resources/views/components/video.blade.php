@@ -80,7 +80,17 @@
             continue;
         }
 
-        $trackKind = is_string($track['kind'] ?? null) && in_array($track['kind'], ['captions', 'subtitles', 'descriptions'], true) ? $track['kind'] : 'captions';
+        // The five kinds a <track> takes, in any case as the element reads its attribute, and
+        // `captions` where none is given. Any other value is reported and read as captions, as a
+        // wrong value of a prop falls back to its default: turned into captions in silence, a
+        // chapters file would stand in the caption menu and show its titles over the video.
+        $trackKind = is_string($track['kind'] ?? null) ? strtolower(trim($track['kind'])) : ($track['kind'] ?? null);
+
+        if ($trackKind === null || $trackKind === '') {
+            $trackKind = 'captions';
+        } elseif (! in_array($trackKind, ['captions', 'subtitles', 'descriptions', 'chapters', 'metadata'], true)) {
+            $trackKind = StrictnessGate::reject('video', 'tracks', is_scalar($trackKind) ? (string) $trackKind : get_debug_type($trackKind), 'a track kind: captions, subtitles, descriptions, chapters or metadata', 'captions');
+        }
 
         $trackList[] = [
             'src' => $trackSrc,
@@ -150,7 +160,7 @@
 
     <div data-wk-video-notice class="{{ $noticeClasses }}" x-show="state === 'consent'" @if($state !== 'consent') x-cloak @endif>
         <p data-wk-prose-skip class="m-0 max-w-[var(--size-wk-modal-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::This video is on :provider. Loading it sends data to :provider.', ['provider' => $providerName]) }}</p>
-        <x-wirekit::button intent="neutral" surface="filled" size="sm" data-wk-video-load x-on:click="requestConsent()">{{ __('wirekit::Load the video') }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" size="sm" data-wk-video-load x-on:click="requestConsent()">{{ __('wirekit::Load the video') }}</x-wirekit::button>
     </div>
     @else
     {{-- No address before the first play: the browser fetches nothing until the reader asks, or

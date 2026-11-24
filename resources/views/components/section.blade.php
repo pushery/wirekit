@@ -26,13 +26,22 @@
         '2xl' => 'py-[var(--space-wk-2xl,4rem)]',
     };
 
+    // `inverse` and `accent` fill the section and set its text color. A heading, a link, a prose
+    // and a text read `--wk-fill-ink` before the page's colors, which would stand dark on dark
+    // here, so they take this color; `--wk-fill-surface` takes the page's muted patch off the code
+    // in a prose. The focus ring takes the same color, without an offset band, since the page ring
+    // is the fill's own color in the default preset. A component with a surface of its own reads
+    // neither, and a card takes all of it back for what it holds (see announcement-banner.blade.php).
     $bgClasses = match (WireKit::validateProp('section', 'background', $background, ['default', 'muted', 'subtle', 'inverse', 'accent'])) {
         'default' => '',
         'muted' => 'bg-[var(--color-wk-bg-muted)]',
         'subtle' => 'bg-[var(--color-wk-bg-subtle)]',
-        'inverse' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]',
-        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        'inverse' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)] [--color-wk-ring:var(--color-wk-text-inverse)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent] [--wk-fill-ink:currentColor] [--wk-fill-surface:transparent]',
     };
+
+    // A filled section says so with `data-wk-fill` (see announcement-banner.blade.php).
+    $handsItsForeground = str_contains($bgClasses, '[--wk-fill-ink:currentColor]');
 
     $dividerValue = match ($divider) {
         'none', 'top', 'bottom', 'both' => $divider,
@@ -40,9 +49,9 @@
     };
 
     $dividerClasses = match ($dividerValue) {
-        'top' => 'border-t border-[var(--color-wk-border)]',
-        'bottom' => 'border-b border-[var(--color-wk-border)]',
-        'both' => 'border-y border-[var(--color-wk-border)]',
+        'top' => 'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
+        'bottom' => 'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
+        'both' => 'border-y-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         default => '',
     };
 
@@ -64,6 +73,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('section', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
+<{{ $as }} data-wk-prose-skip @if($handsItsForeground) data-wk-fill @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </{{ $as }}>

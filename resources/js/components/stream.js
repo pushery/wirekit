@@ -11,7 +11,8 @@
  *     that a response is generating (once), then the result (once) when it settles.
  *  2. Reduced motion. A token-by-token build is motion. Under
  *     `prefers-reduced-motion: reduce` the tokens are buffered and revealed as one
- *     block when the stream finishes — no incremental growth.
+ *     block when the stream finishes — no incremental growth. Each run reads the
+ *     preference when it starts, so a run follows a change made on an open page.
  *  3. Abort + error. A half-streamed response whose connection dies has a defined
  *     terminal state (`aborted` / `failed`), not a silent freeze.
  *
@@ -129,12 +130,6 @@ export default function wirekitStream(config = {}) {
         _announceText: '', // bound to the sr-only role="status" region
 
         init() {
-            // A token-by-token build is motion — honor prefers-reduced-motion by
-            // buffering and revealing the whole response at the end.
-            this._reduce = typeof window !== 'undefined'
-                && typeof window.matchMedia === 'function'
-                && prefersReducedMotion();
-
             // Manual mode has nothing to open but still auto-enters `streaming`
             // so the "generating" announcement happens once, up front, exactly as
             // it does for a live source.
@@ -218,6 +213,15 @@ export default function wirekitStream(config = {}) {
             if (this.status === 'streaming' || (needsUrl && !this._url)) {
                 return;
             }
+            // A token-by-token build is motion, so under reduced motion the run buffers
+            // its tokens and reveals them at the end. The preference is taken here, for
+            // this run, because a reader can change it while the page is open (the
+            // operating system's setting, or `data-reduce-motion` on <html> from a toggle
+            // in the application), and a "Regenerate" or a body that changes every run
+            // starts again on the same element. It holds until the run ends: a change in
+            // the middle would leave the tokens before it in `text` and the ones after it
+            // in the buffer, and the end of the run reveals only one of the two.
+            this._reduce = prefersReducedMotion();
             this.text = '';
             this._buffer = '';
             this.error = null;

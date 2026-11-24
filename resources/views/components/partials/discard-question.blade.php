@@ -8,6 +8,9 @@
        $lockScroll  the overlay's own setting, so a question over an overlay inside a page region
                     leaves the page scrolling as the overlay does
        $scope       the overlay's personalization scope
+       $lazy        whether the overlay builds its panel the first time it is needed: then the
+                    question waits too, built by its own show() when it is first asked. Otherwise
+                    the question follows the configured default of an alert dialog.
 
      The overlay opens it (utils/overlay.js, `_mayDiscard()`), finding it by the marker among its
      root's children. Stay is the dialog's Cancel: focused when the question opens, the answer
@@ -20,11 +23,11 @@
      Without the confirm shortcut: a chord the reader may still hold from the overlay below must not
      discard what they typed. Without close-on-confirm either: the question closes through
      `_discardChanges()`, so an application's default for its own dialogs does not apply here. --}}
-<x-wirekit::alert-dialog data-wk-discard-question :lock-scroll="$lockScroll" :describedby="false" :confirm-shortcut="false" :close-on-confirm="false" :scope="$scope">
+<x-wirekit::alert-dialog data-wk-discard-question :lock-scroll="$lockScroll" :describedby="false" :confirm-shortcut="false" :close-on-confirm="false" :scope="$scope" :lazy="($lazy ?? false) ? true : null">
     <x-wirekit::alert-dialog.title>{{ $question }}</x-wirekit::alert-dialog.title>
     <x-wirekit::alert-dialog.actions>
         <x-wirekit::alert-dialog.cancel>
-            <x-wirekit::button intent="neutral" surface="ghost" size="sm">{{ __('wirekit::Stay') }}</x-wirekit::button>
+            <x-wirekit::button intent="neutral" size="sm">{{ __('wirekit::Stay') }}</x-wirekit::button>
         </x-wirekit::alert-dialog.cancel>
         <x-wirekit::button intent="danger" size="sm" x-on:click="_discardChanges()">{{ __('wirekit::Discard') }}</x-wirekit::button>
     </x-wirekit::alert-dialog.actions>

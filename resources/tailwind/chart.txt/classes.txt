@@ -16,6 +16,7 @@
 --gap-wk-xs
 --padding-wk-x-md
 --padding-wk-x-sm
+--padding-wk-x-xs
 --padding-wk-y-md
 --padding-wk-y-sm
 --padding-wk-y-xs
@@ -23,6 +24,7 @@
 --radius-wk-sm
 --ring-wk-width
 --shadow-wk-md
+--size-wk-target-min
 --size-wk-tooltip-max
 --space-wk-xs
 --text-wk-sm
@@ -34,10 +36,12 @@
 @endonce
 @endphp
 @endunless
+@endwirekitLast
 @foreach
 @if
 @include
 @php
+@wirekitLast
 a
 about
 above
@@ -60,6 +64,7 @@ against
 aim
 align-items
 all
+allows
 already
 always
 an
@@ -160,12 +165,14 @@ clientHeight
 clip
 clips
 close
+code
 col
 collapses
 color
 column
 columns
 come
+compact
 complete
 component
 concatenate
@@ -181,6 +188,7 @@ content
 contents
 context
 contexts
+continues
 contract
 control
 cooperates
@@ -193,6 +201,7 @@ critical
 cryptic
 cursor-pointer
 custom
+cut
 dashed
 data
 data-navigate-once
@@ -200,6 +209,7 @@ data-replayable
 data-wire-stream-cap
 data-wire-stream-event
 data-wire-stream-mode
+data-wk-apex-src
 data-wk-chart
 data-wk-chart-data
 data-wk-chart-label-tip
@@ -261,6 +271,7 @@ emitted
 emitting
 empty
 end
+endShadow
 entrance
 escape
 events
@@ -287,6 +298,7 @@ fire
 firing
 first
 first-class
+fits
 fixed
 flex
 flex-grid
@@ -368,6 +380,7 @@ into
 ireKit
 is
 it
+item
 its
 js
 justify-content
@@ -390,6 +403,7 @@ layout
 lays
 lazy-loader
 lead
+leading-[var(--size-wk-target-min)]
 leaves
 left
 legal
@@ -400,6 +414,7 @@ library
 lifecycle
 lifts
 like
+line
 line-height
 lines
 link
@@ -412,6 +427,8 @@ listitem
 lists
 live
 load
+loaded
+loads
 look
 m-0
 maintainAspectRatio
@@ -474,6 +491,7 @@ on
 once
 one
 only
+opacity
 open
 opens
 optimistic-ui
@@ -513,6 +531,7 @@ past
 path
 payload
 per
+phone
 phrasing
 place
 placed
@@ -538,6 +557,7 @@ pull
 put
 puts
 px-[var(--padding-wk-x-sm)]
+px-[var(--padding-wk-x-xs)]
 py-[var(--padding-wk-y-sm)]
 py-[var(--padding-wk-y-xs)]
 quietly
@@ -594,6 +614,9 @@ screen
 screen-reader
 script
 scripts
+scroll
+scrollbar
+scroller
 scrolls
 second
 see
@@ -606,13 +629,17 @@ series
 server
 set
 sets
+seven
+shadow
 shadow-[var(--shadow-wk-md)]
+shadows
 shape
 shortened
 shortens
 should
 shows
 shrink
+sideways
 sight
 signal
 silently
@@ -640,6 +667,7 @@ stand
 stands
 start
 start-0
+startShadow
 starts
 stay
 stays
@@ -744,7 +772,9 @@ want
 was
 way
 we
+week
 what
+whatever
 when
 where
 which
@@ -755,6 +785,7 @@ whole
 whose
 wide
 widen
+wider
 width
 will
 win
@@ -764,6 +795,7 @@ wire:ignore
 wire:key
 wire:navigate
 wireStream
+wirekitApexChart
 with
 within
 without
@@ -772,6 +804,8 @@ wk-chart-disabled
 wk-chart-links
 wk-chart-mixed
 wk-focus-ring
+wk-scroll-shadow-end
+wk-scroll-shadow-start
 wk-scrollbar
 wk-tooltip-panel
 wkCaption
@@ -782,6 +816,7 @@ would
 wrapper
 writes
 written
+x-cloak
 x-data
 x-ref
 x-show

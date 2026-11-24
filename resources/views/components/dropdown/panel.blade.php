@@ -29,12 +29,20 @@
     'label' => null,
     'scope' => null,
 ])
-
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.panel', $attributes->getAttributes());
+
+    // A lazy dropdown holds this teleport in a template of its own, which the browser keeps out
+    // of the page until the dropdown builds it (utils/lazy-panel.js). The dropdown decides, from
+    // its own `lazy`, in both forms: this view marks where the template opens and closes, and the
+    // dropdown writes it there or nothing (Support\LazyPanel). The marks are echoes rather than a
+    // block: Livewire writes no morph markers around an echo, and a marker inside the template's
+    // content would be built with the panel.
+    $lazyPanelOpen = new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\LazyPanel::OPEN);
+    $lazyPanelClose = new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\LazyPanel::CLOSE);
 
     // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
     $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
@@ -69,6 +77,12 @@
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-md)]',
         'overflow-y-auto',  // fitViewport caps the height; the panel scrolls its excess instead of clipping
+        // Capped at the screen, as a popover is, so the positioning can keep the panel inside it;
+        // a token with no break point, an email address or a URL, then breaks at the cap rather
+        // than widening the panel past it. `break-word` leaves every min-content width alone, so
+        // the rows inside keep their layout.
+        'max-w-[calc(100vw-1rem)]',
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // Width handling — 'auto' uses min-width only, 'trigger' matches trigger width
@@ -93,7 +107,7 @@
      this panel's z-index inside itself, and anything painted after it covers the
      menu however high the z-index goes: a menu open inside a preview renders under
      the code block below it. --}}
-<template x-teleport="#wk-overlay-root">
+{{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
 <div
     {{-- Theme marker. A theme dresses surfaces by querying for these, and this
          panel had none — so a Cupertino-style glass map listing it reached
@@ -154,4 +168,4 @@
 >
     {{ $slot }}
 </div>
-</template>
+</template>{{ $lazyPanelClose }}

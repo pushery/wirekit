@@ -25,6 +25,11 @@
 --padding-wk-x-sm
 --padding-wk-x-xl
 --padding-wk-x-xs
+--padding-wk-y-lg
+--padding-wk-y-md
+--padding-wk-y-sm
+--padding-wk-y-xl
+--padding-wk-y-xs
 --radius-wk-full
 --radius-wk-lg
 --radius-wk-md
@@ -248,6 +253,7 @@ double-ring
 doubled
 draw
 drawing
+draws
 drifts
 dropdown
 dropdown-trigger
@@ -264,6 +270,7 @@ emitting
 empty
 end
 end-0
+ending
 ends
 entries
 entry
@@ -285,6 +292,7 @@ feature
 fg
 fill
 filled
+fills
 firing
 first
 fixed
@@ -530,6 +538,7 @@ overrides
 own
 owns
 padding
+pads
 page-edge
 pair
 pairing
@@ -573,6 +582,11 @@ px-[var(--padding-wk-x-md)]
 px-[var(--padding-wk-x-sm)]
 px-[var(--padding-wk-x-xl)]
 px-[var(--padding-wk-x-xs)]
+py-[var(--padding-wk-y-lg)]
+py-[var(--padding-wk-y-md)]
+py-[var(--padding-wk-y-sm)]
+py-[var(--padding-wk-y-xl)]
+py-[var(--padding-wk-y-xs)]
 qualified
 radius
 rail

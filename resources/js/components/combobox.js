@@ -52,6 +52,8 @@ import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
 import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelHost, lazyPanelTemplate } from '../utils/lazy-panel.js';
 
 /** The attribute that carries the options outside server mode; see init(). */
 const OPTIONS_ATTRIBUTE = 'data-wk-options';
@@ -63,6 +65,11 @@ export default function wirekitCombobox(config = {}) {
         selected: config.value ?? null,
         highlight: 0,
         allOptions: Array.isArray(config.options) ? config.options : [],
+
+        // A lazy combobox's host of its panels (lazyPanelHost()), and whether the list is built: the
+        // field names the list with `aria-controls` only from then on. See preparePanel().
+        _lazyHost: null,
+        _listBuilt: false,
 
         // Cross-close channel — see utils/overlay-coordination.js.
         _coordination: null,
@@ -318,6 +325,17 @@ export default function wirekitCombobox(config = {}) {
                 onOther: () => { this.isOpen = false; },
             });
 
+            // A render of the Livewire component around a lazy combobox must neither remove the
+            // panels it built nor keep panels the server no longer draws. A combobox started again
+            // over panels it built before, as a component carried by `@persist` is, names its list.
+            this._lazyHost = lazyPanelHost(this.$root);
+            const lazyTemplate = lazyPanelTemplate(this._lazyHost);
+
+            if (lazyTemplate) {
+                this._listBuilt = lazyTemplate._wkBuilt === true;
+                keepLazyEntriesThroughRenders();
+            }
+
             // Announce on every transition into the open state so siblings close.
             watchCurrent(this, 'isOpen', (val) => {
                 if (! val) {
@@ -327,6 +345,11 @@ export default function wirekitCombobox(config = {}) {
 
                     return;
                 }
+
+                // An opening that came before the pointer or the focus reached the field, by a
+                // script or by markup writing `isOpen`, still finds its list, built before the
+                // tick below places it.
+                this.preparePanel();
 
                 this._coordination.announce();
 
@@ -452,9 +475,20 @@ export default function wirekitCombobox(config = {}) {
         _placement: config.placement || 'bottom-start',
         _panelWidth: config.panelWidth || 'trigger',
 
+        /**
+         * Build the list and the empty state of a lazy combobox before they are needed, on the
+         * pointer or the focus on the field and on the first opening, and let the field name the
+         * list from then on. A combobox that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            if (buildLazyPanel(lazyPanelTemplate(this._lazyHost))) {
+                this._listBuilt = true;
+            }
+        },
+
         _place() {
-            // No-op on the core bundle, which ships no overlays and no position
-            // helper — the panel simply stays put. The full bundle exposes it.
+            // Every bundle that ships this component sets the position helper when it
+            // loads; the core bundle ships neither. Without it the panel stays put.
             if (typeof window.wirekitPosition !== 'function') {
                 return;
             }

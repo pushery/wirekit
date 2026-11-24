@@ -116,7 +116,10 @@
     }
 
     $hasIcon = $swapsIcons || filled($icon);
-    $hasVisibleLabel = $labelsChange || $slot->hasActualContent();
+    // A label is what a screen reader reads as the button's name: the state labels, or words in the
+    // slot. A slot that shows only what is hidden from a screen reader, a swatch or an icon, is no
+    // label, so its tooltip names the button as it names an icon given through `icon`.
+    $hasVisibleLabel = $labelsChange || \Pushery\WireKit\Support\SlotContent::names($slot);
     $callerNamed = filled(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) || filled($attributes->get('aria-labelledby'));
 
     // A label that changes with the state is the name, so a constant aria-label beside it would

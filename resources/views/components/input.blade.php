@@ -90,6 +90,10 @@
     // know about them, and passed through like the bare HTML attributes
     // (required, disabled, readonly) a plain form writes.
     'required' => false,
+    // Whether the label of a required field draws its asterisk. Off, the field stays required,
+    // with the browser's check, and only the mark goes: a form in which every field is required
+    // needs none.
+    'requiredMark' => true,
     'disabled' => false,
     'readonly' => false,
     'autocomplete' => null,
@@ -147,6 +151,12 @@
     $counterFormat = is_string($counter) && trim($counter) !== '' && BooleanProp::orNull($counter) === null ? $counter : null;
     $counter = $counterFormat !== null || BooleanProp::from($counter, false, 'input', 'counter');
     $required = BooleanProp::from($required, false, 'input', 'required');
+    $requiredMark = BooleanProp::from($requiredMark, true, 'input', 'requiredMark');
+    // Whether the asterisk is drawn: the input's own `requiredMark`, else the form's around
+    // it (Support\AwareProp), else the prop's default. The label is told on its tag: it renders
+    // from this view, where the input no longer stands above it, so its own read would find
+    // only the form.
+    $requiredMark = BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], $requiredMark), true, 'input', 'requiredMark');
     $disabled = BooleanProp::from($disabled, false, 'input', 'disabled');
     $readonly = BooleanProp::from($readonly, false, 'input', 'readonly');
     // Following a derived value, the field is read-only: a reader can still reach and read it, and
@@ -283,6 +293,10 @@
     $formatHint = BooleanProp::from($formatHint, false, 'input', 'formatHint');
     $showsFormatHint = $formatHint && in_array($type, ['date', 'datetime-local'], true);
     $describedBy = trim(implode(' ', array_filter([
+        // The text before and after the value belongs to it (`https://`, a unit), so it describes
+        // the field before the field's message does.
+        $prefix ? $id.'-prefix' : '',
+        $suffix ? $id.'-suffix' : '',
         $hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')),
         $showsFormatHint ? $id.'-format-hint' : '',
         (string) $attributes->get('aria-describedby', ''),
@@ -341,7 +355,7 @@
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         '[&:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
-        '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
+        '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger-text)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
@@ -351,8 +365,8 @@
     // on one element are decided by the stylesheet's order, which put the resting ring over the
     // error one.
     $stateClasses = match (true) {
-        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
-        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
+        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]',
+        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success-text)]',
         // The hover border belongs to the resting state only: on an error or a success border
         // it would win under the pointer, and the state would turn gray exactly while the
         // reader reaches for the field.
@@ -424,8 +438,8 @@
     // The leading/trailing icon slots live inside the field frame, so — like
     // prefix/suffix and the affordance buttons — they route the field through the
     // flex wrapper.
-    $hasLeading = isset($leading) && $leading->hasActualContent();
-    $hasTrailing = isset($trailing) && $trailing->hasActualContent();
+    $hasLeading = \Pushery\WireKit\Support\SlotContent::given($leading ?? null);
+    $hasTrailing = \Pushery\WireKit\Support\SlotContent::given($trailing ?? null);
     $useWrapper = $prefix || $suffix || $hasAffordances || $hasLeading || $hasTrailing;
 @endphp
 
@@ -476,9 +490,11 @@
     @if($label)
         {{-- A visually hidden label draws no asterisk: the mark is for the eye, which does not see
              this label, and the field's own `required` says it to a screen reader. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="$required && ! $hideLabel" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
-    @elseif($inAlignedRow)
-        {{-- An empty label track, held so that the control stays on the middle one. --}}
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="$required && ! $hideLabel" :required-mark="$requiredMark" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track, held so that the control stays on the middle one: a label
+             hidden from the eye is out of the flow and holds no track. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
@@ -509,12 +525,12 @@
             // so the border and focus ring on the wrapper turn red too. Uses
             // :has() so we don't need any JS sync between input and wrapper.
             'has-[:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
-            'has-[:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
+            'has-[:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger-text)]',
             // One border and one ring color per state, as on the field without a frame.
             $hasError
-                ? 'border-[var(--color-wk-border-error)] has-[:focus-visible]:ring-[var(--color-wk-danger)]'
+                ? 'border-[var(--color-wk-border-error)] has-[:focus-visible]:ring-[var(--color-wk-danger-text)]'
                 : ($hasSuccess
-                    ? 'border-[var(--color-wk-border-success)] has-[:focus-visible]:ring-[var(--color-wk-success)]'
+                    ? 'border-[var(--color-wk-border-success)] has-[:focus-visible]:ring-[var(--color-wk-success-text)]'
                     : 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'),
             $prefixWrapperSizeClass,
         ])>
@@ -526,7 +542,10 @@
             @endif
 
             @if($prefix)
-                <span class="shrink-0 select-none ps-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
+                {{-- The prefix keeps its width while it fits beside the field. A longer one, such as
+                     the host before a path, is cut with an ellipsis, so the field keeps half of the
+                     frame to type in. --}}
+                <span id="{{ $id }}-prefix" class="min-w-0 truncate select-none ps-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
             @endif
 
             <input
@@ -560,9 +579,14 @@
                 {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'w-full h-full bg-transparent border-none shadow-none',
+                    // The field grows from nothing into the room the frame leaves, so the parts
+                    // beside it keep their own width while they fit.
+                    'flex-1',
                     // A flex item keeps the width of its content unless told otherwise, so in a
                     // frame narrower than that the field would reach past the edge of the frame.
-                    'min-w-0',
+                    // Beside a prefix or a suffix it keeps half of the frame, and the text gives way.
+                    'min-w-0' => ! $prefix && ! $suffix,
+                    'min-w-1/2' => $prefix || $suffix,
                     'block' => ! $isNativeTemporal,
                     'grid items-center' => $isNativeTemporal,
                     $fontFamilyClass,
@@ -577,7 +601,7 @@
             />
 
             @if($suffix)
-                <span class="shrink-0 select-none pe-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
+                <span id="{{ $id }}-suffix" class="min-w-0 truncate select-none pe-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
             @endif
 
             @if($hasTrailing)
@@ -743,7 +767,10 @@
             {{-- Composed in the browser, which alone knows its own date order. The translated
                  sentence travels from here, so the wording is the page's language. While the two
                  orders agree the paragraph is empty, and its negative top margin cancels the space
-                 above it: a field with the hint on stands as tall as one without it. --}}
+                 above it: a field with the hint on stands as tall as one without it. Its sentence
+                 takes no part in the field's width (`contain-inline-size`): it wraps at the width
+                 the field has without it, so a field as wide as its content in a row keeps its
+                 width once the sentence arrives. --}}
             <p
                 data-wk-prose-skip
                 data-wk-format-hint
@@ -753,7 +780,7 @@
                     template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
                 })"
                 x-text="message"
-                class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] empty:-mt-1.5"
+                class="contain-inline-size text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] empty:-mt-1.5"
             ></p>
         </div>
     @endif
@@ -776,6 +803,7 @@
         @endphp
         <x-wirekit::toggle
             size="sm"
+            :align-fields="false"
             :label="\Pushery\WireKit\Support\BlankName::first($ownLabel, __('wirekit::Set my own value'))"
             :disabled="$disabled"
             :scope="$scope"

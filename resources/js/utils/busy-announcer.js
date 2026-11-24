@@ -14,7 +14,9 @@
  * for instance, has the attribute and no spinner.
  *
  * Only a change is announced. A control rendered busy says nothing when the page loads, and speaks
- * when it next goes busy.
+ * when it next goes busy. The state a control starts in is read from its markup, not from its
+ * layout: a Livewire morph starts the directive of every control it inserts while it still changes
+ * the page around them, and a layout read there would lay out the whole page once per control.
  *
  * The region is a child of `<body>`, created when the first such control starts, so it is in the
  * document before anything is written to it, and again after a navigation replaced the body. An
@@ -92,6 +94,36 @@ export function showsItsSpinner(control) {
 }
 
 /**
+ * Whether the control renders its spinner shown, read from its markup alone, without a layout.
+ *
+ * A spinner Livewire shows (`wire:loading`) is hidden by Livewire's stylesheet until a request names
+ * a display for it inline, so it shows while its inline `display` names a box. Any other spinner is
+ * written while the control is busy and shows while it is in the control, unless `hidden` or an
+ * inline `display: none` hides it.
+ *
+ * @param {HTMLElement} control
+ * @returns {boolean}
+ */
+export function rendersItsSpinner(control) {
+    const spinner = control.querySelector(`[${WK_BUSY_SPINNER_ATTRIBUTE}]`);
+
+    if (! spinner || spinner.hasAttribute('hidden')) {
+        return false;
+    }
+
+    const display = spinner.style?.display ?? '';
+
+    if (display === 'none') {
+        return false;
+    }
+
+    const livewire = typeof spinner.getAttributeNames === 'function'
+        && spinner.getAttributeNames().some((name) => name.startsWith('wire:loading'));
+
+    return livewire ? display !== '' : true;
+}
+
+/**
  * Put the control's busy text into the region.
  *
  * @param {HTMLElement} control
@@ -145,8 +177,11 @@ export function registerAnnounceBusyDirective(Alpine) {
 
         busyRegion(el.ownerDocument);
 
-        // The state the control starts in is where changes are counted from, not a change.
-        let busy = showsItsSpinner(el);
+        // The state the control starts in is where changes are counted from, not a change. Read from
+        // the markup: a morph starts this for every control it inserts while it still writes to the
+        // page, and a layout read here would lay out the page once per control. A change is measured
+        // in `settle()`, which runs after the writes that caused it.
+        let busy = rendersItsSpinner(el);
         let timer = 0;
 
         const settle = () => {

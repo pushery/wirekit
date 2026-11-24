@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-border
 @container/wk-cart-list
 @endphp
@@ -15,6 +16,7 @@ as
 ask
 assistive
 auto-derived
+axis
 base
 be
 because
@@ -22,6 +24,7 @@ belongs
 belt
 beside
 between
+block
 boolean
 border
 border-BOTTOM
@@ -48,8 +51,9 @@ did
 disc
 dist/wirekit.css
 divide-[color:var(--color-wk-border)]
-divide-y
+divide-y-[length:var(--border-wk-width)]
 divided
+divider
 does
 draw
 drops

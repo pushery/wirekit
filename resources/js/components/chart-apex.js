@@ -1,7 +1,8 @@
 import { resolveThemeColors, palette, seriesColors, paletteSchemeOf, resolveCssVarsDeep, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
-import { followChartServerData } from '../utils/chart-server-data.js';
+import { chartServerDataNow, followChartServerData } from '../utils/chart-server-data.js';
+import { queueChartBuild } from '../utils/chart-build-queue.js';
 import { formatDecimal } from '../utils/locale-number.js';
 import { keepRaw } from '../utils/keep-raw.js';
 import { followPointLink, pointLink, takePointLinks } from '../utils/chart-point-links.js';
@@ -915,61 +916,93 @@ export function radarLabelsInside(config) {
 }
 
 /**
- * Keeps the last name of a category x-axis inside its drawing.
+ * Keeps the first and the last name of an x-axis inside its drawing.
  *
  * On a line or an area the last category stands under the last point, at the right edge of the
  * plot, with its label centered there. ApexCharts makes room for half of that label on the right,
  * but not on an axis with `labels.trim`, which `_keepCategoryNames()` sets so that a short axis
- * drops no name: there the drawing cut the label's right half off. After each draw the labels are
- * measured against the drawing, and where one runs past its right edge the grid's right padding
- * grows by what is missing, which moves the plot's edge and the last label in by as much. A right
- * padding the options or the page's global options already set is the developer's, and the chart
- * keeps it.
+ * drops no name: there the drawing cut the label's right half off. On the left ApexCharts makes no
+ * room for the first label at all. It stands under the first point, and a label turned on a narrow
+ * drawing ends there and runs down to the left, past the y-axis where its ticks are short, so the
+ * drawing cut off its first characters. After each draw the labels are measured against the
+ * drawing, and where one runs past an edge the grid's padding on that side grows by what is
+ * missing, which moves the plot's edge and the label in by as much. A padding the options or the
+ * page's global options already set on a side is the developer's, and the chart keeps it. A date
+ * axis leaves out a first or last name it has no room for, and a radar's corner names are kept in
+ * by `radarLabelsInside()`, so neither is measured here.
  *
  * @param {Object} config - The ApexCharts options, completed in place.
  */
 export function xaxisLabelsInside(config) {
     const axis = config.xaxis || {};
-    if (!axis.labels || axis.labels.trim !== true) {
+    if ((config.chart && config.chart.type === 'radar') || axis.type === 'datetime') {
         return;
     }
-    const own = config.grid && config.grid.padding ? config.grid.padding.right : undefined;
-    const pageWide = typeof window !== 'undefined' && window.Apex && window.Apex.grid && window.Apex.grid.padding
-        ? window.Apex.grid.padding.right
-        : undefined;
-    if (own !== undefined || pageWide !== undefined) {
+    const developerSet = (side) => {
+        const own = config.grid && config.grid.padding ? config.grid.padding[side] : undefined;
+        const pageWide = typeof window !== 'undefined' && window.Apex && window.Apex.grid && window.Apex.grid.padding
+            ? window.Apex.grid.padding[side]
+            : undefined;
+
+        return own !== undefined || pageWide !== undefined;
+    };
+    // The right edge only where `trim` took ApexCharts' own room away from the last label.
+    const sides = ['left', 'right'].filter((side) => !developerSet(side)
+        && (side === 'left' || (axis.labels && axis.labels.trim === true)));
+    if (sides.length === 0) {
         return;
     }
 
     // Each widening moves the label in by as much as it was out, so one pass settles it. The count
     // stops a drawing that answers each wider padding with a label still past the edge, and it
-    // starts again at the first drawing that fits, so a later, longer last name still gets room.
+    // starts again at the first drawing that fits, so a later, longer name still gets room.
     let passes = 0;
     const fit = (chart) => {
         const svg = chart && chart.el ? chart.el.querySelector('svg.apexcharts-svg') : null;
-        if (!svg || typeof chart.updateOptions !== 'function' || passes >= 3) {
+        if (!svg || typeof chart.updateOptions !== 'function') {
             return;
         }
         const box = svg.getBoundingClientRect();
         if (box.width === 0) {
             return;
         }
-        let past = 0;
+        const past = { left: 0, right: 0 };
         for (const label of svg.querySelectorAll('.apexcharts-xaxis-label')) {
             const r = label.getBoundingClientRect();
             if (r.width > 0) {
-                past = Math.max(past, r.right - box.right);
+                past.left = Math.max(past.left, box.left - r.left);
+                past.right = Math.max(past.right, r.right - box.right);
             }
         }
-        if (past <= 1) {
+        const padding = chart.w && chart.w.config && chart.w.config.grid && chart.w.config.grid.padding
+            ? chart.w.config.grid.padding
+            : {};
+        const wider = {};
+        for (const side of sides) {
+            if (past[side] > 1) {
+                wider[side] = (Number(padding[side]) || 0) + Math.ceil(past[side]) + 2;
+            }
+        }
+        // Every drawing is read before the count stops one, so a drawing that fits starts it again.
+        if (Object.keys(wider).length === 0) {
             passes = 0;
             return;
         }
-        const padding = chart.w && chart.w.config && chart.w.config.grid && chart.w.config.grid.padding
-            ? Number(chart.w.config.grid.padding.right) || 0
-            : 0;
+        if (passes >= 3) {
+            return;
+        }
         passes += 1;
-        chart.updateOptions({ grid: { padding: { right: padding + Math.ceil(past) + 2 } } }, false, false);
+        // ApexCharts 5 keeps its layout module across updates, and the module lays the chart out
+        // from the padding object it read when the chart was created, while `updateOptions()`
+        // merges the options into a new one: the wider padding never reached the layout there, and
+        // the label stayed past the edge. Written into the module's own object as well, it does.
+        // Where the module reads the padding from the options on every draw, as in ApexCharts 8,
+        // the same value replaces it.
+        const layout = chart.dimensions && chart.dimensions.gridPad;
+        if (layout && typeof layout === 'object') {
+            Object.assign(layout, wider);
+        }
+        chart.updateOptions({ grid: { padding: wider } }, false, false);
     };
 
     config.chart = Object.assign({}, config.chart);
@@ -983,6 +1016,265 @@ export function xaxisLabelsInside(config) {
             fit(chart);
         };
     }
+}
+
+/**
+ * The values along the x-axis of a chart that lies stand apart.
+ *
+ * A bar or a range bar with `plotOptions.bar.horizontal` writes its values on the x-axis, and
+ * ApexCharts gives that axis as many ticks on a phone as on a desk. Beside the names of the bars a
+ * phone leaves little of its width to the axis, and the values stand on each other there. After
+ * each draw no two values stand closer than a gap: where they would, the axis takes as many ticks
+ * as fit the widest label along its length, which ApexCharts rounds to its steps. Ticks or a step
+ * the options or the page's global options set are the developer's, and so is an axis of dates,
+ * which ApexCharts thins itself.
+ *
+ * @param {Object} config - The ApexCharts options, completed in place.
+ */
+export function valueAxisLabelsApart(config) {
+    const lying = Boolean(config.plotOptions && config.plotOptions.bar && config.plotOptions.bar.horizontal);
+    const axis = config.xaxis || {};
+    if (!lying || axis.type === 'datetime') {
+        return;
+    }
+    const pageWide = typeof window !== 'undefined' && window.Apex ? window.Apex.xaxis : undefined;
+    const sources = [axis, pageWide].filter((source) => source !== null && typeof source === 'object');
+    if (sources.some((source) => ['tickAmount', 'stepSize'].some((name) => source[name] !== undefined && source[name] !== null))) {
+        return;
+    }
+
+    // The room each label keeps to the next one, in px.
+    const gap = 8;
+    // Each pass takes fewer ticks, so a few settle it. The count stops a drawing that answers each
+    // with labels still too close, and it starts again at the first drawing whose labels stand apart.
+    let passes = 0;
+    const apart = (chart) => {
+        const svg = chart && chart.el ? chart.el.querySelector('svg.apexcharts-svg') : null;
+        if (!svg || typeof chart.updateOptions !== 'function') {
+            return;
+        }
+        const boxes = [...svg.querySelectorAll('.apexcharts-xaxis-label')]
+            .map((label) => label.getBoundingClientRect())
+            .filter((r) => r.width > 0)
+            .sort((a, b) => a.left - b.left);
+        const close = boxes.some((r, i) => i > 0 && r.left - boxes[i - 1].right < gap);
+        // Every drawing is read before the count stops one, so a drawing whose values stand apart
+        // starts it again, and a later update that crowds the axis is thinned as well.
+        if (boxes.length < 3 || !close) {
+            passes = 0;
+            return;
+        }
+        if (passes >= 3) {
+            return;
+        }
+        const length = boxes[boxes.length - 1].right - boxes[0].left;
+        const widest = Math.max(...boxes.map((r) => r.width));
+        // As many labels as the widest one fits along the axis with a gap after each, and one step
+        // fewer than the axis has now, so every pass thins it.
+        const fit = Math.floor((length + gap) / (widest + gap));
+        const ticks = Math.max(1, Math.min(fit - 1, boxes.length - 2));
+        passes += 1;
+        chart.updateOptions({ xaxis: { tickAmount: ticks } }, false, false);
+    };
+
+    config.chart = Object.assign({}, config.chart);
+    config.chart.events = Object.assign({}, config.chart.events);
+    for (const name of ['mounted', 'updated']) {
+        const given = config.chart.events[name];
+        config.chart.events[name] = (chart, options) => {
+            if (typeof given === 'function') {
+                given(chart, options);
+            }
+            apart(chart);
+        };
+    }
+}
+
+/** The chart types whose value axis ApexCharts divides into steps of its own choosing. */
+const APEX_STEPPED_VALUE_TYPES = ['line', 'area', 'bar', 'scatter'];
+
+/**
+ * Steps the value axis in whole numbers where every value of the chart is a whole number.
+ *
+ * ApexCharts divides a value axis into round steps of any size, so a chart of counts between 0 and
+ * 2, or of nothing but zeros, reads 0, 0.5, 1, 1.5, 2. With `forceNiceScale` it keeps to one step
+ * per unit where every value of the chart is a whole number and the axis would take more steps than
+ * it has units, in every supported version; a decimal anywhere leaves the scale as ApexCharts
+ * divides it, so the option holds through every update of the data. It is set on the value axis of
+ * a line, an area, a bar and a scatter chart with one value axis, the x-axis of bars that lie, where
+ * the developer chose no steps of their own: no `forceNiceScale`, `tickAmount` or `stepSize`, no
+ * logarithmic scale, and no `min` or `max` other than a whole number, in the options or for every
+ * chart in `window.Apex`.
+ *
+ * @param {Object} config - The ApexCharts options, completed in place.
+ */
+export function wholeNumberSteps(config) {
+    const type = config.chart && config.chart.type;
+    if (!APEX_STEPPED_VALUE_TYPES.includes(type)) {
+        return;
+    }
+    const lying = type === 'bar' && config.plotOptions && config.plotOptions.bar && config.plotOptions.bar.horizontal === true;
+    const key = lying ? 'xaxis' : 'yaxis';
+    const given = config[key];
+    if (Array.isArray(given) && given.length !== 1) {
+        return;
+    }
+    const axis = Array.isArray(given) ? given[0] : given;
+    // The axis the page sets for every chart counts as the developer's as well; one set as a list of
+    // axes cannot be read against this one, so the chart keeps ApexCharts' steps.
+    const pageWide = typeof window !== 'undefined' && window.Apex ? window.Apex[key] : undefined;
+    if (Array.isArray(pageWide)) {
+        return;
+    }
+    const sources = [axis, pageWide].filter((source) => source !== null && typeof source === 'object');
+    const named = (name) => sources.some((source) => source[name] !== undefined && source[name] !== null);
+    if (named('forceNiceScale') || named('tickAmount') || named('stepSize')
+        || sources.some((source) => source.logarithmic === true
+            || ['min', 'max'].some((name) => source[name] !== undefined && source[name] !== null && !Number.isInteger(source[name])))) {
+        return;
+    }
+
+    const stepped = Object.assign({}, axis, { forceNiceScale: true });
+    config[key] = Array.isArray(given) ? [stepped] : stepped;
+}
+
+/**
+ * The decimal places a number is written with, up to two, or `null` for one that needs more.
+ *
+ * @param {number} value
+ * @returns {number|null}
+ */
+function xDecimalPlaces(value) {
+    for (let places = 0; places <= 2; places += 1) {
+        const scaled = value * 10 ** places;
+        if (Math.abs(Math.round(scaled) - scaled) < 1e-9) {
+            return places;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Steps the x-axis of a scatter or a bubble chart on the grid its points stand on: whole numbers,
+ * tenths or hundredths.
+ *
+ * ApexCharts divides a numeric x-axis evenly by its number of ticks, without round steps: under 30
+ * points one tick fewer than the points, else one per 150 px of the drawing, so ten ratings from 1 to
+ * 5 stand at 1, 1.44, 1.89 and on, and it writes the labels without decimals, so positions between
+ * whole numbers read 0, 1, 2, 2. Where every x of the chart has at most two decimals, the axis takes
+ * the most ticks that divide its span into steps of that grid, no more than the span has steps, one
+ * fewer than the points or one per 150 px of `width`, and writes its labels with the decimals the
+ * ticks need; an axis of points between whole numbers is named numeric and spans the points, since
+ * ApexCharts writes an unnamed one without decimals. A span of whole numbers that no such number
+ * above one divides keeps ApexCharts' ticks.
+ * A span of tenths or hundredths that none divides keeps ApexCharts' number of ticks, never more than
+ * the grid has steps, and writes the labels with the decimals of the points, so no two read alike.
+ * Ticks, a step, a `min`, a `max` or decimals the options or `window.Apex` set are the developer's,
+ * and so is an axis of dates or categories.
+ *
+ * @param {Object} config - The ApexCharts options, completed in place.
+ * @param {number} width - The width of the drawing, in px.
+ */
+export function wholeNumberXSteps(config, width) {
+    const type = config.chart && config.chart.type;
+    const axis = config.xaxis || {};
+    if ((type !== 'scatter' && type !== 'bubble') || axis.type === 'datetime' || axis.type === 'category' || !(width > 0)) {
+        return;
+    }
+    const pageWide = typeof window !== 'undefined' && window.Apex ? window.Apex.xaxis : undefined;
+    const sources = [axis, pageWide].filter((source) => source !== null && typeof source === 'object');
+    if (sources.some((source) => ['tickAmount', 'stepSize', 'min', 'max', 'decimalsInFloat']
+        .some((name) => source[name] !== undefined && source[name] !== null))) {
+        return;
+    }
+
+    let low = Infinity;
+    let high = -Infinity;
+    let points = 0;
+    let places = 0;
+    for (const series of Array.isArray(config.series) ? config.series : []) {
+        const data = series && Array.isArray(series.data) ? series.data : [];
+        points = Math.max(points, data.length);
+        for (const point of data) {
+            if (point === null || point === undefined) {
+                continue;
+            }
+            const x = Array.isArray(point) ? point[0] : (typeof point === 'object' ? point.x : undefined);
+            const own = typeof x === 'number' && Number.isFinite(x) ? xDecimalPlaces(x) : null;
+            if (own === null) {
+                return;
+            }
+            places = Math.max(places, own);
+            low = Math.min(low, x);
+            high = Math.max(high, x);
+        }
+    }
+    // The span in steps of the grid, so the division below is one of whole numbers.
+    const scale = 10 ** places;
+    const span = Math.round(high * scale) - Math.round(low * scale);
+    if (!(span >= 1)) {
+        return;
+    }
+    const most = Math.max(1, Math.min(points < 30 ? points - 1 : Infinity, Math.round(width / 150)));
+    let ticks = Math.min(span, most);
+    while (ticks > 1 && span % ticks !== 0) {
+        ticks -= 1;
+    }
+    // Points between whole numbers: ApexCharts reads an axis whose type nobody named as numeric and
+    // writes its labels with `toFixed(0)`, `decimalsInFloat` or not, and it may start the axis at a
+    // round number below the first point, so ten weights from 0.5 to 3 read 0, 1, 1, 2, 2, 3. The
+    // axis is named numeric and spans the points, so its ticks stand on their grid.
+    const between = places > 0 ? { type: axis.type ?? 'numeric', min: low, max: high } : {};
+    if (ticks === 1 && span > 1) {
+        if (places === 0) {
+            return;
+        }
+        const apexTicks = points < 30 ? points - 1 : Math.round(width / 150);
+        config.xaxis = Object.assign({}, axis, between, { tickAmount: Math.max(1, Math.min(apexTicks, span)), decimalsInFloat: places });
+
+        return;
+    }
+
+    // The labels take the decimals their values need: those of the first tick and of the step.
+    const decimals = Math.max(xDecimalPlaces(low) ?? places, xDecimalPlaces(span / ticks / scale) ?? places);
+    config.xaxis = Object.assign({}, axis, between, { tickAmount: ticks, decimalsInFloat: decimals });
+}
+
+/**
+ * Lets the tooltip of an ApexCharts chart read the chart's current options.
+ *
+ * ApexCharts builds its tooltip once per chart and keeps it through every update, while
+ * `updateOptions()` merges the options into a new object. Up to ApexCharts 6 the tooltip holds the
+ * object it was built with as `tConfig`, so a theme swap reached the options and not the tooltip:
+ * it went on drawing the theme of the first render, a light tooltip on a dark chart. From
+ * ApexCharts 7 on, `tConfig` is a getter on the tooltip's prototype that reads the current options,
+ * and the instance is left as it is.
+ *
+ * @param {object} chart an ApexCharts instance, after its constructor has run
+ */
+export function tooltipFollowsTheOptions(chart) {
+    const tooltip = chart && chart.w && chart.w.globals ? chart.w.globals.tooltip : null;
+    if (! tooltip || typeof tooltip !== 'object') {
+        return;
+    }
+    const held = Object.getOwnPropertyDescriptor(tooltip, 'tConfig');
+    if (! held || ! ('value' in held) || ! held.configurable) {
+        return;
+    }
+    let fallback = held.value;
+    Object.defineProperty(tooltip, 'tConfig', {
+        configurable: true,
+        enumerable: held.enumerable,
+        get() {
+            return (chart.w && chart.w.config && chart.w.config.tooltip) || fallback;
+        },
+        // The tooltip writes the field in its constructor only, which has run by now; a later
+        // write replaces what is read while the chart has no options.
+        set(value) {
+            fallback = value;
+        },
+    });
 }
 
 /**
@@ -1046,7 +1338,8 @@ export function themeSwapAnimations(own, reduced) {
  *   reactive one.
  *
  * Lifecycle:
- * - init(): creates chart + observer inside $nextTick (after DOM ready)
+ * - init(): queues the chart's build, which runs in a task of its own once the start is done
+ *   (utils/chart-build-queue.js)
  * - destroy(): cleans up chart, observer, and Livewire event listener
  *
  * Cleanup is automatic on Livewire SPA navigation (livewire:navigating)
@@ -1056,6 +1349,10 @@ export default function wirekitApexChart(config) {
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
+        // The chart's build, queued until its turn (utils/chart-build-queue.js), and the payload
+        // the component rendered beside the chart when it started, which the chart is built from.
+        _cancelBuild: null,
+        _dataAtStart: null,
         _cellShapeTooltipCleanup: null,
         _hoverPaused: null,
         _hoverEnterHandler: null,
@@ -1134,6 +1431,7 @@ export default function wirekitApexChart(config) {
             // Asked until it can be answered — utils/await-peer.js. The library may land after
             // Alpine has mounted this chart (a lazily imported apexcharts), so the panel and the
             // console hint wait for the load plus a grace period instead of speaking at once.
+            this._dataAtStart = chartServerDataNow(this.$el);
             this._stopAwaitingLibrary = awaitPeer({
                 isReady: () => typeof ApexCharts !== 'undefined',
                 onReady: () => {
@@ -1286,7 +1584,9 @@ window.ApexCharts = ApexCharts;</pre>
 
         /** Build the chart — at once when the library is on the page, or the moment it lands. */
         _boot() {
-            this.$nextTick(() => {
+            this._cancelBuild?.();
+            this._cancelBuild = queueChartBuild(() => {
+                this._cancelBuild = null;
                 const mount = this.$refs.mount;
                 if (!mount) return;
 
@@ -1344,6 +1644,9 @@ window.ApexCharts = ApexCharts;</pre>
                 textOnlyInApexMarkup(themed);
                 radarLabelsInside(themed);
                 xaxisLabelsInside(themed);
+                valueAxisLabelsApart(themed);
+                wholeNumberSteps(themed);
+                wholeNumberXSteps(themed, mount.getBoundingClientRect().width);
                 withoutHiddenKeyboardNavigation(themed, mount.closest('[aria-hidden="true"]') !== null);
                 this._linkApexPoints(themed, mount);
 
@@ -1448,6 +1751,8 @@ window.ApexCharts = ApexCharts;</pre>
                 const resolvedThemed = resolveCssVarsDeep(themed, style, new Map(), { host: this.$refs?.mount?.parentElement ?? null });
                 // Kept out of Alpine's reactivity, so every call reaches ApexCharts itself.
                 this.chart = keepRaw(new ApexCharts(mount, resolvedThemed));
+                // Before the first draw, so every later theme swap reaches the tooltip as well.
+                tooltipFollowsTheOptions(this.chart);
                 this.chart.render();
                 this._removeHiddenTabStop(mount);
 
@@ -1458,7 +1763,7 @@ window.ApexCharts = ApexCharts;</pre>
 
                 // A Livewire update renders new labels and series beside the chart, outside its
                 // `wire:ignore`; follow them and update the chart in place.
-                this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload));
+                this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload), this._dataAtStart);
 
                 // Radar tooltip — bypass ApexCharts' event system.
                 // `themed.chart.events.dataPointMouseEnter` never fires for a
@@ -2118,6 +2423,9 @@ window.ApexCharts = ApexCharts;</pre>
                     textOnlyInApexMarkup(themed);
                     radarLabelsInside(themed);
                     xaxisLabelsInside(themed);
+                    valueAxisLabelsApart(themed);
+                    wholeNumberSteps(themed);
+                    wholeNumberXSteps(themed, (this.$refs.mount || this.$el).getBoundingClientRect().width);
                     withoutHiddenKeyboardNavigation(themed, (this.$refs.mount || this.$el).closest('[aria-hidden="true"]') !== null);
 
                     // Smooth transition, collapsed to instant under prefers-reduced-motion and
@@ -2273,9 +2581,12 @@ window.ApexCharts = ApexCharts;</pre>
          * is nulled after the first destroy so the second call is a no-op.
          */
         destroy() {
-            // A library that lands after this chart is gone must not build it.
+            // A library that lands after this chart is gone must not build it, nor a turn that
+            // comes after it.
             this._stopAwaitingLibrary?.();
             this._stopAwaitingLibrary = null;
+            this._cancelBuild?.();
+            this._cancelBuild = null;
 
             this._stopLabelTips?.();
             this._stopLabelTips = null;
@@ -2659,10 +2970,24 @@ window.ApexCharts = ApexCharts;</pre>
                     borderColor: colors.border,
                     strokeDashArray: 0,
                 }),
-                xaxis: this._themeAxis(this._keepCategoryNames(rawConfig.xaxis, rawConfig.labels), colors, fontFamily),
+                xaxis: this._themeAxis(this._keepCategoryNames(
+                    rawConfig.xaxis,
+                    rawConfig.labels,
+                    Boolean(rawConfig.plotOptions && rawConfig.plotOptions.bar && rawConfig.plotOptions.bar.horizontal),
+                ), colors, fontFamily),
                 // The application's locale for a decimal tick, handed over on the tooltip by the
-                // PHP side; without it the tick keeps the English spelling.
-                yaxis: this._themeYaxis(rawConfig.yaxis, colors, fontFamily, rawConfig?.tooltip?.wkLocale, chartValueGrouping(rawConfig?.tooltip), rawConfig.series),
+                // PHP side; without it the tick keeps the English spelling. A chart that lies
+                // names its bars on the y-axis, and a heatmap its rows.
+                yaxis: this._themeYaxis(
+                    rawConfig.yaxis,
+                    colors,
+                    fontFamily,
+                    rawConfig?.tooltip?.wkLocale,
+                    chartValueGrouping(rawConfig?.tooltip),
+                    rawConfig.series,
+                    Boolean(rawConfig.plotOptions && rawConfig.plotOptions.bar && rawConfig.plotOptions.bar.horizontal)
+                        || Boolean(rawConfig.chart && rawConfig.chart.type === 'heatmap'),
+                ),
                 tooltip: Object.assign({}, rawConfig.tooltip, {
                     theme: isDark ? 'dark' : 'light',
                     // Object.assign is shallow — without nesting the style
@@ -2687,6 +3012,7 @@ window.ApexCharts = ApexCharts;</pre>
                     ),
                 }),
                 stroke: this._themeStroke(rawConfig.stroke, apexChartType, colors, Math.max(themedSeries.length, 1), developerColors),
+                ...this._themeFill(rawConfig.fill, apexChartType, rawConfig.series),
             });
         },
 
@@ -2699,6 +3025,38 @@ window.ApexCharts = ApexCharts;</pre>
             return this._scheme === 'categorical' && colors.chartLabel && APEX_LABEL_ON_FILL_TYPES.includes(type)
                 ? colors.chartLabel
                 : colors.textPrimary;
+        },
+
+        /**
+         * The opacity of a line series, which ApexCharts draws through the fill.
+         *
+         * ApexCharts strokes a series of type `line` with its fill color at `fill.opacity`, 0.85 when
+         * the configuration names none, while an area, a bar and a radar draw their stroke opaque. The
+         * palette is checked against the surface at full strength (`resolveThemeColors()`), and a line
+         * drawn at 0.85 can fall under the 3:1 that check holds: the danger color on the dark surface
+         * does. A line series draws at 1 here, every other series of the chart keeps ApexCharts' 0.85,
+         * and an opacity the developer set wins.
+         *
+         * @param {*} fill - the configuration's `fill`
+         * @param {string|undefined} type - the chart's type, which a series without its own inherits
+         * @param {*} series - the configuration's series
+         * @returns {object} `{ fill }` to merge into the options, or nothing to leave the fill alone
+         */
+        _themeFill(fill, type, series) {
+            const own = fill !== null && typeof fill === 'object' && !Array.isArray(fill) ? fill : null;
+
+            if ((fill !== undefined && fill !== null && own === null) || (own && own.opacity !== undefined)) {
+                return {};
+            }
+
+            const types = (Array.isArray(series) ? series : [])
+                .map((entry) => (entry !== null && typeof entry === 'object' && typeof entry.type === 'string' ? entry.type : type));
+
+            if (!types.includes('line')) {
+                return {};
+            }
+
+            return { fill: Object.assign({}, own, { opacity: types.map((each) => (each === 'line' ? 1 : 0.85)) }) };
         },
 
         /**
@@ -2757,15 +3115,19 @@ window.ApexCharts = ApexCharts;</pre>
          * shortened name back in full. A date or number axis thins its ticks, which reads as a
          * scale, and so does a category axis of more than eight names, where a cut name per slot
          * would read worse than every other one whole. An axis that sets `trim` or
-         * `hideOverlappingLabels` itself is left as it is.
+         * `hideOverlappingLabels` itself is left as it is. A chart that lies, a bar or a range bar
+         * with `plotOptions.bar.horizontal`, writes its names on the y-axis and its values on this
+         * one, which is a number axis like any other: `trim` would cut every value to the width of
+         * its step, down to a dot on a phone.
          *
          * @param {Object|undefined} axis - `xaxis` as the developer passed it
          * @param {Array|undefined} labels - the top-level `labels` a mixed chart names its categories with
+         * @param {boolean} [lying] - whether the chart lies, so this axis carries its values
          * @returns {Object|undefined}
          */
-        _keepCategoryNames(axis, labels) {
+        _keepCategoryNames(axis, labels, lying = false) {
             const base = axis || {};
-            if (base.type === 'datetime' || base.type === 'numeric') return axis;
+            if (lying || base.type === 'datetime' || base.type === 'numeric') return axis;
             const own = base.labels || {};
             if (own.trim !== undefined || own.hideOverlappingLabels !== undefined) return axis;
             const names = Array.isArray(base.categories) && base.categories.length > 0
@@ -2798,8 +3160,15 @@ window.ApexCharts = ApexCharts;</pre>
          * dataset of `[42, 58, 71, 89]` renders y-axis ticks as
          * `42 / 58 / 71 / 89` instead of `42.00000000000000 …`. Developer-
          * supplied formatters always win.
+         *
+         * A y-axis of names gets no formatter of the kit: on a chart that lies it names the bars,
+         * on a heatmap the rows, and a name such as "2024" read as a number would be grouped into
+         * "2,024". ApexCharts' own formatter leaves a name as it is, and on a heatmap only an axis
+         * without a formatter thins rows that would run into each other.
+         *
+         * @param {boolean} [names] - whether this axis carries names rather than values
          */
-        _themeYaxis(yaxis, colors, fontFamily, locale, grouping = true, series = []) {
+        _themeYaxis(yaxis, colors, fontFamily, locale, grouping = true, series = [], names = false) {
             // The series an axis shows: those its `seriesName` names, else on one of several axes the
             // series in its place, else every series on the one axis. Where all of them name the
             // same decimals (`seriesDecimals`), the axis writes its ticks with them.
@@ -2822,7 +3191,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // the chart's own axis over the global one (`pageWideApexOption`), so the default
                 // below would hide it, on the axis and in the tooltip, which writes its values
                 // with the axis' formatter.
-                if (typeof themed.labels.formatter !== 'function' && ! pageWideApexOption(['yaxis', 'labels', 'formatter'])) {
+                if (! names && typeof themed.labels.formatter !== 'function' && ! pageWideApexOption(['yaxis', 'labels', 'formatter'])) {
                     themed.labels.formatter = (value) => {
                         if (value === null || value === undefined) return '';
                         // A blank tick stays blank. A heatmap's rows sit on a scale of the

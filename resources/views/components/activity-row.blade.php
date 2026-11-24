@@ -81,9 +81,10 @@
 @endphp
 
 <div data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
-    {{-- Leading kind dot. Decorative (aria-hidden) — the kind is conveyed
-         textually by the sr-only span below, so the activity is
-         distinguishable without color perception (WCAG 1.4.1). --}}
+    {{-- Leading kind dot. Decorative (aria-hidden): the sr-only span below names the
+         kind to a screen reader. On screen the dot's color is all the kind shows, so
+         for a reader who does not tell the colors apart the line itself has to say
+         what happened (WCAG 1.4.1), as the documentation asks. --}}
     <span
         aria-hidden="true"
         class="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full"
@@ -96,7 +97,7 @@
                 @if($actor)<span class="font-[number:var(--font-wk-heading-weight)]">{{ $actor }}</span> @endif{{ $slot }}
             </span>
             @wirekitLast($timestamp)
-                @if($timestampMachine !== null)
+                @wirekitLast($timestampMachine !== null)
                     <time datetime="{{ $timestampMachine }}" class="shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
                         {{ $timestamp }}
                     </time>
@@ -104,7 +105,7 @@
                     <span class="shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
                         {{ $timestamp }}
                     </span>
-                @endif
+                @endwirekitLast
             @endwirekitLast
         </div>
 
@@ -115,7 +116,7 @@
             </div>
         @endif
 
-        {{-- Accessible kind label — the textual equivalent of the dot color. --}}
+        {{-- Accessible kind label: what the dot's color says, for a screen reader. --}}
         <span class="sr-only">{{ $kindText }}</span>
 
         {{-- Block content under the line: a list of changed fields, a quoted comment. The default

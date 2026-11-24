@@ -70,6 +70,7 @@
              sr-only because the two lines above already say the same thing on screen —
              repeating it visibly would read as a stutter. --}}
         <x-wirekit::input
+            :align-fields="false"
             :label="__('wirekit::Confirmation phrase')"
             hide-label
             x-model="typed"
