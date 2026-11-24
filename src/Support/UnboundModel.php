@@ -55,6 +55,7 @@ final class UnboundModel
         'data-table',
         'dropdown',
         'event-calendar',
+        'external-link-question',
         'fab',
         'file-upload',
         'filter-builder',

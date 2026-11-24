@@ -232,6 +232,7 @@ custom
 data
 data-placement
 data-position
+data-shown
 data-wk-fab
 data-wk-fab-action
 data-wk-fab-actions
@@ -326,6 +327,7 @@ explicitly
 expression
 fab
 fab/button
+fade
 fail
 failure
 fallback
@@ -521,6 +523,7 @@ macOS
 made
 make
 map
+mark
 markers
 marks
 markup
@@ -737,6 +740,7 @@ scope
 screen
 screen-reader
 screen-reader-skipping
+script
 scroll
 scrollbar
 scrollbar-gutter
@@ -791,6 +795,7 @@ spelled
 spirit
 sr-only
 stack
+stand
 standalone
 stands
 start
@@ -818,6 +823,7 @@ stroke-linecap
 stroke-linejoin
 stroke-width
 style
+stylesheet
 submit
 subtree
 such

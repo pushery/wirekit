@@ -36,6 +36,7 @@ as
 at
 auto-derived
 base
+below
 break
 break-word
 breaks
@@ -47,6 +48,7 @@ carry
 changes
 class
 classes
+colors
 component
 components
 compound
@@ -57,6 +59,7 @@ data-wk-prose-skip
 debug
 decimal
 developer
+difference
 disc
 docs-prose
 does
@@ -75,6 +78,8 @@ every
 everything
 exactly
 family
+fill
+filled
 flags
 flex
 focus-visible:outline-hidden
@@ -85,6 +90,7 @@ font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-body-weight)]
 for
 foreach
+foreground
 from
 has
 holds
@@ -98,6 +104,7 @@ in
 indent
 inject
 instanceof
+instead
 intent
 inter-item
 interactive
@@ -165,6 +172,7 @@ out
 over
 override
 own
+page
 pairs
 payload
 per
@@ -186,6 +194,7 @@ removed
 render
 rendered
 renders
+repeats
 replaces
 rhythm
 role
@@ -218,8 +227,10 @@ start
 still
 straight
 supported
+surface
 table
 tag
+take
 text
 text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-text)]
@@ -273,3 +284,4 @@ wk-list-spacing-none
 wk-list-spacing-sm
 would
 wrappers
+written

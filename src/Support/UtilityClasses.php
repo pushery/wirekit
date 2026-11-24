@@ -316,6 +316,40 @@ final class UtilityClasses
         return [$kept === [] ? '' : implode('; ', $kept).';', implode(' ', $utilities)];
     }
 
+    /**
+     * Whether the caller's `class` sets a side of a value group, under a variant or not: `mt-auto`,
+     * `my-4`, `m-0` and `md:mt-8` each set the top of the margin, `mx-4` does not.
+     *
+     * For a rule of the stylesheet that has to step aside for the caller. The stylesheet stands
+     * outside every cascade layer, so its rule beats a Tailwind utility whatever the specificity,
+     * and a component that marks the element lets the rule leave it out.
+     *
+     * @param  string  $group  a key of the value groups: `padding`, `margin`, `gap` or `size`
+     * @param  list<string>  $sides  the sides asked for, as the groups name them (`t`, `bs`, …)
+     */
+    public static function callerSets(ComponentAttributeBag $attributes, string $group, array $sides): bool
+    {
+        $classes = self::callerClasses($attributes);
+
+        foreach (self::GROUPS[$group] ?? [] as $pattern => $covered) {
+            if (array_intersect($sides, $covered) !== [] && self::reaches($classes, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the caller's `class` carries a utility the pattern matches, under a variant or not:
+     * `bg-white` and `md:bg-white` each set the background color. For a rule of the stylesheet that
+     * steps aside for the caller, as callerSets() does for a side of a value group.
+     */
+    public static function callerHas(ComponentAttributeBag $attributes, string $pattern): bool
+    {
+        return self::reaches(self::callerClasses($attributes), $pattern);
+    }
+
     /** Whether the class string carries a variant-free utility whose name matches `$pattern`. */
     public static function has(string $classes, string $pattern): bool
     {

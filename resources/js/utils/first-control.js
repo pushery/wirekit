@@ -16,10 +16,22 @@ import { controlIsDisabled } from './fieldset-disabled.js';
 export const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
- * The first control in the panel that is not the scroll wrapper.
+ * The mark a page sets on the control an overlay opens on: the field a dialog was opened for, ahead
+ * of a close button in its header. `autofocus` is not read for it, since a browser acts on that at
+ * page load, not when a dialog opens.
+ */
+export const INITIAL_FOCUS = 'data-wk-initial-focus';
+
+/**
+ * Where the overlay's focus starts: the control the page marked for it, else the first control in
+ * the panel that is not the scroll wrapper.
+ *
+ * The dialog pattern lets the focus start on the element the reader is most likely to begin with.
+ * A mark on a wrapper, such as the field around an input, names the first control inside it.
  *
  * Visible and enabled only: a header's close button is hidden with `x-show` on a non-dismissible
- * overlay, and handing focus-trap a node it cannot focus makes it throw.
+ * overlay, and handing focus-trap a node it cannot focus makes it throw. A marked control that is
+ * hidden or disabled gives way to the first control.
  *
  * @param {Element|null|undefined} panelEl
  * @param {string} wrapperAttribute  the attribute marking the scroll wrapper, e.g. `data-wk-modal-body`
@@ -28,12 +40,19 @@ export const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:no
 export function firstControl(panelEl, wrapperAttribute) {
     if (! panelEl) return undefined;
 
-    const control = [...panelEl.querySelectorAll(FOCUSABLE)].find((el) =>
-        ! el.hasAttribute(wrapperAttribute)
+    const usable = (el) => Boolean(el)
+        && ! el.hasAttribute(wrapperAttribute)
         // A control inside a disabled fieldset is disabled without saying so itself.
         && ! controlIsDisabled(el)
-        && el.getClientRects().length > 0,
-    );
+        && el.getClientRects().length > 0;
+
+    const named = [...panelEl.querySelectorAll(`[${INITIAL_FOCUS}]`)]
+        .map((el) => (el.matches?.(FOCUSABLE) ? el : el.querySelector?.(FOCUSABLE)))
+        .find(usable);
+
+    if (named) return named;
+
+    const control = [...panelEl.querySelectorAll(FOCUSABLE)].find(usable);
 
     return control ?? undefined;
 }

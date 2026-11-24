@@ -38,6 +38,11 @@
     'stripLabel' => null,
     // The strip of targets under the image on the phone, each a link where it has an `href`.
     'strip' => true,
+    // The phone's form at every width: its file or its crop, the markers at their places on it and
+    // the strip, also from 48rem up, for a preview beside the image as a desktop shows it or a box
+    // narrower than the page. `phoneSizes` then names the width of that box. Without it the width
+    // of the window decides.
+    'forceMobile' => false,
     'scope' => null,
 ])
 
@@ -61,6 +66,7 @@
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 
     $strip = BooleanProp::from($strip, true, 'image-hotspots', 'strip');
+    $forceMobile = BooleanProp::from($forceMobile, false, 'image-hotspots', 'forceMobile');
     $alt = SlotContent::textOf($alt);
     $label = SlotContent::textOf($label);
     $label = $label !== '' ? $label : __('wirekit::Hotspots');
@@ -178,8 +184,18 @@
             // The label stands on the side with more room, decided for each image on its own. The
             // sides are physical on purpose: they are sides of the image, which does not mirror
             // under `dir="rtl"`, and a marker right of the middle has its room on the left.
-            'side' => $x > 50 ? 'md:right-full md:left-auto md:mr-[var(--space-wk-xs)] md:ml-0' : 'md:left-full md:right-auto md:ml-[var(--space-wk-xs)] md:mr-0',
-            'phoneSide' => $phoneX > 50 ? 'max-md:right-full max-md:left-auto max-md:mr-[var(--space-wk-xs)] max-md:ml-0' : 'max-md:left-full max-md:right-auto max-md:ml-[var(--space-wk-xs)] max-md:mr-0',
+            // In the phone's form at every width, only its side applies, without a width of its own.
+            'side' => match (true) {
+                $forceMobile => '',
+                $x > 50 => 'md:right-full md:left-auto md:mr-[var(--space-wk-xs)] md:ml-0',
+                default => 'md:left-full md:right-auto md:ml-[var(--space-wk-xs)] md:mr-0',
+            },
+            'phoneSide' => match (true) {
+                $forceMobile && $phoneX > 50 => 'right-full left-auto mr-[var(--space-wk-xs)] ml-0',
+                $forceMobile => 'left-full right-auto ml-[var(--space-wk-xs)] mr-0',
+                $phoneX > 50 => 'max-md:right-full max-md:left-auto max-md:mr-[var(--space-wk-xs)] max-md:ml-0',
+                default => 'max-md:left-full max-md:right-auto max-md:ml-[var(--space-wk-xs)] max-md:mr-0',
+            },
             // That room in percent of the image's width, which the label's width stops at.
             'room' => $x > 50 ? $x : 100 - $x,
             'phoneRoom' => $phoneX > 50 ? $phoneX : 100 - $phoneX,
@@ -204,8 +220,10 @@
             '--wk-hotspot-crop-top: '.$css(-$crop['y'] / $crop['h'] * 100).'%;',
         ]);
         $phoneBox = SlotContent::textOf(is_string($phoneSizes) ? $phoneSizes : null);
-        $cropSizes = '(width < 48rem) calc('.($phoneBox !== '' ? $phoneBox : '100vw').' * '.$css($scale).'), '
-            .(filled($sizes) ? SlotContent::textOf(is_string($sizes) ? $sizes : null) : '100vw');
+        $drawn = 'calc('.($phoneBox !== '' ? $phoneBox : '100vw').' * '.$css($scale).')';
+        $cropSizes = $forceMobile
+            ? $drawn
+            : '(width < 48rem) '.$drawn.', '.(filled($sizes) ? SlotContent::textOf(is_string($sizes) ? $sizes : null) : '100vw');
     }
 
     $rootClasses = WireKit::resolveClasses('image-hotspots', 'base', 'font-[family-name:var(--font-wk-sans)]', $scope);
@@ -237,8 +255,9 @@
     // would widen the page for a label nobody sees.
     $labelClasses = WireKit::resolveClasses('image-hotspots', 'label', implode(' ', [
         'absolute top-1/2 -translate-y-1/2 w-max break-words',
-        'md:max-w-[calc(var(--wk-hotspot-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
-        'max-md:max-w-[calc(var(--wk-hotspot-phone-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
+        $forceMobile
+            ? 'max-w-[calc(var(--wk-hotspot-phone-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]'
+            : 'md:max-w-[calc(var(--wk-hotspot-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)] max-md:max-w-[calc(var(--wk-hotspot-phone-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
         'rounded-[var(--radius-wk-md)]',
         'bg-[var(--color-wk-bg-elevated)]',
@@ -258,8 +277,8 @@
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]',
-        'data-[wk-active]:border-[var(--color-wk-accent)]',
-        'data-[wk-active]:ring-[length:var(--ring-wk-width)] data-[wk-active]:ring-[var(--color-wk-accent)]',
+        'data-[wk-active]:border-[var(--color-wk-accent-text)]',
+        'data-[wk-active]:ring-[length:var(--ring-wk-width)] data-[wk-active]:ring-[var(--color-wk-accent-text)]',
     ]), $scope);
 @endphp
 
@@ -270,10 +289,12 @@
 <div x-data="wirekitImageHotspots()" data-wk-image-hotspots x-on:keydown.escape.window.capture="dismiss($event)" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}>
     {{-- No ratio and no fit: the box is the image, so a percentage of the box is a percentage of
          the image, on the phone's file as well. --}}
-    <div @class(['relative', 'max-md:overflow-hidden max-md:aspect-[var(--wk-hotspot-crop-ratio)]' => $crop !== null]) @if($cropStyle !== null) style="{{ $cropStyle }}" @endif>
+    {{-- In the phone's form at every width, the phone's classes stand without their width, and the
+         phone's file without its media condition. --}}
+    <div @class(['relative', 'max-md:overflow-hidden max-md:aspect-[var(--wk-hotspot-crop-ratio)]' => $crop !== null && ! $forceMobile, 'overflow-hidden aspect-[var(--wk-hotspot-crop-ratio)]' => $crop !== null && $forceMobile]) @if($cropStyle !== null) style="{{ $cropStyle }}" @endif>
         <picture class="contents">
             @if($phoneSrc !== null)
-            <source media="(width < 48rem)" srcset="{{ $phoneSrcset ?? $phoneSrc }}" @if($phoneWidth !== null) width="{{ $phoneWidth }}" @endif @if($phoneHeight !== null) height="{{ $phoneHeight }}" @endif>
+            <source @if(! $forceMobile) media="(width < 48rem)" @endif srcset="{{ $phoneSrcset ?? $phoneSrc }}" @if($phoneWidth !== null) width="{{ $phoneWidth }}" @endif @if($phoneHeight !== null) height="{{ $phoneHeight }}" @endif>
             @endif
             <img data-wk-prose-skip
                 src="{{ $src }}"
@@ -284,7 +305,11 @@
                 @if($height !== null) height="{{ $height }}" @endif
                 loading="{{ $loading }}"
                 @if($fetchpriority !== null) fetchpriority="{{ $fetchpriority }}" @endif
-                @class(['block w-full h-auto', 'max-md:absolute max-md:max-w-none max-md:w-[var(--wk-hotspot-crop-width)] max-md:left-[var(--wk-hotspot-crop-left)] max-md:top-[var(--wk-hotspot-crop-top)]' => $crop !== null])
+                @class([
+                    'block w-full h-auto' => $crop === null || ! $forceMobile,
+                    'max-md:absolute max-md:max-w-none max-md:w-[var(--wk-hotspot-crop-width)] max-md:left-[var(--wk-hotspot-crop-left)] max-md:top-[var(--wk-hotspot-crop-top)]' => $crop !== null && ! $forceMobile,
+                    'block h-auto absolute max-w-none w-[var(--wk-hotspot-crop-width)] left-[var(--wk-hotspot-crop-left)] top-[var(--wk-hotspot-crop-top)]' => $crop !== null && $forceMobile,
+                ])
             >
         </picture>
 
@@ -298,7 +323,12 @@
             @foreach($items as $index => $item)
             <li data-wk-prose-skip
                 @if(! $item['onPhone']) data-wk-hotspot-off-phone @endif
-                @class(['absolute -translate-x-1/2 -translate-y-1/2 left-[var(--wk-hotspot-x)] top-[var(--wk-hotspot-y)] max-md:left-[var(--wk-hotspot-phone-x)] max-md:top-[var(--wk-hotspot-phone-y)]', 'max-md:hidden' => ! $item['onPhone']])
+                @class([
+                    'absolute -translate-x-1/2 -translate-y-1/2 left-[var(--wk-hotspot-x)] top-[var(--wk-hotspot-y)] max-md:left-[var(--wk-hotspot-phone-x)] max-md:top-[var(--wk-hotspot-phone-y)]' => ! $forceMobile,
+                    'absolute -translate-x-1/2 -translate-y-1/2 left-[var(--wk-hotspot-phone-x)] top-[var(--wk-hotspot-phone-y)]' => $forceMobile,
+                    'max-md:hidden' => ! $item['onPhone'] && ! $forceMobile,
+                    'hidden' => ! $item['onPhone'] && $forceMobile,
+                ])
                 style="--wk-hotspot-x: {{ $css($item['x']) }}%; --wk-hotspot-y: {{ $css($item['y']) }}%; --wk-hotspot-phone-x: {{ $css($item['phoneX']) }}%; --wk-hotspot-phone-y: {{ $css($item['phoneY']) }}%; --wk-hotspot-room: {{ $css($item['room']) }}; --wk-hotspot-phone-room: {{ $css($item['phoneRoom']) }}"
             >
                 <button
@@ -330,7 +360,7 @@
         aria-label="{{ $stripLabel }}"
         tabindex="0"
         data-wk-image-hotspots-strip
-        class="md:hidden relative mt-[var(--space-wk-sm)] overflow-x-auto overscroll-x-contain snap-x snap-mandatory rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        @class(['md:hidden' => ! $forceMobile, 'relative mt-[var(--space-wk-sm)] overflow-x-auto overscroll-x-contain snap-x snap-mandatory rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])
     >
         <ul data-wk-prose-skip role="list" data-wk-print-wrap class="flex gap-[var(--gap-wk-sm)] m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
             @foreach($items as $index => $item)

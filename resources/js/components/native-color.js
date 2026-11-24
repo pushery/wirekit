@@ -27,7 +27,12 @@ export default function wirekitNativeColor() {
             const field = this._field();
 
             if (field) {
-                this.current = field.getAttribute('value') ?? field.value ?? '';
+                // The color as the browser keeps it in the field: a hex color in lower case, which
+                // is also what the server writes into the readout before the script runs, so the
+                // readout does not change its case as the script starts. Anything else is the
+                // field's own value, black for a color it does not take.
+                const raw = field.getAttribute('value') ?? field.value ?? '';
+                this.current = /^#[0-9a-f]{6}$/i.test(raw) ? raw.toLowerCase() : (field.value ?? raw);
             }
 
             this._stopFieldWatch = observeServerValue(field, () => {

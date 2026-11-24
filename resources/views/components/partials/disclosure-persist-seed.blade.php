@@ -20,11 +20,21 @@
      section, which is its own: the header comes before the panel, and a nested section's arrow is
      inside the panel.
 
+     A section drawn closed with `lazy` holds its entries in a template, the panel's first element.
+     When the reader opened it on an earlier visit, the script builds them here: a copy of the
+     template's content after the template, and `_wkBuilt` on the template, which is what
+     `utils/lazy-entries.js` does when the section first shows them. The section then shows its
+     entries from the first paint, and Alpine finds them built.
+
      Every value arrives as a data attribute on this tag and the body is a constant, for the
      reason `nav-persist-seed` gives: a script body is not escaped the way an attribute is.
 
      It is a correction and never a requirement. Blocked by a policy, thrown by a browser with
      storage switched off, or never reached, the section keeps the behavior it has without it.
+
+     The arrow's turn arrives as the classes the markup writes, with the mirror of a page read
+     from the right and under their short names when compact classes are on, so the script turns
+     what the markup and the arrow's binding turn.
 
      Params: $seedKey (the `persist` key) and $seedOn (the state the server rendered). --}}
 @php
@@ -34,6 +44,7 @@
     @if($seedNonce)nonce="{{ $seedNonce }}"@endif
     data-wk-disclosure-seed-key="{{ $seedKey }}"
     data-wk-disclosure-seed-on="{{ $seedOn ? '1' : '0' }}"
+    data-wk-disclosure-seed-turn="{{ \Pushery\WireKit\Support\CompactClasses::map('rotate-90 rtl:-rotate-90') }}"
 >
 (function () {
     var self = document.currentScript;
@@ -53,8 +64,14 @@
     // folded stays hidden until Alpine starts, like one the server rendered closed.
     if (on) { panel.removeAttribute('x-cloak'); } else { panel.setAttribute('x-cloak', ''); }
 
+    var entries = on ? panel.firstElementChild : null;
+    if (entries && entries.tagName === 'TEMPLATE' && entries.hasAttribute('data-wk-lazy-entries') && entries._wkBuilt !== true) {
+        entries._wkBuilt = true;
+        entries.after(entries.content.cloneNode(true));
+    }
+
     var arrow = panel.parentElement && panel.parentElement.querySelector('[data-wk-disclosure-arrow]');
-    if (arrow) { arrow.classList.toggle('rotate-90', on); }
+    if (arrow) { (cfg.wkDisclosureSeedTurn || 'rotate-90').split(' ').forEach(function (name) { if (name) { arrow.classList.toggle(name, on); } }); }
 
     var trigger = panel.id && panel.parentElement && window.CSS && window.CSS.escape
         ? panel.parentElement.querySelector('[aria-controls="' + window.CSS.escape(panel.id) + '"]')

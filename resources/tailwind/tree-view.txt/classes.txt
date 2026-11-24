@@ -146,6 +146,7 @@ closed
 closing
 collapsed
 color
+compact
 compares
 compiles
 component
@@ -191,6 +192,7 @@ descendant
 descendants
 dev
 developer
+did
 directive
 directly
 disc
@@ -263,6 +265,7 @@ font-[number:var(--font-wk-heading-weight)]
 for
 forced-colors
 forcing
+form
 framework
 fresh
 from
@@ -387,6 +390,7 @@ margin
 margin-inline-start
 marked
 marks
+markup
 match
 matches
 matching
@@ -426,8 +430,10 @@ nor
 not
 nothing
 null
+object
 occurrence
 of
+off
 on
 once
 one
@@ -474,6 +480,7 @@ placeholder
 point
 pointer
 pointing
+points
 post-process
 practices
 pre-checking
@@ -711,6 +718,7 @@ without
 wk-touch-row
 wk-tree-view
 would
+writes
 writing
 written
 x-bind:aria-expanded

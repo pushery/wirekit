@@ -84,6 +84,7 @@ already-closed
 also
 although
 always
+among
 an
 ancestor
 anchors
@@ -170,6 +171,7 @@ bg-transparent
 bind
 bindings
 binds
+black
 block
 blur
 body
@@ -194,6 +196,7 @@ break
 brightness
 browser
 bubbles
+builds
 built
 but
 button
@@ -222,6 +225,8 @@ check
 checked
 checker
 child
+children
+chosen
 class
 clean
 clear
@@ -243,6 +248,8 @@ commits
 compiles
 component
 computed
+conditional
+configuration
 confirmation
 conformance
 container
@@ -272,7 +279,9 @@ cursor
 cursor-crosshair
 cursor-pointer
 custom
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
+data-wk-picker-color
 data-wk-prose-skip
 data-wk-ref-scope
 data-wk-server-value
@@ -324,6 +333,7 @@ duration-[var(--transition-wk-duration)]
 during
 each
 echo
+edge
 edit
 editable
 either
@@ -357,6 +367,7 @@ extends
 extra
 eye
 eyedropper
+factory
 failed
 failure
 fallback
@@ -397,6 +408,9 @@ follows
 font-[family-name:var(--font-wk-mono)]
 font-[number:var(--font-wk-body-weight)]
 for
+forced
+forced-color-adjust-none
+forced-colors
 foreach
 form
 format
@@ -521,6 +535,7 @@ last
 later
 layer
 layout
+lazy
 learn
 leave
 leaves
@@ -528,6 +543,7 @@ left
 left/right
 legible
 length
+lets
 lg
 like
 line
@@ -580,6 +596,7 @@ native
 native-mode
 native-on-mobile
 nativeOnMobile
+needed
 needs
 nesting
 network
@@ -640,6 +657,7 @@ p-[var(--padding-wk-x-md)]
 p-[var(--space-wk-xs)]
 page
 paint
+paints
 panel
 paragraph
 parent
@@ -783,6 +801,7 @@ saying
 says
 scope
 screen
+script
 second
 see
 selects
@@ -807,7 +826,9 @@ shrink-0
 sibling
 side
 silhouette
+since
 single
+sit
 site
 sits
 size
@@ -878,11 +899,13 @@ taking
 tap
 target
 technology
+teleport
 teleported
 teleporting
 teleports
 tell
 telling
+template
 test
 text
 text-[color:var(--color-wk-danger-text)]
@@ -897,6 +920,7 @@ the
 their
 theirs
 them
+theme
 theme-independent
 themed
 then
@@ -946,9 +970,11 @@ understood
 undo
 unknown
 unknown-prop
+unless
 unlike
 unnamed
 unrelated
+until
 untranslated
 up
 uppercase
@@ -972,6 +998,7 @@ view
 viewBox
 visible
 visual
+visually
 voice
 w-3.5
 w-4
@@ -982,6 +1009,7 @@ w-[var(--size-wk-md)]
 w-[var(--size-wk-sm)]
 w-[var(--size-wk-target-min)]
 w-full
+waits
 warning
 was
 way
@@ -1044,6 +1072,8 @@ x-for
 x-if
 x-model
 x-modelable
+x-on:focusin
+x-on:pointerenter
 x-ref
 x-show
 x-teleport

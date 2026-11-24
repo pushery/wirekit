@@ -1,6 +1,7 @@
 !animating
 --border-wk-width
 --color-wk-accent
+--color-wk-accent-text
 --color-wk-bg-elevated
 --color-wk-border
 --color-wk-danger
@@ -36,6 +37,7 @@
 @endif
 @endphp
 @endunless
+@endwirekitLast
 @if
 @php
 [overflow-wrap:anywhere]
@@ -85,9 +87,9 @@ aria-hidden
 aria-label
 aria-labelledby
 aria-pressed
-aria-pressed:border-[var(--color-wk-accent)]
+aria-pressed:border-[var(--color-wk-accent-text)]
 aria-pressed:inset-ring-[length:var(--border-wk-width)]
-aria-pressed:inset-ring-[var(--color-wk-accent)]
+aria-pressed:inset-ring-[var(--color-wk-accent-text)]
 around
 array
 arrives

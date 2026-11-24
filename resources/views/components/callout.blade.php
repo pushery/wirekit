@@ -155,7 +155,7 @@
      So: no landmark, no live region. The heading and the text are read in document order,
      the icon is aria-hidden, and the intent is carried by the words rather than by a role
      a screen reader would have to interrupt for. --}}
-<div {{ $attributes->merge(['data-intent' => $variantValue])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden'])) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<div {{ $attributes->merge(['data-intent' => $variantValue])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden'])) }} @if($animateAttr) {!! $animateAttr !!} @endif @if(str_contains($variantColors['bg'], 'bg-[color-mix(')) data-wk-tint @endif>
     @if($stripe)
         {{-- Opt-in accent stripe: a one-sided colored bar, off by default. The
              plain callout is the alert-style 4-sided tinted border; the bar is
@@ -166,7 +166,7 @@
     {{-- Variant icon —: iconSlot named slot wins over the
          variant-derived auto icon. The bool $icon prop continues to toggle
          the auto-icon path off when explicitly set false. --}}
-    @php $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent(); @endphp
+    @php $hasIconSlot = \Pushery\WireKit\Support\SlotContent::given($iconSlot ?? null); @endphp
     @if($hasIconSlot)
         <div class="shrink-0 mt-0.5">{{ $iconSlot }}</div>
     @elseif($icon !== false)

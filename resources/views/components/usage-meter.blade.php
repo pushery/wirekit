@@ -45,8 +45,11 @@
     $limitNum = $isUnlimited ? null : max(0.0, (float) \Pushery\WireKit\Support\NumericProp::from($limit, 0, 'usage-meter', 'limit'));
 
     $ratio = (! $isUnlimited && $limitNum > 0) ? $usedNum / $limitNum : 0.0;
-    // Real % can exceed 100 (over-limit) — show it in text; the bar clamps to 100.
-    $rawPercent = (! $isUnlimited && $limitNum > 0) ? (int) round($ratio * 100) : null;
+    // Real % can exceed 100 (over-limit) — show it in text; the bar clamps to 100. Rounded down
+    // by WholePercent, so a written share never claims a threshold the bands below do not: 7,996
+    // of 10,000 reads 79 %, under `warn`, and 100 % stands with the band `over` alone, while 29 of
+    // 100 still reads 29.
+    $rawPercent = (! $isUnlimited && $limitNum > 0) ? \Pushery\WireKit\Support\WholePercent::of($usedNum, $limitNum) : null;
     // Mutually-exclusive bands: over > danger > warn > ok. The danger band only
     // exists when `danger` is configured below 1.0 (the docs recommend 0.95); with
     // the default danger=1.0, $isDanger is always false (ratio>=1.0 is already
@@ -133,9 +136,9 @@
                         <span class="text-[color:var(--color-wk-text-subtle)]">· {{ $unlimitedLabel ?? __('wirekit::Unlimited') }}</span>
                     @else
                         {{ $fmt($usedNum) }} / {{ $fmt($limitNum) }}@if($unit) {{ $unit }}@endif
-                        @if($rawPercent !== null)
+                        @wirekitLast($rawPercent !== null)
                             <span class="text-[color:var(--color-wk-text-subtle)]">({{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) $rawPercent, 0) }})</span>
-                        @endif
+                        @endwirekitLast
                     @endwirekitLast
                 </span>
             @endwirekitLast

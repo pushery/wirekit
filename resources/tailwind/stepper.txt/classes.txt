@@ -9,7 +9,6 @@
 --color-wk-text-muted
 --font-wk-heading-weight
 --gap-wk-sm
---opacity-wk-hover
 --padding-wk-x-sm
 --padding-wk-y-md
 --padding-wk-y-xs
@@ -38,6 +37,7 @@ absolutely
 accent
 accept
 accessible
+across
 action
 affordance
 after
@@ -132,6 +132,7 @@ computed
 computes
 connector
 connectors
+contrast
 contributes
 cope
 costs
@@ -175,7 +176,7 @@ either
 element
 else
 empty
-end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)]
+end-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-var(--gap-wk-sm))]
 equal
 ertical
 escaping
@@ -186,6 +187,7 @@ every
 everything
 expression
 expressions
+fade
 fallback
 far
 field
@@ -207,6 +209,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 follow
+followed
 follows
 font-[number:var(--font-wk-heading-weight)]
 for
@@ -222,6 +225,8 @@ gap-[var(--gap-wk-sm)]
 gap-[var(--padding-wk-x-sm)]
 gap-[var(--padding-wk-y-md)]
 get
+group-hover/wk-step:underline
+group/wk-step
 guess
 h-4
 h-[1px]
@@ -241,7 +246,6 @@ hides
 holds
 horizontal
 horizontally
-hover:opacity-[var(--opacity-wk-hover)]
 href
 hyphenates
 hyphenation
@@ -307,6 +311,7 @@ max-w-full
 may
 min-w-0
 min-width
+mix
 more
 move
 mt-[var(--padding-wk-y-xs)]
@@ -441,6 +446,7 @@ spacing
 span
 split
 sr-only
+stands
 start-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 start-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 state
@@ -495,12 +501,14 @@ top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 top-[var(--wk-stepper-circle,var(--size-wk-sm))]
 total
 transition-colors
-transition-opacity
 treatment
 true
 truth
 type
 under
+underline
+underline-offset-2
+underlines
 unknown
 unless
 unmarked

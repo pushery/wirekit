@@ -32,6 +32,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -214,6 +215,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-accent-text)]
@@ -250,11 +252,11 @@ border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-t-[length:var(--border-wk-width)]
 border-transparent
 both
@@ -274,6 +276,7 @@ browser
 buffer
 build
 built
+bundle
 busy
 but
 button
@@ -343,6 +346,7 @@ comment
 comments
 commit
 common
+compact
 companion
 compiled
 compiles
@@ -399,10 +403,12 @@ data-stack-below
 data-wk-busy-spinner
 data-wk-busy-text
 data-wk-button-group
+data-wk-markers
 data-wk-print-expand
 data-wk-prose-skip
 data-wk-scroll-inset
 data-wk-sr-host
+data-wk-view
 dataDeferred
 dead
 debug
@@ -448,7 +454,7 @@ discarded
 display
 dist/wirekit.css
 divide-[var(--color-wk-border)]
-divide-y
+divide-y-[length:var(--border-wk-width)]
 divider
 do
 docs
@@ -505,6 +511,7 @@ explicit
 explicitly
 expression
 extra
+factory
 fading
 fails
 failure
@@ -659,9 +666,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -748,6 +755,7 @@ labels
 landmark
 landmark-unique
 lands
+larger
 largest
 last:border-b-0
 last:border-e-0
@@ -794,6 +802,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 locations
 log
 logger
@@ -1198,6 +1207,7 @@ shape
 shapes
 shared
 shares
+sheet
 ships
 short
 show
@@ -1275,6 +1285,7 @@ stackBelow
 stacks
 stand
 stands
+start
 state
 states
 static
@@ -1410,6 +1421,7 @@ trade
 transition-colors
 translated
 transparent
+travel
 travels
 treating
 treatment

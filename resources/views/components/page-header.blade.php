@@ -89,9 +89,11 @@
      * Written out per size because Tailwind reads a literal class name and never an assembled
      * one, the same reason `hide-below` spells its five out.
      *
-     * The container is named (`@container/wk-page-header` on the root below), for the reason the
-     * table's frame carries a name too: an anonymous container would also become the measuring
-     * context for every `@`-variant a caller nests in the actions slot, and silently retarget it.
+     * The container is named (`@container/wk-page-header` on the root below), as the table's
+     * frame is: the header's own variants ask the header even where a caller sets a container
+     * of its own in the actions slot. A name hides the header from no variant without one: such
+     * a variant in the slot asks the nearest container, and that is the header unless the caller
+     * set another.
      */
     $stackBelow = filled($stackBelow) ? (string) $stackBelow : null;
 
@@ -216,7 +218,7 @@
     // of its accessible name; in `description` they would cost a second line; in `actions` they
     // would sit at the far end, away from the name they describe. They wrap with the title and
     // never into the actions.
-    $hasMeta = isset($meta) && $meta->hasActualContent();
+    $hasMeta = \Pushery\WireKit\Support\SlotContent::given($meta ?? null);
 
     $actionsClasses = WireKit::resolveClasses('page-header', 'actions', implode(' ', [
         // Wraps inside itself too: with two buttons beside a title on a phone, a row that
@@ -262,7 +264,7 @@
     </div>
 
     @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
-        @if($actionsBesideTitle)
+        @wirekitLast($actionsBesideTitle)
             {{-- The frame grows to fill its line, which is how the stylesheet tells beside the
                  title from wrapped below it. The row keeps its name and its block, so a call site
                  that reaches for `[data-wk-page-header-actions]` finds the same element. --}}
@@ -271,6 +273,6 @@
             </div>
         @else
             <div data-wk-page-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
-        @endif
+        @endwirekitLast
     @endwirekitLast
 </div>

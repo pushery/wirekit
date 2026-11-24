@@ -18,11 +18,17 @@
  *     timers and `load` listener of utils/await-peer.js, which looks for an engine and
  *     holds back the missing-engine hint. All released in destroy(), and the moment an
  *     engine boots the map.
+ *   - _stopViewSync and _stopMarkersSync — the observers of the root's `data-wk-view` and
+ *     `data-wk-markers`, through which a render's center, zoom and markers arrive in the
+ *     running map. Released in destroy().
  *
  * @param {Object} config
- * @param {Array}  config.center   - [lat, lng]
+ * @param {Array}  config.center   - [lat, lng]; with `zoom`, for a factory built outside Blade.
+ *                                   Without both the view comes from the root's `data-wk-view`.
  * @param {number} config.zoom
- * @param {Array}  config.markers  - [{id,lat,lng,label,intent?}]
+ * @param {Array}  config.markers  - [{id,lat,lng,label,intent?}], for a factory built outside
+ *                                   Blade. Without them the markers come from the root's
+ *                                   `data-wk-markers`.
  * @param {string} config.provider - 'maplibre' | 'leaflet'
  * @param {string} config.styleUrl - tile/style URL (provider-specific)
  * @param {string} config.attribution - tile attribution HTML (Leaflet provider; shown
@@ -31,6 +37,15 @@
 import { keepRaw } from '../utils/keep-raw.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
+import { jsonValue, observeServerValue } from '../utils/server-value.js';
+
+/*
+ * The attributes of the root that carry what a render changes: the view (center and zoom) and the
+ * markers. In `x-data` a change to either would have Alpine set the component back to the new
+ * expression and start it again, which builds the map anew at its first view.
+ */
+const VIEW_ATTRIBUTE = 'data-wk-view';
+const MARKERS_ATTRIBUTE = 'data-wk-markers';
 
 /**
  * Map engines the host handed over, keyed by provider name.
@@ -137,8 +152,34 @@ export default function wirekitMap(config = {}) {
         // Both are released by _stopAwaitingEngine().
         _onEngine: null,
         _stopAwaitingPeer: null,
+        // Stop following the root's view and markers; released in destroy().
+        _stopViewSync: null,
+        _stopMarkersSync: null,
 
         init() {
+            /*
+             * The view and the markers are read from attributes of the root rather than from
+             * `x-data`, so the expression renders the same on every update, and followed from
+             * there: markers the server changes reach the list and the pins, and a center or zoom
+             * it changes moves the map, while the reader's own pan and zoom stay as long as the
+             * server's view does. Values passed in `config`, as by a factory built outside Blade,
+             * are taken as given. Read before the data preference below, so the list follows the
+             * server even while the canvas waits.
+             */
+            const root = this.$root;
+
+            if (typeof root?.getAttribute === 'function') {
+                if (config.center === undefined && config.zoom === undefined) {
+                    this._takeView(jsonValue(root.getAttribute(VIEW_ATTRIBUTE)), false);
+                    this._stopViewSync = observeServerValue(root, (raw) => this._takeView(jsonValue(raw), true), VIEW_ATTRIBUTE);
+                }
+
+                if (config.markers === undefined) {
+                    this._takeMarkers(jsonValue(root.getAttribute(MARKERS_ATTRIBUTE)));
+                    this._stopMarkersSync = observeServerValue(root, (raw) => this._takeMarkers(jsonValue(raw)), MARKERS_ATTRIBUTE);
+                }
+            }
+
             /*
              * Tiles are the largest network cost this library can cause, and the only
              * one it controls at runtime.
@@ -168,6 +209,14 @@ export default function wirekitMap(config = {}) {
             this._boot();
         },
         destroy() {
+            if (this._stopViewSync) {
+                this._stopViewSync();
+                this._stopViewSync = null;
+            }
+            if (this._stopMarkersSync) {
+                this._stopMarkersSync();
+                this._stopMarkersSync = null;
+            }
             // An engine that arrives after this map is gone must not boot it, and a pending
             // missing-engine hint must not speak for a map that no longer exists.
             this._stopAwaitingEngine();
@@ -651,6 +700,86 @@ export default function wirekitMap(config = {}) {
             // A removed marker can't stay selected.
             if (this.selectedId === id) {
                 this.selectedId = null;
+            }
+        },
+
+        // ── What a render brings ─────────────────────────────────────────
+
+        /**
+         * Take the center and the zoom the server wrote. At the start they are where the map opens.
+         * A later render that changes them moves the map there; one that leaves them as they were
+         * writes nothing new, so the reader's own pan and zoom stay.
+         *
+         * @param {*}       view the parsed value of `data-wk-view`: { center: [lat, lng], zoom }
+         * @param {boolean} move whether to move a drawn map to it
+         */
+        _takeView(view, move) {
+            if (! view || typeof view !== 'object' || Array.isArray(view)) {
+                return;
+            }
+
+            this.center = Array.isArray(view.center) ? view.center : [0, 0];
+            this.zoom = Number(view.zoom) || 2;
+
+            if (move) {
+                this._moveTo();
+            }
+        },
+
+        /** Move a drawn map to `center` and `zoom`, with no motion for a reader who asked for none. */
+        _moveTo() {
+            if (! this._map) {
+                return;
+            }
+
+            const reduce = typeof window !== 'undefined' && window.matchMedia
+                && prefersReducedMotion();
+
+            if (this._resolved === 'leaflet' && typeof this._map.setView === 'function') {
+                this._map.setView(this.center, this.zoom, { animate: ! reduce });
+            } else if (typeof this._map.flyTo === 'function') {
+                this._map.flyTo({ center: [this.center[1], this.center[0]], zoom: this.zoom, animate: ! reduce });
+            }
+        },
+
+        /**
+         * Take the markers the server wrote: the list beside the map and the pins on it. A pin
+         * whose marker is unchanged stays as drawn, with its bubble; a changed one is drawn again
+         * where its marker now is, a new one is added and one the list no longer holds is removed.
+         * A selection whose marker is gone ends. A value that is not a list changes nothing.
+         *
+         * @param {*} markers the parsed value of `data-wk-markers`
+         */
+        _takeMarkers(markers) {
+            if (! Array.isArray(markers)) {
+                return;
+            }
+
+            const next = markers.map((m) => ({ ...m }));
+            const before = new Map(this.markers.map((m) => [m.id, JSON.stringify(m)]));
+            const ids = new Set(next.map((m) => m.id));
+
+            this.markers = next;
+
+            if (this.selectedId !== null && ! ids.has(this.selectedId)) {
+                this.selectedId = null;
+            }
+
+            if (! this._map) {
+                return;
+            }
+
+            for (const id of before.keys()) {
+                if (! ids.has(id)) {
+                    this._removeMapMarker(id);
+                }
+            }
+
+            for (const m of next) {
+                if (before.get(m.id) !== JSON.stringify(m)) {
+                    this._removeMapMarker(m.id);
+                    this._addMarker(m);
+                }
             }
         },
         get markerCount() {

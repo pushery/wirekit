@@ -61,6 +61,28 @@
     $points = \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::records($value, 'image-hotspots-editor', 'value'));
     $points = array_values(array_filter(is_array($points) ? $points : [], 'is_array'));
 
+    // The points as the page loads, for the moment before the script starts and for a page that
+    // runs none: each at the place the script starts it on the desktop image, held between 0 and
+    // 100 and kept to one decimal, else in the middle, and with the name the script gives it.
+    $startPercent = static function ($coordinate): ?float {
+        if (! is_int($coordinate) && ! is_float($coordinate) && ! (is_string($coordinate) && is_numeric(trim($coordinate)))) {
+            return null;
+        }
+
+        $number = (float) $coordinate;
+
+        return is_finite($number) ? round(max(0.0, min(100.0, $number)) * 10) / 10 : null;
+    };
+    $startPoints = [];
+    foreach ($points as $pointIndex => $point) {
+        $pointLabel = is_string($point['label'] ?? null) ? trim($point['label']) : '';
+        $startPoints[] = [
+            'x' => $startPercent($point['x'] ?? null) ?? 50.0,
+            'y' => $startPercent($point['y'] ?? null) ?? 50.0,
+            'name' => $pointLabel !== '' ? $pointLabel : __('wirekit::Point :number', ['number' => $pointIndex + 1]),
+        ];
+    }
+
     $helpId = DomId::unique(null, 'wk-hotspots-editor-help-');
 
     $config = [
@@ -97,11 +119,11 @@
         'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] text-[length:var(--text-wk-xs)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-text)]',
         'shadow-[var(--shadow-wk-md)] cursor-grab data-[wk-dragging]:cursor-grabbing touch-none',
-        'aria-pressed:ring-[length:var(--ring-wk-width)] aria-pressed:ring-[var(--color-wk-accent)]',
+        'aria-pressed:ring-[length:var(--ring-wk-width)] aria-pressed:ring-[var(--color-wk-accent-text)]',
         $focusRing,
     ]), $scope);
 
-    $rowClasses = WireKit::resolveClasses('image-hotspots-editor', 'row', 'flex flex-wrap items-center gap-[var(--gap-wk-xs)] p-[var(--padding-wk-x-xs)] rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] data-[wk-selected]:border-[var(--color-wk-accent)]', $scope);
+    $rowClasses = WireKit::resolveClasses('image-hotspots-editor', 'row', 'flex flex-wrap items-center gap-[var(--gap-wk-xs)] p-[var(--padding-wk-x-xs)] rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] data-[wk-selected]:border-[var(--color-wk-accent-text)]', $scope);
 
     $nameClasses = 'wk-touch-row basis-full min-w-0 text-start text-[length:var(--text-wk-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] '.$focusRing;
 
@@ -142,6 +164,18 @@
             @if($phoneSrc !== null)
             <img data-wk-prose-skip src="{{ $phoneSrc }}" alt="{{ $alt }}" @if($phoneWidth !== null) width="{{ $phoneWidth }}" @endif @if($phoneHeight !== null) height="{{ $phoneHeight }}" @endif draggable="false" class="block w-full h-auto cursor-crosshair" x-show="isShown('phone')" x-cloak>
             @endif
+            {{-- The markers as the page loads; the template below draws nothing until the script
+                 starts. The script hides them as it starts and draws its own buttons in their
+                 place, and `x-show` keeps them hidden through a Livewire render as well. Without
+                 the script a marker moves nothing, so it is no button, and the list beside the
+                 image names each point. --}}
+            @if($startPoints !== [])
+                <span data-wk-image-hotspots-editor-start x-show="false" aria-hidden="true" style="display: contents">
+                    @foreach($startPoints as $startIndex => $startPoint)
+                        <span class="{{ $pointClasses }}" style="left: {{ $startPoint['x'] }}%; top: {{ $startPoint['y'] }}%">{{ $startIndex + 1 }}</span>
+                    @endforeach
+                </span>
+            @endif
             <template x-for="(point, index) in points" x-bind:key="index">
                 <button
                     type="button"
@@ -162,7 +196,13 @@
         <div class="grid gap-[var(--gap-wk-sm)]">
             {{-- `role="list"`: WebKit reads a list without numbers as plain text. An empty list is
                  hidden, so a screen reader meets no named list with nothing in it. --}}
-            <ol data-wk-prose-skip role="list" aria-label="{{ $label }}" class="m-0 p-0 list-none grid gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;" x-show="points.length">
+            <ol data-wk-prose-skip role="list" aria-label="{{ $label }}" class="m-0 p-0 list-none grid gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;" x-show="points.length" @if($startPoints === []) x-cloak @endif>
+                {{-- The points as the page loads, by number and name, as the rows below name them:
+                     hidden by the script as it starts, text only. Without points the list waits
+                     under `x-cloak`, as the script hides it. --}}
+                @foreach($startPoints as $startIndex => $startPoint)
+                    <li data-wk-prose-skip data-wk-image-hotspots-editor-start x-show="false" class="{{ $rowClasses }}"><span class="basis-full min-w-0 text-start text-[length:var(--text-wk-sm)]">{{ ($startIndex + 1).'. '.$startPoint['name'] }}</span></li>
+                @endforeach
                 <template x-for="(point, index) in points" x-bind:key="index">
                     <li data-wk-prose-skip class="{{ $rowClasses }}" x-bind:data-wk-hotspots-row="index" x-bind:data-wk-selected="isSelected(index)">
                         <button type="button" class="{{ $nameClasses }}" data-wk-row-control="name" x-on:click="select(index, $el)" x-text="(index + 1) + '. ' + nameOf(point, index)"></button>
@@ -183,11 +223,8 @@
                 </template>
             </ol>
 
-            {{-- A soft surface, without a border: the neutral outline's border stands at 1.3:1 against
-                 the page, under the 3:1 a control's boundary needs (WCAG 1.4.11), and the button's
-                 words name it without one. --}}
             <div>
-                <x-wirekit::button intent="neutral" surface="soft" size="sm" data-wk-hotspots-add x-on:click="addAtCenter()">
+                <x-wirekit::button intent="neutral" size="sm" data-wk-hotspots-add x-on:click="addAtCenter()">
                     <x-slot:iconLeft><x-wirekit::icon name="plus" size="sm" aria-hidden="true" /></x-slot:iconLeft>
                     {{ __('wirekit::Add a point') }}
                 </x-wirekit::button>

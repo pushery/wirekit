@@ -9,10 +9,15 @@
  * that travels. A reader moving a row three places pressed the arrow once and then had to find
  * it again, twice.
  *
- * So the cell remembers which arrow was pressed, by the row's key and the direction, and after
- * the next Livewire commit that succeeds it focuses the same arrow in the row's new place, or
- * the other one where the row reached an end and its arrow is disabled. It does so only when the
- * focus was lost: a reader who has moved on during the round trip keeps where they went.
+ * So the cell remembers which arrow was pressed, by the row's key and the direction, and once the
+ * Livewire request that carries the press has succeeded it focuses the same arrow in the row's new
+ * place, or the other one where the row reached an end and its arrow is disabled. It does so only
+ * when the focus was lost: a reader who has moved on during the round trip keeps where they went.
+ *
+ * A request carries the press remembered as it goes out, from a list inside the component that
+ * sends it. A second press while the first request is out waits, as its action does: Livewire sends
+ * that action once the first request has ended, and the press goes with it. A request that went
+ * out before the press, or from another component, carries none and leaves the press to its own.
  *
  * One slot per page, as module state: one keyboard presses one arrow at a time, and the cell
  * that pressed it may itself be replaced by the morph. The Livewire hook is registered once.
@@ -56,14 +61,37 @@ function findCell(list, key) {
     return (scope === list ? cells.find((cell) => listOf(cell) === list) : cells[0]) ?? null;
 }
 
-/** After a commit: focus the remembered arrow again, if the focus was lost on the way. */
-export function restoreReorderFocus() {
-    if (! pending) {
+/**
+ * Whether a request of `component` carries a press made in `list`: the list stands inside the
+ * component's element. A request whose component or list is not known is taken to carry it.
+ *
+ * @param {{ el?: Element } | null | undefined} component
+ * @param {Element | null} list
+ * @returns {boolean}
+ */
+function carries(component, list) {
+    const root = component?.el;
+
+    return ! root || typeof root.contains !== 'function' || ! list || root.contains(list);
+}
+
+/**
+ * After a commit: focus the remembered arrow again, if the focus was lost on the way.
+ *
+ * @param {{ key: string, direction: string, list: Element | null } | null} [press] - the press the
+ *   request carried; the one remembered last when none is given
+ */
+export function restoreReorderFocus(press = pending) {
+    if (! press) {
         return;
     }
 
-    const { key, direction, list } = pending;
-    pending = null;
+    // A press made since stays for the request Livewire sends after this one.
+    if (pending === press) {
+        pending = null;
+    }
+
+    const { key, direction, list } = press;
 
     const active = typeof document !== 'undefined' ? document.activeElement : null;
     if (active && active !== document.body && active.isConnected) {
@@ -92,8 +120,12 @@ export default function wirekitTableReorder(config = {}) {
             }
 
             hooked = true;
-            window.Livewire.hook('commit', ({ succeed }) => {
-                succeed(() => queueMicrotask(restoreReorderFocus));
+            // The hook runs as a request goes out, so the press it carries is the one remembered
+            // now. A press made while it is out goes with the request Livewire sends after it.
+            window.Livewire.hook('commit', ({ component, succeed }) => {
+                const press = pending !== null && carries(component, pending.list) ? pending : null;
+
+                succeed(() => queueMicrotask(() => restoreReorderFocus(press)));
             });
         },
 

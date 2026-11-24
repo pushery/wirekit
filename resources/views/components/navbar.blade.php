@@ -85,7 +85,7 @@
     $variantClasses = match ($variant) {
         'bordered' => 'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-sm)]',
         'transparent' => 'bg-transparent',
-        default => 'border-b border-[var(--color-wk-border)]',
+        default => 'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
     };
 
     // A transparent bar takes the background color out of the resolved base block instead of
@@ -166,12 +166,12 @@
     $navListClasses = $forceMobile
         ? implode(' ', [
             'w-full order-last flex-col items-stretch gap-[var(--gap-wk-xs)]',
-            'border-t border-[var(--color-wk-border)]',
+            'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
             'mt-[var(--padding-wk-y-md)] pt-[var(--padding-wk-y-md)] pb-[var(--padding-wk-y-md)]',
         ])
         : implode(' ', [
             'w-full order-last flex-col items-stretch gap-[var(--gap-wk-xs)]',
-            'border-t border-[var(--color-wk-border)]',
+            'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
             'mt-[var(--padding-wk-y-md)] pt-[var(--padding-wk-y-md)] pb-[var(--padding-wk-y-md)]',
             'md:w-auto md:order-none md:flex-row md:items-center md:flex-1 md:ms-[var(--padding-wk-x-lg)]',
             'md:border-t-0 md:mt-0 md:pt-0 md:pb-0',

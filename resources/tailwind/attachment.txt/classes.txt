@@ -161,6 +161,7 @@ blade-ui-kit/blade-icons.
 block
 bootstrapped
 border
+border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
 both
 bound
@@ -235,6 +236,7 @@ computation
 compute
 computed
 condition
+conditional
 configured
 consistently
 console
@@ -494,6 +496,7 @@ it
 items-center
 its
 judged
+just
 justify-between
 justify-center
 keep
@@ -536,6 +539,7 @@ made
 manager
 mandatory
 map
+marker
 markers
 marks
 markup
@@ -587,6 +591,7 @@ neutral
 never
 new
 next
+nine
 no
 nobody
 noise
@@ -616,6 +621,7 @@ one-time
 only
 onto
 open
+opened
 opening
 operable
 opposite
@@ -747,6 +753,7 @@ role
 root
 rotates
 round
+rounded
 rounded-[var(--radius-wk-full)]
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
@@ -923,6 +930,7 @@ update
 upload
 uploading
 usage
+usage-meter
 use
 used
 useful

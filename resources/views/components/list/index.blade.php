@@ -116,15 +116,18 @@
     if ($rows !== []) {
         $rowClasses = WireKit::resolveClasses('list-item', 'base', '', $scope);
         // The classes `link` draws without a size: no family class, so the row's own family holds.
+        // One difference to the components, for this and the note below: the rows keep the page's
+        // link and text colors instead of reading a filled surface's foreground first, since every
+        // row of a long list repeats them. Rows written as `list.item` with a link and a text take
+        // a fill's foreground as those components do.
         $rowLinkClasses = WireKit::resolveClasses('link', 'base', implode(' ', [
             '[overflow-wrap:break-word]',
             'cursor-pointer',
             'transition-[color,text-decoration-color,opacity]',
             'duration-[var(--transition-wk-duration)]',
             'ease-[var(--transition-wk-easing)]',
-            'hover:opacity-[var(--opacity-wk-hover)]',
             'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
-            'text-[color:var(--color-wk-accent-text)]',
+            'text-[color:var(--color-wk-accent-text)] hover:opacity-[var(--opacity-wk-hover)]',
             'underline underline-offset-2',
         ]));
         $rowMetaClasses = WireKit::resolveClasses('text', 'base', implode(' ', [

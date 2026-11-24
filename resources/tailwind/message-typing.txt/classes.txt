@@ -1,4 +1,5 @@
 --border-wk-width
+--ch-wk-sans
 --color-wk-bg-elevated
 --color-wk-bg-muted
 --color-wk-border-subtle
@@ -37,6 +38,7 @@ above
 absolute
 accessibility
 action
+advances
 affects
 after
 against
@@ -99,11 +101,14 @@ busy
 by
 call
 caller
+can
 cannot
+capped
 carried
 carries
 carrying
 cast
+ch
 chip
 circle
 cirlce
@@ -140,6 +145,7 @@ data-wk-sr-host
 data-wk-status-shape
 debug
 declaration
+declares
 default
 deliberate
 dense
@@ -147,6 +153,7 @@ derive
 derived
 deterministic
 developer
+digit
 dims
 direction
 discs
@@ -225,6 +232,7 @@ hape
 happened
 has
 hash
+have
 height
 here
 hid
@@ -272,6 +280,7 @@ layer
 layout
 leaves
 left
+length
 lets
 letters
 lg
@@ -281,6 +290,7 @@ list
 literal
 live
 live-region
+loaded
 logical
 look
 looking
@@ -291,7 +301,7 @@ many
 margin
 marks
 match
-max-w-[42ch]
+max-w-[calc(42*var(--ch-wk-sans,1ch))]
 may
 md
 mean
@@ -391,6 +401,7 @@ rendering
 renders
 replaces
 reported
+resolve
 rest
 result
 right
@@ -405,6 +416,7 @@ row
 rx
 s
 same
+sans
 says
 scale
 scaling
@@ -459,6 +471,7 @@ strings
 stroke
 stroke-width
 style
+stylesheet
 subject
 surface
 surface-color
@@ -482,6 +495,7 @@ that
 the
 their
 them
+then
 there
 these
 they
@@ -536,6 +550,7 @@ w-[var(--size-wk-xs)]
 w-full
 was
 we
+web
 well
 were
 what
@@ -560,3 +575,4 @@ written
 xl
 xs
 you
+zero

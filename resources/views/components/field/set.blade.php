@@ -55,7 +55,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'requiredMark' => true])
 
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -72,9 +72,16 @@
     use Pushery\WireKit\Support\FieldGroup;
     use Pushery\WireKit\WireKit;
 
+    // Whether the asterisk is drawn: the set's own `requiredMark`, else the form's around it. A
+    // class component keeps a key its constructor does not take in the attribute bag rather than
+    // in its data, where Support\AwareProp looks for a tag's own value, so the set reads its own
+    // from the bag before letting it go.
+    $ownRequiredMark = $attributes->get('requiredMark', $attributes->get('required-mark'));
+
     // `@aware` does not take its key out of the attribute bag, so the spelling written on the
     // tag would render as a stray HTML attribute. Both spellings, as in field.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'requiredMark', 'required-mark']);
+    $requiredMark = \Pushery\WireKit\Support\BooleanProp::from($ownRequiredMark ?? \Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], true), true);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -204,13 +211,13 @@
          a row that also holds a question mark or a mark. --}}
     @if($hasLegend)
         @if($legendRow)
-            <legend data-wk-label-row data-wk-sr-host {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endwirekitLast</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) (filled($helpField) ? $helpField : ($group->name ?? ''))])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
+            <legend data-wk-label-row data-wk-sr-host {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}@wirekitLast($required && $requiredMark)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endwirekitLast</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) (filled($helpField) ? $helpField : ($group->name ?? ''))])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
         @else
             {{-- A required group says so in its caption: the asterisk is drawn and hidden from a
                  screen reader, as on a field's label, and the word in the legend is read instead.
                  `data-wk-required-word` keeps the word out of a name the kit shows on screen,
                  such as the question before leaving. --}}
-            <legend data-wk-field-label data-wk-sr-host {{ $legendAttributes }}>{{ $legend }}@wirekitLast($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endwirekitLast</legend>
+            <legend data-wk-field-label data-wk-sr-host {{ $legendAttributes }}>{{ $legend }}@wirekitLast($required && $requiredMark)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endwirekitLast</legend>
         @endif
     @endif
     @if(! $asField)
@@ -243,10 +250,10 @@
     {{-- The message of a set that stands for one field follows its controls, as a field's follows
          the field. --}}
     @wirekitLast($asField)
-        @if($groupMessage !== null)
+        @wirekitLast($groupMessage !== null)
             <p data-wk-prose-skip id="{{ $group->errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="{{ $errorClasses }}">{{ $groupMessage }}</p>
         @elseif($group->hint !== null)
             <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
-        @endif
+        @endwirekitLast
     @endwirekitLast
 </fieldset>

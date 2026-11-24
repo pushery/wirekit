@@ -99,6 +99,10 @@
     // A marker's id comes back from the script with a click, so one beyond what a script's
     // number holds exactly travels as its digits (Support\ExactIds).
     $markersArr = \Pushery\WireKit\Support\ExactIds::in($markersArr, 'id');
+    // The view and the markers travel on attributes of their own, which the factory reads and
+    // follows. In `x-data` a render with other markers or another center would change the
+    // expression, and Alpine would start the map again at its first view.
+    $mapView = ['center' => $centerArr, 'zoom' => \Pushery\WireKit\Support\NumericProp::int($zoom, 0, 'map', 'zoom')];
 
     // Marker dot intents (PHP literals → Tailwind-compiled + drift-traced). The
     // list pairs the dot color with the text label, so color is never the sole
@@ -148,7 +152,9 @@
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ \Pushery\WireKit\Support\NumericProp::int($zoom, 0, 'map', 'zoom') }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution instanceof \Illuminate\Contracts\Support\Htmlable ? $attribution->toHtml() : $attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
+    data-wk-view="{{ \Pushery\WireKit\Support\AlpinePayload::json($mapView) }}"
+    data-wk-markers="{{ \Pushery\WireKit\Support\AlpinePayload::json($markersArr) }}"
+    x-data="wirekitMap({ provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution instanceof \Illuminate\Contracts\Support\Htmlable ? $attribution->toHtml() : $attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}"
     {{-- No flex gap between canvas and list: the list's own divider border (a top
@@ -211,7 +217,7 @@
             <template x-if="dataDeferred">
                 <div class="flex flex-col items-center gap-[var(--gap-wk-sm)] pointer-events-auto">
                     <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Map tiles are not loaded because your browser asked for reduced data. The locations are listed alongside.') }}</p>
-                    <x-wirekit::button intent="neutral" surface="outline" size="sm" type="button" x-on:click="loadAnyway()">{{ __('wirekit::Load the map anyway') }}</x-wirekit::button>
+                    <x-wirekit::button intent="neutral" size="sm" type="button" x-on:click="loadAnyway()">{{ __('wirekit::Load the map anyway') }}</x-wirekit::button>
                 </div>
             </template>
         </div>
@@ -243,7 +249,7 @@
         <p data-wk-prose-skip data-wk-scroll-inset="top" class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $listLabelResolved }} (<span x-text="markerCount"></span>)
         </p>
-        <ul data-wk-prose-skip role="list" class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
+        <ul data-wk-prose-skip role="list" class="list-none divide-y-[length:var(--border-wk-width)] divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
             <template x-for="m in markers" :key="m.id">
                 <li data-wk-prose-skip>
                     <button

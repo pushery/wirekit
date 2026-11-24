@@ -63,7 +63,7 @@
 
     $listClasses = WireKit::resolveClasses('shortcuts', 'list', implode(' ', [
         'flex flex-col',
-        'divide-y divide-[var(--color-wk-border-subtle)]',
+        'divide-y-[length:var(--border-wk-width)] divide-[var(--color-wk-border-subtle)]',
     ]), $scope);
 
     // A row keeps its keys at the end and wraps under a long name rather than squeezing it.
@@ -150,6 +150,7 @@
 
                 <div x-show="! screenOff">
                     <x-wirekit::toggle
+                        :align-fields="false"
                         :label="__('wirekit::Single-key shortcuts')"
                         :hint="__('wirekit::Shortcuts made of one key, such as ?, work only while this is on.')"
                         x-bind:checked="singleKeys"

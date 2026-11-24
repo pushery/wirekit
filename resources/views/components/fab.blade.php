@@ -111,10 +111,17 @@
              purpose: swap lives on another branch, and the icon crossfade is
              cosmetic. Building a hard cross-branch dependency for a nicety would
              drag an unrelated review into this one. Once both land, this block
-             becomes one swap tag. --}}
+             becomes one swap tag.
+
+             Both icons carry the closed state as the page loads, the state the
+             script starts in: the stylesheet shows an icon by `data-shown` alone,
+             so without it both would stand at once until the script ran, and the
+             close mark would fade out as it started. --}}
         <span class="relative inline-grid place-items-center">
             <span
                 class="wk-fab-icon col-start-1 row-start-1"
+                aria-hidden="true"
+                data-shown="false"
                 :aria-hidden="isOpen ? 'false' : 'true'"
                 :data-shown="isOpen ? 'true' : 'false'"
             >
@@ -124,6 +131,8 @@
             </span>
             <span
                 class="wk-fab-icon col-start-1 row-start-1"
+                aria-hidden="false"
+                data-shown="true"
                 :aria-hidden="isOpen ? 'true' : 'false'"
                 :data-shown="isOpen ? 'false' : 'true'"
             >

@@ -53,9 +53,15 @@
         // h-16 becomes a MIN-height once wrap engages (`min-h-16`) so a
         // wrapped second row doesn't squeeze its children's line-height.
         'flex flex-wrap items-center',
+        // A brand with `truncate` among the children gives way before the row breaks, as it does
+        // in a navbar: it enters the row at no width, so the row breaks into lines only for what
+        // cannot shrink; beside a `spacer`, which grows too, it grows 999 times faster, up to the
+        // width of its name and never past it; and below that it cuts the name (the brand carries
+        // `min-w-0` itself).
+        '[&>[data-wk-brand-truncate]]:basis-0 [&>[data-wk-brand-truncate]]:grow-[999] [&>[data-wk-brand-truncate]]:max-w-max',
         'min-h-16',
         'bg-[var(--color-wk-bg-elevated)]',
-        'border-b border-[var(--color-wk-border)]',
+        'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-y-sm)]',
         'gap-[var(--gap-wk-md)]',
@@ -83,7 +89,7 @@
 
 <header @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->merge($headerStyle ? ['style' => $headerStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $stickyClasses, $headerStyleClasses => $headerStyleClasses !== ''])) }}>
     @wirekitLast($container)
-        <div class="flex flex-wrap items-center w-full max-w-[var(--size-wk-container-2xl,96rem)] mx-auto gap-[var(--gap-wk-md)]" style="{{ $innerStyle }}">
+        <div class="flex flex-wrap items-center w-full max-w-[var(--size-wk-container-2xl,96rem)] mx-auto gap-[var(--gap-wk-md)] [&>[data-wk-brand-truncate]]:basis-0 [&>[data-wk-brand-truncate]]:grow-[999] [&>[data-wk-brand-truncate]]:max-w-max" style="{{ $innerStyle }}">
             {{ $slot }}
         </div>
     @else

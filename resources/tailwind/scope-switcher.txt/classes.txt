@@ -29,6 +29,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-warning
@@ -100,6 +101,7 @@
 [--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]
 [overflow-wrap:anywhere]
+[overflow-wrap:break-word]
 a
 a-b
 a11y
@@ -253,6 +255,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -260,10 +263,13 @@ bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-bg-soft)]
 bg-[var(--color-wk-danger)]
+bg-[var(--color-wk-danger-text)]
 bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
+bg-[var(--color-wk-success-text)]
 bg-[var(--color-wk-text-muted)]
 bg-[var(--color-wk-warning)]
+bg-[var(--color-wk-warning-text)]
 bg-muted
 bg-subtle
 bg-transparent
@@ -292,11 +298,11 @@ border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-t-[length:var(--border-wk-width)]
 border-transparent
 both
@@ -322,6 +328,7 @@ broken
 browser
 bug
 build
+builds
 built
 bundle
 busy
@@ -412,6 +419,7 @@ comment
 comments
 commit
 common
+compact
 compile
 compiled
 compiles
@@ -478,6 +486,7 @@ data-wk-busy-text
 data-wk-button-group
 data-wk-icon-missing
 data-wk-indicator
+data-wk-lazy-panel-host
 data-wk-popover
 data-wk-prose-skip
 data-wk-scope-switcher
@@ -566,6 +575,7 @@ element
 else
 elseif
 em
+email
 embedded
 emit
 emits
@@ -787,9 +797,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -896,6 +906,7 @@ labeled
 labels
 landed
 lands
+larger
 last
 last:border-b-0
 last:border-e-0
@@ -938,6 +949,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 locale
 locales
 log
@@ -959,6 +971,7 @@ make
 makes
 manifest
 manually
+many
 map
 maps
 margin
@@ -1076,6 +1089,7 @@ node
 noise
 non-Livewire
 non-null
+none
 noopener
 nor
 noreferrer
@@ -1165,6 +1179,7 @@ pair
 pairing
 pairs
 panel
+panels
 parses
 part
 parts
@@ -1215,6 +1230,7 @@ points
 polite
 pop-up-button
 popover
+popovers
 position
 positioned
 positioning
@@ -1424,6 +1440,7 @@ share
 shared
 shares
 sharing
+sheet
 shipping
 ships
 short
@@ -1509,6 +1526,7 @@ stacks
 stale
 stand
 stands
+starts
 state
 stated
 states
@@ -1565,6 +1583,7 @@ taller
 target
 teaches
 technology
+teleport
 teleported
 tells
 template
@@ -1741,6 +1760,7 @@ w-fit
 w-full
 w-max
 wait
+waits
 wants
 warn
 warning
@@ -1826,7 +1846,9 @@ x-effect
 x-init
 x-model
 x-on:click
+x-on:focusin
 x-on:input
+x-on:pointerenter
 x-ref
 x-show
 x-teleport

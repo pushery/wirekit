@@ -36,7 +36,6 @@ accepts
 accordion
 actually
 aligned
-allowed
 already
 also
 among
@@ -60,6 +59,7 @@ aria-controls
 aria-expanded
 aria-hidden
 aria-labelledby
+arrow
 arrows
 as
 asking
@@ -80,7 +80,9 @@ behind
 being
 between
 bg-[var(--color-wk-bg-elevated)]
+binding
 blank
+block
 border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
@@ -107,6 +109,7 @@ canonical
 card
 carried
 carries
+carry
 case
 centers
 chain
@@ -126,6 +129,7 @@ collapsed
 comes
 comments
 common
+compact
 compiles
 component
 components
@@ -144,6 +148,8 @@ data
 data-wk-accordion-item
 data-wk-accordion-open
 data-wk-faq-item
+data-wk-fold-chevron
+data-wk-print-open
 data-wk-rendered-open
 date
 debug
@@ -158,6 +164,7 @@ derived
 deriving
 descend
 developer
+did
 differ
 difference
 different
@@ -194,6 +201,7 @@ exists
 explicit
 fall
 fallbacks
+falls
 false
 family
 faq
@@ -219,6 +227,7 @@ follow
 follows
 font-[number:var(--font-wk-heading-weight)]
 for
+form
 found
 from
 full
@@ -313,7 +322,9 @@ no
 not
 nothing
 null
+object
 of
+off
 on
 once
 one
@@ -342,6 +353,8 @@ paints
 pairings
 pairs
 panel
+panels
+paper
 parent
 part
 pass
@@ -355,9 +368,11 @@ plain-text
 plainText
 plugin
 pointer
+points
 precisely
 prefix
 prevents
+prints
 produce
 prop
 property
@@ -398,6 +413,7 @@ render
 rendered
 rendering
 renders
+reported
 resolves
 revealed
 revealing
@@ -421,10 +437,13 @@ script
 seam
 search
 second
+section
 sees
 separated
+server
 set
 several
+sheet
 shipped
 short
 shown
@@ -516,7 +535,6 @@ use
 user
 utility
 utils/findable.js.
-validateProp
 value
 variant
 variant/size
@@ -528,6 +546,7 @@ visible
 w-4
 w-full
 was
+way
 what
 when
 where
@@ -546,6 +565,7 @@ would
 wrapped
 wrapping
 wraps
+writes
 written
 x-cloak
 x-collapse

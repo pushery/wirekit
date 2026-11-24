@@ -85,6 +85,7 @@ alt
 altLang
 alternative
 always-present
+among
 an
 and
 animate-spin
@@ -172,6 +173,7 @@ bright
 broken
 browser
 build
+builds
 built
 but
 button
@@ -200,8 +202,10 @@ cast
 center
 centers
 certifies
+change
 changes
 check
+children
 choice
 chose
 clamp
@@ -234,6 +238,8 @@ component
 components
 composed
 compromise
+conditional
+configuration
 construction
 contain
 container
@@ -250,7 +256,6 @@ corner
 correct
 costs
 could
-count
 counting
 counts
 cover
@@ -271,9 +276,11 @@ cy
 dark
 darker
 data-driven
+data-wk-lazy-panel-host
 data-wk-lightbox-media
 data-wk-prose-skip
 data-wk-slide-overlay
+data-wk-slides
 data:text/html
 database
 debug
@@ -367,6 +374,7 @@ exists
 explicit
 express
 expressible
+expression
 extract
 extracts
 factory
@@ -616,6 +624,7 @@ mapping
 maps
 marked
 marker
+markers
 marking
 markup
 match
@@ -1012,6 +1021,7 @@ takes
 tall
 taught
 teaching
+teleport
 teleported
 template
 ten
@@ -1090,6 +1100,7 @@ unusable
 unvalidated
 up
 update
+updated
 use
 user
 using
@@ -1117,6 +1128,7 @@ w-[90vw]
 w-[var(--size-wk-md)]
 w-auto
 w-full
+waits
 warning
 warns
 was

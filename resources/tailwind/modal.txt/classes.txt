@@ -36,6 +36,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-placeholder
@@ -100,6 +101,7 @@
 --transition-wk-duration
 --transition-wk-easing
 --wk-button-square
+--wk-fill-ink
 --wk-touch-min
 --z-wk-modal
 --z-wk-tooltip
@@ -113,11 +115,14 @@
 -ms-1
 -my-1
 -own
--strong
+-prefix
 -success
+-suffix
+-tooltip
 -translate-y-1/2
 -variant
 -variants
+-words
 @aware
 @class
 @click
@@ -133,7 +138,7 @@
 @props
 @source
 @wirekitLast
-[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]
+[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger-text)]
 [&:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]
 [&[readonly]]:bg-[var(--color-wk-bg-muted)]
 [--color-wk-ring:var(--color-wk-accent-fg)]
@@ -355,6 +360,7 @@ before:h-[var(--size-wk-touch-target)]
 before:left-1/2
 before:top-1/2
 before:w-[var(--size-wk-touch-target)]
+begins
 behavior
 behind
 being
@@ -367,6 +373,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -398,24 +405,28 @@ boolean
 border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]
+border-[var(--color-wk-accent-text)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border-error)]
 border-[var(--color-wk-border-strong)]
 border-[var(--color-wk-border-subtle)]
 border-[var(--color-wk-border-success)]
 border-[var(--color-wk-danger)]
+border-[var(--color-wk-danger-text)]
 border-[var(--color-wk-info-tone)]
 border-[var(--color-wk-success)]
+border-[var(--color-wk-success-text)]
+border-[var(--color-wk-text-muted)]
 border-[var(--color-wk-warning)]
 border-b
 border-b-2
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-none
 border-t
 border-transparent
@@ -431,6 +442,7 @@ brake
 branch
 branches
 brand
+breadcrumb
 break
 break-word
 breaking
@@ -445,8 +457,11 @@ bubble
 bubbling
 bug
 build
+builds
 built
 built-in
+bundle
+bundled
 busy
 but
 button
@@ -457,6 +472,7 @@ buttons
 by
 byte-identical
 bytes
+cache
 caches
 calendar
 call
@@ -589,6 +605,7 @@ conditional
 config
 config/wirekit.php
 configuration
+configured
 confirm
 confirm-discard
 confirm-shortcut
@@ -604,6 +621,7 @@ consent
 console
 constraint
 consumed
+contain-inline-size
 container
 container-relative
 containing
@@ -691,6 +709,7 @@ data-wk-discard-question
 data-wk-field
 data-wk-field-label
 data-wk-field-part
+data-wk-fill
 data-wk-format-hint
 data-wk-grouped-locale
 data-wk-grouped-marks
@@ -702,7 +721,9 @@ data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
+data-wk-label-beside
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-modal-body
 data-wk-modal-header
 data-wk-modal-panel
@@ -711,6 +732,12 @@ data-wk-own-for
 data-wk-prose-skip
 data-wk-ref-scope
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-title-id
 data-wk-toggle-state
 data-wk-tooltip-cut-words
@@ -719,6 +746,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 date
 date-and-time
 date-picker
@@ -733,6 +761,7 @@ decides
 decimal
 decision
 declaration
+declarations
 declarative
 declare
 declared
@@ -750,6 +779,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 delegates
 delete
 delete-in-a-list
@@ -791,6 +821,7 @@ did
 differ
 difference
 different
+differs
 digits
 dim
 direct
@@ -800,6 +831,7 @@ directive
 directives
 directly
 disable
+disable-on-loading
 disableOnLoading
 disabled
 disabled:cursor-not-allowed
@@ -940,9 +972,11 @@ expression
 extend
 external
 extra
+eye
 fact
 factory
 fade
+faded
 fading
 fails
 failure
@@ -966,7 +1000,6 @@ files
 fill
 fill-rule
 filled
-fills
 final
 find
 findable
@@ -1012,9 +1045,9 @@ focus-ring
 focus-trap
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
-focus-visible:ring-[var(--color-wk-danger)]
+focus-visible:ring-[var(--color-wk-danger-text)]
 focus-visible:ring-[var(--color-wk-ring)]
-focus-visible:ring-[var(--color-wk-success)]
+focus-visible:ring-[var(--color-wk-success-text)]
 focus-visible:ring-inset
 focus-visible:ring-offset-[length:var(--ring-wk-offset)]
 focus-visible:ring-offset-[var(--color-wk-ring-offset)]
@@ -1159,12 +1192,12 @@ hardcoded
 hared
 has
 has-[:focus-visible]:ring-[length:var(--ring-wk-width)]
-has-[:focus-visible]:ring-[var(--color-wk-danger)]
+has-[:focus-visible]:ring-[var(--color-wk-danger-text)]
 has-[:focus-visible]:ring-[var(--color-wk-ring)]
-has-[:focus-visible]:ring-[var(--color-wk-success)]
+has-[:focus-visible]:ring-[var(--color-wk-success-text)]
 has-[:focus-visible]:ring-offset-[length:var(--ring-wk-offset)]
 has-[:focus-visible]:ring-offset-[var(--color-wk-ring-offset)]
-has-[:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]
+has-[:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger-text)]
 has-[:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]
 has-[input[readonly]]:bg-[var(--color-wk-bg-muted)]
 hasValue
@@ -1185,6 +1218,7 @@ helpId
 helpName
 helpText
 here
+hero
 hidden
 hide
 hide-label
@@ -1213,9 +1247,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -1230,6 +1264,7 @@ hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text)]
 hover:text-[color:var(--color-wk-text-muted)]
+hover:text-[color:var(--wk-fill-ink,var(--color-wk-text))]
 hover:underline
 hoverable
 hovered
@@ -1265,6 +1300,7 @@ included
 includes
 including
 increments
+indent
 independent
 independently
 indicator
@@ -1373,6 +1409,7 @@ lands
 lang/de.json
 language
 large
+larger
 last
 last:border-b-0
 last:border-e-0
@@ -1432,6 +1469,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 locale
 location
 lock
@@ -1451,6 +1489,7 @@ looked
 looking
 looks
 lose
+loses
 loss
 loud
 lowering
@@ -1531,6 +1570,7 @@ method
 methods
 mid-word
 middle
+midline
 migration
 min
 min-content
@@ -1545,6 +1585,7 @@ min-h-[var(--size-wk-md-compact)]
 min-h-[var(--size-wk-sm)]
 min-h-[var(--size-wk-touch-target)]
 min-w-0
+min-w-1/2
 min-w-5
 min-w-6
 min-w-7
@@ -1699,6 +1740,7 @@ optimistic
 optimistic-announcer
 optimistic-ui
 optimisticArgs
+option
 or
 order
 ordering
@@ -1734,6 +1776,7 @@ overlay-close
 override
 overrides
 oversights
+overtake
 overview
 owes
 own
@@ -1788,10 +1831,10 @@ peer-checked:bg-[var(--color-wk-accent)]
 peer-checked:bg-[var(--color-wk-border-strong)]
 peer-checked:bg-[var(--color-wk-danger)]
 peer-checked:bg-[var(--color-wk-success)]
-peer-checked:border-[var(--color-wk-accent)]
-peer-checked:border-[var(--color-wk-border-strong)]
-peer-checked:border-[var(--color-wk-danger)]
-peer-checked:border-[var(--color-wk-success)]
+peer-checked:border-[var(--color-wk-accent-text)]
+peer-checked:border-[var(--color-wk-danger-text)]
+peer-checked:border-[var(--color-wk-success-text)]
+peer-checked:border-[var(--color-wk-text-muted)]
 peer-checked:translate-x-4
 peer-checked:translate-x-5
 peer-checked:translate-x-6
@@ -1860,6 +1903,7 @@ presence
 present
 presentational
 preset
+presets
 press
 pressed
 presses
@@ -1887,6 +1931,9 @@ provided
 provides
 proxy
 ps-1
+ps-[calc(2.5rem+var(--gap-wk-md))]
+ps-[calc(2rem+var(--gap-wk-md))]
+ps-[calc(3rem+var(--gap-wk-md))]
 ps-[var(--padding-wk-x-md)]
 pt-[max(0px,calc((var(--size-wk-sm)_-_1lh)/2))]
 publishes
@@ -1922,6 +1969,7 @@ race
 racing
 rack
 radius
+raised
 raises
 range
 rapper
@@ -2004,6 +2052,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 resent
 reserve
@@ -2031,6 +2081,7 @@ retargeted
 return
 returns
 reverted
+ride
 rides
 right
 ring
@@ -2142,6 +2193,7 @@ shapes
 share
 shared
 shares
+sheet
 ship
 shipped
 shipping
@@ -2357,7 +2409,6 @@ tests
 text
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-info-fg)]
@@ -2370,6 +2421,10 @@ text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
@@ -2435,6 +2490,8 @@ toolbars
 tools
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-1/2
@@ -2579,6 +2636,7 @@ w-[var(--size-wk-sm)]
 w-full
 w-max
 wait
+waits
 walk
 walks
 want

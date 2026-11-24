@@ -73,7 +73,7 @@
 
     $dividerClass = match ($divider) {
         'none' => '',
-        default => 'border-b border-[var(--color-wk-border)]',
+        default => 'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
     };
 
     $stickyClass = filter_var($sticky, FILTER_VALIDATE_BOOL)

@@ -72,6 +72,7 @@
      form around the trigger has nothing to send for it. --}}
 <div data-wk-command-palette-trigger x-data="wirekitCommandPaletteTrigger({{ $config }})" x-on:click="openPalette()" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     <x-wirekit::input
+        :align-fields="false"
         type="search"
         name=""
         size="sm"

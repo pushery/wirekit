@@ -20,15 +20,30 @@
     $presetSelected = \Pushery\WireKit\WireKit::resolveClasses('calendar', 'preset-selected', 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-heading-weight)] cursor-pointer', $scope ?? null);
     $presetOpen = \Pushery\WireKit\WireKit::resolveClasses('calendar', 'preset', 'text-[color:var(--color-wk-text)] cursor-pointer hover:bg-[var(--color-wk-bg-hover)]', $scope ?? null);
     $presetClosed = \Pushery\WireKit\WireKit::resolveClasses('calendar', 'preset-closed', 'text-[color:var(--color-wk-text-muted)] opacity-[var(--opacity-wk-disabled)] cursor-not-allowed', $scope ?? null);
+
+    // The presets as the script lists them when it starts, for the copies the page loads with,
+    // before the script runs and on a page that runs none (DatePresets::start()): each with its
+    // label, closed or chosen as the script marks it, from the day the root names for the script.
+    $startPresets = \Pushery\WireKit\Support\DatePresets::start($presetKeys, array_intersect_key($presetLabels, array_flip($presetKeys)), (string) $value, $namedPreset, \Carbon\CarbonImmutable::today(), $wkStart, $calendarLimits, (bool) ($disabled ?? false));
+    $startChosen = array_values(array_filter($startPresets, static fn (array $preset): bool => $preset['selected']))[0] ?? null;
+
+    // The frame of the list beside the calendar, for the list the script fills and for its copy,
+    // so the copy stands where the list will.
+    $presetListClasses = 'hidden list-none flex-col gap-px sm:flex';
 @endphp
 <div data-wk-calendar-presets class="flex flex-col sm:border-e-[length:var(--border-wk-width)] sm:border-[var(--color-wk-border)] sm:pe-[var(--padding-wk-x-md)]">
     <span id="{{ $presetListLabelId }}" class="sr-only">{{ __('wirekit::Preset ranges') }}</span>
 
     {{-- A narrow screen: a native select, whose own picker suits a phone. --}}
     <div data-wk-calendar-preset-select class="relative sm:hidden">
+        {{-- The preset the select shows as the page loads, as text: its options come from the
+             script, and a hidden option still stands in Safari's list. The select waits under
+             `x-cloak`. --}}
+        <div data-wk-calendar-start x-show="false" class="wk-field flex w-full items-center truncate rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] bg-[var(--color-wk-bg-input)] h-[var(--size-wk-md)] ps-[var(--padding-wk-x-md)] pe-[calc(var(--padding-wk-x-md)+--spacing(4))] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">{{ $startChosen['label'] ?? __('wirekit::Preset ranges') }}</div>
         {{-- A native select has no read-only state, so a read-only calendar disables it: the chosen
              preset stays in view, and nothing picks another. --}}
         <select
+            x-cloak
             aria-labelledby="{{ $presetListLabelId }}"
             @disabled(($disabled ?? false) || ($readonly ?? false))
             x-on:change="choosePreset($event.target.value)"
@@ -47,6 +62,7 @@
     {{-- A wide screen: the list beside the calendar. --}}
     <ul
         data-wk-prose-skip
+        x-cloak
         x-ref="presetList"
         role="listbox"
         aria-labelledby="{{ $presetListLabelId }}"
@@ -54,7 +70,7 @@
         @if($readonly ?? false) aria-readonly="true" @endif
         x-on:keydown="presetKeydown($event)"
         data-wk-calendar-preset-list
-        class="hidden list-none flex-col gap-px sm:flex"
+        class="{{ $presetListClasses }}"
         style="list-style: none; margin: 0; padding: 0;"
     >
         <template x-for="(option, index) in presetOptions()" :key="option.key">
@@ -72,5 +88,14 @@
                 :class="option.selected ? {{ \Pushery\WireKit\Support\AlpinePayload::string($presetSelected) }} : (option.disabled ? {{ \Pushery\WireKit\Support\AlpinePayload::string($presetClosed) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($presetOpen) }})"
             ></li>
         </template>
+    </ul>
+    {{-- The list as the page loads, for the moment before the script starts and for a page that
+         runs none: the list above draws its presets from a template and waits under `x-cloak`.
+         Plain entries rather than options, since without the script a press picks nothing, so a
+         query for the list's options finds the ones the script draws. --}}
+    <ul data-wk-prose-skip data-wk-calendar-start x-show="false" role="list" aria-labelledby="{{ $presetListLabelId }}" class="{{ $presetListClasses }}" style="list-style: none; margin: 0; padding: 0;">
+        @foreach($startPresets as $startPreset)
+            <li data-wk-prose-skip class="wk-touch-row flex h-[var(--size-wk-sm)] shrink-0 items-center whitespace-nowrap rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] {{ $startPreset['selected'] ? $presetSelected : ($startPreset['disabled'] ? $presetClosed : $presetOpen) }}">{{ $startPreset['label'] }}</li>
+        @endforeach
     </ul>
 </div>

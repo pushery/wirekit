@@ -246,7 +246,10 @@
     @endif
 
     {{-- Message content --}}
-    <div class="flex flex-col {{ $textAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
+    {{-- The column is capped at 42 advances of the digit zero of the sans face, the length the
+         font stylesheet declares as `--ch-wk-sans`, rather than at `42ch`: Chromium can resolve
+         `ch` to 0 for a loaded web face, and the column would then have no width. --}}
+    <div class="flex flex-col {{ $textAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[calc(42*var(--ch-wk-sans,1ch))]">
         {{-- Header: name + timestamp --}}
         <span id="{{ $messageId }}-header" class="flex items-center gap-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)]">
             {{-- A name too long for the line is cut, and `title` shows it whole, as the head of a
@@ -275,7 +278,7 @@
              non-neutral, neutral border for plain chat bubbles). `max-w-full`: in a column aligned
              to one side the bubble is as wide as its content, so a URL with no break point would
              widen it past the column; capped, the inherited `break-word` breaks it. --}}
-        <div data-wk-message-bubble class="{{ $bubbleClasses }} max-w-full rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
+        <div data-wk-message-bubble class="{{ $bubbleClasses }} max-w-full rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]" @if(str_contains($bubbleClasses, 'bg-[color-mix(')) data-wk-tint @endif>
             {{ $slot }}
         </div>
 

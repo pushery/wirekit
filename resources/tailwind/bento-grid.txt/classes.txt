@@ -18,7 +18,6 @@
 a
 action
 all
-allowed
 already
 amounts
 an
@@ -39,7 +38,6 @@ auditor
 authoring
 auto-derived
 auto-rows-[minmax(12rem,auto)]
-back
 bad
 base
 baseline
@@ -80,10 +78,9 @@ element
 every
 extends
 eye
-falls
+fallback
 feature
 feature-grid
-first
 fixed
 flags
 follow
@@ -129,9 +126,8 @@ itself
 label
 ladder
 ladders
-land
+lands
 later
-leads
 let
 lg
 list

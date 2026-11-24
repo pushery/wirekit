@@ -104,7 +104,7 @@
         : WireKit::validateProp('feature', 'size', $size, array_keys($sizeMap));
     [$chipSizeClasses, $iconSizeProp] = $sizeMap[$validSize];
 
-    $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
+    $hasIconSlot = \Pushery\WireKit\Support\SlotContent::given($iconSlot ?? null);
 
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a
     // did-you-mean, and where the gate does not throw it renders the default level — never

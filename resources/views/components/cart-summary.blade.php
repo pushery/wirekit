@@ -72,7 +72,7 @@
     $classes = WireKit::resolveClasses('cart-summary', 'base', implode(' ', [
         'flex flex-col gap-[var(--gap-wk-md)]',
         'rounded-[var(--radius-wk-lg)]',
-        'border border-[color:var(--color-wk-border)]',
+        'border-[length:var(--border-wk-width)] border-[color:var(--color-wk-border)]',
         'bg-[color:var(--color-wk-bg-subtle)]',
         'p-[var(--padding-wk-x-lg)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -171,7 +171,7 @@
         </x-wirekit::data-list>
     @endif
 
-    @wirekitLast(isset($actions) && $actions->hasActualContent())
+    @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div class="flex flex-col gap-[var(--gap-wk-sm)]">
             {{ $actions }}
         </div>

@@ -31,6 +31,6 @@
             @endforeach
         </ul>
     @else
-        <x-wirekit::select size="sm" :options="$perPageChoices" :value="$perPageCurrent" :attributes="$perPageSelectAttributes" />
+        <x-wirekit::select :align-fields="false" size="sm" :options="$perPageChoices" :value="$perPageCurrent" :attributes="$perPageSelectAttributes" />
     @endwirekitLast
 </div>

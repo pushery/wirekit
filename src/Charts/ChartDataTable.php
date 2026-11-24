@@ -21,6 +21,11 @@ namespace Pushery\WireKit\Charts;
  * The values of one point of a candlestick or a boxplot are named in the cell, with the names the
  * tooltip gives them in the application's language: four or five numbers in a row are otherwise
  * numbers without a meaning for a reader who hears them.
+ *
+ * A scatter and a bubble chart read by point instead: one row per point, named by its dataset, with
+ * its `x`, its `y` and, for a bubble, its size in columns of their own, headed by the axis titles
+ * where the chart has them. A row by position put the points of different datasets beside each
+ * other there, under the `x` of the first, and a bubble's size stood nowhere.
  */
 final class ChartDataTable
 {
@@ -29,10 +34,12 @@ final class ChartDataTable
      * @param  list<mixed>  $datasets  The datasets without their addresses (`ChartPointLinks::extract()`).
      * @param  list<bool>  $rangePairs  Per dataset, whether a point written as a pair is a range (`ChartPointLinks::rangePairs()`).
      * @param  string|null  $dateZone  The zone the x axis writes its dates in, null where it holds none (`ChartPointLinks::dateZone()`).
-     * @param  string|null  $type  The chart's type: a candlestick or a boxplot names the values of each point.
+     * @param  string|null  $type  The chart's type: a candlestick or a boxplot names the values of each point, a scatter and a bubble take a row per point.
+     * @param  string|null  $xTitle  The title of the x axis, which heads the `x` column of a scatter or a bubble.
+     * @param  string|null  $yTitle  The title of the y axis, which heads its `y` column.
      * @return array{columns: list<string>, rows: list<array{label: string, cells: list<string>}>}
      */
-    public static function from(array $labels, array $datasets, ?int $decimals = null, ?string $prefix = null, ?string $suffix = null, array $rangePairs = [], ?string $dateZone = null, ?string $type = null): array
+    public static function from(array $labels, array $datasets, ?int $decimals = null, ?string $prefix = null, ?string $suffix = null, array $rangePairs = [], ?string $dateZone = null, ?string $type = null, ?string $xTitle = null, ?string $yTitle = null): array
     {
         $parts = self::partNames($type);
         $columns = [];
@@ -50,6 +57,11 @@ final class ChartDataTable
 
         $none = __('wirekit::No value');
         $none = is_string($none) ? $none : 'No value';
+
+        if ($type === 'scatter' || $type === 'bubble') {
+            return self::byPoint($columns, $points, $places, $prefix, $suffix, $dateZone, $type === 'bubble', $none, $xTitle, $yTitle);
+        }
+
         $count = max([count($labels), ...array_map(static fn (array $list): int => count($list), $points)]);
         $rows = [];
 
@@ -99,6 +111,70 @@ final class ChartDataTable
         }
 
         return ['columns' => $columns, 'rows' => $rows];
+    }
+
+    /**
+     * A scatter or a bubble chart, one row per point: named by its dataset, and by its position
+     * where the dataset holds more than one, with `x`, `y` and a bubble's size in their own columns,
+     * as the tooltip writes a point. The affixes of the chart's values go with `y`, the value the
+     * chart plots; an `x` on a date axis is written as its date.
+     *
+     * @param  list<string>  $names
+     * @param  list<list<mixed>>  $points
+     * @param  list<int|null>  $places
+     * @return array{columns: list<string>, rows: list<array{label: string, cells: list<string>}>}
+     */
+    private static function byPoint(array $names, array $points, array $places, ?string $prefix, ?string $suffix, ?string $dateZone, bool $bubble, string $none, ?string $xTitle, ?string $yTitle): array
+    {
+        $columns = [
+            ChartPointLinks::text($xTitle) ?? 'X',
+            ChartPointLinks::text($yTitle) ?? 'Y',
+            ...($bubble ? [self::text(__('wirekit::Size'), 'Size')] : []),
+        ];
+        $rows = [];
+
+        foreach ($points as $d => $list) {
+            foreach ($list as $n => $point) {
+                [$x, $y, $z] = self::coordinates($point);
+
+                $date = $dateZone !== null && (is_string($x) || is_int($x) || is_float($x)) ? ChartPointLinks::date($x, $dateZone) : null;
+                $writtenX = $date ?? ChartPointLinks::value($x, $places[$d]);
+                $writtenY = ChartPointLinks::value($y, $places[$d]);
+                $cells = [
+                    $writtenX === '' ? $none : $writtenX,
+                    $writtenY === '' ? $none : $prefix.$writtenY.$suffix,
+                ];
+
+                if ($bubble) {
+                    $writtenZ = ChartPointLinks::value($z, $places[$d]);
+                    $cells[] = $writtenZ === '' ? $none : $writtenZ;
+                }
+
+                $rows[] = ['label' => count($list) > 1 ? $names[$d].' '.($n + 1) : $names[$d], 'cells' => $cells];
+            }
+        }
+
+        return ['columns' => $columns, 'rows' => $rows];
+    }
+
+    /**
+     * The `x`, `y` and `z` of a point in any of the forms the libraries take: an object, a list of
+     * two or three, or a bare number, which is a `y` with no `x`. The point is `mixed` because it is
+     * a point of the developer's chart data, in whatever form it stands there.
+     *
+     * @return array{0: mixed, 1: mixed, 2: mixed}
+     */
+    private static function coordinates(mixed $point): array
+    {
+        if (is_array($point) && array_is_list($point)) {
+            return [$point[0] ?? null, $point[1] ?? null, $point[2] ?? null];
+        }
+
+        if (is_array($point)) {
+            return [$point['x'] ?? null, $point['y'] ?? null, $point['z'] ?? ($point['r'] ?? null)];
+        }
+
+        return [null, $point, null];
     }
 
     /**

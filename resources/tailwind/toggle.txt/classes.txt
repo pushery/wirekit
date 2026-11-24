@@ -1,7 +1,7 @@
 --border-wk-width
 --color-wk-accent
+--color-wk-accent-text
 --color-wk-bg
---color-wk-bg-elevated
 --color-wk-bg-muted
 --color-wk-border
 --color-wk-border-strong
@@ -10,6 +10,7 @@
 --color-wk-ring
 --color-wk-ring-offset
 --color-wk-success
+--color-wk-success-text
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -37,13 +38,15 @@
 --text-wk-xs
 --transition-wk-duration
 --transition-wk-easing
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -help
 -hint
 -my-1
--strong
+-tooltip
 -translate-y-1/2
+-words
 @aware
 @else
 @endforeach
@@ -53,6 +56,8 @@
 @endwirekitLast
 @php
 @props
+[overflow-wrap:anywhere]
+[overflow-wrap:break-word]
 a
 able
 about
@@ -69,6 +74,7 @@ activating
 acts
 actually
 add
+address
 adds
 after
 again
@@ -76,6 +82,8 @@ against
 agree
 agreed
 alias
+align-fields
+alignFields
 all
 alone
 along
@@ -102,6 +110,7 @@ announcing
 answer
 answers
 anticipate
+apart
 appear
 appears
 appended
@@ -113,6 +122,7 @@ area
 args
 arguments
 aria-atomic
+aria-busy
 aria-describedby
 aria-disabled
 aria-hidden
@@ -138,6 +148,7 @@ associated
 association
 asterisk
 at
+attr
 attribute
 attributes
 auto-derived
@@ -157,6 +168,7 @@ becomes
 becoming
 been
 before
+begins
 behind
 being
 belongs
@@ -165,7 +177,6 @@ beside
 between
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
-bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-border-strong)]
 bg-[var(--color-wk-danger)]
@@ -176,14 +187,15 @@ binding
 binds
 block
 body
+bool
 boolean
 border
 border-[length:var(--border-wk-width)]
-border-[var(--color-wk-accent)]
+border-[var(--color-wk-accent-text)]
 border-[var(--color-wk-border)]
-border-[var(--color-wk-border-strong)]
-border-[var(--color-wk-danger)]
-border-[var(--color-wk-success)]
+border-[var(--color-wk-danger-text)]
+border-[var(--color-wk-success-text)]
+border-[var(--color-wk-text-muted)]
 border-b-2
 both
 bound
@@ -195,11 +207,15 @@ brings
 browser
 bubble
 bug
+build
+builds
 built
+busy
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -211,6 +227,7 @@ capture
 card
 carried
 carries
+carry
 case
 cast
 catalog
@@ -218,6 +235,7 @@ causes
 cell
 center
 centered
+centers
 change
 changed
 changes
@@ -253,7 +271,9 @@ comes
 compete
 compiles
 component
+conditional
 config/wirekit.php
+configuration
 console
 consumed
 container
@@ -271,6 +291,7 @@ corner
 correctly
 costs
 could
+count
 counted
 counterpart
 counts
@@ -282,15 +303,24 @@ cuts
 d
 danger
 data-reduce-motion
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
+data-wk-label-beside
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-toggle-state
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -298,16 +328,18 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
+declarations
 declared
 decline
 declining
-decorative
 default
 delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 delivers
@@ -323,10 +355,13 @@ dev-warning
 developer
 diameter
 different
+differs
 direct
 direction
 directions
 directives
+disable-on-loading
+disableOnLoading
 disabled
 disables
 discipline
@@ -344,6 +379,7 @@ drawer
 drawing
 drawn
 draws
+drives
 dropped
 duration
 duration-100
@@ -376,6 +412,7 @@ escaping
 evaluated
 event
 events
+ever
 every
 exactly
 expander
@@ -383,6 +420,7 @@ explains
 explanation
 explicit
 expression
+factory
 fade
 fails
 failure
@@ -396,7 +434,6 @@ fields
 files
 fill
 filled
-fills
 final
 find
 finds
@@ -414,6 +451,7 @@ flight
 flip
 flips
 floor
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -422,6 +460,7 @@ focus-within
 focusable
 focusable-trigger
 focusableTrigger
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -457,6 +496,7 @@ glyph
 go
 goes
 grammar
+gray
 greater
 green
 grid
@@ -500,6 +540,7 @@ hint
 hit
 hit-area
 hoists
+hold
 holds
 host
 hover
@@ -517,6 +558,7 @@ if
 imports
 in
 include
+indent
 inert
 init
 inline
@@ -528,6 +570,7 @@ inset-0
 inside
 instanceof
 instead
+intent
 interaction
 interactive
 interpolated
@@ -556,6 +599,7 @@ key
 keyboard
 keys
 kinds
+kit
 knob
 know
 knows
@@ -567,6 +611,7 @@ lands
 last
 later
 layer
+lazy
 leading-none
 leads
 leave
@@ -584,6 +629,7 @@ light
 like
 line
 lines
+link
 linked
 list
 listener
@@ -594,12 +640,15 @@ live
 lives
 ll
 load-bearing
+loading-target
+loadingTarget
 logged
 logical
 logs
 long
 look
 looks
+loses
 mac
 make
 makes
@@ -630,6 +679,7 @@ message
 messages
 method
 middle
+midline
 min-h-[24px]
 min-w-0
 min-w-5
@@ -657,6 +707,7 @@ ms-[var(--space-wk-sm)]
 mt-[var(--space-wk-xs)]
 much
 must
+muted
 name
 named
 names
@@ -697,6 +748,7 @@ onIntent
 onLabel
 once
 one
+ones
 only
 onmouseover
 onto
@@ -713,6 +765,7 @@ opt
 optimistic
 optimistic-ui
 optimisticArgs
+option
 or
 order
 original
@@ -727,6 +780,7 @@ outside
 over
 overflow
 overlay
+overtake
 overview
 own
 padding
@@ -741,6 +795,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 passes
 patches
@@ -751,10 +806,10 @@ peer-checked:bg-[var(--color-wk-accent)]
 peer-checked:bg-[var(--color-wk-border-strong)]
 peer-checked:bg-[var(--color-wk-danger)]
 peer-checked:bg-[var(--color-wk-success)]
-peer-checked:border-[var(--color-wk-accent)]
-peer-checked:border-[var(--color-wk-border-strong)]
-peer-checked:border-[var(--color-wk-danger)]
-peer-checked:border-[var(--color-wk-success)]
+peer-checked:border-[var(--color-wk-accent-text)]
+peer-checked:border-[var(--color-wk-danger-text)]
+peer-checked:border-[var(--color-wk-success-text)]
+peer-checked:border-[var(--color-wk-text-muted)]
 peer-checked:translate-x-4
 peer-checked:translate-x-5
 peer-checked:translate-x-6
@@ -790,6 +845,7 @@ precedence
 present
 presentational
 preset
+presets
 press
 prevent
 printing
@@ -798,8 +854,12 @@ project
 prop
 property
 props
+prose
 provided
 proxy
+ps-[calc(2.5rem+var(--gap-wk-md))]
+ps-[calc(2rem+var(--gap-wk-md))]
+ps-[calc(3rem+var(--gap-wk-md))]
 purpose
 pushed
 put
@@ -814,8 +874,10 @@ qualified
 question
 queue
 queueing
+race
 racing
 rack
+raised
 raises
 rather
 re-thrown
@@ -851,6 +913,8 @@ replacement
 reported
 request
 required
+required-mark
+requiredMark
 requires
 resolve
 resolved
@@ -860,6 +924,7 @@ rests
 restyles
 result
 reverted
+ride
 rides
 right
 role
@@ -874,6 +939,7 @@ rtl:peer-checked:-translate-x-5
 rtl:peer-checked:-translate-x-6
 rule
 run
+running
 runs
 runtime
 s
@@ -889,6 +955,7 @@ scoped
 screen
 script
 scroll
+search
 second
 see
 sees
@@ -911,6 +978,7 @@ shape
 share
 shared
 shares
+short
 shortcut
 shortcuts
 should
@@ -967,7 +1035,6 @@ stays
 stem
 steps
 still
-stood
 stop
 stops
 strategy
@@ -1038,6 +1105,7 @@ themed
 then
 there
 therefore
+these
 they
 thing
 this
@@ -1045,6 +1113,7 @@ through
 tick
 timer
 timing
+tint
 tip
 to
 together
@@ -1055,6 +1124,8 @@ too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-1/2
@@ -1062,6 +1133,7 @@ top-left
 touch
 towards
 track
+tracks
 transformed
 transition
 transition-colors
@@ -1090,7 +1162,9 @@ unique
 unknown
 unless
 unlike
+unrelated
 unsteady
+until
 up
 usable
 use
@@ -1113,6 +1187,7 @@ w-4
 w-5
 w-8
 w-max
+waits
 walk
 wants
 warning
@@ -1130,7 +1205,6 @@ where
 whether
 which
 while
-white
 who
 whole
 whose
@@ -1140,11 +1214,13 @@ width/height
 will
 win
 window
+wins
 wire:click
 wire:id
 wire:key
 wire:model
 wire:show
+wire:target
 wire:text
 wirekit:field-help
 wirekitOptimistic
@@ -1166,6 +1242,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps

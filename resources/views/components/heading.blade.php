@@ -95,9 +95,13 @@
         null => '',
     };
 
+    // On a filled surface (a filled announcement banner, a hero or CTA on the accent, a section on
+    // the accent or the inverse background) `--wk-fill-ink` carries the surface's foreground, and
+    // the heading takes it: the page's text and accent colors stand on the page. Elsewhere, a card
+    // included, the variable is unset and the page's color applies.
     $colorClasses = $accent
-        ? 'text-[color:var(--color-wk-accent-text)]'
-        : 'text-[color:var(--color-wk-text)]';
+        ? 'text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]'
+        : 'text-[color:var(--wk-fill-ink,var(--color-wk-text))]';
 
     $classes = WireKit::resolveClasses('heading', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
@@ -131,14 +135,16 @@
 
 {{-- The slot sits against both tags. A line break and an indent around it are part of the
      element's content, and a caller who keeps a user's own line breaks with `white-space`
-     set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
+     set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one.
+     `wk-heading` marks the heading element itself, never the row it shares with its help: the
+     shipped stylesheet evens out the lines of a heading that wraps through it. --}}
 @if($hasHelp)
     {{-- The heading and its help share a row, and the caller's classes go on the row, as they do
          for a label with help: they place the heading, and the help belongs in the same place.
          A fitted heading takes the rest of the row, since the box it fits its text in takes the
          heading's width; any other stands as wide as its text, with the help after it. --}}
     <{{ $rowTag }} data-wk-prose-skip data-wk-heading-row class="{{ trim(($rowTag === 'span' ? 'inline-flex' : 'flex').' items-center gap-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
-        <{{ $tag }} data-wk-prose-skip {{ $attributes->except('class')->class([$classes, 'min-w-0', 'flex-1' => $fitted !== null]) }}>{{ $fitted ?? $content }}</{{ $tag }}>
+        <{{ $tag }} data-wk-prose-skip {{ $attributes->except('class')->class([$classes, 'wk-heading', 'min-w-0', 'flex-1' => $fitted !== null]) }}>{{ $fitted ?? $content }}</{{ $tag }}>
         @include('wirekit::components.partials.field-help', [
             'helpText' => $help,
             'helpName' => \Pushery\WireKit\Support\SlotContent::plain($slot),
@@ -147,4 +153,4 @@
             'helpField' => (string) $attributes->get('id', ''),
         ])
     </{{ $rowTag }}>@else
-<{{ $tag }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $fitted ?? $content }}</{{ $tag }}>@endif
+<{{ $tag }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'wk-heading'])) }}>{{ $fitted ?? $content }}</{{ $tag }}>@endif

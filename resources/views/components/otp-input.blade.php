@@ -17,6 +17,10 @@
     // a legitimate attribute all the way down. The result was a required field that submits
     // empty, in the same form as a plain input that behaves correctly.
     'required' => false,
+    // Whether the label of a required code draws its asterisk. Off, the code stays required,
+    // with `aria-required` on every box and the check of an empty code, and only the mark goes:
+    // a form in which every field is required needs none.
+    'requiredMark' => true,
     // The Livewire method to call when the code is complete — not per keystroke.
     // A refusal keeps what was entered; see the note above. Null leaves the
     // component exactly as it has always rendered.
@@ -132,6 +136,12 @@
     $disabled = BooleanProp::from($disabled, false, 'otp-input', 'disabled');
     $readonly = BooleanProp::from($readonly, false, 'otp-input', 'readonly');
     $required = BooleanProp::from($required, false, 'otp-input', 'required');
+    $requiredMark = BooleanProp::from($requiredMark, true, 'otp-input', 'requiredMark');
+    // Whether the asterisk is drawn: the code's own `requiredMark`, else the form's around
+    // it (Support\AwareProp), else the prop's default. The label is told on its tag: it renders
+    // from this view, where the code no longer stands above it, so its own read would find
+    // only the form.
+    $requiredMark = BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], $requiredMark), true, 'otp-input', 'requiredMark');
 
     // The length stands in the x-data object as a bare number, so it is read as one first: text
     // written there unquoted would run as an expression. One that holds no number takes the
@@ -244,6 +254,18 @@
     // wrong for a mixed-case alphabet only while the two common ones come out
     // right.
     $alphabetCaseFold = $hasUpper !== $hasLower;
+
+    // The on-screen keyboard follows the fold. `characters` starts every key in capitals, which is
+    // right only where the script folds a lowercase key up into the alphabet. An alphabet of both
+    // cases compares a code as typed, so a keyboard in capitals turns each of its lowercase letters
+    // into another character; one of lowercase letters folds down, and capitals there are a case
+    // the field undoes. Both, and an alphabet of digits and symbols, turn capitalization off. Digits
+    // alone write no hint, as the numeric keypad has no case.
+    $alphabetCapitalize = match (true) {
+        $alphabetIsNumeric => null,
+        $alphabetCaseFold && $hasUpper => 'characters',
+        default => 'off',
+    };
 
     // The HTML `pattern` mirrors the alphabet as a character class. Characters
     // that carry meaning inside one are escaped; everything else is literal.
@@ -501,7 +523,7 @@
     @if($label)
         {{-- `-digit-0`, not `-0`. See the digit id below for why the segment is
              there; this must move with it or every otp-input loses its label. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id . '-digit-0'" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id . '-digit-0'" :required="$required" :required-mark="$requiredMark">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- Hidden input holds the combined OTP value for form submission / wire:model.
@@ -568,8 +590,9 @@
                 {{-- A numeric keypad is right only for a numeric alphabet; offering
                      one for a code containing letters hides the keys the reader
                      needs. The autocapitalize/spellcheck pair is for the letter
-                     case: mobile keyboards otherwise start lowercase and browsers
-                     underline the "misspelled" code. --}}
+                     case: the keyboard starts in the case the alphabet folds to
+                     ($alphabetCapitalize), and browsers do not underline the
+                     "misspelled" code. --}}
                 inputmode="{{ $alphabetIsNumeric ? 'numeric' : 'text' }}"
                 {{-- One character per box, except the first, which takes up to the whole code:
                      without a script nothing spreads a code an autofill puts there, and a
@@ -578,7 +601,7 @@
                 pattern="{{ $i === 0 && $length > 1 ? $alphabetPattern.'{1,'.$length.'}' : $alphabetPattern }}"
                 {{ $boxAttributes }}
                 @unless($alphabetIsNumeric)
-                    autocapitalize="characters"
+                    autocapitalize="{{ $alphabetCapitalize }}"
                     spellcheck="false"
                 @endunless
                 {{-- No `maxlength`: WebKit cuts a code inserted at once (the autofill of a

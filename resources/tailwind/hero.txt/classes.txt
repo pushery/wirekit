@@ -1,6 +1,7 @@
 --color-wk-
 --color-wk-accent
 --color-wk-accent-fg
+--color-wk-accent-hover
 --color-wk-bg
 --color-wk-bg-muted
 --color-wk-ring
@@ -22,6 +23,8 @@
 --text-wk-3xl
 --text-wk-fit-floor
 --text-wk-lg
+--wk-fill-ink
+--wk-fill-surface
 --wk-fit-floor
 @endif
 @endphp
@@ -29,6 +32,8 @@
 @php
 [--color-wk-ring-offset:transparent]
 [--color-wk-ring:var(--color-wk-accent-fg)]
+[--wk-fill-ink:currentColor]
+[--wk-fill-surface:transparent]
 a
 above
 absolute
@@ -40,7 +45,6 @@ adds
 against
 aligned
 alignment
-allowed
 allowed-values
 already
 also
@@ -66,6 +70,7 @@ auto-derived
 automatically
 axe
 axis
+back
 background
 balanced
 band
@@ -75,6 +80,7 @@ base
 be
 because
 becomes
+behind
 below
 best-practice
 beyond
@@ -141,10 +147,12 @@ dark
 dark-variant
 data-replayable
 data-variant
+data-wk-fill
 data-wk-prose-skip
 dead-zone
 debug
 debug-mode
+decided
 default
 defensive
 depth
@@ -179,6 +187,7 @@ escapes
 establishes
 even
 every
+everything
 exhausts
 existing
 explicit
@@ -192,7 +201,6 @@ fill
 filled
 fills
 fine
-first
 fit
 fitted
 fixed
@@ -231,6 +239,7 @@ gradient
 gradient-extension
 guessed
 h1
+hand
 handles
 has
 heading
@@ -242,6 +251,7 @@ higher-risk
 hint
 historical
 horizontal
+hover
 identical
 if
 ignored
@@ -280,7 +290,6 @@ layout
 layouts
 lead
 leading-[var(--font-wk-heading-line-height,1.25)]
-leads
 leave
 lede
 length
@@ -292,6 +301,7 @@ lg:mx-0
 lg:text-start
 lg:w-auto
 light
+lightened
 lightens
 like
 line
@@ -338,7 +348,6 @@ natural
 near-black
 near-white
 needs
-neutral
 never
 new
 next
@@ -366,6 +375,7 @@ other
 otherwise
 outer
 outline
+over
 overflow-hidden
 overflow-x-auto
 overflowing
@@ -376,12 +386,14 @@ own
 padding
 page
 page-edge
+pairs
 parent
 past
 pattern
 per-component
 php
 picks
+point
 pointer-events-none
 pre
 prescribe
@@ -432,6 +444,7 @@ run
 runs
 s
 same
+says
 scanner
 scope
 scrolling
@@ -441,6 +454,7 @@ section-sm
 see
 separately
 sets
+shades
 shape
 shapes
 short
@@ -475,6 +489,8 @@ start
 static
 stay
 stays
+step
+steps
 strictness
 string
 strings
@@ -501,6 +517,7 @@ that
 the
 their
 them
+theme
 then
 there
 this
@@ -513,12 +530,14 @@ tightOnMobile
 tightest
 title
 to
+to-[var(--color-wk-accent-hover)]
 to-black/20
 to-white/30
 token
 token-surfaced
 too
 touch
+toward
 tracking-tight
 true
 truthy
@@ -557,13 +576,13 @@ well
 what
 when
 where
+wherever
 which
 white
 white-space
 who
 whole
 whose
-why
 wide
 wins
 wirekit:spine-participant
@@ -571,6 +590,7 @@ with
 within
 without
 wk-hero
+words
 worse
 would
 wrapper

@@ -38,6 +38,10 @@
     // a second line the layout does not have. The real <label for="…"> stays in
     // the DOM, so the name survives. Mirrors input / select / textarea / combobox.
     'hideLabel' => false,
+    // Whether the label of a required field draws its asterisk. Off, the field stays required,
+    // with the browser's check, and only the mark goes: a form in which every field is required
+    // needs none. `required` itself stays in the bag, which carries it to the native control.
+    'requiredMark' => true,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
     // field's description (partials/field-help).
@@ -58,7 +62,7 @@
 
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -69,13 +73,25 @@
     $toggle = BooleanProp::from($toggle, true, 'password-input', 'toggle');
     $strengthMeter = BooleanProp::from($strengthMeter, false, 'password-input', 'strengthMeter');
     $hideLabel = BooleanProp::from($hideLabel, false, 'password-input', 'hideLabel');
+    $requiredMark = BooleanProp::from($requiredMark, true, 'password-input', 'requiredMark');
+    // Whether the asterisk is drawn: the field's own `requiredMark`, else the form's around
+    // it (Support\AwareProp), else the prop's default. The label is told on its tag: it renders
+    // from this view, where the field no longer stands above it, so its own read would find
+    // only the form.
+    $requiredMark = BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('requiredMark', ['form'], $requiredMark), true, 'password-input', 'requiredMark');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does not remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -193,7 +209,7 @@
     // Each state names its own focus-ring color and the base list names none: two ring colors on
     // one element are decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = $hasError
-        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
+        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]'
         // Hover belongs to the resting state only, so an error border keeps its color under
         // the pointer.
         : 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]';
@@ -296,7 +312,7 @@
      method is not an expression Alpine's CSP parser accepts, and under a strict
      policy the element would get an empty scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
-<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests inside the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -313,7 +329,12 @@
              declaring it would pull `required` out of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :required-mark="$requiredMark" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <div class="relative">
@@ -394,6 +415,12 @@
         @endwirekitLast
     </div>
 
+    {{-- In an aligned row the strength meter and the message stand in one element, the row's
+         third track: a second element would have no track of its own. Empty, it holds the
+         track. --}}
+    @if($inAlignedRow)
+        <div data-wk-field-messages class="space-y-1.5 min-w-0">
+    @endif
     {{-- Strength meter — 4 bars that fill based on password complexity score.
          Score: +1 for length≥8, +1 mixed case, +1 digit, +1 symbol. --}}
     @if($strengthMeter)
@@ -440,6 +467,9 @@
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+    @if($inAlignedRow)
+        </div>
     @endif
 
 @if($optimisticConfig)

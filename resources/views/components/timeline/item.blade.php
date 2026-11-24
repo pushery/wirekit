@@ -60,10 +60,9 @@
     //
     // The dot is the only thing that changes between a deployment that succeeded
     // and a pipeline that failed, and the dot is `aria-hidden` — so without this
-    // the difference reaches neither a screen reader nor a reader who cannot
-    // separate the red from the green. WCAG 1.4.1 does not permit color to be
-    // the sole carrier, and this component's own documentation recommends the
-    // intent for exactly that job.
+    // the difference would not reach a screen reader at all. A sighted reader who
+    // cannot separate the red from the green reads it in the title, which the
+    // documentation asks to read correctly with the color removed (WCAG 1.4.1).
     //
     // Same wording as alert's variant label, deliberately: an item whose outcome
     // is a failure should be announced with the word a developer already read on

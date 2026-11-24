@@ -11,7 +11,9 @@
  */
 import { contrast } from './utils/wcag-contrast.js';
 import { defineShortcut } from './utils/shortcuts.js';
+import { wirekitCodeJoins } from './utils/code-joins.js';
 import { installRuntime } from './runtime.js';
+import { installSharedTooltips } from './utils/shared-tooltips.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
 import wirekitSubmenu from './components/submenu.js';
@@ -98,6 +100,8 @@ import wirekitDatetimePickerMoment from './components/datetime-picker-moment.js'
 import wirekitDatetimePickerTime from './components/datetime-picker-time.js';
 import wirekitDatePicker from './components/date-picker.js';
 import wirekitTimePicker from './components/time-picker.js';
+import wirekitExternalLinkQuestion from './components/external-link-question.js';
+import wirekitCaptcha from './components/captcha.js';
 import wirekitTableSearch from './components/table-search.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
@@ -149,6 +153,12 @@ export function register(Alpine, components) {
     for (const [name, factory] of Object.entries(components)) {
         Alpine.data(name, factory);
     }
+
+    // A subset with the tooltip drives the triggers of shared tooltips that are one element, with
+    // the factory it registers. See utils/shared-tooltips.js.
+    if (typeof components?.wirekitTooltip === 'function') {
+        installSharedTooltips(typeof window === 'undefined' ? null : window, () => components.wirekitTooltip);
+    }
 }
 
 /**
@@ -160,6 +170,9 @@ export function register(Alpine, components) {
  */
 export default function (Alpine) {
     installRuntime(Alpine);
+    // The trigger of a shared tooltip that is one element, with no component of its own, is
+    // driven from the document through the tooltip factory. See utils/shared-tooltips.js.
+    installSharedTooltips(typeof window === 'undefined' ? null : window, () => wirekitTooltip);
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -238,6 +251,8 @@ export default function (Alpine) {
     Alpine.data('wirekitMenubar', wirekitMenubar);
     Alpine.data('wirekitNavigationMenu', wirekitNavigationMenu);
     Alpine.data('wirekitAlertDialog', wirekitAlertDialog);
+    Alpine.data('wirekitExternalLinkQuestion', wirekitExternalLinkQuestion);
+    Alpine.data('wirekitCaptcha', wirekitCaptcha);
     Alpine.data('wirekitTableSearch', wirekitTableSearch);
     Alpine.data('wirekitTableSort', wirekitTableSort);
     Alpine.data('wirekitCarousel', wirekitCarousel);
@@ -372,6 +387,8 @@ export {
     wirekitDatetimePickerTime,
     wirekitDatePicker,
     wirekitTimePicker,
+    wirekitExternalLinkQuestion,
+    wirekitCaptcha,
     wirekitTableSearch,
     wirekitTableSort,
     wirekitTour,
@@ -417,4 +434,7 @@ export {
     contrast,
     // Not a factory: a shortcut that works out what it does, as `window.wirekitShortcut` offers it.
     defineShortcut,
+    // Not a factory: the highlight.js plugin that keeps the joins of code that wraps, as
+    // `window.wirekitCodeJoins` offers it. Importable on its own as `resources/js/utils/code-joins.js`.
+    wirekitCodeJoins,
 };

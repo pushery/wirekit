@@ -101,10 +101,14 @@
     // That there is nothing to choose. A list from `options` says it by holding no option; a server
     // search starts every list empty, so there the application says it.
     'nothingToChoose' => false,
+    // Whether the list waits out of the page until it is first needed: the pointer or the focus on
+    // the field, or the list opening. The default comes from the configuration
+    // (`components.combobox.lazy`).
+    'lazy' => config('wirekit.components.combobox.lazy', false),
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -155,7 +159,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the combobox takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -438,12 +448,16 @@
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
-        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
+        // The state decides the border and the ring's color together: a field with an error keeps
+        // its error border while it has the focus and draws its ring in the danger text color, and
+        // the border that marks a focused field, in the accent's text color, belongs to the field
+        // at rest, as the hover border of an input does.
+        $hasError
+            ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]'
+            : 'border-[var(--color-wk-border-strong)] focus-visible:ring-[var(--color-wk-ring)] focus:border-[var(--color-wk-accent-text)]',
         'rounded-[var(--radius-wk-md)]',
         'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
-        'focus-visible:ring-[var(--color-wk-ring)]',
-        'focus:border-[var(--color-wk-accent)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
         'transition-colors',
@@ -597,12 +611,23 @@
     // `UtilityClasses::yieldToCaller()`, and the search field inside fills the root at whatever
     // width it takes.
     $rootClasses = 'relative w-full';
+
+    // A lazy combobox holds the teleports of its list and of its empty state in one template of
+    // its own, which the browser keeps out of the page until the factory builds them
+    // (utils/lazy-panel.js). The template stands among the children of the element the panels
+    // stood in: the root, or the optimistic layer inside it, which names itself to the render hook.
+    // The field names the list with `aria-controls` once the list is built, through a binding a
+    // Livewire update keeps. The wrapper is an echo, since a conditional around a tag's two ends
+    // would leave Livewire's markers inside the template.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.combobox.lazy', false)), 'combobox', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 {{-- `wk-combobox` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-` class
      token and its descendants, and this root is the first element above the chevrons to carry one:
      `wk-field` sits on the input, beside them, where the clamp never reaches them. --}}
-<div {{ $outerAttributes }} class="wk-combobox space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="wk-combobox space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         {{-- The asterisk flag is read from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` out of the bag, and the bag is what carries the
@@ -617,7 +642,17 @@
             <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
         @endif
     @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one. A hidden label is out of the flow and holds nothing. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
+    @endif
 <div
+    {{-- In a row that lines its fields up, this element spans the control track and the message
+         track and hands one to each of its children, the field and the element of its messages, so
+         both stay inside the script's scope. --}}
+    @if($inAlignedRow) data-wk-field-body @endif
+    @if($lazy && ! $optimisticConfig) data-wk-lazy-panel-host @endif
     {{-- The value and the options travel on attributes of their own, so `x-data` renders the
          same on every update: a morph that changed it would have Alpine reset the component to
          the new expression and initialize it again, dropping the open list and the reader's
@@ -653,14 +688,17 @@
         {{-- `display: contents` — this element's `relative` is the containing
              block the listbox is positioned against, and a real box here would
              move the panel. --}}
-        <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+        <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($lazy) data-wk-lazy-panel-host @endif>
     @endif
 
     {{-- The field, the value it sends and what is drawn on it stand in a box of their own, so
          `top-1/2` on the medium, the clear button and the chevron measures the field alone. The root
          goes on to hold the hint, the error and the empty state, and centered on the root they would
          stand lower by half of whatever is written under the field. --}}
-    <div class="relative">
+    {{-- In a row that lines its fields up, the field keeps below it the space `space-y-1.5` keeps
+         below the field of an `input`, so a row of comboboxes sets its messages as far below the
+         fields as a row of inputs does. --}}
+    <div @class(['relative', 'mb-1.5' => $inAlignedRow]) @if($lazy) x-on:pointerenter="preparePanel()" x-on:focusin="preparePanel()" @endif>
     {{-- Hidden input holding the selected *value* for form submission. With free input the text field
          below carries the name itself, since its text is the value. --}}
     @if($name && ! $freeInput)
@@ -689,7 +727,7 @@
         @unless($attributes->has('role')) role="combobox" @endunless
         aria-expanded="false"
         :aria-expanded="isOpen"
-        aria-controls="{{ $listId }}"
+        @if($lazy) :aria-controls="_listBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} : null" @else aria-controls="{{ $listId }}" @endif
         :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         aria-autocomplete="list"
         placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}"
@@ -778,7 +816,7 @@
         aria-haspopup="listbox"
         aria-expanded="false"
         :aria-expanded="isOpen"
-        aria-controls="{{ $listId }}"
+        @if($lazy) :aria-controls="_listBuilt ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} : null" @else aria-controls="{{ $listId }}" @endif
         :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         @if($label) aria-labelledby="{{ $comboId }}-label" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @elseif($resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
         @if($disabled)
@@ -808,8 +846,10 @@
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     >
         {{-- Two spans rather than one binding that swaps the text and its color: the placeholder
-             color would otherwise live in a runtime class string no scope can restyle. --}}
-        <span class="block min-w-0 truncate" :title="selectedText" x-show="selectedText !== ''" x-text="selectedText" @if($initialText === '') x-cloak @endif>{{ $initialText }}</span>
+             color would otherwise live in a runtime class string no scope can restyle. The text
+             carries itself as its title from the server, so a value cut short reads whole before
+             the script starts as after. --}}
+        <span class="block min-w-0 truncate" :title="selectedText" @if($initialText !== '') title="{{ $initialText }}" @endif x-show="selectedText !== ''" x-text="selectedText" @if($initialText === '') x-cloak @endif>{{ $initialText }}</span>
         <span class="block min-w-0 truncate text-[color:var(--color-wk-text-placeholder)]" x-show="selectedText === ''" @if($initialText !== '') x-cloak @endif>{{ $placeholder }}</span>
     </div>
     @endif
@@ -912,7 +952,7 @@
          `optimistic` set every ref of this component registers into the nested
          optimistic scope, which `_place()` cannot read. An id depends on
          neither. --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
     <ul data-wk-prose-skip
         {{-- The morph key. Without it the id below is what Livewire uses to
              identify this node across an update — it resolves `wire:id`, then
@@ -1133,7 +1173,7 @@
     >
         <p data-wk-prose-skip class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]" @if($server) x-text="searchEmptyText(typedQuery())" @endif>{{ __('wirekit::No results') }}</p>
     </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 
     {{-- The symbols the option icons point at. Inside the component root rather than the
          teleported panel, so a Livewire update renders them with the component; a `<use>`
@@ -1151,10 +1191,17 @@
         <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="isOpen && filtered.length === 0 && query !== '' ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No results')) }} : ''"></div>
     @endif
 
+    {{-- In an aligned row every message stands in one element, the track below the field: a second
+         one would have no track of its own. Empty, it holds the track. There the messages take the
+         spacing an `input` gives its own, so they drop the margin that sets them off the field
+         outside such a row. --}}
+    @if($inAlignedRow)
+        <div data-wk-field-messages class="space-y-1.5 min-w-0">
+    @endif
     @if($showsError)
-        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif @class(['mt-1.5' => ! $inAlignedRow, 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]'])>{{ $errorMessage }}</p>
     @elseif($showsHint)
-        <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" @class(['mt-1.5' => ! $inAlignedRow, 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]'])>{{ $hint }}</p>
     @endif
 
     {{-- Nothing to choose: what is missing, and where it is created (partials/empty-choice). --}}
@@ -1163,8 +1210,17 @@
             'emptyFor' => 'combobox',
             'emptyId' => $emptyId,
             'emptySlot' => $empty ?? null,
-            'emptyClass' => 'mt-[var(--space-wk-xs)]',
+            'emptyClass' => $inAlignedRow ? null : 'mt-1.5',
         ])
+    @endif
+    {{-- The required message joins them there. It reads the combobox's state, and inside the
+         optimistic scope it still does, since that scope defines neither name. It is included
+         without a block and before the block that closes this element: inside a Livewire
+         component that block leaves its opening marker in here, and the marker has to stay the
+         last node, or a morph that brings the message back would have no end to insert it at. --}}
+    @includeWhen($inAlignedRow && $requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
+    @if($inAlignedRow)
+        </div>
     @endif
 
     @if($optimisticConfig)
@@ -1180,9 +1236,12 @@
         </div>
     @endif
 
-    {{-- The required message stands last, so it is included without a block, and Livewire
-         writes no morph markers around it: an include is not one of the blocks it marks. --}}
-    @includeWhen($requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
+    {{-- The required message stands last, in a block Livewire writes no morph markers around
+         (`@wirekitLast`), as an include outside one has none. In an aligned row it stands with the
+         other messages above. --}}
+    @wirekitLast(! $inAlignedRow)
+        @includeWhen($requiredMessageId, 'wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
+    @endwirekitLast
 </div>
 
 {{-- Close the always-present root wrapper. --}}

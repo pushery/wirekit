@@ -58,11 +58,12 @@
       hover:bg-[var(--color-wk-accent-hover)]
       shadow-[var(--shadow-wk-sm)]
 
-    neutral:
-      bg-[var(--color-wk-bg-muted)]
+    neutral: the text color mixed into the surface the button stands on, like the
+    fill of soft() at a larger share, so it stands apart from every surface.
+      bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
       text-[color:var(--color-wk-text)]
       border-transparent
-      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
       shadow-[var(--shadow-wk-sm)]
 
     success:
@@ -188,7 +189,7 @@
 
     Several of these classes appear in no Blade view, and they are not decoration:
     `border-b-[3px]` / `border-e-[3px]` are the active-tab indicator, their
-    `border-b-[var(--color-wk-accent)]` / `border-e-[var(--color-wk-accent)]`
+    `border-b-[var(--color-wk-accent-text)]` / `border-e-[var(--color-wk-accent-text)]`
     color it on the selected tab, and the negative margins pull it onto the
     container edge. Without them the bar renders, the tabs work, ARIA is
     correct, and the selected tab is simply not marked. Nothing throws.
@@ -211,10 +212,10 @@
     border-[var(--color-wk-border)]
     border-b-[3px]
     border-b-[length:var(--border-wk-width)]
-    border-b-[var(--color-wk-accent)]
+    border-b-[var(--color-wk-accent-text)]
     border-e-[3px]
     border-e-[length:var(--border-wk-width)]
-    border-e-[var(--color-wk-accent)]
+    border-e-[var(--color-wk-accent-text)]
     border-transparent
     cursor-pointer
     disabled:cursor-not-allowed

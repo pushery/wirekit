@@ -1,3 +1,5 @@
+import { clickedLink, windowTheLinkOpens } from './link-window.js';
+
 /**
  * The id a fragment names, or an empty string. A fragment is percent-encoded in the address, and an
  * id is compared as written, so `#zahlung%C3%BCbersicht` names the element `zahlungübersicht`. A
@@ -41,16 +43,16 @@ export function followsTheFragmentAgain(event, location) {
         return false;
     }
 
-    const link = typeof event.target?.closest === 'function' ? event.target.closest('a[href]') : null;
+    const link = clickedLink(event.target);
 
     // An SVG link holds its address as an object rather than text, and is left to the browser.
     if (! link || typeof link.href !== 'string' || link.hasAttribute('download')) {
         return false;
     }
 
-    const target = (link.getAttribute('target') ?? '').trim().toLowerCase();
-
-    if (target !== '' && target !== '_self') {
+    // A link that opens another window is none, through its own target or the page's `<base target>`
+    // as the browser reads them; `_top` and `_parent` on a page no frame holds name this window.
+    if (windowTheLinkOpens(link) !== '_self') {
         return false;
     }
 

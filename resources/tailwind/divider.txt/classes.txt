@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-border
 --color-wk-border-strong
 --color-wk-border-subtle
@@ -27,6 +28,7 @@ be
 because
 below
 bold
+border
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border-strong,var(--color-wk-border))]
 border-[var(--color-wk-border-subtle)]
@@ -35,6 +37,7 @@ border-e-0
 border-s
 border-s-0
 border-t
+box
 caller
 centered
 childrenPresentational
@@ -48,10 +51,12 @@ default
 divider
 docs
 does
+edges
 emits
 emitted
 flags
 flex
+follow
 font-[family-name:var(--font-wk-sans)]
 from
 grow
@@ -64,9 +69,11 @@ interactive
 is
 it
 items-center
+keeps
 label
 later
 left
+line
 list
 live
 match
@@ -75,10 +82,12 @@ name
 no
 not
 nothing
+of
 optimistic-ui
 orientation
 page
 presentational
+preset
 props
 px-[var(--space-wk-sm,0.5rem)]
 qualified
@@ -86,14 +95,17 @@ rather
 reach
 result
 role
+rule
 s
 scope
 self-stretch
 separator
+sets
 shown
 shrink-0
 so
 span
+stays
 still
 subtle
 supplied
@@ -102,6 +114,7 @@ text-[color:var(--color-wk-text-muted)]
 text-[length:var(--text-wk-sm)]
 than
 the
+theme
 there
 this
 to
@@ -113,8 +126,10 @@ variant
 vertical
 view
 what
+where
 which
 whose
+width
 wins
 with
 would

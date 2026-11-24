@@ -163,6 +163,26 @@ final class ListProp
     }
 
     /**
+     * A text that names several entries, `"DE,AT"`, as the list of them; any other value as it came.
+     *
+     * For a list prop whose single entry may be written as text: a code, a key, a slot name or a
+     * property path, none of which holds a comma, so a comma in the text stands between two
+     * entries. Each entry is trimmed, and an empty one is left out. `mixed` for the reason `from()`
+     * gives: the value is handed on to `from()` or `renumbered()` either way.
+     */
+    public static function splitAtCommas(mixed $value): mixed
+    {
+        if (! is_string($value) || ! str_contains($value, ',')) {
+            return $value;
+        }
+
+        return array_values(array_filter(
+            array_map(trim(...), explode(',', $value)),
+            static fn (string $entry): bool => $entry !== '',
+        ));
+    }
+
+    /**
      * The value as `from()` gives it, with an array renumbered 0 to n-1 in the order it is walked.
      *
      * For a prop whose keys mean nothing: labels, steps, the options of a field. The order is

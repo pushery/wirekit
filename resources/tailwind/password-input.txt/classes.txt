@@ -6,7 +6,6 @@
 --color-wk-border-error
 --color-wk-border-strong
 --color-wk-border-strong-hover
---color-wk-danger
 --color-wk-danger-text
 --color-wk-ring
 --color-wk-ring-offset
@@ -46,12 +45,15 @@
 --text-wk-xs
 --transition-wk-duration
 --transition-wk-easing
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -help
 -hint
 -my-1
 -strength
+-tooltip
+-words
 @aware
 @click
 @else
@@ -64,6 +66,7 @@
 @include
 @php
 @props
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -78,6 +81,7 @@ action
 activating
 acts
 actually
+address
 adds
 after
 again
@@ -85,6 +89,9 @@ against
 agree
 agreed
 alias
+align-fields
+alignFields
+aligned
 all
 alone
 already
@@ -104,6 +111,7 @@ announced
 announcement
 announces
 announcing
+another
 answer
 anticipate
 any
@@ -184,6 +192,7 @@ binds
 block
 blocks
 body
+bool
 boolean
 booted
 border
@@ -203,12 +212,14 @@ brings
 browser
 bubble
 bug
+build
 builds
 built
 but
 button
 buttons
 by
+cache
 call
 called
 caller
@@ -221,6 +232,7 @@ capture
 card
 carousel
 carries
+carry
 carrying
 case
 cast
@@ -269,6 +281,7 @@ components
 conditional
 config
 config/wirekit.php
+configuration
 confirmation
 conflicting
 console
@@ -302,25 +315,39 @@ cy
 d
 danger-text
 dark
+data-wk-field
 data-wk-field-label
+data-wk-field-messages
+data-wk-field-part
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
+data-wk-lit
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 dead
 debug
 decided
+declarations
 declared
 declaring
 default
@@ -328,9 +355,11 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 delete
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -341,6 +370,7 @@ design
 developer
 difference
 different
+differs
 direction
 directives
 disabled
@@ -362,6 +392,7 @@ drawer
 drawing
 drawn
 draws
+drives
 dropped
 drops
 duration-100
@@ -380,6 +411,7 @@ element
 elements
 elevated
 eligible
+else
 emits
 emitted
 empty
@@ -400,6 +432,7 @@ escaping
 evaluated
 event
 events
+ever
 every
 exactly
 exists
@@ -440,11 +473,12 @@ flight
 flips
 floor
 flow
+fn
 focus
 focus-ring
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
-focus-visible:ring-[var(--color-wk-danger)]
+focus-visible:ring-[var(--color-wk-danger-text)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-inset
 focus-visible:ring-offset-[length:var(--ring-wk-offset)]
@@ -454,6 +488,7 @@ focus:outline-hidden
 focusable
 focusable-trigger
 focusableTrigger
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -517,6 +552,7 @@ head
 hear
 hears
 height
+held
 help
 helpButton
 helpField
@@ -612,6 +648,7 @@ last
 later
 layer
 layout
+lazy
 leading-none
 leads
 leave
@@ -628,6 +665,7 @@ light
 like
 line
 lines
+link
 linked
 list
 listener
@@ -642,6 +680,7 @@ locale
 logs
 lone
 long
+longer
 look
 looks
 mac
@@ -748,6 +787,7 @@ on
 once
 one
 one-word
+ones
 only
 onmouseover
 onto
@@ -763,6 +803,7 @@ opt
 optimistic
 optimistic-ui
 optimisticArgs
+option
 opts
 or
 order
@@ -798,6 +839,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 passes
 password
@@ -846,6 +888,7 @@ prop
 properties
 property
 props
+prose
 proxy
 pull
 put
@@ -861,6 +904,7 @@ py-[var(--padding-wk-y-xs)]
 qualified
 question
 quoting
+race
 racing
 raises
 rather
@@ -895,12 +939,15 @@ removing
 render
 rendered
 renders
+repaints
 replacement
 reported
 reports
 represents
 request
 required
+required-mark
+requiredMark
 requires
 reset
 resolve
@@ -913,6 +960,7 @@ restyles
 result
 returns
 reverse
+ride
 ring
 role
 roll
@@ -927,6 +975,7 @@ rule
 run
 rung
 rungs
+running
 runs
 s
 safe
@@ -942,6 +991,7 @@ screen
 script
 scroll
 seam
+search
 second
 see
 seeds
@@ -964,6 +1014,7 @@ shared
 shares
 ship
 ships
+short
 shortcut
 shortcuts
 should
@@ -1097,8 +1148,10 @@ theme
 then
 there
 therefore
+these
 they
 thing
+third
 this
 thought
 three
@@ -1113,16 +1166,21 @@ toggle
 toggletip
 token
 tokens
+told
 too
 took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
 towards
+track
 tracking-[var(--font-wk-letter-spacing)]
+tracks
 transformed
 transition
 transition-colors
@@ -1178,6 +1236,7 @@ visually
 w-4
 w-full
 w-max
+waits
 walk
 warning
 was
@@ -1203,6 +1262,7 @@ width
 widths
 will
 window
+wins
 wire:id
 wire:key
 wire:model
@@ -1214,6 +1274,7 @@ with
 without
 wk-field
 wk-field-set
+wk-strength-bar
 wk-tooltip-panel
 wk-touch-target
 wkField
@@ -1225,6 +1286,7 @@ work
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps
@@ -1234,6 +1296,7 @@ writing
 written
 wrong
 x-bind:aria-busy
+x-bind:data-wk-lit
 x-bind:data-wk-tooltip-disabled
 x-bind:style
 x-bind:type

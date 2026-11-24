@@ -33,7 +33,9 @@
     // announced as an unlabeled group, which is worse than no landmark at all when a
     // page carries two of them.
     'label' => null,
-    'variant' => 'underline',
+    // The default of every tab bar, this one and `tabs`, from `components.tabs.variant`: both are
+    // drawn from Support\TablistStyles, so a variant set for tabs means the same in either.
+    'variant' => config('wirekit.components.tabs.variant', 'underline'),
     'orientation' => 'horizontal',
     // Wrap the tabs onto further lines instead of scrolling, at every width or from a
     // breakpoint up, as on `tabs`.

@@ -14,7 +14,8 @@
      Cancel control to actually close the dialog without manually
      wiring `$dispatch('wirekit-alert-dialog-close', { name })`.
 
-     Defaults: renders a neutral filled button reading "Cancel". Pass
+     Defaults: renders a neutral button reading "Cancel", in the surface
+     `wirekit.components.button.surface` sets, the filled one by default. Pass
      a default slot to override the button label, or pass any inner
      <x-wirekit::button> to customize variant / size / icon.
 
@@ -22,7 +23,7 @@
        <x-wirekit::alert-dialog.cancel />
        <x-wirekit::alert-dialog.cancel>Back</x-wirekit::alert-dialog.cancel>
        <x-wirekit::alert-dialog.cancel>
-           <x-wirekit::button intent="neutral" surface="ghost">Discard</x-wirekit::button>
+           <x-wirekit::button intent="neutral" size="sm">Keep editing</x-wirekit::button>
        </x-wirekit::alert-dialog.cancel> --}}
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -66,7 +67,7 @@
         {{-- Translated through the catalog: a literal `Cancel` would leave a German app
              with a fully translated dialog and an English cancel button, while
              lang/de.json carries "Abbrechen". --}}
-        <x-wirekit::button intent="neutral" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Cancel') }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Cancel') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the rendered markup,
              because that is what a slot holds: by the time it is cast to a string
@@ -84,6 +85,6 @@
     @else
         {{-- Plain text slot — wrap it in the default Cancel button so
              keyboard + screen-reader semantics stay correct. --}}
-        <x-wirekit::button intent="neutral" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
     @endwirekitLast
 </div>

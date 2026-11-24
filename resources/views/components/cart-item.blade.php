@@ -80,6 +80,10 @@
     // line beside the line total, and under them the variant and the unit price on the left, the
     // quantity and the line's actions on the right. `default` is the row a shop's cart shows.
     'layout' => 'default',
+    // Whether `compact` cuts the name and the line under it to one line each, with the rest in a
+    // tooltip. `false` lets both wrap: an overview the reader confirms an order on states the
+    // name and the variant in full. The `default` layout wraps either way.
+    'truncate' => config('wirekit.components.cart-item.truncate', true),
     // `buttons` shows − and + with the quantity between them, and each press dispatches an event
     // for the application to act on: `wirekit:cart-decrement` or `wirekit:cart-increment`, with
     // the line's key. Every press counts, and the quantity shown is the one the application
@@ -94,6 +98,18 @@
     // remove glyph and is named "Remove", because that is what the press does. It still dispatches
     // `wirekit:cart-decrement`: the application decides what the press means.
     'removesAtZero' => false,
+    // Whether − at the smallest quantity takes the line out. One less of the last piece is a
+    // removal, so − stays in use there, draws the remove glyph, is named "Remove …" and takes the
+    // line out as the remove control does, after the same question (`confirmRemove`). Off, − is
+    // disabled at the minimum. A line that cannot be removed, is only shown or brings its own
+    // `remove` slot keeps − disabled there, and the press stepper of a line that leaves at zero
+    // (`removesAtZero`) keeps to that rule.
+    'removeAtMin' => config('wirekit.components.cart-item.remove-at-min', true),
+    // Whether taking the line out asks first. The remove control and − at the smallest quantity
+    // open the line's question, "Remove …?", and only its yes dispatches `wirekit:cart-remove`.
+    // Off, both dispatch it at once: a till that answers every press at once has no time for a
+    // question.
+    'confirmRemove' => config('wirekit.components.cart-item.confirm-remove', true),
     // The size of the line total, on the scale of `price`: `xs` to `xl`. A screen read across a
     // counter looks for what a line costs first, and at the default size the total stands no
     // larger than the name. Without it the total takes the size `price` is configured with.
@@ -117,6 +133,8 @@
 
     $size = WireKit::validateProp('cart-item', 'size', $size, ['sm', 'md', 'lg']);
     $removable = BooleanProp::from($removable, true, 'cart-item', 'removable');
+    $removeAtMin = BooleanProp::from($removeAtMin, true, 'cart-item', 'removeAtMin');
+    $confirmRemove = BooleanProp::from($confirmRemove, true, 'cart-item', 'confirmRemove');
     $minorUnits = BooleanProp::from($minorUnits, false, 'cart-item', 'minorUnits');
     // An empty string is no amount, as null is: the value of a field nobody has filled. Left as it
     // is, it would reach `price` and its row would stand empty.
@@ -124,6 +142,7 @@
     $compareAt = $compareAt === '' ? null : $compareAt;
     $lineTotal = $lineTotal === '' ? null : $lineTotal;
     $readonly = BooleanProp::from($readonly, false, 'cart-item', 'readonly');
+    $truncate = BooleanProp::from($truncate, true, 'cart-item', 'truncate');
     $removesAtZero = BooleanProp::from($removesAtZero, false, 'cart-item', 'removesAtZero');
     // A line whose quantity can be changed ignores it: its field is its quantity.
     $hideQuantity = BooleanProp::from($hideQuantity, false, 'cart-item', 'hideQuantity') && $readonly;
@@ -154,7 +173,7 @@
     // that the names of a list with and without pictures start in one column. There is no
     // automatic placeholder, as on `product-card`: a line that has no picture and no slot has no
     // column.
-    $hasMedia = isset($media) && $media->hasActualContent();
+    $hasMedia = \Pushery\WireKit\Support\SlotContent::given($media ?? null);
     // An empty image address, or one of white space, is no image, so the line has no empty frame
     // where a thumbnail would stand (Support\UrlProp::source()).
     $image = \Pushery\WireKit\Support\UrlProp::source($image);
@@ -173,8 +192,8 @@
     }
 
     // The bounds of the press buttons. A − at `min` would ask for a quantity the line refuses, so
-    // it is disabled there, as the number field's is. A caller whose − on the last piece takes the
-    // line out passes `:min="0"`.
+    // it is disabled there, as the number field's is, unless the line asks there whether it goes
+    // (`removeAtMin`). A caller whose − on the last piece takes the line out passes `:min="0"`.
     $atMin = $min !== null && (float) $quantity <= (float) $min;
     $atMax = $max !== null && (float) $quantity >= (float) $max;
 
@@ -191,7 +210,20 @@
     // A name given as markup is read as its text there.
     $nameText = \Pushery\WireKit\Support\SlotContent::textOf($name);
     $removeName = $name ? __('wirekit::Remove :name', ['name' => $nameText]) : __('wirekit::Remove');
-    $decrementName = $decrementRemoves
+    // The line's own remove control: on a line that can be removed, is operated and brings no
+    // `remove` slot of its own.
+    $builtInRemove = $removable && ! $readonly && ! (\Pushery\WireKit\Support\SlotContent::given($remove ?? null));
+    // Whether taking the line out asks first (`confirmRemove`), from the remove control and from −
+    // at the smallest quantity alike, in a question of the line's own whose yes is the removal.
+    $removeAsks = $confirmRemove && $builtInRemove;
+    // − at the smallest quantity takes the line out (`removeAtMin`), on a line the remove control
+    // can take out. With the press stepper the server knows the minimum is reached; the number
+    // field knows it in the browser, and sends its event from there. The press stepper of a line
+    // that leaves at zero keeps to `removesAtZero`, whose last press is a decrement.
+    $removesAtMin = $removeAtMin && $builtInRemove;
+    $decrementRemovesAtMin = $removesAtMin && $stepperValue === 'buttons' && $atMin && ! $removesAtZero;
+
+    $decrementName = $decrementRemoves || $decrementRemovesAtMin
         ? $removeName
         : ($name ? __('wirekit::Decrease the quantity of :name', ['name' => $nameText]) : __('wirekit::Decrease :field', ['field' => __('wirekit::Quantity')]));
     $incrementName = $name ? __('wirekit::Increase the quantity of :name', ['name' => $nameText]) : __('wirekit::Increase :field', ['field' => __('wirekit::Quantity')]);
@@ -219,6 +251,10 @@
     // events still carry the key itself: it names the line for the application.
     $rowId = \Pushery\WireKit\Support\DomId::distinct($itemKey);
 
+    // The question taking the line out asks: an alert dialog of the line's own, named after the row
+    // so two carts on one page ask apart.
+    $removeQuestion = $rowId.'-remove-question';
+
     // A caller's binding belongs on the quantity field and nowhere else, in every form it takes.
     // A fixed list of keys forwarded `wire:model` and `wire:model.live` and left `.blur` and
     // `.live.debounce…` on the row alone, where `blur` never arrives; and the row rendered the
@@ -242,8 +278,13 @@
         // cluster of controls keeps its width while the name collapses: `flex-1 min-w-0` gives
         // way to `shrink-0`, so the column that matters is the one that disappears. Below the
         // threshold the cluster takes a row of its own instead.
-        'flex flex-wrap items-start gap-[var(--gap-wk-md)]',
+        //
+        // The name, the variant and the unit price stand as one block in the middle of the line,
+        // as the stepper and the total beside them do, and the line sets its own line height:
+        // inherited from a page set for paragraphs, the three stood a paragraph's lines apart.
+        'flex flex-wrap items-center gap-[var(--gap-wk-md)]',
         'py-[var(--padding-wk-y-md)]',
+        'leading-[var(--leading-wk-tight)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
@@ -253,6 +294,7 @@
     $compactClasses = WireKit::resolveClasses('cart-item', 'compact', implode(' ', [
         'flex items-start gap-[var(--gap-wk-sm)]',
         'py-[var(--padding-wk-y-sm)]',
+        'leading-[var(--leading-wk-tight)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
@@ -305,13 +347,16 @@
         </div>
     @endif
 
-    <div class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
-        <div class="flex min-w-0 items-baseline justify-between gap-[var(--gap-wk-sm)]">
+    <div data-wk-cart-item-main class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
+        <div data-wk-cart-item-head class="flex min-w-0 items-start justify-between gap-[var(--gap-wk-sm)]">
             {{-- A fitted total gives way before the name does: the name grows into the row from a
                  basis of eight characters and barely shrinks, so a narrow row first shrinks the
-                 total down to its floor, which is as narrow as it gets, and only then the name. --}}
+                 total down to its floor, which is as narrow as it gets, and only then the name.
+
+                 The name takes up to two lines and is cut after the second, with the whole name in
+                 its tooltip, and it and the total stand at the top of the row. --}}
             @if($name)
-                <x-wirekit::text :as="$nameHref !== null ? 'a' : 'span'" :href="$nameHref" :lang="$nameLangValue" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" data-wk-cart-item-name class="{{ $compactNameClasses }}">{{ $name }}</x-wirekit::text>
+                <x-wirekit::text :as="$nameHref !== null ? 'a' : 'span'" :href="$nameHref" :lang="$nameLangValue" :truncate="$truncate ? 'tooltip' : false" :line-clamp="$truncate ? 2 : null" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" data-wk-cart-item-name class="{{ $compactNameClasses }}">{{ $name }}</x-wirekit::text>
             @endif
 
             @wirekitLast($lineTotal !== null)
@@ -334,10 +379,10 @@
              as soon as the unit price no longer fits beside the controls; the variant does not
              count toward that width (`contain-inline-size`), since it shortens to what is left. On
              a row of their own the controls keep to the end. --}}
-        <div class="flex flex-wrap items-center justify-between gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
-            <div class="flex min-w-0 flex-auto flex-col {{ $metaClasses }}">
+        <div data-wk-cart-item-row class="flex flex-wrap items-center justify-between gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
+            <div data-wk-cart-item-info class="flex min-w-0 flex-auto flex-col {{ $metaClasses }}">
                 @if($slot->hasActualContent())
-                    <x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="contain-inline-size">{{ $slot }}</x-wirekit::text>
+                    <x-wirekit::text as="span" :truncate="$truncate ? 'tooltip' : false" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="contain-inline-size">{{ $slot }}</x-wirekit::text>
                 @endif
 
                 @wirekitLast($price !== null)
@@ -357,20 +402,24 @@
                 @endwirekitLast
             </div>
 
-            <div class="ms-auto flex shrink-0 items-center gap-[var(--gap-wk-xs)]">
-                @include('wirekit::components.partials.cart-item-quantity')
-
-                @if(isset($actions) && $actions->hasActualContent())
+            {{-- A line's own actions stand left of the quantity, in the order a keyboard reaches
+                 them, so the quantity, and in the other layout the total, keep one column. The
+                 remove control stands between them and the quantity, beside the − rather than at
+                 the end of the line, where it would draw the eye before the quantity does. --}}
+            <div data-wk-cart-item-controls class="ms-auto flex shrink-0 items-center gap-[var(--gap-wk-xs)]">
+                @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
                     <div data-wk-cart-item-actions class="flex shrink-0 items-center gap-[var(--gap-wk-xs)]">{{ $actions }}</div>
                 @endif
 
                 {{-- The slot is named here, where the partial is included, so the catalog reads it
                      as this component's. The partial shares the scope either way. --}}
                 @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null, 'removeInRow' => true])
+
+                @include('wirekit::components.partials.cart-item-quantity')
             </div>
         </div>
 
-        @wirekitLast(isset($details) && $details->hasActualContent())
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($details ?? null))
             <div data-wk-cart-item-details class="{{ $metaClasses }}">{{ $details }}</div>
         @endwirekitLast
     </div>
@@ -391,7 +440,7 @@
         </div>
     @endif
 
-    <div class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
+    <div data-wk-cart-item-info class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
         @if($name)
             @if($nameHref !== null)
                 <a data-wk-prose-skip href="{{ $nameHref }}" data-wk-cart-item-name @if($nameLangValue !== null) lang="{{ $nameLangValue }}" @endif class="{{ $nameClasses }} {{ $nameLinkClasses }}">{{ $name }}</a>
@@ -426,7 +475,7 @@
         {{-- Further lines about this line: what it saves, the promotion it is part of. Display
              copy the application composes, for the reason the variant line above is a slot, and
              it may hold components of its own, a badge for the promotion. --}}
-        @wirekitLast(isset($details) && $details->hasActualContent())
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($details ?? null))
             <div data-wk-cart-item-details class="{{ $metaClasses }}">{{ $details }}</div>
         @endwirekitLast
     </div>
@@ -441,18 +490,27 @@
          above: that one wraps the cluster away from the name, this one wraps inside the
          cluster. In a narrow column the stepper, the line total and the remove control can
          need more than the cluster gets, and `justify-between` distributes spare width and
-         has none to distribute, so the remove control would paint past the right edge.
+         has none to distribute, so the line total would paint past the right edge.
          Below that width it takes a row of its own; above it there is room, nothing wraps,
          and a wrap only happens where the content already did not fit. --}}
-    <div class="flex shrink-0 flex-wrap items-center gap-[var(--gap-wk-md)] @max-lg/wk-cart-list:w-full @max-lg/wk-cart-list:justify-between">
+    <div data-wk-cart-item-controls class="flex shrink-0 flex-wrap items-center gap-[var(--gap-wk-md)] @max-lg/wk-cart-list:w-full @max-lg/wk-cart-list:justify-between">
+        {{-- A line's own actions first, then the remove control, both left of the quantity, as
+             in the compact layout above. --}}
+        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
+            <div data-wk-cart-item-actions class="flex shrink-0 items-center gap-[var(--gap-wk-xs)]">{{ $actions }}</div>
+        @endif
+
+        {{-- Named here for the catalog, as in the compact layout above. --}}
+        @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null, 'removeInRow' => false])
+
         @include('wirekit::components.partials.cart-item-quantity')
 
         {{-- The line total. `aria-live="polite"` sits here and on nothing else in the row: a
              quantity change moves this number and the cart's grand total, and announcing both
              speaks twice for one click. The line is the one the person just acted on. With
              `stepper="buttons"` the quantity is the region instead (see the partial). --}}
-        @if($lineTotal !== null)
-            <span data-wk-cart-item-total @if($totalLive) aria-live="polite" @endif class="min-w-[6ch] text-end">
+        @wirekitLast($lineTotal !== null)
+            <span data-wk-cart-item-total @if($totalLive) aria-live="polite" @endif class="min-w-[calc(6*var(--ch-wk-sans,1ch))] text-end">
                 <x-wirekit::price
                     :amount="$lineTotal"
                     :size="$totalSizeValue"
@@ -462,14 +520,7 @@
                     :fit="$totalFit"
                 />
             </span>
-        @endif
-
-        @if(isset($actions) && $actions->hasActualContent())
-            <div data-wk-cart-item-actions class="flex shrink-0 items-center gap-[var(--gap-wk-xs)]">{{ $actions }}</div>
-        @endif
-
-        {{-- Named here for the catalog, as in the compact layout above. --}}
-        @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null, 'removeInRow' => false])
+        @endwirekitLast
     </div>
 </li>
 @endif

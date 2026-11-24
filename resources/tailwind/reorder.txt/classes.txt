@@ -7,6 +7,7 @@
 --color-wk-accent-content
 --color-wk-accent-fg
 --color-wk-accent-hover
+--color-wk-accent-text
 --color-wk-bg
 --color-wk-bg-elevated
 --color-wk-bg-muted
@@ -26,6 +27,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -74,14 +76,17 @@
 --transition-wk-duration
 --transition-wk-easing
 --wk-button-square
+--wk-fill-ink
 --wk-touch-min
 --z-wk-tooltip
 -fg
 -mb-[length:var(--border-wk-width)]
 -me-[length:var(--border-wk-width)]
 -ms-1
+-tooltip
 -variant
 -variants
+-words
 @class
 @container/wk-table
 @else
@@ -89,6 +94,7 @@
 @endif
 @endphp
 @endunless
+@endwirekitLast
 @if
 @include
 @php
@@ -119,6 +125,7 @@ acts
 actual
 actually
 add
+address
 adds
 after
 again
@@ -239,6 +246,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -264,6 +272,7 @@ block
 blocks
 blurs
 body
+bool
 boolean
 bootstrapped
 border
@@ -277,11 +286,11 @@ border-[var(--color-wk-warning)]
 border-b-2
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 both
 bottom
@@ -297,11 +306,14 @@ break-word
 breaking
 breakpoint
 breakpoints
+breaks
 browser
 bubble
 bug
 build
+builds
 built
+bundle
 busy
 but
 button
@@ -310,6 +322,7 @@ buttons
 by
 byte-identical
 bytes
+cache
 call
 called
 caller
@@ -379,6 +392,7 @@ comes
 comment
 commit
 common
+compact
 compete
 compiled
 compiles
@@ -387,6 +401,7 @@ components
 composer
 concern
 condition
+conditional
 config
 config/wirekit.php
 configuration
@@ -438,28 +453,38 @@ data-stack-below
 data-wk-busy-spinner
 data-wk-busy-text
 data-wk-button-group
+data-wk-fill
 data-wk-icon-missing
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-prose-skip
 data-wk-reorder
 data-wk-reorder-arrow
 data-wk-reorder-key
 data-wk-reorder-position
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
 decide
 decided
 decision
 declaration
+declarations
 declarative
 declared
 declares
@@ -473,6 +498,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deletion
 deliberate
 deliberately
@@ -480,6 +506,7 @@ delivered
 demos
 dense
 depend
+depends
 descendant
 descendants
 describe
@@ -495,6 +522,7 @@ developer-side
 developers
 difference
 different
+differs
 direction
 directive
 directives
@@ -525,6 +553,7 @@ drawing
 drawn
 draws
 driven
+drives
 drop
 dropdown
 dropdown/item.blade.php
@@ -587,6 +616,7 @@ explicit
 explicitly
 expression
 extra
+factory
 fade
 fading
 fail
@@ -605,6 +635,7 @@ file
 files
 fill
 filled
+find
 finds
 finger
 finish
@@ -634,6 +665,7 @@ floor
 flow
 flows
 flush
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -772,9 +804,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -827,6 +859,7 @@ inner
 inserts
 inside
 installed
+instanceof
 instead
 intact
 integer
@@ -877,6 +910,7 @@ label
 labeled
 labels
 lands
+larger
 last
 last:border-b-0
 last:border-e-0
@@ -916,6 +950,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 log
 logger
 login
@@ -1089,6 +1124,7 @@ opt-out
 opted
 optimism
 optimistic-ui
+option
 or
 order
 ordinary
@@ -1201,6 +1237,7 @@ promoting
 prop
 property
 props
+prose
 provides
 proxy
 publishes
@@ -1225,6 +1262,7 @@ qualified
 query
 question
 quietly
+race
 racing
 radius
 raises
@@ -1301,6 +1339,7 @@ resulting
 retargeted
 return
 returns
+ride
 rides
 right
 ring
@@ -1317,6 +1356,7 @@ row
 rows
 rule
 run
+running
 runs
 runtime
 s
@@ -1340,6 +1380,7 @@ screen-reader-skipping
 script
 scroll
 seam
+search
 second
 see
 sees
@@ -1365,6 +1406,7 @@ shapes
 share
 shared
 shares
+sheet
 ships
 short
 shortcut
@@ -1570,6 +1612,8 @@ too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left

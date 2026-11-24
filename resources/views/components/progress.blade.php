@@ -136,16 +136,15 @@
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
-@if($valueExpression)
-    {{-- The scope sits on the wrapper, not on the bar: the readout is a sibling above
-         the track, so a scope on the track would leave `valueText()` unresolvable there
-         and the readout empty while the width and `aria-valuenow` are right.
-         The arithmetic lives in the factory, where the fill, `aria-valuenow` and the
-         readout share one clamped number; every binding below only names a method. --}}
-    <div x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full font-[family-name:var(--font-wk-sans)]'])) }}>
-@else
-<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full font-[family-name:var(--font-wk-sans)]'])) }}>
-@endif
+{{-- The scope sits on the wrapper, not on the bar: the readout is a sibling above
+     the track, so a scope on the track would leave `valueText()` unresolvable there
+     and the readout empty while the width and `aria-valuenow` are right.
+     The arithmetic lives in the factory, where the fill, `aria-valuenow` and the
+     readout share one clamped number; every binding below only names a method. --}}
+{{-- One root, with the scope as an attribute: a root opened in either branch of a conditional
+     would leave the opening marker Livewire writes before it in the view that renders this
+     component, with nothing to close it on that level. --}}
+<div @if($valueExpression)x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })" @endif{{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full font-[family-name:var(--font-wk-sans)]'])) }}>
     @if($label || $showValue)
         <div class="mb-[var(--space-wk-xs)] flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
             @if($label)

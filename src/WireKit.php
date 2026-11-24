@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Closure;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AvatarPalette;
+use Pushery\WireKit\Support\ConfigReads;
+use Pushery\WireKit\Support\PropDefault;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Theming\ModeTokens;
 use Pushery\WireKit\Theming\WcagContrast;
@@ -80,12 +83,13 @@ class WireKit
      *       'input'  => ['size' => 'lg'],
      *   ]);
      *
-     * Every key has to be a prop the component actually declares. Blade folds an
-     * unknown one into the attribute bag, where it renders as a literal HTML
-     * attribute that nothing reads — so the page looks finished and no test fails.
-     * This docblock taught `variant` on both of these for exactly that reason:
-     * `button` migrated to `intent` + `surface` and `input` never had a `variant`
-     * at all.
+     * Every key has to be a prop the component reads from the configuration, as
+     * `button` reads `intent` (`config('wirekit.components.button.intent', 'primary')`).
+     * A key for any other prop, or for a name the component does not have, changes
+     * nothing, so the page looks finished and no test fails; it is logged in debug and
+     * on the console (see warnUnreadDefaults()). This docblock taught `variant` on both
+     * of these for exactly that reason: `button` migrated to `intent` + `surface` and
+     * `input` never had a `variant` at all.
      *
      * `variant` is not retired in general — it is a live, declared prop across a large
      * part of the catalog, and it is retired on `button` and `badge` only. A blanket
@@ -160,6 +164,74 @@ class WireKit
                 config(['wirekit.components' => $components]);
             }
         }
+
+        self::warnUnreadDefaults($defaults);
+    }
+
+    /**
+     * Log each key of a `defaults()` call that no component reads.
+     *
+     * A component takes a default from the configuration only where it asks for that path, so a key
+     * for a prop whose default is written into the view, or for a prop the component does not have,
+     * changes nothing, and nothing said so. The warning names the key and what the component does
+     * read. It is logged in debug and on the console, where the developer is, as for
+     * `personalize()`, and never thrown: this runs while the application boots.
+     *
+     * @param  array<array-key, mixed>  $defaults
+     */
+    private static function warnUnreadDefaults(array $defaults): void
+    {
+        if (! (bool) config('app.debug') && ! app()->runningInConsole()) {
+            return;
+        }
+
+        foreach ($defaults as $component => $props) {
+            if (! is_array($props)) {
+                continue;
+            }
+
+            foreach (self::defaultPaths((string) $component, $props) as $path) {
+                if (ConfigReads::reaches($path)) {
+                    continue;
+                }
+
+                $read = ConfigReads::keysOf((string) $component);
+
+                logger()->warning(sprintf(
+                    "[WireKit] WireKit::defaults() sets '%s', which no component reads, so it has no effect. %s",
+                    $path,
+                    $read === []
+                        ? "'{$component}' takes no default from the configuration; set the prop on the call."
+                        : "'{$component}' reads ".implode(', ', $read).' from the configuration; set any other prop on the call.',
+                ));
+            }
+        }
+    }
+
+    /**
+     * The paths a `defaults()` entry sets. A nested map is a section and is walked, as
+     * `['accordion' => ['item' => ['open' => true]]]` sets `accordion.item.open`; a list is one value.
+     *
+     * @param  array<array-key, mixed>  $values
+     * @return list<string>
+     */
+    private static function defaultPaths(string $prefix, array $values): array
+    {
+        $paths = [];
+
+        foreach ($values as $key => $value) {
+            $path = $prefix.'.'.$key;
+
+            if (is_array($value) && $value !== [] && ! array_is_list($value)) {
+                array_push($paths, ...self::defaultPaths($path, $value));
+
+                continue;
+            }
+
+            $paths[] = $path;
+        }
+
+        return $paths;
     }
 
     /** @return array<string, mixed> */
@@ -466,10 +538,14 @@ class WireKit
      * `wirekit.validation.throw_on_invalid` set):
      *   - APP_DEBUG=true, console / test run → throws InvalidArgumentException
      *     with Did-you-mean.
-     *   - APP_DEBUG=true, HTTP request       → logs an error + returns the first
-     *     allowed value.
-     *   - APP_DEBUG=false                    → logs a warning + returns the first
-     *     allowed value.
+     *   - APP_DEBUG=true, HTTP request       → logs an error + returns the
+     *     fallback.
+     *   - APP_DEBUG=false                    → logs a warning + returns the
+     *     fallback.
+     *
+     * The fallback is the prop's declared default where the list holds it, so a
+     * typo renders as the prop left out would (Support\PropDefault), and the
+     * first allowed value otherwise.
      *
      * Explicit overrides: `wirekit.validation.strict` (env
      * `WIREKIT_STRICT_VALIDATION`) forces strict / lenient regardless of
@@ -485,7 +561,12 @@ class WireKit
         string $value,
         array $allowed,
     ): string {
-        return StrictnessGate::enforce($component, $prop, $value, $allowed);
+        // A value on the list takes the fast path; only one off it asks what the prop declares.
+        if (in_array($value, array_map(strval(...), $allowed), true)) {
+            return $value;
+        }
+
+        return StrictnessGate::enforce($component, $prop, $value, $allowed, PropDefault::within($component, $prop, $allowed));
     }
 
     /**
@@ -695,22 +776,70 @@ class WireKit
     }
 
     /**
-     * Reset all personalizations — used in tests only.
+     * Reset all personalizations and what one render counts — used in tests only.
      *
-     * Must be called in setUp() of every test to prevent state leakage.
+     * In an application's tests it is called after each test, in `tearDown()` or in Pest's
+     * `afterEach`, rather than in `setUp()`: the application boots in `setUp()`, a provider's
+     * `boot()` that calls `defaults()`, `scope()` or `personalize()` has run by then, and a flush
+     * there would render every test without that configuration. To reset only what one render
+     * counts and keep the configuration, a test calls `resetPerRender()`.
      */
     public static function flush(): void
     {
         static::$defaults = [];
         static::$scoped = [];
         static::$personalizations = [];
-        Support\DomId::reset();
+        static::resetPerRender();
         Support\InlineScriptHashes::reset();
+        Support\LocalizedNumber::formatUsing(null);
+    }
+
+    /**
+     * Reset what one render counts, and keep the configuration.
+     *
+     * The generated ids of controls (`textarea-1`), the prop values already reported, the steps
+     * of a tour, the questions of an FAQ, the icons of the navigation sprite, the option lists lazy
+     * selects share and the compact switch last for one render. The service provider resets them after each request and before each
+     * queued job. A test that renders without the HTTP kernel, through `Blade::render()`, a
+     * console command or a request that throws while exception handling is off, leaves them to
+     * the next test, which then counts on from `textarea-3`; it calls this in `setUp()`, or in
+     * Pest's `beforeEach`. What
+     * `defaults()`, `scope()` and `personalize()` set in a provider's `boot()` stays.
+     */
+    public static function resetPerRender(): void
+    {
+        Support\DomId::reset();
         StrictnessGate::forgetLogged();
         Support\CompactClasses::forget();
         Support\TourStepCounter::reset();
         Support\FaqCollector::reset();
-        Support\LocalizedNumber::formatUsing(null);
+        Support\NavigationIcons::reset();
+        Support\SelectOptionLists::reset();
+    }
+
+    /**
+     * Tell WireKit that these ids are on the page already, so that it hands none of them out again
+     * in this request.
+     *
+     * The generated ids count from 1 in every request (`wk-tooltip-1`, `textarea-1`). A page that
+     * writes HTML rendered in an earlier request, such as a fragment it keeps in a cache, and
+     * renders a layout around it, finds the fragment's ids counted again in the layout. Register
+     * them before anything else renders: a counted id then continues after the highest number of
+     * its prefix, and an id derived from a name moves on to its next suffix. They are forgotten
+     * with the other counts after the request, and by resetPerRender().
+     */
+    public static function reserveIds(string ...$ids): void
+    {
+        Support\DomId::reserve(...$ids);
+    }
+
+    /**
+     * Tell WireKit that every id in this rendered HTML is on the page already, as reserveIds()
+     * does for each. The HTML is the fragment as it will be written, read for its `id` attributes.
+     */
+    public static function reserveIdsIn(string|Htmlable $html): void
+    {
+        Support\DomId::reserveIn($html);
     }
 
     /**
@@ -746,6 +875,43 @@ class WireKit
     }
 
     /**
+     * Code as a code block with `wrap` writes it: each run of hyphens inside a token stands with the
+     * character after it in an element the stylesheet does not wrap, so `->` or `--force` never ends
+     * one line and starts the next.
+     *
+     * For code a page writes into a rendered code block itself, which the block's slot never saw: a
+     * Markdown pipeline that renders the block once and places each example into it. It takes markup,
+     * so code that is text is escaped first. Tags and comments stay as they are and only the text
+     * between them is joined, so the markup of a highlighter that runs on the server keeps its
+     * elements, and the text a copy reads stays the same.
+     *
+     *   $html = str_replace($slot, WireKit::codeJoins(e($code)), $block);
+     */
+    public static function codeJoins(string|Htmlable $html): string
+    {
+        return Support\CodeWrapJoins::html($html instanceof Htmlable ? $html->toHtml() : $html);
+    }
+
+    /**
+     * The code of a rendered body as `<x-wirekit::prose>` writes its own: in each inline `<code>`
+     * an operator stands together (`->`, `-=`, `--force`), and in each `<pre>` every run of hyphens
+     * stands with the character after it. A hyphen inside a name (`x-data`, `Retry-After`) stays a
+     * place where a line of running text may break.
+     *
+     * For a page that renders its Markdown into markup of its own rather than into a prose body. It
+     * takes the rendered markup and joins only the text inside `<code>` and `<pre>`: tags and
+     * comments stay as they are, and the text a copy reads stays the same. A `<pre>` with a
+     * `tabindex`, a `<pre>` or `<code>` with `data-wk-prose-skip`, a `<pre>` that holds such a
+     * `<code>`, and code that already holds a join come back as they came.
+     *
+     *   $body = WireKit::proseCodeJoins(Str::markdown($markdown));
+     */
+    public static function proseCodeJoins(string|Htmlable $html): string
+    {
+        return Support\CodeWrapJoins::inProse($html instanceof Htmlable ? $html->toHtml() : $html);
+    }
+
+    /**
      * A class list under the names the kit writes into the page: with `wirekit.styles.compact` on,
      * each utility that has a short name under that name, otherwise the list as it came.
      *
@@ -758,6 +924,23 @@ class WireKit
     public static function compactClasses(string $classes, bool $field = false): string
     {
         return Support\CompactClasses::map($classes, $field);
+    }
+
+    /**
+     * A class list with the kit's short names written out: with `wirekit.styles.compact` on, each
+     * short class as the utility it stands for, otherwise the list as it came.
+     *
+     * The other direction of compactClasses(), for a test of the application that reads the classes
+     * of a rendered page and compares them with utilities: written out, the classes hold the utility
+     * the test looks for, and a test that expects a utility to be absent cannot pass only because the
+     * page writes its short name. A class that is no short name keeps its name, and the whitespace
+     * stays as it was, so `spelledOutClasses(compactClasses($classes))` gives `$classes` back. A class
+     * that stands for several utilities at once, as the root of a button carries under compact
+     * classes, comes back as those utilities.
+     */
+    public static function spelledOutClasses(string $classes): string
+    {
+        return Support\CompactClasses::spelledOut($classes);
     }
 
     /**

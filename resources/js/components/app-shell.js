@@ -1,5 +1,6 @@
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { holdPageInert, releasePageInert } from '../utils/overlay.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * App shell — the off-canvas navigation drawer, and only below the breakpoint.
@@ -119,6 +120,14 @@ export default function wirekitAppShell(config = {}) {
                     // avoid. Focus stays where the reader put it.
                     this._releaseTrap({ returnFocus: false });
                     this.sidebarOpen = false;
+
+                    return;
+                }
+
+                // Crossing below the breakpoint with the drawer open turns it into a dialog
+                // over the page, which needs the same trap and inert page as one opened there.
+                if (this.sidebarOpen && ! this._trap) {
+                    this._armTrap();
                 }
             };
 
@@ -130,7 +139,10 @@ export default function wirekitAppShell(config = {}) {
             // the toggle it ships is one of several plausible writers. A `toggleSidebar()`
             // that armed the trap would therefore be armed for the shell's own button and
             // silently absent for every control a developer wires themselves.
-            this.$watch?.('sidebarOpen', (open) => {
+            //
+            // Through `watchCurrent()`, so a second `init()` on the same object leaves the
+            // watcher of the first one quiet instead of arming and releasing beside it.
+            watchCurrent(this, 'sidebarOpen', (open) => {
                 open ? this._armTrap() : this._releaseTrap();
             });
         },
@@ -176,6 +188,11 @@ export default function wirekitAppShell(config = {}) {
         },
 
         _armTrap() {
+            // The query itself decides, not the flag its `change` event keeps: an engine can
+            // apply a narrower viewport before it delivers that event, and a drawer opened in
+            // between would cover the page as a dialog without a trap.
+            this._syncViewport();
+
             // Only where it is a drawer. Beside the content there is nothing to trap focus
             // against and nothing covering the page to escape from.
             if (! this.isDrawer || this._trap) {

@@ -206,6 +206,7 @@
             aria-live="off"
             @if($streaming) aria-busy="true" @endif
             class="{{ $surface }} rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)]"
+            @if(str_contains($surface, 'bg-[color-mix(')) data-wk-tint @endif
         >
             <x-wirekit::prose size="sm">{{ $slot }}</x-wirekit::prose>
         </div>

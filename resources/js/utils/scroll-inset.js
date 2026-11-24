@@ -9,7 +9,8 @@
  * the container's own padding on that side (none for the page), the surface's `top` or `bottom`,
  * and its height. The container takes the largest band on each side, plus a gap, as
  * `--wk-scroll-inset-top` and `--wk-scroll-inset-bottom`, and the stylesheet turns those into
- * `scroll-padding` at zero specificity, so a value the developer sets wins.
+ * `scroll-padding` on each edge the developer leaves free: a `scroll-p*` utility of theirs, also
+ * behind a variant, or a rule of theirs outside a cascade layer takes its edge.
  *
  * A third value leaves out the surfaces that stand on `--wk-fab-lift` themselves, the floating action
  * button and what stacks over it (`data-wk-fab-lifted`): `--wk-scroll-inset-below-fab`, the band of

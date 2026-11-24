@@ -1,5 +1,4 @@
 --border-wk-width
---color-wk-accent
 --color-wk-accent-text
 --color-wk-bg-active
 --color-wk-bg-elevated
@@ -52,6 +51,7 @@
 --text-wk-xs
 --transition-wk-duration
 --transition-wk-easing
+--wk-fill-ink
 --z-wk-dropdown
 --z-wk-tooltip
 -desc
@@ -65,7 +65,9 @@
 -my-1
 -required
 -sized
+-tooltip
 -translate-y-1/2
+-words
 @aware
 @click
 @else
@@ -82,6 +84,7 @@
 @php
 @pointerdown
 @props
+@wirekitLast
 [overflow-wrap:anywhere]
 [overflow-wrap:break-word]
 a
@@ -90,6 +93,7 @@ about
 above
 absence
 absolute
+accent
 accept
 accepts
 accessibility
@@ -108,6 +112,9 @@ again
 against
 agree
 alias
+align-fields
+alignFields
+aligned
 alike
 all
 allows
@@ -246,7 +253,6 @@ bind
 binding
 binds
 block
-blocks
 body
 bool
 boolean
@@ -265,6 +271,7 @@ box
 boxClasses
 branch
 brand
+breadcrumb
 break
 break-word
 breaks
@@ -275,13 +282,16 @@ browser-default
 bubble
 bug
 build
+builds
 built
 built-in
 bullet
+bundled
 but
 button
 buttons
 by
+cache
 call
 called
 caller
@@ -369,6 +379,7 @@ computed
 conditional
 config
 config/wirekit.php
+configuration
 console
 consumed
 consuming
@@ -408,6 +419,7 @@ customer
 cut
 cuts
 d
+danger
 danger-text
 dark
 data
@@ -418,7 +430,12 @@ data-wk-combobox-clear
 data-wk-combobox-clearable
 data-wk-combobox-empty
 data-wk-combobox-search
+data-wk-field
+data-wk-field-body
 data-wk-field-label
+data-wk-field-messages
+data-wk-field-part
+data-wk-fill
 data-wk-flag
 data-wk-kbd-guess
 data-wk-kbd-platform
@@ -426,6 +443,7 @@ data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-options
 data-wk-prose-skip
@@ -435,27 +453,37 @@ data-wk-required-message
 data-wk-select-empty
 data-wk-server-options
 data-wk-server-value
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 de
 debug
 decided
 decides
 deciding
+declarations
 declared
 declaring
 decorative
 default
 defaults
 defined
+defines
 delay-hide
 delay-show
 delayHide
 delayShow
+delays
 delegates
 deliberately
 delivered
@@ -477,6 +505,7 @@ developer
 dialog
 difference
 different
+differs
 dim
 dimmed
 direction
@@ -509,6 +538,8 @@ drawing
 drawn
 draws
 drift
+drives
+drop
 dropdown
 dropped
 dropping
@@ -567,6 +598,7 @@ even
 evenodd
 event
 events
+ever
 every
 everything
 everywhere
@@ -588,6 +620,7 @@ external
 extra
 factory
 fade
+faded
 failed
 fails
 failure
@@ -614,6 +647,7 @@ fills
 filter
 filtered
 filteredGroups
+find
 finds
 fine
 finger
@@ -630,13 +664,16 @@ flex-1
 flex-wrap
 flight
 flips
+floor
+flow
 fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-danger-text)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-within
-focus:border-[var(--color-wk-accent)]
+focus:border-[var(--color-wk-accent-text)]
 focus:outline-hidden
 focusable
 focusable-trigger
@@ -658,6 +695,7 @@ forced
 forced-colors
 forces
 foreach
+foreground
 form
 found
 four
@@ -732,6 +770,7 @@ heading
 hear
 hears
 height
+held
 help
 helpButton
 helpField
@@ -739,6 +778,7 @@ helpId
 helpName
 helpText
 here
+hero
 hidden
 hide
 hideLabel
@@ -760,6 +800,7 @@ hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text)]
 hover:text-[color:var(--color-wk-text-muted)]
+hover:text-[color:var(--wk-fill-ink,var(--color-wk-text))]
 hover:underline
 hoverable
 how
@@ -806,6 +847,8 @@ inline-flex
 inner
 input
 inputId
+inputs
+insert
 inserts
 inside
 instanceof
@@ -914,6 +957,7 @@ looks
 lose
 loss
 lower
+lowering
 lowers
 mac
 make
@@ -936,6 +980,7 @@ max-h-60
 max-w-[10rem]
 max-w-[var(--size-wk-tooltip-max)]
 may
+mb-1.5
 md
 mean
 meaning
@@ -971,6 +1016,7 @@ missing
 modal
 mode
 model
+modes
 moment
 monospaced
 more
@@ -986,7 +1032,7 @@ moves
 moving
 ms-0.5
 ms-[var(--space-wk-sm)]
-mt-[var(--padding-wk-y-xs)]
+mt-1.5
 mt-[var(--space-wk-xs)]
 much
 multi-select
@@ -1054,6 +1100,7 @@ omit
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -1208,6 +1255,7 @@ qualified
 query
 question
 quiet
+race
 racing
 raises
 rather
@@ -1259,9 +1307,11 @@ request
 require
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageId
 requiredValue
@@ -1286,6 +1336,7 @@ return
 returned
 reverted
 rich
+ride
 right
 ring
 role
@@ -1392,6 +1443,7 @@ since
 single
 single-key
 single-option
+sit
 site
 sits
 size
@@ -1418,6 +1470,7 @@ sorts
 source
 space
 space-y-1.5
+spacing
 span
 spans
 speaks
@@ -1516,13 +1569,16 @@ teleports
 tell
 template
 text
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-placeholder)]
 text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-2xs)]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
@@ -1558,6 +1614,7 @@ time
 timer
 tint
 tip
+title
 to
 together
 toggled
@@ -1571,6 +1628,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-1/2
@@ -1736,6 +1795,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps
@@ -1771,6 +1831,7 @@ x-on:invalid
 x-on:mouseenter
 x-on:mouseleave
 x-on:pointerdown
+x-on:pointerenter
 x-on:pointerleave
 x-on:pointerup
 x-ref

@@ -23,6 +23,10 @@ use Pushery\WireKit\Icons\IconSetPackages;
  * `<x-wirekit::icon>` looks up its own: a misspelled alias fails the same way in every
  * installation, not only in one that has an icon package.
  *
+ * A navigation row asks for its icon with `navigation: true`, and while
+ * `wirekit.icons.navigation_sprite` is on the icon points into the page's symbols instead
+ * (NavigationIcons).
+ *
  * @internal Called from the component views; not a developer-facing API.
  */
 final class IconSvg
@@ -31,8 +35,9 @@ final class IconSvg
      * The icon's SVG, or null where nothing can be drawn.
      *
      * @param  array<string, string>  $attributes  the attributes the `<svg>` takes, as `svg()` takes them
+     * @param  bool  $navigation  whether the icon is a navigation row's, which may point into the page's symbols
      */
-    public static function html(string $alias, array $attributes = []): ?HtmlString
+    public static function html(string $alias, array $attributes = [], bool $navigation = false): ?HtmlString
     {
         $resolved = app(IconResolver::class)->resolve($alias);
 
@@ -41,7 +46,8 @@ final class IconSvg
         }
 
         try {
-            return new HtmlString(svg($resolved, $attributes)->toHtml());
+            $svg = svg($resolved, $attributes);
+            $whole = $svg->toHtml();
         } catch (SvgNotFound $e) {
             if (StrictnessGate::shouldThrowOnInvalid()) {
                 throw $e;
@@ -51,5 +57,7 @@ final class IconSvg
 
             return null;
         }
+
+        return $navigation ? NavigationIcons::row($resolved, $whole, $svg->contents()) : new HtmlString($whole);
     }
 }

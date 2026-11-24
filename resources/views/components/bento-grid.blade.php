@@ -23,8 +23,8 @@
 
     // Match on the result, not the raw prop: where the strictness gate does not throw,
     // validateProp returns the fallback, so an invalid value can never reach the
-    // class map. 'md' leads the list because validateProp falls back to the first
-    // allowed value — a bad gap should land on the normal gap, not on none.
+    // class map. The fallback is the prop's default, 'md', so a bad gap lands on the
+    // normal gap, not on none.
     $gap = WireKit::validateProp('bento-grid', 'gap', $gap, ['md', 'none', 'xs', 'sm', 'lg', 'xl', '2xl']);
 
     $scale = WireKit::validateProp('bento-grid', 'scale', (string) $scale, ['space', 'gap']);

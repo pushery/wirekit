@@ -38,12 +38,28 @@ use Pushery\WireKit\ComponentRegistry;
  */
 final class AccessibilityContract
 {
+    /** The roles of WAI-ARIA 1.2, which a word in a template's PHP is read against. */
+    private const ARIA_ROLES = [
+        'alert', 'alertdialog', 'application', 'article', 'banner', 'blockquote', 'button', 'caption',
+        'cell', 'checkbox', 'code', 'columnheader', 'combobox', 'complementary', 'contentinfo',
+        'definition', 'deletion', 'dialog', 'document', 'emphasis', 'feed', 'figure', 'form',
+        'generic', 'grid', 'gridcell', 'group', 'heading', 'img', 'insertion', 'link', 'list',
+        'listbox', 'listitem', 'log', 'main', 'marquee', 'math', 'menu', 'menubar', 'menuitem',
+        'menuitemcheckbox', 'menuitemradio', 'meter', 'navigation', 'none', 'note', 'option',
+        'paragraph', 'presentation', 'progressbar', 'radio', 'radiogroup', 'region', 'row',
+        'rowgroup', 'rowheader', 'scrollbar', 'search', 'searchbox', 'separator', 'slider',
+        'spinbutton', 'status', 'strong', 'subscript', 'superscript', 'switch', 'tab', 'table',
+        'tablist', 'tabpanel', 'term', 'textbox', 'time', 'timer', 'toolbar', 'tooltip', 'tree',
+        'treegrid', 'treeitem',
+    ];
+
     /**
      * The contract for one component, or null when the registry does not know it.
      *
      * @return array{
      *     component: string,
      *     roles: list<string>,
+     *     role_choices: list<string>,
      *     aria: list<string>,
      *     caller_supplies: list<string>,
      *     keys: list<string>,
@@ -62,6 +78,7 @@ final class AccessibilityContract
         return [
             'component' => $name,
             'roles' => self::roles($markup),
+            'role_choices' => self::roleChoices($markup),
             'aria' => self::ariaAttributes($markup),
             'caller_supplies' => self::callerSupplied($markup, $name),
             'keys' => self::keys($name, $markup),
@@ -81,10 +98,44 @@ final class AccessibilityContract
      */
     private static function roles(string $markup): array
     {
-        preg_match_all('/\brole="([a-z]+)"/', $markup, $literal);
+        preg_match_all('/(?<![\w-])role="([a-z]+)"/', $markup, $literal);
         preg_match_all('/[:x-]bind:?role="[^"]*?\'([a-z]+)\'/', $markup, $bound);
+        // A role given as a word in the template's PHP: the default of a `role` prop, as
+        // dropdown.item declares `menuitem`, or one handed to the attribute bag.
+        preg_match_all('/\'role\'\s*=>\s*\'([a-z]+)\'/', $markup, $keyed);
 
-        return self::sortedUnique(array_merge($literal[1], $bound[1]));
+        return self::sortedUnique(array_merge($literal[1], $bound[1], array_values(array_intersect($keyed[1], self::ARIA_ROLES)), self::roleChoices($markup)));
+    }
+
+    /**
+     * The roles the template picks between at render time, from its props.
+     *
+     * A role chosen in the template's PHP reaches the markup through a variable, written as
+     * `role="{{ $role }}"` or handed to the attribute bag as `'role' => $role`, so neither of the
+     * two spellings above sees it: the alert writes `alert` for a danger message and `status` for
+     * the others, and a scan that read only the markup reported it as having no role. Each such
+     * variable's assignments are read for the ARIA roles they name; which one applies when is the
+     * component's page to say.
+     *
+     * @return list<string>
+     */
+    private static function roleChoices(string $markup): array
+    {
+        preg_match_all('/(?<![\w-])role="\{\{\s*\$(\w+)\s*\}\}"/', $markup, $echoed);
+        preg_match_all('/\'role\'\s*=>\s*\$(\w+)\b/', $markup, $merged);
+
+        $roles = [];
+
+        foreach (array_unique(array_merge($echoed[1], $merged[1])) as $variable) {
+            preg_match_all('/\$'.preg_quote($variable, '/').'\s*=(?!=)\s*([^;]+);/', $markup, $assignments);
+
+            foreach ($assignments[1] as $expression) {
+                preg_match_all('/\'([a-z]+)\'/', $expression, $words);
+                $roles = [...$roles, ...array_values(array_intersect($words[1], self::ARIA_ROLES))];
+            }
+        }
+
+        return self::sortedUnique($roles);
     }
 
     /**

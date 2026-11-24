@@ -1,3 +1,5 @@
+import { measureOnceStarted, measureOnceTheFontsAreIn } from '../utils/measure-once-started.js';
+
 /**
  * WireKit Sticky Panel — overlay scroll-shadow driver.
  *
@@ -23,8 +25,20 @@
  *   - _resizeObserver (ResizeObserver on the scroller) — disconnected + nulled in
  *     destroy(); its callback null-guards both observers. It exists for the reveal of a
  *     hidden panel, see _recheckOnReveal below.
+ *   - _positionWatch (with `inline: 'position'`) — the scroll listener, a ResizeObserver and a
+ *     MutationObserver on the scroller, and the two readings waiting for the start's task and
+ *     for the fonts; all are released and the field nulled in destroy(), and the reading they
+ *     call null-guards against a late fire.
+ *
+ * @param {Object} [config]
+ * @param {'position'} [config.inline]  read the inline pair from the scroll position instead of
+ *   from sentinels, for a scroller whose content a script of the page writes anew: a highlighter
+ *   that runs in the browser rewrites a code block from its text and would take a sentinel with
+ *   it, and highlight.js warns about a block that holds an element.
  */
-export default function wirekitStickyPanelShadows() {
+export default function wirekitStickyPanelShadows(config = {}) {
+    const byPosition = config?.inline === 'position';
+
     return {
         topShadow: false,
         bottomShadow: false,
@@ -46,6 +60,7 @@ export default function wirekitStickyPanelShadows() {
 
         _observer: null,
         _resizeObserver: null,
+        _positionWatch: null,
 
         /*
          * Set while the scroller has no box. An IntersectionObserver reports only changes of
@@ -59,6 +74,12 @@ export default function wirekitStickyPanelShadows() {
 
         init() {
             const scroller = this.$refs.scroller;
+
+            if (scroller && byPosition) {
+                this._watchPosition(scroller);
+
+                return;
+            }
 
             if (!scroller || typeof IntersectionObserver === 'undefined') {
                 return;
@@ -137,7 +158,67 @@ export default function wirekitStickyPanelShadows() {
             }
         },
 
+        /*
+         * The inline pair read from where the scroller stands: a shadow at the start once it has
+         * scrolled, one at the end while more of its content lies past the edge. It is read again
+         * on a scroll, when the scroller's box changes (a reveal from a hidden panel included),
+         * when its content changes, and once the fonts of the page are in, since a font that
+         * arrives late changes the width of a line and nothing else. A scroller with no box says
+         * nothing about overflow and shows neither, as with the sentinels above. A pixel of
+         * slack on both sides, because a scroll position can stop a fraction short of its end.
+         */
+        _watchPosition(scroller) {
+            const read = () => {
+                if (! this._positionWatch) return;
+
+                const width = scroller.clientWidth;
+
+                if (width === 0) {
+                    this.startShadow = false;
+                    this.endShadow = false;
+
+                    return;
+                }
+
+                // In a right-to-left scroller the position runs from 0 at the start into negative
+                // values toward the end, so the distance from the start is its size.
+                const left = Math.abs(scroller.scrollLeft);
+
+                this.startShadow = left > 1;
+                this.endShadow = scroller.scrollWidth - width - left > 1;
+            };
+
+            this._positionWatch = {
+                scroller,
+                read,
+                resize: typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read),
+                mutation: typeof MutationObserver === 'undefined' ? null : new MutationObserver(read),
+            };
+
+            scroller.addEventListener('scroll', read, { passive: true });
+            this._positionWatch.resize?.observe(scroller);
+            this._positionWatch.mutation?.observe(scroller, { childList: true, characterData: true, subtree: true });
+
+            // The first reading runs with the other components started in this task, once it is
+            // done, and again once the page's fonts are in. A page of many code blocks then lays
+            // itself out once for all of them and reads the fonts' promise once between them,
+            // instead of once per block, and its first paint still shows the shadows they read.
+            this._positionWatch.stopTheFirstRead = measureOnceStarted(read);
+            this._positionWatch.stopTheFontsRead = measureOnceTheFontsAreIn(read);
+        },
+
         destroy() {
+            if (this._positionWatch) {
+                const { scroller, read, resize, mutation, stopTheFirstRead, stopTheFontsRead } = this._positionWatch;
+
+                this._positionWatch = null;
+                stopTheFirstRead?.();
+                stopTheFontsRead?.();
+                scroller.removeEventListener('scroll', read);
+                resize?.disconnect();
+                mutation?.disconnect();
+            }
+
             if (this._observer) {
                 this._observer.disconnect();
                 this._observer = null;

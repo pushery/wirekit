@@ -3,7 +3,7 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'name' => null,
-    'position' => config('wirekit.components.drawer.position', 'right'),
+    'position' => config('wirekit.components.drawer.position', 'end'),
     'size' => config('wirekit.components.drawer.size', 'md'),
     // Below this breakpoint (`sm` to `2xl`) the panel fills the screen, as a phone shows a cart or a
     // menu: the whole width for a side drawer, the whole height for a top or bottom one, with no
@@ -31,6 +31,9 @@
     // find. This also means the name survives with JavaScript disabled.
     'label' => null,
     'scope' => null,
+    // Whether the drawer waits out of the page until it first opens. The default comes from the
+    // configuration (`components.drawer.lazy`).
+    'lazy' => config('wirekit.components.drawer.lazy', false),
 ])
 
 @php
@@ -68,24 +71,15 @@
     // to read. `warnUnknownProps` cannot see it either — it flags unknown prop keys, and
     // both of these are declared props carrying an out-of-set value.
     //
-    // The gate supplies the signal without changing what renders. By default it throws in a
-    // console or test run with APP_DEBUG on, logs an error and continues in a request with
-    // APP_DEBUG on, and logs a warning and continues with APP_DEBUG off. The fallback is
-    // assigned here rather than taken from the gate's return, because the gate falls back to
-    // the first allowed value and this component's default is `md` / `right` — reordering the
-    // allowed set to steer that would make the error message lie about which value is
-    // canonical.
-    if (! in_array($size, ['sm', 'md', 'lg'], true)) {
-        WireKit::validateProp('drawer', 'size', (string) $size, ['sm', 'md', 'lg']);
-        $size = 'md';
-    }
+    // The gate supplies the signal. By default it throws in a console or test run with
+    // APP_DEBUG on, logs an error and continues in a request with APP_DEBUG on, and logs a
+    // warning and continues with APP_DEBUG off. Where it continues it hands back the prop's
+    // default, `md` / `end` unless `config/wirekit.php` sets another.
+    $size = WireKit::validateProp('drawer', 'size', (string) $size, ['sm', 'md', 'lg']);
 
     // `start` and `end` name the edge where the lines of the page begin and the one across from it,
     // and follow the direction of the page; `left` and `right` name a physical edge.
-    if (! in_array($position, ['left', 'right', 'top', 'bottom', 'start', 'end'], true)) {
-        WireKit::validateProp('drawer', 'position', (string) $position, ['left', 'right', 'top', 'bottom', 'start', 'end']);
-        $position = 'right';
-    }
+    $position = WireKit::validateProp('drawer', 'position', (string) $position, ['left', 'right', 'top', 'bottom', 'start', 'end']);
 
     $fullBelow = filled($fullBelow) ? (string) $fullBelow : null;
     if ($fullBelow !== null && ! in_array($fullBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
@@ -244,6 +238,13 @@
     // box, which a flex or grid container would otherwise count as an empty item with a gap of
     // its own beside it.
     $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
+    // A lazy drawer holds the teleport of its panel in a template of its own among the children of
+    // its root, which the browser keeps out of the page until the factory builds it as the panel
+    // first opens (utils/lazy-panel.js, show() in utils/overlay.js). The wrapper is an echo, since a
+    // conditional around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.drawer.lazy', false)), 'drawer', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 {{-- Drawer component — slides in from the edge of the screen.
@@ -260,12 +261,13 @@
      the listener of a drawer another overlay covers. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
+    @if($lazy) data-wk-lazy-panel-host @endif
     x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($discardQuestionText)) : 'null' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $attributes }}
 >
     {{-- Drawer overlay and panel — teleported to the overlay root --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div x-show="isOpen" x-cloak>
             {{-- Backdrop.
                  Leave transition intentionally omitted: pest-plugin-browser's
@@ -322,10 +324,10 @@
                 {{ $slot }}
             </div>
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 
     {{-- The dialog the question about discarded changes is asked in, when the drawer asks one. --}}
     @wirekitLast($discardQuestionText !== null)
-        @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope])
+        @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope, 'lazy' => $lazy])
     @endwirekitLast
 </div>

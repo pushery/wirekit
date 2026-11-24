@@ -252,6 +252,9 @@
          there, and a lazy-loader firing on it would fetch a chart library for
          a chart that was never configured. --}}
     data-wk-chart="{{ $chartLibrary }}"
+    {{-- Where the ApexCharts adapter loads on demand, the chart names it, and the bundle holds the
+         chart until it has loaded (Support\ApexAdapter). --}}
+    @if ($alpineComponent === 'wirekitApexChart' && ($apexSource = \Pushery\WireKit\Support\ApexAdapter::source()) !== null) data-wk-apex-src="{{ $apexSource }}" @endif
     @if ($wireStreamEvent)
         data-wire-stream-event="{{ $wireStreamEvent }}"
         data-wire-stream-mode="{{ $wireStreamModeAttr }}"
@@ -283,7 +286,7 @@
         adapter's `responsive: true; maintainAspectRatio: false;`; it carries
         the same inline style for consistency.
     --}}
-    @if ($resolvedMountElement === 'div')
+    @wirekitLast ($resolvedMountElement === 'div')
         <{{ $wrapperTag }} data-wk-prose-skip x-ref="mount" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></{{ $wrapperTag }}>
         @if ($labelTipClasses !== null)
             {{-- The full text of an axis label ApexCharts shortened, written by the script while the
@@ -294,7 +297,7 @@
         @endif
     @else
         <canvas x-ref="canvas" aria-hidden="true" style="width: 100%; height: 100%;"></canvas>
-    @endif
+    @endwirekitLast
 </{{ $wrapperTag }}>
 {{-- The data half of the chart, outside the `wire:ignore` above on purpose. The morph leaves
      the chart root alone, attributes included, so new labels and series from a Livewire update
@@ -336,11 +339,21 @@
 @if ($tableMode === 'disclosure')
     {{-- `wire:ignore.self`: the browser sets `open` when a reader opens the summary, the server's
          markup never carries it, and a morph would take it away on the next update and close the
-         table under the reader. The rows inside still follow the data. --}}
+         table under the reader. The rows inside still follow the data. The summary's line is the
+         minimum target height, whatever line height the page around it sets, and it stays a list
+         item so it keeps its marker. --}}
     <details data-wk-prose-skip data-wk-chart-table wire:ignore.self class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
-        <summary data-wk-prose-skip class="wk-focus-ring w-fit cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]">{{ __('wirekit::Chart data') }}</summary>
-        <div data-wk-prose-skip tabindex="0" class="wk-scrollbar relative mt-[var(--space-wk-xs)] overflow-x-auto rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
-            @include('wirekit::components.partials.chart-data-table', ['wkTable' => $tableModel, 'wkCaption' => $chartAriaLabel])
+        <summary data-wk-prose-skip class="wk-focus-ring w-fit cursor-pointer rounded-[var(--radius-wk-sm)] leading-[var(--size-wk-target-min)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]">{{ __('wirekit::Chart data') }}</summary>
+        {{-- A table wider than the chart scrolls, and a shadow stands at each edge it continues past,
+             the shadows of a table that scrolls sideways: cut off at a column, it would read as the
+             whole table, and a phone shows no scrollbar until the reader drags. They are read from
+             the scroll position, as a code block's are. --}}
+        <div class="relative mt-[var(--space-wk-xs)]" x-data="wirekitStickyPanelShadows({ inline: 'position' })">
+            <div data-wk-prose-skip tabindex="0" x-ref="scroller" class="wk-scrollbar relative overflow-x-auto rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+                @include('wirekit::components.partials.chart-data-table', ['wkTable' => $tableModel, 'wkCaption' => $chartAriaLabel])
+            </div>
+            <div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
+            <div aria-hidden="true" x-cloak x-show="endShadow" x-transition.opacity class="wk-scroll-shadow-end"></div>
         </div>
     </details>
 @elseif ($tableMode === 'screen-reader')

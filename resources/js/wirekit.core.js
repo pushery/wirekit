@@ -10,8 +10,9 @@
  * own component, the `x-wk-fit-text` directive that keeps a fitted text's copies in step with
  * words a script writes, the memory for a field Livewire emptied after a successful action, the
  * scroll inset that keeps a focused element clear of a bar pinned to an edge, the mark that
- * keeps the focus ring on a radio the arrow keys reach in WebKit, and `wirekit:focus-invalid`,
- * which takes the focus to the first field a response rejected. For
+ * keeps the focus ring on a radio the arrow keys reach in WebKit, `wirekit:focus-invalid`,
+ * which takes the focus to the first field a response rejected, and `wirekit:focus`, which takes
+ * it to the element a response names. For
  * projects that only use the core form components, charts and the before/after
  * slider.
  *
@@ -44,6 +45,10 @@ import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { installFocusInvalid } from './utils/focus-invalid.js';
+import { installLazySelectOptions } from './utils/lazy-select-options.js';
+import { installFocusTarget } from './utils/focus-target.js';
+import { installChoicesFollowTheServer } from './utils/choices-follow-the-server.js';
+import { installApexOnDemand } from './utils/apex-on-demand.js';
 import { installSubmitOnce } from './utils/submit-once.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
@@ -95,6 +100,18 @@ function registerCoreComponents() {
     // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
     // See utils/focus-invalid.js.
     installFocusInvalid();
+    // A lazy select builds its list the first time it is used, and keeps it through Livewire's
+    // renders. See utils/lazy-select-options.js.
+    installLazySelectOptions();
+    // `wirekit:focus` takes the focus to the element a response names, opening what hides it.
+    // See utils/focus-target.js.
+    installFocusTarget();
+    // A toggle, a checkbox or a radio that sends an action of its own shows the server's state
+    // once its component's request has ended, refused or not. See utils/choices-follow-the-server.js.
+    installChoicesFollowTheServer();
+    // A chart drawn with ApexCharts that names the adapter waits for it, which loads where a
+    // chart starts while `wirekit.scripts.apex` is `on-demand`. See utils/apex-on-demand.js.
+    installApexOnDemand(Alpine);
     // A form with `data-wk-submit-once` sends itself once until the page changes. See
     // utils/submit-once.js.
     installSubmitOnce();

@@ -4,6 +4,44 @@ import { watchModelEvents } from '../utils/model-events.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 /**
+ * How far a step ratio may sit from a whole number and still count as on the grid, for the values
+ * `gridNeighbor()` cannot count in whole units. Binary floating point drifts with the size of the
+ * value, and the tolerance follows that drift: never below 1e-10 of a step, never above 0.001 of one.
+ */
+function gridTolerance(ratio) {
+    return Math.min(1e-3, Math.max(1e-10, 8 * Number.EPSILON * Math.abs(ratio)));
+}
+
+/**
+ * The grid point next to `value` in `direction` (1 up, -1 down), on the grid of `step` that starts at
+ * `origin`. It counts in whole units of the finest decimal place the three carry, which is exact while
+ * they stay below 10^15 of those units, so 1000000.2 moves with a step of 0.1 as 0.2 does. A value
+ * past that, or one carrying the noise of binary arithmetic in its last places, takes the ratio with a
+ * tolerance that follows its drift.
+ */
+function gridNeighbor(value, origin, step, direction) {
+    const scale = 10 ** decimalPlaces(step, origin, value);
+
+    if (Math.max(Math.abs(value), Math.abs(origin), Math.abs(step)) * scale < 1e15) {
+        const start = Math.round(origin * scale);
+        const unit = Math.round(step * scale);
+        const offset = Math.round(value * scale) - start;
+        const below = offset - (((offset % unit) + unit) % unit);
+        const steps = below / unit;
+        const n = direction > 0 ? steps + 1 : (below === offset ? steps - 1 : steps);
+
+        return (start + n * unit) / scale;
+    }
+
+    const ratio = (value - origin) / step;
+    const n = direction > 0
+        ? Math.floor(ratio + gridTolerance(ratio)) + 1
+        : Math.ceil(ratio - gridTolerance(ratio)) - 1;
+
+    return origin + n * step;
+}
+
+/**
  * Number input — the stepper's arithmetic.
  *
  * This was an inline `x-data` and could not stay: the literal declared getters
@@ -47,6 +85,9 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * @param {Object}  [config.adjusted]  translated sentences for a value that leaving the field
  *   changed, each taking `:value`: `highest`, `lowest` and `changed`
  * @param {string}  [config.locale]  the application's locale, BCP-47, for the value in those sentences
+ * @param {?string} [config.minAction]  the event − dispatches at `min` instead of being disabled there
+ * @param {string}  [config.minActionLabel]  the name of − while it stands at `min` with a `minAction`
+ * @param {string}  [config.decreaseLabel]  the name of − everywhere else
  * @param {{group: string, decimal: string}|null} [config.separators]  the application's own marks
  */
 export default function wirekitNumberInput(config = {}) {
@@ -59,6 +100,10 @@ export default function wirekitNumberInput(config = {}) {
         max: config.max ?? null,
         step: config.step ?? 1,
         bound: config.bound === true,
+        // What − does at `min`: the event it dispatches there instead of being disabled, or null.
+        minAction: typeof config.minAction === 'string' && config.minAction !== '' ? config.minAction : null,
+        _minActionLabel: typeof config.minActionLabel === 'string' ? config.minActionLabel : '',
+        _decreaseLabel: typeof config.decreaseLabel === 'string' ? config.decreaseLabel : '',
         // What leaving the field did to a value the reader typed, as a sentence, or ''.
         adjustment: '',
         _adjusted: config.adjusted && typeof config.adjusted === 'object' ? config.adjusted : {},
@@ -320,6 +365,44 @@ export default function wirekitNumberInput(config = {}) {
             return this.max !== null && this.value >= this.max;
         },
 
+        /** Whether − stands at `min` with an action of its own there, rather than disabled. */
+        get minActs() {
+            return this.atMin && this.minAction !== null;
+        },
+
+        /** Whether − is out of use: at `min` without an action there, or the field locked. */
+        get decreaseOff() {
+            return (this.atMin && this.minAction === null) || this.locked;
+        },
+
+        /** The minus glyph shows everywhere but at `min` with an action, which draws its own. */
+        get showsMinus() {
+            return !this.minActs;
+        },
+
+        /** The name of −: the action's at `min`, its own everywhere else. */
+        get decreaseName() {
+            return this.minActs && this._minActionLabel !== '' ? this._minActionLabel : this._decreaseLabel;
+        },
+
+        /**
+         * A press of −: one step down, or at `min` with an action, that action's event, which
+         * bubbles from the button to whatever listens around the field. The value stays where it is.
+         */
+        pressDecrease() {
+            if (this.locked) {
+                return;
+            }
+
+            if (this.minActs) {
+                this.$dispatch(this.minAction);
+
+                return;
+            }
+
+            this.decrease();
+        },
+
         /**
          * Whether the field is out of use, disabled or read-only. Read from the field
          * itself rather than kept as a flag, because Livewire can set either state after
@@ -337,11 +420,9 @@ export default function wirekitNumberInput(config = {}) {
         },
 
         /**
-         * Step down to the previous grid point, anchored at `min` (or 0).
-         *
-         * The 1e-10 tolerance absorbs binary-float drift, so a value that is
-         * on-grid in intent but stored as 1.7999999998 steps to the correct
-         * neighbor rather than to itself.
+         * Step down to the previous grid point, anchored at `min` (or 0). `gridNeighbor()` counts
+         * the grid, so a value that is on-grid in intent but stored as 1.7999999998 steps to the
+         * correct neighbor rather than to itself, and one in the millions as one near 0.
          */
         decrease() {
             if (this.locked) {
@@ -351,9 +432,7 @@ export default function wirekitNumberInput(config = {}) {
             this.adjustment = '';
 
             const origin = this.min !== null ? this.min : 0;
-            const ratio = (this.value - origin) / this.step;
-            const prevSteps = Math.ceil(ratio - 1e-10) - 1;
-            const next = this.round(origin + prevSteps * this.step);
+            const next = this.round(gridNeighbor(this.value, origin, this.step, -1));
 
             this.value = this.min !== null ? Math.max(this.min, next) : next;
             this._writeThrough();
@@ -369,9 +448,7 @@ export default function wirekitNumberInput(config = {}) {
             this.adjustment = '';
 
             const origin = this.min !== null ? this.min : 0;
-            const ratio = (this.value - origin) / this.step;
-            const nextSteps = Math.floor(ratio + 1e-10) + 1;
-            const next = this.round(origin + nextSteps * this.step);
+            const next = this.round(gridNeighbor(this.value, origin, this.step, 1));
 
             this.value = this.max !== null ? Math.min(this.max, next) : next;
             this._writeThrough();

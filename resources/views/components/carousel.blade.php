@@ -176,7 +176,11 @@
         {{-- At an end the arrow says it is unavailable rather than going `disabled`: a
              disabled button cannot hold the focus, so pressing Next onto the last slide would
              drop the reader's place on the page. prev() and next() do nothing there already.
-             Only a carousel with nothing to step through takes the arrows out of the order. --}}
+             Only a carousel with nothing to step through takes the arrows out of the order.
+             The script starts on the first slide, so without `loop` this arrow starts
+             unavailable, and says so before the script runs too; how many slides there are,
+             which the other arrow and `disabled` wait on, only the script counts. --}}
+        @unless($loop) aria-disabled="true" @endunless
         :aria-disabled="!loop && current === 0"
         :disabled="total <= 1"
         class="wk-touch-target {{ $buttonClasses }} {{ $prevPosClass }}"
@@ -249,7 +253,7 @@
                      to that ring would not carry on its own. The width has a floor because a
                      theme may set the border width to 0px, and the ring would vanish. --}}
                 class="wk-carousel-dot w-2 h-2 cursor-pointer rounded-full border-[length:max(1px,var(--border-wk-width))] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                :class="current === i ? 'bg-[var(--color-wk-accent)] border-[var(--color-wk-accent)]' : 'bg-transparent border-[var(--color-wk-border-strong)]'"
+                :class="current === i ? 'bg-[var(--color-wk-accent-text)] border-[var(--color-wk-accent-text)]' : 'bg-transparent border-[var(--color-wk-border-strong)]'"
             ></button>
         </template>
 

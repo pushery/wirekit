@@ -16,7 +16,7 @@ accent
 action
 against
 all
-allowed
+also
 an
 and
 any
@@ -38,7 +38,6 @@ border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]
 border-[var(--color-wk-border)]
-both
 call
 can
 cannot
@@ -73,7 +72,6 @@ exists
 failure
 false
 feature
-first
 flags
 flex
 flex-col
@@ -187,7 +185,6 @@ unreadable
 up
 use
 validateProp
-value
 view
 was
 what

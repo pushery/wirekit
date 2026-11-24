@@ -80,14 +80,20 @@ class VariantResolver
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             'neutral' => implode(' ', [
-                'bg-[var(--color-wk-bg-muted)]',
+                // The text color mixed into the surface the button stands on, as the fill of the
+                // `soft` surface is, at a larger share. One gray for every surface matches one of
+                // them: a chosen row is `bg-muted`, and a button filled with it showed only its
+                // label there. Mixed into the surface, the fill stands apart from the page, a card,
+                // its footer and a chosen row in every palette and both modes. At 10% it is a step
+                // stronger than `soft` at 6%, so it reads as a fill, and it stays light on a light
+                // page, about 1.24:1 against white.
+                'bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]',
                 'text-[color:var(--color-wk-text)]',
                 'border-transparent',
-                // The pairing `soft()`'s comment measures and rejects, fixed here rather than
-                // only described there: muted (L=0.972) hovering to subtle (L=0.985) moves 1.3
-                // points brighter, which reads as fading out. Mixing toward the text moves away
-                // from the base in both modes by construction.
-                'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]',
+                // Further toward the text, which moves away from the surface in both modes by
+                // construction. The palette's subtle gray would move a light fill brighter, which
+                // reads as fading out.
+                'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             'success' => implode(' ', [
@@ -204,9 +210,9 @@ class VariantResolver
         // uses, needs no new token, and follows the theme in both modes because
         // `--color-wk-bg` is the half that switches.
         //
-        // `neutral` is not `bg-subtle`. `filled()` pairs muted with subtle, which in a light
-        // theme makes the hover slightly brighter, at the threshold of perception and pointing
-        // the way a reader parses as fading out.
+        // `neutral` is not `bg-subtle`. Muted hovering to subtle makes the hover slightly
+        // brighter in a light theme, at the threshold of perception and pointing the way a
+        // reader parses as fading out.
         // Mixing the surface toward the text color instead is correct in both modes by
         // construction — the text is dark on a light theme and light on a dark one, so the
         // hover always moves away from the background rather than in a fixed direction.

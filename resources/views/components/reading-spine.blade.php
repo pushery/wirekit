@@ -392,7 +392,7 @@
     {{-- Optional developer-supplied filter input slot. Two-way-binds to
          `filter` Alpine state via `x-model` on the developer's input. --}}
     @if (\Pushery\WireKit\Support\SlotContent::given($filter ?? null))
-        <div class="wk-reading-spine__filter px-2 pb-[var(--padding-wk-y-md)] border-b border-[var(--color-wk-border)]">
+        <div class="wk-reading-spine__filter px-2 pb-[var(--padding-wk-y-md)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
             {{ $filter }}
         </div>
     @endif
@@ -443,8 +443,11 @@
                         style, like the list styles above, rather than a class a
                         build would have to generate.
                     --}}
+                    {{-- `lang` only where the heading's language differs from the spine's: a heading
+                         of an English article on a German page is read as English (WCAG 3.1.2). --}}
                     <a data-wk-prose-skip
                         :href="'#' + item.id"
+                        :lang="item.lang"
                         {{-- The rail finds each link's box by it, whatever the filter hides. --}}
                         @if ($rail) :data-index="item.index" @endif
                         :data-active="item.index === activeIndex ? 'true' : 'false'"

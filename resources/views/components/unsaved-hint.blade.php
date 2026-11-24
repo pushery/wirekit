@@ -10,6 +10,15 @@
     // closed tab in its own words, so this is the question before a `wire:navigate` visit, asked
     // in the dialog below.
     'question' => null,
+    // The property paths of the fields this hint speaks for, wherever they stand on the page: a
+    // list, or one path. A path names everything under it, as in `wirekit:saved`, and inside a
+    // Livewire component the hint speaks for that component's fields. Without it the hint speaks
+    // for the fields of its own `x-wk-unsaved` scope.
+    'paths' => null,
+    // Whether the hint brings the dialog of the question before leaving. A page holds one: the
+    // question takes the dialog of another hint on the page, so of thirty hints on one page
+    // twenty-nine can leave theirs out.
+    'dialog' => true,
     'scope' => null,
 ])
 
@@ -20,6 +29,15 @@
     WireKit::warnUnknownProps('unsaved-hint', $attributes->getAttributes());
 
     $text = filled($text) ? $text : __('wirekit::Unsaved changes');
+    $dialog = \Pushery\WireKit\Support\BooleanProp::from($dialog, true, 'unsaved-hint', 'dialog');
+    // One path or a list of them; a value that names no path is no part of it.
+    // A Collection of paths reads as the list it holds.
+    // A text with commas names several paths, `paths="price, compareAt"`.
+    $given = \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::splitAtCommas($paths));
+    $pathList = $paths === null ? null : array_values(array_filter(
+        is_array($given) ? $given : [$given],
+        static fn ($path): bool => is_string($path) && trim($path) !== '',
+    ));
     $question = filled($question) ? $question : __('wirekit::You have unsaved changes. Leave this page anyway?');
 
     $classes = WireKit::resolveClasses('unsaved-hint', 'base', implode(' ', [
@@ -42,14 +60,13 @@
 
      It also names the words `x-wk-unsaved` writes beside the label of an unsaved field, in the
      reader's language, as `data-wk-unsaved-words`; one the caller passes takes their place. --}}
-<span {{ $attributes->except('role')->merge(['data-wk-unsaved-words' => __('wirekit::Unsaved change')])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} data-wk-unsaved-hint data-wk-unsaved-confirm="{{ \Pushery\WireKit\Support\SlotContent::textOf($question) }}" role="{{ $attributes->get('role', 'status') }}">
+<span {{ $attributes->except('role')->merge(['data-wk-unsaved-words' => __('wirekit::Unsaved change')])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} data-wk-unsaved-hint data-wk-unsaved-confirm="{{ \Pushery\WireKit\Support\SlotContent::textOf($question) }}" @if($pathList !== null) data-wk-unsaved-paths="{{ \Pushery\WireKit\Support\AlpinePayload::json($pathList) }}" @endif role="{{ $attributes->get('role', 'status') }}">
     {{-- A soft badge in the warning color, without a symbol. The color of the unsaved state stands
          here, beside the button, and a field takes only a light line and the words beside its
          label, so nothing unsaved looks refused. It wraps: the sentence may be one of the
          developer's own, and on a phone a long one would otherwise run out of its row. --}}
     <x-wirekit::badge intent="warning" surface="soft" size="sm" wrap data-wk-unsaved-text>@if($slot->hasActualContent()){{ $slot }}@else{{ $text }}@endif</x-wirekit::badge>
-</span>
-{{-- The dialog the question before a `wire:navigate` visit is asked in, as a template:
+</span>{{-- The dialog the question before a `wire:navigate` visit is asked in, as a template:
      utils/unsaved.js puts it into the page the first time a scope asks, writes the scope's
      question into its title and opens it. Stay is its Cancel, focused when it opens and the answer
      Escape gives; Leave dispatches `wirekit:unsaved-leave`, and the visit goes on. Neither answer
@@ -69,7 +86,7 @@
      Before it opens, the scope dispatches `wirekit:unsaved-question`, in which the page may set
      the question, a sentence under it, the label of Leave and whether ⌘↵ / Ctrl+Enter presses
      Leave, for that opening only. The sentence is shown, and describes the dialog, only when it
-     is set. --}}
+     is set. --}}@if($dialog)
 <template data-wk-unsaved-question>
     <x-wirekit::alert-dialog :describedby="false" :close-on-confirm="false" :scope="$scope">
         <x-wirekit::alert-dialog.title><span data-wk-unsaved-question-text>{{ $question }}</span></x-wirekit::alert-dialog.title>
@@ -89,9 +106,9 @@
         <p data-wk-prose-skip data-wk-unsaved-question-more hidden data-wk-unsaved-question-forms="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $moreForms) }}" data-wk-unsaved-question-locale="{{ $locale }}" data-wk-unsaved-question-separators="{{ \Pushery\WireKit\Support\AlpinePayload::json(\Pushery\WireKit\Support\LocalizedNumber::separators()) }}" class="mt-[var(--space-wk-xs)] font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]"></p>
         <x-wirekit::alert-dialog.actions>
             <x-wirekit::alert-dialog.cancel>
-                <x-wirekit::button intent="neutral" surface="ghost" size="sm">{{ __('wirekit::Stay') }}</x-wirekit::button>
+                <x-wirekit::button intent="neutral" size="sm">{{ __('wirekit::Stay') }}</x-wirekit::button>
             </x-wirekit::alert-dialog.cancel>
             <x-wirekit::button intent="danger" size="sm" data-wk-unsaved-question-leave x-on:click="$dispatch('wirekit:unsaved-leave')"><span data-wk-unsaved-question-leave-text>{{ __('wirekit::Leave') }}</span></x-wirekit::button>
         </x-wirekit::alert-dialog.actions>
     </x-wirekit::alert-dialog>
-</template>
+</template>@endif

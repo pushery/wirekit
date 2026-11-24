@@ -28,6 +28,13 @@
     // Opt-in rather than inferred, because this sub-component cannot see whether its siblings
     // form a set. The caller knows; the item does not.
     'role' => 'menuitem',
+    // Hold the busy state of one Livewire action, as a button does: while the action named here
+    // is in flight the control is disabled (`wire:loading.attr` with `wire:target`), so a second
+    // press cannot overtake the first, and an unrelated request leaves it alone.
+    // `disable-on-loading` set to false marks it `aria-busy` instead and keeps the focus on it,
+    // which a disabled control loses the moment it is disabled.
+    'loadingTarget' => null,
+    'disableOnLoading' => true,
     'scope' => null,
 ])
 
@@ -53,10 +60,16 @@
     $danger = BooleanProp::from($danger, false, 'dropdown.item', 'danger');
     $disabled = BooleanProp::from($disabled, false, 'dropdown.item', 'disabled');
     $active = BooleanProp::from($active, false, 'dropdown.item', 'active');
+    $disableOnLoading = BooleanProp::from($disableOnLoading, true, 'dropdown.item', 'disableOnLoading');
+    $loadingTarget = is_string($loadingTarget) && trim($loadingTarget) !== '' ? trim($loadingTarget) : null;
 
     // Base item classes — full-width flex row with hover state
     $classes = WireKit::resolveClasses('dropdown.item', 'base', implode(' ', [
         'flex items-center gap-x-[var(--gap-wk-sm)] w-full',
+        // The label is a flex item of the row, and a flex item is never narrower than its longest
+        // word: `anywhere` lets an email address or a URL break inside the row where the panel's
+        // cap leaves less room than that word, which `break-word` on the panel does not.
+        '[overflow-wrap:anywhere]',
         'px-[var(--padding-wk-x-md)]',
         'py-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)]',
@@ -149,7 +162,7 @@
         .'<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] tabular-nums bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]')).'" data-wk-dropdown-item-badge>'.e($badgeText).'</span>'
     );
     $shortcutPart = $shortcutText === '' ? '' : new \Illuminate\Support\HtmlString(
-        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map(\Illuminate\Support\Arr::toCssClasses(['ms-auto' => $badgeText === null, 'ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums']))).'" aria-hidden="true">'.e($shortcutText).'</span>'
+        '<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map(\Illuminate\Support\Arr::toCssClasses(['ms-auto' => $badgeText === null, 'shrink-0 ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums']))).'" aria-hidden="true">'.e($shortcutText).'</span>'
     );
     $newTabHint = $opensNewTab
         ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'"> '.e(__('wirekit::(opens in new tab)')).'</span>')
@@ -172,6 +185,9 @@
          theirs: this fills a gap rather than overriding an author. --}}
     @if($active && ! $attributes->has('aria-current')) aria-current="{{ $href !== null ? 'page' : 'true' }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{-- The busy state of the one action `loading-target` names, as on a button: `disabled` is inert on a
+         link, so a link item takes the treatment of a disabled link while the action is in flight. --}}
+    @if($loadingTarget !== null) @if($tag === 'button') wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif wire:target="{{ $loadingTarget }}" @endif
     {{ $attributes->except(['rel', 'type', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses, $activeClasses, $disabledClasses])) }}
 >{{--
     The parts of the item touch: no text of this template stands between them. A `<button>` keeps

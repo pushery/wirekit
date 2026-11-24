@@ -365,18 +365,19 @@
              it, and a rail with neither has no empty band. --}}
         <div class="wk-shell-foot shrink-0 relative border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border)] py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))] flex flex-col gap-[var(--space-wk-nav-gap)]">
             @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
-                {{-- The trailing inset only exists while the rail is wide and the toggle has
-                     moved onto this row — it is the room the toggle occupies, so the two
-                     belong to the same condition.
+                {{-- The room for the toggle only exists while the rail is wide and the toggle
+                     has moved onto this row, so the two belong to the same condition.
 
                      On the last row only. On the whole column every footer row would
                      shrink to make space for a control that stands beside one of them,
                      which reads as a second, narrower list rather than as the same list
-                     with a button at the end. --}}
-                <div @class([
-                    'flex flex-col gap-[var(--space-wk-nav-gap)]',
-                    '[&>*:last-child]:group-data-[expanded]/wk-rail:pe-[2.25rem]' => $expandable,
-                ])>
+                     with a button at the end.
+
+                     The row ends before the toggle rather than running under it. The
+                     stylesheet reads the rail's state and caps the last row at the width the
+                     toggle leaves (`[data-wk-rail-foot-rows]` in dist/wirekit.css), so no
+                     rail writes a class for a state it may never take. --}}
+                <div @if($expandable) data-wk-rail-foot-rows @endif class="flex flex-col gap-[var(--space-wk-nav-gap)]">
                     {{ $footer }}
                 </div>
             @endif
@@ -401,7 +402,11 @@
                     // Only when a footer exists: with nothing else in this block, taking the
                     // toggle out of flow leaves the block with no content to give it height,
                     // and the button hangs outside a collapsed band.
-                    'group-data-[expanded]/wk-rail:absolute group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)] group-data-[expanded]/wk-rail:end-[var(--padding-wk-y-sm)]' => \Pushery\WireKit\Support\SlotContent::given($footer ?? null),
+                    //
+                    // Its end is the inset of the footer, the edge the rows end at, so the room
+                    // the last row leaves is the size of the toggle and the gap of the list in
+                    // every shell, also where a panel sets that inset to another width.
+                    'group-data-[expanded]/wk-rail:absolute group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)] group-data-[expanded]/wk-rail:end-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]' => \Pushery\WireKit\Support\SlotContent::given($footer ?? null),
                 ])>
                     {{-- Same reason as the sidebar's control: the chevron alone is a guess
                          until you click it, and the name that answers it was reachable only

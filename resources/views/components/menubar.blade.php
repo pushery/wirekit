@@ -2,6 +2,9 @@
      Its state is which menu is open. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
 @props([
+    // Whether each menu waits out of the page until it first opens. The default comes from the
+    // configuration (`components.menubar.lazy`).
+    'lazy' => config('wirekit.components.menubar.lazy', false),
     'scope' => null,
 ])
 
@@ -32,6 +35,12 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
+
+    // A lazy menubar holds each menu's teleport in a template of its own, which the browser keeps
+    // out of the page until the menubar builds it as the menu first opens (utils/lazy-panel.js).
+    // Each menu marks where its template opens and closes, and the menubar writes it there or
+    // nothing from its own `lazy` (Support\LazyPanel).
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.menubar.lazy', false)), 'menubar', 'lazy');
 @endphp
 
 <div
@@ -45,5 +54,5 @@
     @unless($attributes->has('role')) role="menubar" @endunless
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    {{ $slot }}
+    {!! \Pushery\WireKit\Support\LazyPanel::resolve($slot->toHtml(), $lazy) !!}
 </div>

@@ -136,8 +136,11 @@
         @if($hasChildren)
             <svg
                 aria-hidden="true"
-                class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]"
-                :class="nodeExpanded ? 'rotate-90' : ''"
+                {{-- Turned in the markup when the server renders it open, so the arrow points the way the
+                     content stands from the first paint. The object form of the binding takes off a class it
+                     did not add, and its key is the class as the markup writes it, short under `compact`. --}}
+                class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]{{ $expanded ? ' rotate-90' : '' }}"
+                :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map('rotate-90')) }}: nodeExpanded }"
                 viewBox="0 0 16 16"
                 fill="currentColor"
             >

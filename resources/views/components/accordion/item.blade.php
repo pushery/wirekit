@@ -144,10 +144,10 @@
     // because <svg> has no min-width constraint).
     $chevronClasses = 'shrink-0 w-4 h-4 text-[color:var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]';
 
-    // Fall back to 3 rather than to validateProp's first allowed value: a bad
-    // `level` must never turn a row's trigger into the page's <h1>, which is a
-    // worse outline than the one the default gives. Same shape, and the same
-    // reason, as the empty-state title.
+    // A bad `level` is reported and falls back to 3, the default: it must never
+    // turn a row's trigger into the page's <h1>, which is a worse outline than the
+    // one the default gives. Same shape, and the same reason, as the empty-state
+    // title.
     $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
     if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
         WireKit::validateProp('accordion', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
@@ -182,12 +182,16 @@
                  break inside long unbroken words). --}}
             <span class="flex-1 min-w-0" @if(filled($titleLang) && $title !== '') lang="{{ $titleLang }}" @endif>{{ $title !== '' ? $title : ($header ?? '') }}</span>
             <svg
-                class="{{ $chevronClasses }}"
-                :class="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'rotate-180' : ''"
+                {{-- Turned in the markup when the server renders it open, so the arrow points the way the
+                     content stands from the first paint. The object form of the binding takes off a class it
+                     did not add, and its key is the class as the markup writes it, short under `compact`. --}}
+                class="{{ $chevronClasses }}{{ $open ? ' rotate-180' : '' }}"
+                :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map('rotate-180')) }}: isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) }"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 aria-hidden="true"
+                data-wk-fold-chevron
             >
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
@@ -202,11 +206,16 @@
 
          The padding and the border moved to the element inside: a closed until-found panel keeps
          its box, and they would paint as an empty strip under every closed item. No `x-cloak`,
-         which would stop the browser from revealing it. See utils/findable.js. --}}
+         which would stop the browser from revealing it. See utils/findable.js.
+
+         Both panels carry `data-wk-print-open`: paper has no button to open an item with, so
+         every item prints open, and `data-wk-fold-chevron` keeps the arrow off the sheet (print
+         block of dist/wirekit.css, section 10). --}}
     <div
         id="{{ $panelId }}"
         role="region"
         aria-labelledby="{{ $buttonId }}"
+        data-wk-print-open
         {{-- Both spellings are written out rather than assembled, and the duplication is the
              point. A directive name built in PHP is invisible to every scanner that looks for
              this one by name — the CSP audit among them — so the modifier would be unreachable
@@ -232,6 +241,7 @@
         id="{{ $panelId }}"
         role="region"
         aria-labelledby="{{ $buttonId }}"
+        data-wk-print-open
         x-show="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
         {{-- The other half of the same prop. `x-wk-findable.collapse` exists because `x-collapse`
              only works with `x-show` — and this branch is `x-show`, so here the plugin is the

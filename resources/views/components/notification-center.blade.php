@@ -21,6 +21,9 @@
     // "Delete read" in the panel's head: takes the read notifications out of the list and names
     // their ids in a bubbling `notification-delete-read`, for the application to delete them.
     'deleteRead' => false,
+    // Whether "Delete read" asks first, in an alert dialog of the kit: a destructive action asks
+    // before it runs. `false` deletes at once, for a panel where the question stands in the way.
+    'confirmDeleteRead' => true,
     // Both defaults resolve through the catalog, the way faq's `label` does. They were
     // English literals, so a German application rendered a fully translated panel with
     // an English footer link and an English empty state — the catalog that would have
@@ -35,6 +38,11 @@
     // configured trigger, `bell` unless the project names another, so an application sets it once
     // for a center it does not render itself.
     'trigger' => config('wirekit.components.notification-center.trigger', 'bell'),
+    // Whether the panel waits out of the page until the pointer or the focus reaches the trigger,
+    // or the panel opens. A page with a center that is rarely opened then starts no part of its
+    // panel with the page. The default comes from the configuration
+    // (`components.notification-center.lazy`).
+    'lazy' => config('wirekit.components.notification-center.lazy', false),
     'scope' => null,
 ])
 
@@ -61,6 +69,7 @@
     $filters = BooleanProp::from($filters, false, 'notification-center', 'filters');
     $readMarker = BooleanProp::from($readMarker, true, 'notification-center', 'readMarker');
     $deleteRead = BooleanProp::from($deleteRead, false, 'notification-center', 'deleteRead');
+    $confirmDeleteRead = BooleanProp::from($confirmDeleteRead, true, 'notification-center', 'confirmDeleteRead');
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
     $trigger = WireKit::validateProp('notification-center', 'trigger', $trigger, ['bell', 'row', 'rail']);
@@ -113,6 +122,14 @@
     // `team inbox` keeps its place on the root, and each `aria-labelledby` names one id per part.
     $idBase = (string) \Pushery\WireKit\Support\DomId::valid((string) $id);
     $titleId = $idBase.'-title';
+    // The question before Delete read, named after this panel: the dialog stands in the overlay
+    // root, outside the panel, so its yes comes back as an event that names the question.
+    $deleteReadAsks = $deleteRead && $confirmDeleteRead;
+    $deleteReadQuestion = $idBase.'-delete-read-question';
+    // Where the focus goes after the yes, the button that asked being gone: this panel's list. An
+    // attribute selector, which takes any id the caller gives without escaping it for CSS.
+    $deleteReadListId = $idBase.'-list';
+    $deleteReadFocusTo = '[id="'.$deleteReadListId.'"]';
 
     // The footer link is named by its own text and the panel's title, `See all Notifications`:
     // alone in the footer, `See all` carries no sentence, paragraph, list item or table cell that
@@ -171,6 +188,15 @@
     // prohibits a name, and a reader never hears it.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
+    // A lazy center holds the teleport of its panel in a template of its own, which the browser
+    // keeps out of the page until the factory builds it (utils/lazy-panel.js). The wrapper is an
+    // echo rather than a block: Livewire writes no morph markers around an echo, and a marker
+    // inside the template's content would be built with the panel. The root names itself to the
+    // render hook and builds on the pointer or the focus: the panel is teleported out, so the
+    // root's area is the trigger's.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.notification-center.lazy', false)), 'notification-center', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <div
@@ -192,7 +218,12 @@
          press alone that something else already handled (escapeFlyout()). --}}
     x-on:keydown.escape="escapeFlyout($event)"
     x-on:keydown.escape.window="escapeFlyout($event)"
+    {{-- The yes of the question before Delete read. The dialog stands in the overlay root, outside
+         this scope, and its yes names the question, so a second panel on the page deletes nothing;
+         the panel reads the name to stay open while the question is asked. --}}
+    @if($deleteReadAsks) data-wk-delete-read-question="{{ $deleteReadQuestion }}" x-on:wirekit:notification-delete-read-confirmed.window="$event.detail.question === {{ \Pushery\WireKit\Support\AlpinePayload::from($deleteReadQuestion) }} && deleteRead()" @endif
     {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
+    @if($lazy) data-wk-lazy-panel-host x-on:pointerenter="preparePanel()" x-on:focusin="preparePanel()" @endif
 >
     {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
          a binding on the tag would reach no element. --}}
@@ -295,12 +326,14 @@
 
              (No literal Tailwind class names in this comment on purpose — Tailwind's
              @source scans comments as text and would compile any class named here.) --}}
+        {{-- With unread entries the pill stands from the start, with the count the server wrote, as
+             the script shows it; without, it waits under `x-cloak`. --}}
         <span
             x-show="unreadCount > 0"
-            x-cloak
+            @if($serverUnread === 0) x-cloak @endif
             aria-hidden="true"
-            class="absolute -top-0.5 -end-0.5 min-w-[1rem] h-4 px-1 inline-flex items-center justify-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-danger)] rounded-[var(--radius-wk-full)]"
-        ><span x-text="unreadCount > 99 ? '99+' : unreadCount">{{ $serverUnread }}</span></span>
+            class="absolute -top-0.5 -end-0.5 min-w-[1rem] h-4 px-1 inline-flex items-center justify-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-fg)] bg-[var(--color-wk-danger)] rounded-[var(--radius-wk-full)]"
+        ><span x-text="unreadCount > 99 ? '99+' : unreadCount">{{ $serverUnread > 99 ? '99+' : $serverUnread }}</span></span>
     </button>
     @endif
 
@@ -310,7 +343,7 @@
          shifting back on-screen when the edge would overflow. click.outside lives
          here (on the panel), not the root, because teleporting moves the panel out
          of the root's subtree. Near-full-width on small screens. --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
     <div
         x-show="isOpen"
         x-cloak
@@ -337,27 +370,14 @@
             <p data-wk-prose-skip id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $titleResolved }}</p>
             {{-- The panel's actions, at the end of its head. Each shows only while it has
                  something to do, and a wrapper keeps them together beside the title. --}}
+            {{-- Labeled actions, so buttons of the kit and filled, each with its rank in `intent`:
+                 marking is neutral, deleting is a destructive action and takes `danger`. --}}
             <div class="flex items-center gap-[var(--gap-wk-xs)]">
-                <button
-                    type="button"
-                    data-wk-mark-all-read
-                    x-show="unreadCount > 0"
-                    x-cloak
-                    @click="markAllRead()"
-                    {{-- Ghost button (subtle hover surface), not a hover-underline
-                         text-link — matches WireKit's other in-panel actions
-                         (e.g. data-table "Clear", filter-builder "Clear all"). --}}
-                    class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
-                >{{ __('wirekit::Mark all read') }}</button>
-                @if($deleteRead)
-                    <button
-                        type="button"
-                        data-wk-delete-read
-                        x-show="readCount > 0"
-                        x-cloak
-                        @click="deleteRead()"
-                        class="wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
-                    >{{ __('wirekit::Delete read') }}</button>
+                <x-wirekit::button intent="neutral" size="xs" data-wk-mark-all-read x-show="unreadCount > 0" x-cloak x-on:click="markAllRead()">{{ __('wirekit::Mark all read') }}</x-wirekit::button>
+                @if($deleteReadAsks)
+                    <x-wirekit::button intent="danger" size="xs" data-wk-delete-read x-show="readCount > 0" x-cloak x-on:click="$dispatch('wirekit-alert-dialog-show', { name: {{ \Pushery\WireKit\Support\AlpinePayload::from($deleteReadQuestion) }} })">{{ __('wirekit::Delete read') }}</x-wirekit::button>
+                @elseif($deleteRead)
+                    <x-wirekit::button intent="danger" size="xs" data-wk-delete-read x-show="readCount > 0" x-cloak x-on:click="deleteRead()">{{ __('wirekit::Delete read') }}</x-wirekit::button>
                 @endif
             </div>
         </div>
@@ -385,7 +405,7 @@
         {{-- List — a labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
         {{-- Reachability unconditional (WCAG 2.1.1), landmark only when the caller named the
              center: the derived name was the same on every unnamed one. --}}
-        <div data-wk-notification-list @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => \Pushery\WireKit\Support\SlotContent::textOf($title)]) }}" @endif tabindex="0" class="relative max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <div data-wk-notification-list id="{{ $deleteReadListId }}" @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => \Pushery\WireKit\Support\SlotContent::textOf($title)]) }}" @endif tabindex="0" class="relative max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -470,11 +490,23 @@
         </div>
 
         @if($seeAllHref)
-            {{-- Footer — ghost action (subtle full-width hover surface), not a
-                 hover-underline text-link, matching the "Mark all read" header
-                 action and WireKit's in-panel-action standard. --}}
+            {{-- Footer — a link, since it goes to another page, with a subtle full-width hover
+                 surface rather than a hover underline; the actions of the head are buttons. --}}
             <a data-wk-prose-skip id="{{ $seeAllId }}" aria-labelledby="{{ $seeAllId }} {{ $titleId }}" href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-active)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
         @endif
     </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
+
+    {{-- The question before Delete read, in the overlay root like every dialog. Its yes deletes the
+         read notifications through the event above, its no leaves them all and gives the focus back
+         to Delete read; after the yes the focus goes to the list, the button being gone. --}}
+    @wirekitLast($deleteReadAsks)
+        <x-wirekit::alert-dialog :name="$deleteReadQuestion" :close-on-confirm="true" :focus-return-to="$deleteReadFocusTo">
+            <x-wirekit::alert-dialog.title>{{ __('wirekit::Delete the read notifications?') }}</x-wirekit::alert-dialog.title>
+            <x-wirekit::alert-dialog.actions>
+                <x-wirekit::alert-dialog.cancel />
+                <x-wirekit::button intent="danger" data-wk-dialog-primary x-on:click="$dispatch('wirekit:notification-delete-read-confirmed', { question: {{ \Pushery\WireKit\Support\AlpinePayload::from($deleteReadQuestion) }} })">{{ __('wirekit::Delete read') }}</x-wirekit::button>
+            </x-wirekit::alert-dialog.actions>
+        </x-wirekit::alert-dialog>
+    @endwirekitLast
 </div>

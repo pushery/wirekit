@@ -76,7 +76,7 @@
     // The featured plan is lifted with a ring, not scaled up: scaling a card
     // reflows the row and makes the other plans look broken on a phone.
     $featuredClasses = $isFeatured
-        ? 'ring-2 ring-[color:var(--color-wk-accent)]'
+        ? 'ring-2 ring-[color:var(--color-wk-accent-text)]'
         : '';
 
     $classes = WireKit::resolveClasses('pricing-tier', 'base', implode(' ', array_filter([
@@ -123,20 +123,31 @@
                  Only the first is visible before Alpine boots (the rest carry
                  `x-cloak`, which the kit's stylesheet hides until Alpine removes it),
                  so the page never flashes every price at once, under a `style-src`
-                 policy that drops inline styles as well. --}}
+                 policy that drops inline styles as well.
+
+                 The amounts read `$data.interval` rather than a bare `interval`. A
+                 table without `intervals` holds no interval, and a bare name that
+                 finds none throws inside any Alpine scope around the table, a
+                 Livewire component's included, and the throw hides every amount.
+                 Without an interval the first amount stands, as it does before
+                 Alpine boots. --}}
             @foreach($prices as $intervalKey => $intervalAmount)
                 <span
-                    x-show="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
-                    @unless($loop->first) x-cloak @endunless
+                    @if($loop->first)
+                        x-show="! $data.interval || $data.interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
+                    @else
+                        x-show="$data.interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
+                        x-cloak
+                    @endif
                     class="flex items-baseline gap-[var(--space-wk-xs)]"
                     data-wk-pricing-interval="{{ $intervalKey }}"
                 >
                     @wirekitLast($intervalAmount !== null && $intervalAmount !== '')
                         <x-wirekit::price :amount="$intervalAmount" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" :size="$priceSize" />
                         @php($intervalPeriod = is_array($periods) ? ($periods[$intervalKey] ?? $period) : $period)
-                        @if($intervalPeriod)
+                        @wirekitLast($intervalPeriod)
                             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $intervalPeriod }}</span>
-                        @endif
+                        @endwirekitLast
                     @endwirekitLast
                 </span>
             @endforeach
@@ -144,9 +155,9 @@
             {{-- Without an amount there is no price, and a period after nothing would read as one:
                  `price` draws nothing for a missing amount rather than a 0 nobody gave. --}}
             <x-wirekit::price :amount="$price" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" :size="$priceSize" />
-            @if($period)
+            @wirekitLast($period)
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $period }}</span>
-            @endif
+            @endwirekitLast
         @endwirekitLast
     </div>
 

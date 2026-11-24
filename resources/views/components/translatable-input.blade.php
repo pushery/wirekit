@@ -40,7 +40,7 @@
     'scope' => null,
 ])
 
-@aware(['wkField' => null, 'wkFieldSet' => null])
+@aware(['alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Illuminate\View\ComponentAttributeBag;
@@ -83,7 +83,8 @@
     // nothing else: letters, digits, `-` and `_` (`pt-BR`, `zh_Hant`).
     $names = [];
     $refused = [];
-    $given = ListProp::from($locales, 'translatable-input', 'locales');
+    // An enum among the codes, as `Language::cases()` gives them, is read as its value.
+    $given = ListProp::records($locales, 'translatable-input', 'locales');
     foreach (is_array($given) ? $given : [] as $key => $entry) {
         $code = is_int($key) ? (string) $entry : (string) $key;
 
@@ -315,7 +316,16 @@
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:input']);
     // The field around the component and the set's group below are read by `@aware`, which a
     // caller's attribute of the same name would otherwise also reach the root as.
-    $attributes = $attributes->except(['wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), one language is one field, drawn by
+    // `input` or `textarea`: this element writes the field hook and hands the row's three tracks
+    // on to that field, which takes them as its own. Several languages are a group of fields, one
+    // per language, and stand in such a row as a whole. Not inside a `field`, which takes the tracks
+    // for the control it wraps.
+    $inAlignedRow = BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl)
+        && $primaryCode !== '' && $further === [];
 
     // A mark after the legend, whatever the caller's `labelAfter` slot holds. A slot that holds only
     // Livewire's morph markers is no mark. The required star is the set's, below.
@@ -328,6 +338,7 @@
 
 <div
     @if($callerId !== null) id="{{ $callerId }}" @endif
+    @if($inAlignedRow) data-wk-field @endif
     x-data="wirekitTranslatableInput({{ AlpinePayload::from($config) }})"
     @if($modelScope) data-wk-ref-scope @endif
     x-on:input="typed($event)"
@@ -349,6 +360,7 @@
     @php($single = $fields[$primaryCode])
     @if($multiline)
         <x-wirekit::textarea
+            :align-fields="$inAlignedRow"
             :id="$single['id']"
             :name="$single['name']"
             :label="$label"
@@ -366,6 +378,7 @@
         ><x-slot:labelAfter>{{ $callerAfter ?? '' }}</x-slot:labelAfter>{{ (string) ($single['text'] ?? '') }}</x-wirekit::textarea>
     @else
         <x-wirekit::input
+            :align-fields="$inAlignedRow"
             :id="$single['id']"
             :name="$single['name']"
             :label="$label"

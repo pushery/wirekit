@@ -61,7 +61,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -73,7 +73,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the slider takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -141,6 +147,14 @@
         $initialMax = min($max, $initialMin + $step);
         $initialMin = max($min, $initialMax - $step);
     }
+
+    // Where the fill, the handles and their badges stand at the start, in percent of the track, as
+    // the factory's style functions place them, so the slider shows its range before the script
+    // starts and on a page that runs none; `:style` sets each property again as it starts. A track
+    // without a span has no place on it, and both stand at its start.
+    $startSpan = $max - $min;
+    $startLow = $startSpan > 0 ? round((($initialMin - $min) / $startSpan) * 100, 4) : 0;
+    $startHigh = $startSpan > 0 ? round((($initialMax - $min) / $startSpan) * 100, 4) : 0;
 
     // Spoken-value map, string-keyed so the JS lookup matches (Alpine compares the
     // numeric value against object keys, which are always strings).
@@ -400,6 +414,7 @@
 @endphp
 
 <div
+    @if($inAlignedRow) data-wk-field @endif
     @unless($attributes->has('role')) role="group" @endunless
     @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $id }}-label" @endunless @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
     {{-- On the group rather than on either thumb: the message is about the range, and a
@@ -418,6 +433,11 @@
 >
     @if($label)
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track in a row that lines its fields up, held so that the slider stays
+             on the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     {{-- The `wirekitRangeSlider` factory, registered by the WireKit bundle.
@@ -505,11 +525,13 @@
              with one pointer and no drag (WCAG 2.5.7). `wk-range-track` gives the 8px track a
              target of the minimum size a handle gets. The press is read as well, because the
              click that ends a handle's drag can land on the track too, and that one must not
-             count. The track is drawn in the control border token: how far it reaches is part
-             of what shows where the values stand, so it holds 3:1 against the page (WCAG
-             1.4.11), where the muted surface it had stood at 1.09:1. --}}
+             count. The track is light with an edge in the strong border color, as a progress
+             bar's is: how far it reaches is part of what shows where the values stand, and the
+             edge holds 3:1 against the page (WCAG 1.4.11). The edge is a shadow, which the
+             chosen range covers where it runs, and the range takes the accent's text tone,
+             which stands apart from the light track at 3:1 or more in every theme. --}}
         <div
-            class="wk-range-track relative h-2 rounded-full bg-[var(--color-wk-border-strong)]"
+            class="wk-range-track relative h-2 rounded-full bg-[var(--color-wk-bg-muted)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-border-strong)]"
             style="overflow: visible;"
             x-ref="track"
             @unless($disabled)
@@ -520,13 +542,15 @@
             {{-- Snap-to-step tick marks (decorative) — only for discrete
                  sliders with a readable number of steps. --}}
             @foreach($tickPercents as $tickPercent)
-                <span aria-hidden="true" class="absolute top-1/2 -translate-y-1/2 h-2 w-px bg-[var(--color-wk-border)]" style="left: {{ $tickPercent }}%;"></span>
+                <span aria-hidden="true" class="absolute top-1/2 -translate-y-1/2 h-2 w-px bg-[var(--color-wk-border-strong)]" style="left: {{ $tickPercent }}%;"></span>
             @endforeach
 
             {{-- Active range fill. `wk-range-fill` is the marker the stylesheet's forced-colors
-                 rule selects, since this mode repaints the fill away. --}}
+                 rule selects, since this mode repaints the fill away. `w-0` holds it at nothing
+                 where a `style-src` policy drops the style attribute, until the script sets it. --}}
             <div
-                class="wk-range-fill absolute h-full rounded-full bg-[var(--color-wk-accent)]"
+                class="wk-range-fill absolute h-full w-0 rounded-full bg-[var(--color-wk-accent-text)]"
+                style="left: {{ $startLow }}%; width: {{ $startHigh - $startLow }}%"
                 :style="rangeFillStyle()"
             ></div>
 
@@ -538,6 +562,7 @@
                  horizontally (-translate-x-1/2 centers it on the thumb). --}}
             <div
                 class="{{ $thumbClasses }} z-10"
+                style="left: {{ $startLow }}%"
                 :style="minThumbStyle()"
                 {{-- A disabled thumb leaves the tab order and says so. `aria-disabled`
                      rather than removing `role="slider"`: the handle is still a slider,
@@ -560,7 +585,10 @@
                 @if($required || $fieldRequired) aria-required="true" @endif
                 aria-valuenow="{{ $initialMin }}"
                 :aria-valuenow="minVal"
-                @if($bindRangeValueText) :aria-valuetext="valueTextFor(minVal)" @endif
+                {{-- The spoken value as the script starts it, so a mapped stop reads as its word
+                     before the script runs too. A handle moves with the script alone, so the
+                     text the server writes cannot go stale. --}}
+                @if($bindRangeValueText) aria-valuetext="{{ $valueText($initialMin) }}" :aria-valuetext="valueTextFor(minVal)" @endif
                 aria-valuemin="{{ $min }}"
                 {{-- The ceiling this handle can actually hold, not the track's end.
                      Every path that moves the lower handle — `_setMin`, and through
@@ -637,8 +665,9 @@
                         aria-hidden="true"
                         x-ref="minBubble"
                         :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
+                        style="left: {{ $startLow }}%; transform: translateX(-{{ $startLow }}%)"
                         :style="minBadgeStyle()"
-                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
+                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(minVal)"
                     >{{ $valueText($initialMin) }}</span>
                 @endwirekitLast
@@ -647,6 +676,7 @@
             {{-- Max thumb. Same static-fallback pattern as the min thumb. --}}
             <div
                 class="{{ $thumbClasses }} z-20"
+                style="left: {{ $startHigh }}%"
                 :style="maxThumbStyle()"
                 {{-- The same disabled shape as the min thumb — see the note there. --}}
                 tabindex="{{ $disabled ? '-1' : '0' }}"
@@ -663,7 +693,7 @@
                 @if($required || $fieldRequired) aria-required="true" @endif
                 aria-valuenow="{{ $initialMax }}"
                 :aria-valuenow="maxVal"
-                @if($bindRangeValueText) :aria-valuetext="valueTextFor(maxVal)" @endif
+                @if($bindRangeValueText) aria-valuetext="{{ $valueText($initialMax) }}" :aria-valuetext="valueTextFor(maxVal)" @endif
                 {{-- The mirror of the lower handle's ceiling — see the note there.
                      `_setMax` clamps at `minVal + step`, so that, and not `minVal`,
                      is this handle's floor. --}}
@@ -695,8 +725,9 @@
                         aria-hidden="true"
                         x-ref="maxBubble"
                         :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
+                        style="left: {{ $startHigh }}%; transform: translateX(-{{ $startHigh }}%)"
                         :style="maxBadgeStyle()"
-                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
+                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(maxVal)"
                     >{{ $valueText($initialMax) }}</span>
                 @endwirekitLast
@@ -738,12 +769,16 @@
                      nudged its badge ~2px off the merged badge's row. --}}
                 <div
                     class="wk-range-phantom absolute top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb border-2 border-transparent pointer-events-none"
+                    style="left: {{ ($startLow + $startHigh) / 2 }}%"
                     :style="mergedBadgeStyle()"
                 >
+                    {{-- Empty and hidden as the script starts it, so it waits under `x-cloak` rather
+                         than standing as an empty pill until then. --}}
                     <span
                         aria-hidden="true"
+                        x-cloak
                         :class="[_merged ? 'opacity-100' : 'opacity-0', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
-                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30"
+                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30"
                         x-text="mergedBadgeText()"
                     ></span>
                 </div>
@@ -789,5 +824,9 @@
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @elseif($inAlignedRow)
+        {{-- Nothing below the slider, and the track still ends here, or the row's next field
+             would be pulled up into it. --}}
+        <span data-wk-field-part="message" aria-hidden="true"></span>
     @endwirekitLast
 </div>

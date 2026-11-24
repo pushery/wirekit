@@ -336,7 +336,7 @@
         $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus-within:ring-[length:var(--ring-wk-width)]',
-        $hasError ? 'focus-within:ring-[var(--color-wk-danger)]' : 'focus-within:ring-[var(--color-wk-ring)]',
+        $hasError ? 'focus-within:ring-[var(--color-wk-danger-text)]' : 'focus-within:ring-[var(--color-wk-ring)]',
     ])), $scope);
     // `value` rather than `bind`: this layer is the outermost x-data here, so an
     // undeclared property is in no scope at all — the binding would name nothing

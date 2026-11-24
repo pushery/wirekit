@@ -6,10 +6,14 @@
  */
 import { placementReference, position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
+import { measureEach, measureOnceStarted, measureOnceTheFontsAreIn } from '../utils/measure-once-started.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { singleKeysHidden, watchSingleKeysHidden } from '../utils/single-keys-hidden.js';
 import { timerDelay } from '../utils/timer-delay.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 // What a reader can tab to.
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -29,6 +33,16 @@ const CUT_TEXT = '[data-wk-cut-tip]';
 // A text in a tooltip's trigger whose words lead the panel while it is cut, as the label of a badge
 // with `truncate`, and the place the panel holds for them (resources/views/components/tooltip.blade.php).
 const CUT_LEAD = '[data-wk-tooltip-cut]';
+
+/**
+ * Whether an element's text is cut off: past its end on one line, or below its last line where the
+ * text is clamped to a number of lines. The element's own measure, in whole pixels and with no
+ * tolerance.
+ *
+ * @param {Element} el
+ * @returns {boolean}
+ */
+const isCut = (el) => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
 const CUT_LEAD_PLACE = '[data-wk-tooltip-cut-words]';
 
 // The trigger of a tooltip, the element around what the caller put in its slot.
@@ -36,6 +50,44 @@ const TRIGGER = '[data-wk-tooltip-trigger]';
 
 /** A text's words as they read on the line: the spaces and line breaks of the markup collapsed. */
 const wordsOf = (element) => (element?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+/*
+ * A cut text is measured with the others, never on its own.
+ *
+ * At its start, together with the components started in the same task, once that task is done
+ * (utils/measure-once-started.js), so each tab stop is in place before the first frame, as it was.
+ * After that, one size observer watches every cut text. The browser hands an observer all of its
+ * texts in a single call after it laid the page out, and Alpine writes the tab stops they set once
+ * the call returns. With an observer of each text's own it made one call per text, and Alpine wrote
+ * that text's tab stop before the next call; on a touch screen the stop makes the line taller (the
+ * `[data-wk-cut-tip][tabindex="0"]` rule of the stylesheet), so every next read laid the page out
+ * again.
+ */
+const cutTextMeasures = new WeakMap();
+let cutTextSizes = null;
+
+/** Watch a cut text's size, where the browser has a size observer. */
+function watchTheSizeOfACutText(host, measure) {
+    if (typeof ResizeObserver !== 'function') {
+        return;
+    }
+
+    cutTextSizes ??= new ResizeObserver((entries) => {
+        measureEach(entries.map((entry) => cutTextMeasures.get(entry.target)));
+    });
+    cutTextMeasures.set(host, measure);
+    cutTextSizes.observe(host);
+}
+
+/** Stop watching a cut text's size, unless a later start on the same element took it over. */
+function unwatchTheSizeOfACutText(host, measure) {
+    if (cutTextMeasures.get(host) !== measure) {
+        return;
+    }
+
+    cutTextMeasures.delete(host);
+    cutTextSizes?.unobserve(host);
+}
 
 // A widget that keeps the keyboard focus to itself and moves it with the arrow keys. A tab stop of
 // a cut text's own inside one would be a stop the widget does not expect.
@@ -117,15 +169,19 @@ export default function wirekitTooltip(config = {}) {
         // Puts the description back on the control after an update; disconnected in destroy().
         _describedByObserver: null,
 
-        // Takes the other platform's keys out of the panel again after an update, and a single-key
-        // shortcut while single keys are hidden; disconnected in destroy().
-        _shownKeysObserver: null,
+        // Take the other platform's keys out of the panel and out of a lazy tooltip's words again
+        // after an update, and a single-key shortcut while single keys are hidden; disconnected in
+        // destroy().
+        _shownKeysObservers: [],
 
-        // Stops following the switch for single keys; called in destroy().
-        _stopSingleKeysWatch: null,
+        // Stop following the switch for single keys, one for the panel and one for the words; called
+        // in destroy().
+        _stopSingleKeysWatches: [],
 
-        // The single-key shortcuts taken out of the panel, each with the comment that holds its place.
+        // The single-key shortcuts taken out of the panel, each with the comment that holds its place,
+        // and those taken out of a lazy tooltip's words.
         _keysAway: [],
+        _wordsKeysAway: [],
 
         // `text truncate="tooltip"`: the tooltip repeats the text of the element it sits on, which
         // that element cuts off, and only while it does. See `_watchTheCut()`.
@@ -143,12 +199,14 @@ export default function wirekitTooltip(config = {}) {
 
         // The control the text stands in, its listeners, and the observers of the cut; all released
         // in destroy(). `_surroundingAround` is the element the text stands in, which for a label
-        // is the label rather than the control it names.
+        // is the label rather than the control it names. `_stopMeasuringTheCut` takes the text out of
+        // the page's measure of cut texts, which holds the element and its measure in a closure.
         _surroundingControl: null,
         _surroundingAround: null,
         _surroundingFocusIn: null,
         _surroundingFocusOut: null,
         _cutObservers: [],
+        _stopMeasuringTheCut: null,
 
         // The words of every cut text in the control, while this text speaks for all of them on a
         // focus of the control. See `_focusFromTheControl()`.
@@ -158,8 +216,20 @@ export default function wirekitTooltip(config = {}) {
             this._moveDescriptionToTheFocusableTrigger();
             this._keepTheDescriptionAcrossUpdates();
             // The panel comes with the template that teleports it, which Alpine sets up after this
-            // init() has run, so its keys are kept from the next tick on.
+            // init() has run, so its keys are kept from the next tick on. A lazy panel's keys are
+            // kept from its build on, and the words that describe its trigger from that tick.
             this.$nextTick?.(() => this._keepTheShownKeysOnly());
+
+            // A render of the Livewire component around a lazy tooltip must neither remove the panel
+            // it built nor keep a panel the server no longer draws. An opening that does not come
+            // through show(), markup writing `isOpen` or the deprecated `open` alias, still finds a
+            // panel: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
 
             if (this._whenTruncated) {
                 this._watchTheCut();
@@ -245,10 +315,20 @@ export default function wirekitTooltip(config = {}) {
          * they are hidden and come back to their place when they are drawn again. Closed or open,
          * the tooltip describes its control with the keys it shows. Before the root names a
          * platform the platform's keys are left as they are.
+         *
+         * A lazy tooltip describes its control with its words, which hold the keys the panel holds,
+         * so they are kept the same way, and its panel from the build on (`preparePanel()`).
          */
         _keepTheShownKeysOnly() {
-            const panel = this.$refs?.tooltip;
+            this._keepTheShownKeysIn(this.$refs?.tooltip, '_keysAway');
+            this._keepTheShownKeysIn(this.$refs?.words, '_wordsKeysAway');
+        },
 
+        /**
+         * Keep the keys in one element to the shown ones: the panel, or a lazy tooltip's words.
+         * `away` names the list that holds the single-key shortcuts taken out of it.
+         */
+        _keepTheShownKeysIn(panel, away) {
             // A tooltip taken out of the page before the tick takes its panel with it.
             if (! panel || panel.isConnected === false || typeof panel.querySelector !== 'function') {
                 return;
@@ -270,19 +350,20 @@ export default function wirekitTooltip(config = {}) {
                 }
 
                 if (single) {
-                    this._placeSingleKeys(panel, singleKeysHidden());
+                    this._placeSingleKeys(panel, singleKeysHidden(), away);
                 }
             };
 
             keep();
 
             if (typeof MutationObserver === 'function') {
-                this._shownKeysObserver = new MutationObserver(keep);
-                this._shownKeysObserver.observe(panel, { childList: true, subtree: true });
+                const observer = new MutationObserver(keep);
+                observer.observe(panel, { childList: true, subtree: true });
+                this._shownKeysObservers.push(observer);
             }
 
             if (single) {
-                this._stopSingleKeysWatch = watchSingleKeysHidden(keep);
+                this._stopSingleKeysWatches.push(watchSingleKeysHidden(keep));
             }
         },
 
@@ -291,8 +372,10 @@ export default function wirekitTooltip(config = {}) {
          * comment in its place, and put them back in those places while it draws them. A shortcut
          * inside one already taken out goes with it. A place an update has drawn over is dropped:
          * the update brought the keys back itself, and they leave again if they are still hidden.
+         * `list` names where the keys taken out of this element are held: the panel's and a lazy
+         * tooltip's words each have their own, so a return to one leaves the other's places alone.
          */
-        _placeSingleKeys(panel, hidden) {
+        _placeSingleKeys(panel, hidden, list = '_keysAway') {
             if (hidden) {
                 panel.querySelectorAll('[data-wk-kbd-single]').forEach((el) => {
                     if (! panel.contains(el)) {
@@ -301,14 +384,14 @@ export default function wirekitTooltip(config = {}) {
 
                     const place = el.ownerDocument.createComment('');
                     el.replaceWith(place);
-                    this._keysAway.push({ place, el });
+                    this[list].push({ place, el });
                 });
 
                 return;
             }
 
-            const away = this._keysAway;
-            this._keysAway = [];
+            const away = this[list];
+            this[list] = [];
 
             for (const { place, el } of away) {
                 if (panel.contains(place)) {
@@ -360,8 +443,11 @@ export default function wirekitTooltip(config = {}) {
          * not for the pointer alone (WCAG 2.1.1), and gives it back once the text fits. Not inside
          * a widget that moves the focus with the arrow keys, and not where nothing may take focus.
          *
-         * The cut is measured again when the element changes size (a narrower window, a container
-         * shown late), when its text changes (an update), and once the fonts are in.
+         * The cut is measured first together with the other components started in the same task,
+         * once that task is done (utils/measure-once-started.js), and again when the element changes size
+         * (a narrower window, a container shown late), when its text changes (an update), and once
+         * the fonts are in, which the texts started together wait for with one read of the fonts'
+         * promise.
          */
         _watchTheCut() {
             const host = this.$root;
@@ -398,20 +484,24 @@ export default function wirekitTooltip(config = {}) {
 
             const measure = () => this._measureTheCut();
 
-            if (typeof ResizeObserver === 'function') {
-                const size = new ResizeObserver(measure);
-                size.observe(host);
-                this._cutObservers.push(size);
-            }
+            // The cut is first read with the other texts started in this task, once it is done, and
+            // after that by the page's size observer of cut texts, never here on its own. Once the
+            // fonts are in it is read again, with the same texts: they read `document.fonts.ready`
+            // once between them, since in Blink every read of it lays the page out.
+            const stopTheFirstMeasure = measureOnceStarted(measure);
+            const stopTheMeasureOfTheFonts = measureOnceTheFontsAreIn(measure);
+            watchTheSizeOfACutText(host, measure);
+            this._stopMeasuringTheCut = () => {
+                stopTheFirstMeasure();
+                stopTheMeasureOfTheFonts();
+                unwatchTheSizeOfACutText(host, measure);
+            };
 
             if (typeof MutationObserver === 'function') {
                 const text = new MutationObserver(measure);
                 text.observe(host, { childList: true, characterData: true, subtree: true });
                 this._cutObservers.push(text);
             }
-
-            document.fonts?.ready?.then(measure);
-            measure();
         },
 
         /**
@@ -445,7 +535,7 @@ export default function wirekitTooltip(config = {}) {
 
             return [...around.querySelectorAll(CUT_TEXT)].filter((element) =>
                 element.parentElement?.closest?.(SURROUNDING_CONTROL) === around
-                && element.scrollWidth > element.clientWidth);
+                && isCut(element));
         },
 
         /**
@@ -470,15 +560,15 @@ export default function wirekitTooltip(config = {}) {
         },
 
         /**
-         * Is the element's text cut off at its end right now?
+         * Is the element's text cut off right now, at its end or below the lines it is clamped to?
          *
          * The element's own measure, in whole pixels and with no tolerance: a text cut by a pixel
-         * still has its tooltip, and a text that fits reports no more width than its box.
+         * still has its tooltip, and a text that fits reports no more than its box.
          */
         _isTruncated() {
             const el = this.$root;
 
-            return Boolean(el) && el.scrollWidth > el.clientWidth;
+            return Boolean(el) && isCut(el);
         },
 
         /**
@@ -529,7 +619,7 @@ export default function wirekitTooltip(config = {}) {
             const trigger = this.$root?.querySelector?.(TRIGGER);
             const text = [...(this.$root?.querySelectorAll?.(CUT_LEAD) ?? [])]
                 .find((element) => element.closest?.(TRIGGER) === trigger);
-            const words = text && text.scrollWidth > text.clientWidth ? wordsOf(text) : '';
+            const words = text && isCut(text) ? wordsOf(text) : '';
 
             if (place.textContent !== words) {
                 place.textContent = words;
@@ -548,15 +638,23 @@ export default function wirekitTooltip(config = {}) {
         destroy() {
             this._describedByObserver?.disconnect();
             this._describedByObserver = null;
-            this._shownKeysObserver?.disconnect();
-            this._shownKeysObserver = null;
-            this._stopSingleKeysWatch?.();
-            this._stopSingleKeysWatch = null;
+
+            for (const observer of this._shownKeysObservers) {
+                observer.disconnect();
+            }
+            this._shownKeysObservers = [];
+
+            for (const stop of this._stopSingleKeysWatches) {
+                stop();
+            }
+            this._stopSingleKeysWatches = [];
 
             for (const observer of this._cutObservers) {
                 observer.disconnect();
             }
             this._cutObservers = [];
+            this._stopMeasuringTheCut?.();
+            this._stopMeasuringTheCut = null;
 
             if (this._surroundingControl) {
                 this._surroundingControl.removeEventListener('focusin', this._surroundingFocusIn);
@@ -758,10 +856,13 @@ export default function wirekitTooltip(config = {}) {
             // switch that only guards the doors it knows about is not a switch.
             if (this._disabled()) return;
 
-            if (this._whenTruncated) {
-                // A text that fits has nothing to repeat.
-                if (!this._isTruncated()) return;
+            // A text that fits has nothing to repeat, and builds nothing.
+            if (this._whenTruncated && !this._isTruncated()) return;
 
+            // A lazy panel is built here, before anything below writes into it or reads it.
+            this.preparePanel();
+
+            if (this._whenTruncated) {
                 // Its words go in before the panel shows, as its colors do below.
                 this._writeTheCutText();
             }
@@ -884,6 +985,18 @@ export default function wirekitTooltip(config = {}) {
         },
 
         /**
+         * Build the panel of a lazy tooltip the first time it shows, and keep its keys to the shown
+         * ones from then on, as an eager panel's are from the tick after init(). Its trigger has been
+         * described all along by the words beside it. A tooltip that is not lazy, or is built, is
+         * left alone.
+         */
+        preparePanel() {
+            if (buildLazyPanel(lazyPanelTemplate(this.$root))) {
+                this._keepTheShownKeysIn(this.$refs?.tooltip, '_keysAway');
+            }
+        },
+
+        /**
          * Make the page's shared panel this tooltip's: the tooltip that shows it closes, and the panel
          * takes this tooltip's classes and the words of the element its trigger is described by. The
          * placement and colors of the tooltip before go with the old `style`.
@@ -900,11 +1013,36 @@ export default function wirekitTooltip(config = {}) {
             }
 
             panel._wkOwner = this;
-            panel.className = this.$root?.getAttribute?.('data-wk-tooltip-panel-class') ?? '';
-            panel.removeAttribute('style');
 
-            const source = this._textFrom ? document.getElementById(this._textFrom) : null;
-            panel.textContent = wordsOf(source);
+            // A trigger without a component of its own writes its panel's classes only where they
+            // differ from the default look, which the stylesheet draws on the marked panel.
+            const classes = this.$root?.getAttribute?.('data-wk-tooltip-panel-class') ?? null;
+
+            if (classes === null) {
+                panel.className = 'wk-tooltip-panel';
+                panel.setAttribute('data-wk-tooltip-default', '');
+            } else {
+                panel.className = classes;
+                panel.removeAttribute('data-wk-tooltip-default');
+            }
+
+            panel.removeAttribute('style');
+            panel.textContent = this._sharedWords();
+        },
+
+        /**
+         * The words the shared panel shows: those of the element the trigger names; where it names
+         * none, those the tooltip carries on its root, as one that describes nothing does; or else
+         * the trigger's own name, as a status dot's label is both its name and its tip.
+         */
+        _sharedWords() {
+            if (this._textFrom) {
+                return wordsOf(document.getElementById(this._textFrom));
+            }
+
+            const words = this.$root?.getAttribute?.('data-wk-tip-words') ?? this.$root?.getAttribute?.('aria-label') ?? '';
+
+            return words.replace(/\s+/g, ' ').trim();
         },
 
         /** Hide the shared panel where this tooltip is the one showing it. */

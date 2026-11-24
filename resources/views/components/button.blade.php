@@ -651,29 +651,32 @@
     $newTabHint = $opensNewTab
         ? new \Illuminate\Support\HtmlString('<span class="'.e(\Pushery\WireKit\Support\CompactClasses::map('sr-only')).'"> '.e(__('wirekit::(opens in new tab)')).'</span>')
         : '';
+
+    // Under compact classes the base block and the classes of the intent on its surface each go
+    // under one short name, a bundle the compact sheet declares with exactly their rules, so a button
+    // in every row of a long table writes a few classes instead of some thirty. A class of the
+    // caller's and one Livewire sets while it loads keep their names, and a utility of a bundle that
+    // has to keep its name beside one of them keeps the list as it is (CompactClasses::bundled()).
+    // Without compact classes the list comes back as it is.
+    $rootClasses = \Pushery\WireKit\Support\CompactClasses::bundled(
+        implode(' ', array_filter(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $iconOnlyShrinkClasses, $touchClasses, $linkDisabledClasses]))),
+        [
+            ...(preg_split('/\s+/', trim(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', ''))), -1, PREG_SPLIT_NO_EMPTY) ?: []),
+            ...($loading && ! $declarativeLoading && $tag !== 'button' ? ['opacity-[var(--opacity-wk-disabled)]', 'pointer-events-none'] : []),
+        ],
+    );
 @endphp
 
-<{{ $tag }} data-wk-prose-skip data-wk-sr-host
-    @if($href !== null && ! $linkDisabled) href="{{ $href }}" @endif
-    @if($tag === 'button') type="{{ $type }}" @endif
-    @if($linkDisabled) role="link" aria-disabled="true" @endif
-    @disabled($tag === 'button' && $isDisabled)
-    @if($emitAriaBusy) aria-busy="true" @endif
-    @if($announceBusy) x-wk-announce-busy @unless($attributes->has('data-wk-busy-text')) data-wk-busy-text="{{ __('wirekit::Loading') }}" @endunless @endif
-    @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $buttonBag->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $iconOnlyShrinkClasses, $touchClasses, $linkDisabledClasses])) }}
-    {{-- `disabled` is inert on an anchor, so the link branch gets the treatment
-         this component uses for a disabled link instead. `wire:loading.attr`
-         adds a `disabled` attribute, which a browser honors on a button and ignores
-         on an <a>, where the link would stay navigable for the whole request, the
-         one moment a second click does the most damage. Same classes as
-         $linkDisabledClasses above, so the two disabled states look identical and
-         `pointer-events-none` is what actually stops the click. --}}
-    @if($loading && ! $declarativeLoading)
-        @if($tag === 'button') wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif
-        @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif
-    @endif
->{{--
+{{-- The root tag stands on one line: a directive that writes nothing leaves the space before it
+     and no indentation, which a button in every row of a long table would carry each time.
+
+     `disabled` is inert on an anchor, so the link branch gets the treatment this component uses
+     for a disabled link instead. `wire:loading.attr` adds a `disabled` attribute, which a browser
+     honors on a button and ignores on an <a>, where the link would stay navigable for the whole
+     request, the one moment a second click does the most damage. Same classes as
+     $linkDisabledClasses above, so the two disabled states look identical and
+     `pointer-events-none` is what actually stops the click. --}}
+<{{ $tag }} data-wk-prose-skip data-wk-sr-host @if($href !== null && ! $linkDisabled) href="{{ $href }}" @endif @if($tag === 'button') type="{{ $type }}" @endif @if($linkDisabled) role="link" aria-disabled="true" @endif @disabled($tag === 'button' && $isDisabled) @if($emitAriaBusy) aria-busy="true" @endif @if($announceBusy) x-wk-announce-busy @unless($attributes->has('data-wk-busy-text')) data-wk-busy-text="{{ __('wirekit::Loading') }}" @endunless @endif @if($computedRel) rel="{{ $computedRel }}" @endif {{ $buttonBag->class($rootClasses) }} @if($loading && ! $declarativeLoading) @if($tag === 'button') wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif @endif>{{--
     The parts of the button touch: no text of this template stands between them. A `<button>`
     keeps a run of white space as a flex item in Blink and WebKit, where another flex container
     drops it, and the gap then stands beside an empty item: after a label that ends in a visually

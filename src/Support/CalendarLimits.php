@@ -224,6 +224,23 @@ final class CalendarLimits
     }
 
     /**
+     * Whether the month of `$month` holds no day the limits leave open: its first day lies after
+     * `max`, or its last day before `min`. The calendar's script closes the way into such a month,
+     * so its arrows and its today button start closed where it leads there.
+     *
+     * @param  array<array-key, mixed>  $limits  the limits as from() gives them
+     */
+    public static function monthOutside(CarbonImmutable $month, array $limits): bool
+    {
+        $min = $limits['min'] ?? null;
+        $max = $limits['max'] ?? null;
+        $first = $month->startOfMonth()->format('Y-m-d');
+        $last = $month->endOfMonth()->format('Y-m-d');
+
+        return (is_string($max) && strcmp($first, $max) > 0) || (is_string($min) && strcmp($last, $min) < 0);
+    }
+
+    /**
      * A number of days, at least one, or null.
      *
      * @param  array<array-key, mixed>|object|string|int|float|bool|null  $value

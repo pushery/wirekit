@@ -181,10 +181,10 @@
     </picture>
 @endif
 
-    @if($caption)
+    @wirekitLast($caption)
         <{{ $captionTag }} data-wk-prose-skip @if(filled($captionLang)) lang="{{ $captionLang }}" @endif @class(['block' => $captionTag === 'span', 'mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]'])>
             {{ $caption }}
         </{{ $captionTag }}>
-    @endif
+    @endwirekitLast
 </{{ $as }}>
 @endif

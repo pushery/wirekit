@@ -19,6 +19,19 @@
     // The name of the crop, and the sentence that says how to move and size it.
     'label' => null,
     'help' => null,
+    // The kinds of mark the editor draws on the image: `arrow`, `line`, `ellipse`, `rect` and
+    // `freehand`, as a list or a comma-separated text, or `true` for all five. Without any the
+    // editor is a crop alone, and its value the crop.
+    'tools' => null,
+    // The colors a mark can take, each `['color' => …, 'label' => …]`: a hex color, `rgb()`,
+    // `hsl()` or `oklch()`, and the name a screen reader says for it. None is five named colors.
+    // The first one is the color a new mark starts in.
+    'palette' => null,
+    // How many steps undo goes back.
+    'history' => 50,
+    // The largest area the edited image is drawn at, in pixels. A larger crop is drawn smaller by
+    // one factor on both sides, its marks with it: WebKit draws nothing into a larger canvas.
+    'maxArea' => 16700000,
     'scope' => null,
 ])
 
@@ -54,8 +67,68 @@
     $alt = SlotContent::textOf($alt);
     $label = SlotContent::textOf($label);
     $label = $label !== '' ? $label : __('wirekit::Crop');
-    // The sentence above the image, as text or as markup, as the help of a field takes it.
-    $help = SlotContent::textOf($help) !== '' ? $help : __('wirekit::Drag the crop or its handles, or use the arrow keys: they move the crop, and with Shift they change its size.');
+
+    // The kinds of mark offered, in the toolbar's order. A kind the editor does not draw is
+    // reported and left out; another value than a list, a text or `true` leaves a crop alone.
+    $wkKinds = [
+        'arrow' => __('wirekit::Arrow'),
+        'line' => __('wirekit::Line'),
+        'ellipse' => __('wirekit::Ellipse'),
+        'rect' => __('wirekit::Rectangle'),
+        'freehand' => __('wirekit::Freehand line'),
+    ];
+    $tools = ListProp::renumbered($tools);
+    $wkAsked = [];
+    if ($tools === true) {
+        $wkAsked = \Pushery\WireKit\Support\ImageCrop::MARK_TYPES;
+    } elseif (is_string($tools)) {
+        $wkAsked = array_values(array_filter(array_map('trim', explode(',', $tools)), static fn (string $kind): bool => $kind !== ''));
+    } elseif (is_array($tools)) {
+        $wkAsked = $tools;
+    } elseif ($tools !== null && $tools !== false) {
+        StrictnessGate::reject('image-editor', 'tools', get_debug_type($tools), 'a list of arrow, line, ellipse, rect and freehand, or true for all five', 'a crop alone');
+    }
+    foreach ($wkAsked as $wkKind) {
+        if (! is_string($wkKind) || ! in_array($wkKind, \Pushery\WireKit\Support\ImageCrop::MARK_TYPES, true)) {
+            StrictnessGate::reject('image-editor', 'tools', is_string($wkKind) ? $wkKind : get_debug_type($wkKind), 'arrow, line, ellipse, rect or freehand', 'left out');
+        }
+    }
+    $wkTools = array_values(array_filter(\Pushery\WireKit\Support\ImageCrop::MARK_TYPES, static fn (string $kind): bool => in_array($kind, $wkAsked, true)));
+
+    // The palette: each color as a swatch takes it, each with its name. An entry that is no color
+    // or has no name is reported and left out, and a palette left empty is the five colors. They
+    // read on a light image and on a dark one, each strong against the light seam under a stroke.
+    $wkDefaultPalette = [
+        ['color' => '#e11d48', 'label' => __('wirekit::Red')],
+        ['color' => '#f59e0b', 'label' => __('wirekit::Orange')],
+        ['color' => '#16a34a', 'label' => __('wirekit::Green')],
+        ['color' => '#2563eb', 'label' => __('wirekit::Blue')],
+        ['color' => '#111827', 'label' => __('wirekit::Black')],
+    ];
+    $wkPalette = [];
+    $wkGiven = ListProp::renumbered($palette, 'image-editor', 'palette');
+    if ($wkGiven !== null && ! is_array($wkGiven)) {
+        StrictnessGate::reject('image-editor', 'palette', get_debug_type($wkGiven), "a list of colors with their names, [['color' => '#e11d48', 'label' => 'Red'], …]", 'the five colors');
+    }
+    foreach (is_array($wkGiven) ? $wkGiven : [] as $wkEntry) {
+        $wkColor = is_array($wkEntry) && isset($wkEntry['color']) && is_string($wkEntry['color']) ? \Pushery\WireKit\Support\CssColor::value($wkEntry['color']) : '';
+        $wkName = is_array($wkEntry) ? trim(SlotContent::textOf($wkEntry['label'] ?? '')) : '';
+        if ($wkColor === '' || $wkName === '') {
+            StrictnessGate::reject('image-editor', 'palette', is_array($wkEntry) ? (string) json_encode($wkEntry) : get_debug_type($wkEntry), "a color with its name, ['color' => '#e11d48', 'label' => 'Red']", 'left out');
+
+            continue;
+        }
+        $wkPalette[] = ['color' => $wkColor, 'label' => $wkName];
+    }
+    $wkPalette = $wkPalette !== [] ? $wkPalette : $wkDefaultPalette;
+    $history = max(1, NumericProp::intOrNull($history, 'image-editor', 'history') ?? 50);
+    $maxArea = max(1, NumericProp::intOrNull($maxArea, 'image-editor', 'maxArea') ?? 16700000);
+
+    // The sentence above the image, as text or as markup, as the help of a field takes it. With
+    // marks offered it says how one is drawn as well.
+    $help = SlotContent::textOf($help) !== '' ? $help : ($wkTools !== []
+        ? __("wirekit::Drag the crop or its handles, or use the arrow keys: they move the crop, and with Shift they change its size. With a mark's tool, drag on the image to draw the mark, or tap to place one.")
+        : __('wirekit::Drag the crop or its handles, or use the arrow keys: they move the crop, and with Shift they change its size.'));
     $width = NumericProp::intOrNull($width, 'image-editor', 'width');
     $height = NumericProp::intOrNull($height, 'image-editor', 'height');
     $min = NumericProp::intOrNull($min, 'image-editor', 'min') ?? 16;
@@ -81,9 +154,16 @@
         $value = null;
     }
     $crop = \Pushery\WireKit\Support\ImageCrop::from($value);
+    // With marks offered the value carries them beside the crop, each held as the editor holds it.
+    if ($wkTools !== [] && $crop !== null) {
+        $wkMarks = ListProp::renumbered($value['marks'] ?? null);
+        $crop += ['marks' => \Pushery\WireKit\Support\ImageCrop::marks(is_array($wkMarks) ? $wkMarks : null)];
+    }
 
     $helpId = DomId::unique(null, 'wk-image-editor-help-');
     $valueId = DomId::unique(null, 'wk-image-editor-value-');
+    $toolHelpId = DomId::unique(null, 'wk-image-editor-tool-help-');
+    $markHelpId = DomId::unique(null, 'wk-image-editor-mark-help-');
 
     $config = [
         'width' => $width,
@@ -93,6 +173,30 @@
         'valueText' => __('wirekit::Crop: :x% across, :y% down, :w% wide, :h% high'),
         'locale' => IcuLocale::tag(),
     ];
+
+    // The crop the script shows as it starts, for the fields and the crop in words the page loads
+    // with, before the script runs and on a page that runs none (ImageCrop::settled()). The words
+    // are the script's `valueText()`: each side in the locale, to one decimal.
+    $startCrop = \Pushery\WireKit\Support\ImageCrop::settled($crop === null ? null : ['x' => $crop['x'], 'y' => $crop['y'], 'w' => $crop['w'], 'h' => $crop['h']], $width, $height, $ratio, $min);
+    $startValueText = (string) preg_replace_callback('/:(x|y|w|h)\b/', static fn (array $side): string => \Pushery\WireKit\Support\LocalizedNumber::format($startCrop[$side[1]], maxPrecision: 1, locale: $config['locale']), $config['valueText']);
+    if ($wkTools !== []) {
+        $config += [
+            'tools' => $wkTools,
+            'palette' => $wkPalette,
+            'history' => $history,
+            'maxArea' => $maxArea,
+            'texts' => [
+                'mark' => __('wirekit:::mark, :x% across, :y% down'),
+                'added' => __('wirekit:::mark added.'),
+                'removed' => __('wirekit:::mark removed.'),
+                'start' => __('wirekit::Moving the start.'),
+                'end' => __('wirekit::Moving the end.'),
+                'undone' => __('wirekit::Undone.'),
+                'redone' => __('wirekit::Redone.'),
+                'kinds' => $wkKinds,
+            ],
+        ];
+    }
 
     $rootClasses = WireKit::resolveClasses('image-editor', 'base', 'grid gap-[var(--gap-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]', $scope);
 
@@ -143,16 +247,62 @@
     data-wk-server-value="{{ AlpinePayload::json($crop) }}"
     x-data="wirekitImageEditor({{ AlpinePayload::from($config) }})"
     x-modelable="crop"
+    @if($wkTools !== []) x-on:keydown="onEditorKey($event)" @endif
     {{ $attributes->class(UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
 >
     <p data-wk-prose-skip id="{{ $helpId }}" class="m-0 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $help }}</p>
 
+    @if($wkTools !== [])
+    {{-- The tools, the steps back and forth, the width and the color. A tool pressed with a
+         pointer picks what the pointer draws; pressed from the keyboard it also places its mark
+         in the middle of the crop. A color or a width applies to the selected mark too. --}}
+    <div data-wk-image-editor-toolbar x-on:click="focusPressed($event)" class="flex flex-wrap items-center gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-sm)]">
+        <div role="group" aria-label="{{ __('wirekit::Tools') }}" aria-describedby="{{ $toolHelpId }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+            <x-wirekit::toggle-button size="sm" data-wk-image-editor-tool="crop" x-bind:aria-pressed="toolPressed('crop')" x-on:click="pickTool('crop', $event)">{{ __('wirekit::Crop') }}</x-wirekit::toggle-button>
+            @foreach($wkTools as $wkTool)
+            <x-wirekit::toggle-button size="sm" data-wk-image-editor-tool="{{ $wkTool }}" x-bind:aria-pressed="toolPressed({{ AlpinePayload::string($wkTool) }})" x-on:click="pickTool({{ AlpinePayload::string($wkTool) }}, $event)">{{ $wkKinds[$wkTool] }}</x-wirekit::toggle-button>
+            @endforeach
+        </div>
+        <div class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+            <x-wirekit::button intent="neutral" size="sm" data-wk-image-editor-undo x-bind:disabled="undoDisabled()" x-on:click="undo()">{{ __('wirekit::Undo') }}</x-wirekit::button>
+            <x-wirekit::button intent="neutral" size="sm" data-wk-image-editor-redo x-bind:disabled="redoDisabled()" x-on:click="redo()">{{ __('wirekit::Redo') }}</x-wirekit::button>
+            <x-wirekit::button intent="neutral" size="sm" data-wk-image-editor-remove x-bind:disabled="removeDisabled()" x-on:click="removeMark()">{{ __('wirekit::Remove the mark') }}</x-wirekit::button>
+        </div>
+        <div role="group" aria-label="{{ __('wirekit::Line width') }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+            @foreach(['thin' => __('wirekit::Thin'), 'medium' => __('wirekit::Medium'), 'thick' => __('wirekit::Thick')] as $wkWidth => $wkWidthName)
+            <x-wirekit::toggle-button size="sm" data-wk-image-editor-width="{{ $wkWidth }}" x-bind:aria-pressed="widthPressed({{ AlpinePayload::string($wkWidth) }})" x-on:click="pickWidth({{ AlpinePayload::string($wkWidth) }})">{{ $wkWidthName }}</x-wirekit::toggle-button>
+            @endforeach
+        </div>
+        <div role="group" aria-label="{{ __('wirekit::Color') }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+            @foreach(array_values($wkPalette) as $wkIndex => $wkEntry)
+            {{-- The swatch shows the color and the tooltip names it: a color alone says nothing to a
+                 screen reader, and the swatch, hidden from one, leaves the button its tooltip's name. --}}
+            <x-wirekit::toggle-button size="sm" :tooltip="$wkEntry['label']" data-wk-image-editor-color="{{ $wkIndex }}" x-bind:aria-pressed="colorPressed({{ $wkIndex }})" x-on:click="pickColor({{ $wkIndex }})"><x-wirekit::swatch :color="$wkEntry['color']" size="sm" /></x-wirekit::toggle-button>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     {{-- No ratio and no fit on the box: it is the image, so a percentage of the box is a
-         percentage of the image. On a touch screen a handle answers a finger in a square of the
-         touch target around it, half of which lies past the image; the margin keeps that half off
-         the fields below and off a link in the help above. --}}
-    <div x-ref="area" class="relative select-none [@media(pointer:coarse)]:my-[calc(var(--size-wk-touch-target)/2)] [[data-wk-touch]_&]:my-[calc(var(--size-wk-touch-target)/2)]">
+         percentage of the image. A handle stands on the crop's edge, half of it past the image,
+         and a crop of the whole image sets the side handles on the image's side edges: the margin
+         at either side keeps those halves inside the editor. On a touch screen a handle answers a
+         finger in a square of the touch target around it, half of which lies past the image; the
+         margin above and below keeps that half off the fields below and off a link in the help
+         above. --}}
+    <div x-ref="area" class="relative select-none mx-[calc(var(--size-wk-xs)/2)] [@media(pointer:coarse)]:my-[calc(var(--size-wk-touch-target)/2)] [[data-wk-touch]_&]:my-[calc(var(--size-wk-touch-target)/2)]">
         <img data-wk-prose-skip x-ref="image" src="{{ $src }}" alt="{{ $alt }}" @if($width !== null) width="{{ $width }}" @endif @if($height !== null) height="{{ $height }}" @endif draggable="false" class="block w-full h-auto">
+
+        @if($wkTools !== [])
+        {{-- The marks, in the image's pixels, under the shade, so a mark outside the crop shows
+             dimmed as the part of the image the result leaves out. The script draws them; the two
+             outlines mark the selected one, a light edge under a dark one. --}}
+        <svg aria-hidden="true" focusable="false" data-wk-image-editor-marks class="absolute inset-0 size-full pointer-events-none" preserveAspectRatio="none" x-effect="renderMarks()">
+            <g x-ref="marks"></g>
+            <rect x-ref="selectionLight" visibility="hidden" fill="none" vector-effect="non-scaling-stroke" class="stroke-[var(--color-wk-bg-elevated)] [stroke-width:calc(var(--border-wk-width)*3)]" />
+            <rect x-ref="selectionDark" visibility="hidden" fill="none" vector-effect="non-scaling-stroke" class="stroke-[var(--color-wk-text)] [stroke-width:var(--border-wk-width)]" />
+        </svg>
+        @endif
 
         {{-- The image outside the crop, dimmed: the box with the crop cut out of it. --}}
         <svg aria-hidden="true" focusable="false" class="absolute inset-0 size-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -165,6 +315,7 @@
             {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }}
             aria-describedby="{{ trim($valueId.' '.$helpId.' '.($callerDescribedBy ?? '')) }}"
             data-wk-image-editor-crop
+            x-ref="cropRegion"
             class="{{ $regionClasses }}"
             x-bind:style="regionStyle()"
             x-on:pointerdown="startDrag('move', $event)"
@@ -172,23 +323,51 @@
         ></div>
 
         @foreach(\Pushery\WireKit\Support\ImageCrop::HANDLES as $handle)
-        <span aria-hidden="true" data-wk-crop-handle="{{ $handle }}" class="wk-touch-target {{ $handleClasses }} {{ $handleCursor($handle) }}" x-bind:style="handleStyle({{ AlpinePayload::string($handle) }})" x-on:pointerdown.stop="startDrag({{ AlpinePayload::string($handle) }}, $event)"><span class="{{ $gripClasses }}"></span></span>
+        <span aria-hidden="true" data-wk-crop-handle="{{ $handle }}" class="wk-touch-target {{ $handleClasses }} {{ $handleCursor($handle) }}" @if($wkTools !== []) x-show="cropping()" @endif x-bind:style="handleStyle({{ AlpinePayload::string($handle) }})" x-on:pointerdown.stop="startDrag({{ AlpinePayload::string($handle) }}, $event)"><span class="{{ $gripClasses }}"></span></span>
         @endforeach
+
+        @wirekitLast($wkTools !== [])
+        {{-- With a mark's tool the image takes the pointer: a press on a mark's stroke selects and
+             moves it, a press elsewhere draws. --}}
+        <div data-wk-image-editor-surface class="absolute inset-0 touch-none cursor-crosshair" x-show="drawing()" x-on:pointerdown="startMark($event)"></div>
+
+        {{-- One focus target per mark, over its box. A press passes through to the image; the
+             keyboard reaches a mark here. --}}
+        <div data-wk-image-editor-targets class="absolute inset-0 pointer-events-none">
+            <template x-for="target in markTargets()" x-bind:key="target.index">
+                <button type="button" data-wk-image-editor-mark x-bind:data-wk-mark-target="target.index" x-bind:aria-label="target.label" x-bind:aria-pressed="target.pressed" aria-describedby="{{ $markHelpId }}" class="absolute -translate-x-1/2 -translate-y-1/2 min-w-[var(--size-wk-xs)] min-h-[var(--size-wk-xs)] p-0 border-0 bg-transparent rounded-[var(--radius-wk-sm)] {{ $focusRing }}" x-bind:style="target.style" x-on:focus="select(target.index)" x-on:keydown="onMarkKey(target.index, $event)"></button>
+            </template>
+        </div>
+
+        <template x-for="handle in markHandleList()" x-bind:key="handle.name">
+            <span aria-hidden="true" class="wk-touch-target {{ $handleClasses }}" x-bind:class="handle.cursor" x-bind:data-wk-mark-handle="handle.name" x-bind:style="handle.style" x-on:pointerdown.stop="startMarkResize(handle.name, $event)"><span class="{{ $gripClasses }}"></span></span>
+        </template>
+        @endwirekitLast
     </div>
 
-    <span id="{{ $valueId }}" class="sr-only" x-text="valueText()"></span>
+    <span id="{{ $valueId }}" class="sr-only" x-text="valueText()">{{ $startValueText }}</span>
+    @if($wkTools !== [])
+    <span id="{{ $toolHelpId }}" class="sr-only">{{ __('wirekit::A tool pressed from the keyboard places its mark in the middle of the crop.') }}</span>
+    <span id="{{ $markHelpId }}" class="sr-only">{{ __('wirekit::On a mark, the arrow keys move it, with Shift they change its size, Space switches the end of a line or an arrow, and Delete removes it.') }}</span>
+    @endif
 
     <fieldset class="m-0 p-0 border-0 min-w-0 flex flex-wrap items-center gap-[var(--gap-wk-sm)]">
         <legend class="sr-only">{{ __('wirekit::Crop in percent') }}</legend>
         @foreach($axes as $axis => $text)
         <label class="{{ $axisClasses }}">
             <span aria-hidden="true">{{ $text['text'] }}</span>
-            <input type="number" min="0" max="100" step="0.1" inputmode="decimal" class="wk-field {{ $fieldClasses }}" aria-label="{{ $text['name'] }}" x-bind:value="fieldValue({{ AlpinePayload::string($axis) }})" x-on:change="setField({{ AlpinePayload::string($axis) }}, $event.target.value, $event.target)">
+            <input type="number" min="0" max="100" step="0.1" inputmode="decimal" class="wk-field {{ $fieldClasses }}" aria-label="{{ $text['name'] }}" value="{{ \Pushery\WireKit\Support\ScriptText::of($startCrop[$axis]) }}" x-bind:value="fieldValue({{ AlpinePayload::string($axis) }})" x-on:change="setField({{ AlpinePayload::string($axis) }}, $event.target.value, $event.target)">
             <span aria-hidden="true">%</span>
         </label>
         @endforeach
-        <x-wirekit::button intent="neutral" surface="soft" size="sm" data-wk-image-editor-reset x-on:click="reset()">{{ __('wirekit::Reset the crop') }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" size="sm" data-wk-image-editor-reset x-on:click="reset()">{{ __('wirekit::Reset the crop') }}</x-wirekit::button>
     </fieldset>
+
+    {{-- The page's own controls, inside the editor's scope: a button here can call rasterize(),
+         which draws the edited image into a file. --}}
+    @if(SlotContent::given($actions ?? null))
+    <div data-wk-image-editor-actions class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
+    @endif
 
     <div role="status" class="sr-only" x-text="announcement"></div>
 </div>

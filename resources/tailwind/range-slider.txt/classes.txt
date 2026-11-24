@@ -1,5 +1,6 @@
 --border-wk-width
 --color-wk-accent
+--color-wk-accent-text
 --color-wk-bg-elevated
 --color-wk-bg-muted
 --color-wk-border
@@ -32,15 +33,18 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -help
 -hint
 -label
 -my-1
+-tooltip
 -top-8
 -translate-x-1/2
 -translate-y-1/2
+-words
 @aware
 @click
 @else
@@ -52,12 +56,14 @@
 @php
 @pointerdown
 @props
+[overflow-wrap:anywhere]
 a
 able
 about
 above
 absence
 absolute
+accent
 accepts
 accessibility
 accessible
@@ -66,12 +72,15 @@ action
 activating
 acts
 actually
+address
 adds
 after
 again
 against
 agree
 alias
+align-fields
+alignFields
 aligns
 all
 allow
@@ -97,9 +106,11 @@ announced
 announcement
 announces
 announcing
+another
 answer
 anticipate
 any
+apart
 app
 appear
 appears
@@ -126,6 +137,7 @@ aria-required
 aria-valuemax
 aria-valuemin
 aria-valuenow
+aria-valuetext
 arithmetic
 arming
 arms
@@ -157,6 +169,7 @@ background
 badge
 badges
 bag
+bar
 bare
 base
 be
@@ -176,9 +189,9 @@ beside
 between
 beyond
 bg-[var(--color-wk-accent)]
+bg-[var(--color-wk-accent-text)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
-bg-[var(--color-wk-border)]
 bg-[var(--color-wk-border-strong)]
 bg-[var(--color-wk-tooltip-bg)]
 bind
@@ -188,6 +201,7 @@ binds
 block
 blur
 body
+bool
 boolean
 border
 border-2
@@ -218,6 +232,7 @@ but
 button
 buttons
 by
+cache
 call
 caller
 caller-supplied
@@ -246,6 +261,7 @@ check
 checks
 child
 children
+chosen
 circle
 clamp
 clamps
@@ -289,6 +305,7 @@ composed
 conditional
 config
 config/wirekit.php
+configuration
 configured
 console
 container
@@ -307,6 +324,7 @@ could
 count
 counted
 counterpart
+covers
 crossed
 current
 cursor
@@ -319,26 +337,38 @@ d
 danger-text
 dark
 data
+data-wk-field
 data-wk-field-label
+data-wk-field-part
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-server-value
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 days
 debug
 decided
 decimal
+declarations
 declared
 declares
 default
@@ -347,9 +377,11 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
 depend
+depends
 descendant
 descendants
 described
@@ -361,6 +393,7 @@ deterministic
 developer
 did
 different
+differs
 dim
 dims
 direction
@@ -391,6 +424,7 @@ drawing
 drawn
 draws
 drift
+drives
 drop
 dropped
 drops
@@ -435,6 +469,7 @@ evaluated
 even
 event
 events
+ever
 every
 everywhere
 exact
@@ -471,6 +506,7 @@ fight
 files
 fill
 filled
+find
 finds
 finish
 fire
@@ -526,6 +562,7 @@ full-width
 fully
 function
 function-valued
+functions
 further
 g
 gap
@@ -596,6 +633,7 @@ high
 hint
 hint-only
 hoists
+hold
 holds
 horizontal
 horizontally
@@ -630,6 +668,8 @@ inner
 input
 inputs
 inserts
+inset-ring-[length:max(1px,var(--border-wk-width))]
+inset-ring-[var(--color-wk-border-strong)]
 inside
 instanceof
 instead
@@ -686,6 +726,7 @@ larger
 last
 later
 layer
+lazy
 leading-none
 leads
 leave
@@ -703,6 +744,7 @@ light
 like
 line
 lines
+link
 linked
 list
 listener
@@ -808,7 +850,6 @@ mt-[var(--space-wk-xs)]
 much
 multiplier
 must
-muted
 mutually
 name
 named
@@ -859,6 +900,7 @@ omitted
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -877,6 +919,7 @@ opt
 optimistic
 optimistic-ui
 optimisticArgs
+option
 or
 order
 origin
@@ -913,6 +956,7 @@ parser
 parses
 part
 partial
+parts
 passed
 passthrough
 past
@@ -928,6 +972,7 @@ percentages
 perf
 phrasing
 picks
+pill
 pixel-identical
 place
 placed
@@ -946,6 +991,7 @@ pointer-events-none
 pointerup
 pointing
 points
+policy
 polite
 politely
 popover
@@ -967,14 +1013,17 @@ priceRange
 printed
 produces
 production
+progress
 project
 promise
 prop
 properties
 property
 props
+prose
 proxy
 public
+pulled
 purpose
 push
 put
@@ -987,6 +1036,7 @@ py-0.5
 py-[var(--padding-wk-y-xs)]
 qualified
 question
+race
 racing
 radiogroup
 raises
@@ -1039,6 +1089,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 resolve
 resolved
@@ -1052,6 +1104,7 @@ result
 return
 reverse-diff
 reverted
+ride
 right
 role
 role-less
@@ -1068,6 +1121,7 @@ routed
 row
 rule
 run
+running
 runs
 runtime
 s
@@ -1086,6 +1140,7 @@ screen
 screen-readers
 script
 scroll
+search
 second
 see
 seed
@@ -1112,6 +1167,7 @@ shares
 shifts
 shipped
 shipping
+short
 shortcut
 shortcuts
 should
@@ -1159,12 +1215,14 @@ span
 spans
 specific
 spellings
+spoken
 spreads
 sr-only
 stack
 stacking-context
 stand
 standalone
+standing
 stands
 start
 starting
@@ -1179,7 +1237,6 @@ step
 stepMin
 steps
 still
-stood
 stop
 stops
 stored
@@ -1188,7 +1245,9 @@ stray
 strictly
 string
 string-keyed
+strong
 style
+style-src
 stylesheet
 sub-component
 submit
@@ -1258,6 +1317,7 @@ these
 they
 thing
 this
+three
 through
 throw
 thumb
@@ -1281,7 +1341,9 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
 tooltip-style
+tooltip-words
 tooltips
 top
 top-1/2
@@ -1358,9 +1420,11 @@ visibly
 visual
 visually
 vs
+w-0
 w-4
 w-max
 w-px
+waits
 walk
 warning
 was
@@ -1392,6 +1456,7 @@ width/height
 win
 window
 winning
+wins
 wire:id
 wire:key
 wire:model
@@ -1415,6 +1480,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps

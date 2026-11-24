@@ -389,6 +389,10 @@ final class Chart extends Component
         }
 
         if ($this->tableMode !== null) {
+            // The axis titles head the columns of a scatter or a bubble, read where either library
+            // keeps them: ApexCharts in `xaxis` and `yaxis` (the first of several y axes), Chart.js in
+            // `scales`.
+            $yAxis = data_get($mergedOptions, 'yaxis');
             $this->tableModel = ChartDataTable::from(
                 $labels,
                 $datasets,
@@ -398,6 +402,8 @@ final class Chart extends Component
                 $rangePairs,
                 $dateZone,
                 $type,
+                ChartPointLinks::text(data_get($mergedOptions, 'xaxis.title.text') ?? data_get($mergedOptions, 'scales.x.title.text')),
+                ChartPointLinks::text((is_array($yAxis) && array_is_list($yAxis) ? data_get($yAxis, '0.title.text') : data_get($yAxis, 'title.text')) ?? data_get($mergedOptions, 'scales.y.title.text')),
             );
         }
 

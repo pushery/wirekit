@@ -35,6 +35,12 @@ import { timerDelay } from '../utils/timer-delay.js';
  * @param {string|null}  [config.persist]    localStorage key; null keeps it ephemeral
  */
 export default function wirekitSidebarRail(config = {}) {
+    // The column's own element, kept from init(). Alpine binds `$el` to the element an expression
+    // runs on, so `toggle()` from the collapse button inside the column would read that button:
+    // its id in the announcement and its transition in the timer below. Before init(), as in a
+    // harness that calls a method directly, `$el` answers.
+    let columnElement = null;
+
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
@@ -95,6 +101,7 @@ export default function wirekitSidebarRail(config = {}) {
         _settleFallback: null,
 
         init() {
+            columnElement = this.$el;
             if (! this._pinned) {
                 this._chosen = readPersistedFlag(this._persistKey, this._chosen, this._persistDriver);
             }
@@ -257,8 +264,9 @@ export default function wirekitSidebarRail(config = {}) {
                 // token a project can retune.
                 clearTimeout(this._settleFallback);
 
-                const declared = typeof getComputedStyle === 'function' && this.$el
-                    ? getComputedStyle(this.$el).transitionDuration || '0s'
+                const column = columnElement ?? this.$el;
+                const declared = typeof getComputedStyle === 'function' && column
+                    ? getComputedStyle(column).transitionDuration || '0s'
                     : '0s';
                 const longest = Math.max(
                     0,
@@ -309,7 +317,7 @@ export default function wirekitSidebarRail(config = {}) {
                     // Optional chaining because the id is optional and because $el is an
                     // Alpine magic that a plain unit harness does not provide -- reading it
                     // unguarded would make the component untestable outside a browser.
-                    detail: { id: this.$el?.id || null, collapsed: this.collapsed, chosenCollapsed: this._chosen, cause },
+                    detail: { id: (columnElement ?? this.$el)?.id || null, collapsed: this.collapsed, chosenCollapsed: this._chosen, cause },
                 }),
             );
         },

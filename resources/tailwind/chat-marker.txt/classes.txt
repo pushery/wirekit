@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-border
 --color-wk-border-strong
 --color-wk-border-subtle
@@ -89,14 +90,15 @@ border
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border-strong,var(--color-wk-border))]
 border-[var(--color-wk-border-subtle)]
-border-b
 border-b-0
+border-b-[length:var(--border-wk-width)]
 border-e-0
 border-s
 border-s-0
 border-t
 both
 bound
+box
 branch
 break
 broken
@@ -188,6 +190,7 @@ duration
 each
 early
 echo
+edges
 effect
 either
 element
@@ -223,6 +226,7 @@ flex
 flight
 flips
 float
+follow
 follows
 font-[family-name:var(--font-wk-sans)]
 for
@@ -445,6 +449,7 @@ role
 root
 row
 rows
+rule
 rules
 run
 s
@@ -533,6 +538,7 @@ that
 the
 their
 them
+theme
 then
 there
 third

@@ -48,9 +48,14 @@
              contract — so both `icon="cube"` and `<x-slot:icon>` now work.
              `data-wk-icon-nudge` moves either of them up onto the label's letters while the
              label shows (the rule beside `wk-rail-hide` in the stylesheet). --}}
-        <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
-            @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
-                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses]) }}
+        {{-- Markup in the slot, an avatar or a glyph of the caller's, stands in a box as a block,
+             centered and in its own size: beside a name and a line of preview an avatar is larger
+             than a glyph by design. Folded, the stylesheet gives the box the rail's icon size and
+             holds a larger child to it (`[data-wk-sidebar-slot-icon]` in dist/wirekit.css).
+             `$iconIsName` comes from the including view, as every variable here does. --}}
+        <span class="{{ $iconIsName ? 'shrink-0' : 'flex shrink-0 items-center justify-center' }}" @if(! $iconIsName) data-wk-sidebar-slot-icon @endif data-wk-icon-nudge aria-hidden="true">
+            @wirekitLast($iconIsName)
+                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses], navigation: true) }}
             @else
                 {{ $icon }}
             @endwirekitLast
@@ -66,8 +71,11 @@
          than its min-content width, which `break-words` does not lower, so without it the word
          keeps its full width and runs past the column. With `truncate` the same `min-w-0`
          bounds the box the ellipsis needs; the text stays whole for a screen reader, and the
-         `title` gives it back to a pointer. --}}
-    <span class="min-w-0 flex-1 {{ $truncate ? 'truncate' : 'break-words' }} wk-rail-hide"@if($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($slot) }}"@endif>{{ $slot }}</span>
+         `title` gives it back to a pointer. A row whose tooltip shares the page's panel names the
+         label by its id, and the panel shows the label's words. Both stand after the class, in one
+         chain: a second `@if` right after an `@endif` is no directive to Blade, and one before the
+         class left two spaces in the tag. --}}
+    <span class="min-w-0 flex-1 {{ $truncate ? 'truncate' : 'break-words' }} wk-rail-hide"@if($truncate && isset($labelId)) id="{{ $labelId }}" title="{{ \Pushery\WireKit\Support\SlotContent::textOf($slot) }}"@elseif($truncate) title="{{ \Pushery\WireKit\Support\SlotContent::textOf($slot) }}"@elseif(isset($labelId)) id="{{ $labelId }}"@endif>{{ $slot }}</span>
     {{-- Trailing counter (an unread badge). Rendered outside the label span so a long
          name wraps beside it rather than pushing it out, and pushed to the end with ms-auto.
 

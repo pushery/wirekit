@@ -31,6 +31,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --wk-rating-cut
 --wk-rating-fill
 --z-wk-tooltip
@@ -40,6 +41,8 @@
 -label
 -my-1
 -required
+-tooltip
+-words
 @aware
 @click
 @else
@@ -54,6 +57,7 @@
 @php
 @props
 [clip-path:inset(0_var(--wk-rating-cut,100%)_0_0)]
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -68,6 +72,7 @@ activating
 acts
 actually
 added
+address
 adds
 after
 after-hook
@@ -98,6 +103,7 @@ announced
 announcement
 announces
 announcing
+another
 answer
 anticipate
 any
@@ -182,6 +188,7 @@ block
 blocks
 blur
 body
+bool
 boolean
 boot
 border-[length:var(--border-wk-width)]
@@ -197,13 +204,16 @@ brings
 browser
 bubble
 bug
+build
 building
+builds
 built
 but
 button
 buttons
 by
 byte-identical
+cache
 call
 caller
 can
@@ -267,6 +277,7 @@ component
 components
 conditional
 config/wirekit.php
+configuration
 configured
 conflicting
 console
@@ -299,12 +310,14 @@ d
 danger-text
 dark
 data-wk-field-label
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-rating-star
@@ -313,16 +326,24 @@ data-wk-required-check
 data-wk-required-message
 data-wk-server-value
 data-wk-sr-host
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
 decided
 decimal
 decision
+declarations
 declared
 deduped
 default
@@ -332,9 +353,11 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberate
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -347,6 +370,7 @@ develop
 developer
 diamond
 different
+differs
 direction
 directives
 directly
@@ -373,6 +397,7 @@ drawer
 drawing
 drawn
 draws
+drives
 drop
 dropped
 dropping
@@ -414,6 +439,7 @@ evaluates
 even
 event
 events
+ever
 every
 everybody
 exactly
@@ -445,6 +471,7 @@ fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
 fill-none
 filled
 filter
+find
 finds
 finish
 fire
@@ -462,6 +489,7 @@ flips
 float
 floor
 flush
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -472,6 +500,7 @@ focusable-trigger
 focusableTrigger
 focuses
 fold
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -644,6 +673,7 @@ larger
 last
 later
 layer
+lazy
 leading-none
 leads
 least
@@ -660,6 +690,7 @@ light
 like
 line
 lines
+link
 linked
 list
 listener
@@ -787,6 +818,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -805,6 +837,7 @@ opt-in
 optimistic
 optimistic-ui
 optimisticArgs
+option
 optional
 or
 order
@@ -838,6 +871,7 @@ parser
 parses
 part
 partial
+parts
 passed
 passes
 passthrough
@@ -898,6 +932,7 @@ prop
 properties
 property
 props
+prose
 proxy
 purpose
 push
@@ -912,6 +947,7 @@ py-[var(--padding-wk-y-xs)]
 qualified
 question
 queued
+race
 racing
 radio
 radiogroup
@@ -965,9 +1001,11 @@ reports
 request
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageId
 requiredValue
@@ -983,6 +1021,7 @@ result
 return
 reverted
 rewrites
+ride
 rides
 right
 role
@@ -998,6 +1037,7 @@ row
 rtl:[clip-path:inset(0_0_0_var(--wk-rating-cut,100%))]
 rule
 run
+running
 runs
 s
 safe
@@ -1014,6 +1054,7 @@ score
 screen
 script
 scroll
+search
 second
 see
 seed
@@ -1038,6 +1079,7 @@ share
 shared
 shares
 ship
+short
 shortcut
 shortcuts
 should
@@ -1052,6 +1094,7 @@ sidebar
 silently
 simply
 simultaneously
+since
 single
 single-key
 single-select
@@ -1193,6 +1236,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1303,6 +1348,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps

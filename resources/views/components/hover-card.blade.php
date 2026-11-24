@@ -6,6 +6,9 @@
     'offset' => 8,
     'delayShow' => 300,
     'delayHide' => 200,
+    // Whether the card waits out of the page until it first shows. The default comes from the
+    // configuration (`components.hover-card.lazy`).
+    'lazy' => config('wirekit.components.hover-card.lazy', false),
     'scope' => null,
 ])
 
@@ -61,6 +64,10 @@
         'text-[color:var(--color-wk-text)]',
         // Scrolls once the position helper caps its height to a short viewport.
         'overflow-y-auto overscroll-contain',
+        // A token with no break point, an email address or a URL, breaks inside the panel rather
+        // than scrolling it sideways; `break-word` leaves every min-content width alone, so the
+        // rows inside keep their layout.
+        '[overflow-wrap:break-word]',
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
@@ -68,9 +75,17 @@
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    // A lazy hover card holds the teleport of its card in a template of its own among the children
+    // of its root, which the browser keeps out of the page until the factory builds it as the card
+    // first shows (utils/lazy-panel.js). The wrapper is an echo, since a conditional around a tag's
+    // two ends would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.hover-card.lazy', false)), 'hover-card', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <span
+    @if($lazy) data-wk-lazy-panel-host @endif
     x-data="wirekitHoverCard({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ $offset }}, delayShow: {{ $delayShow }}, delayHide: {{ $delayHide }} })"
     {{-- Escape listens on the window, and it has to.
          The panel below carries its own `@keydown.escape`, which fires only while
@@ -142,7 +157,7 @@
         coordinates are viewport-relative so the wrapper position is
         irrelevant).
     --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div
             x-ref="panel"
             x-show="isOpen"
@@ -179,5 +194,5 @@
         >
             {{ $slot }}
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 </span>

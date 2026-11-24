@@ -184,8 +184,8 @@
              of the control's name or description. In a row with `align-fields` it takes a fourth
              track of its own (dist/wirekit.css), so the controls and messages of the row stay on
              their lines. --}}
-        @if(\Pushery\WireKit\Support\SlotContent::given($after ?? null))
+        @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($after ?? null))
             <div data-wk-field-after>{{ $after }}</div>
-        @endif
+        @endwirekitLast
     @endwirekitLast
 </div>

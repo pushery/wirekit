@@ -19,20 +19,34 @@
 export const WK_CHART_DATA_ATTRIBUTE = 'data-wk-chart-data';
 
 /**
+ * The payload the component renders beside its chart right now, or null where it renders none.
+ *
+ * @param {Element|null|undefined} root  the chart's root element
+ * @returns {string|null}
+ */
+export function chartServerDataNow(root) {
+    const carrier = root?.nextElementSibling;
+
+    return carrier?.hasAttribute?.(WK_CHART_DATA_ATTRIBUTE) ? carrier.getAttribute(WK_CHART_DATA_ATTRIBUTE) : null;
+}
+
+/**
  * @param {Element|null|undefined} root  the chart's root element
  * @param {(payload: object) => void} onData  called with each new payload, never the first
+ * @param {string|null} [since]  the payload the chart was built from, read when it started; a
+ *   newer one that arrived before the chart was built is reported at once
  * @returns {(() => void)|null}
  */
-export function followChartServerData(root, onData) {
+export function followChartServerData(root, onData, since = null) {
     const carrier = root?.nextElementSibling;
 
     if (! carrier || ! carrier.hasAttribute?.(WK_CHART_DATA_ATTRIBUTE) || typeof MutationObserver === 'undefined') {
         return null;
     }
 
-    let last = carrier.getAttribute(WK_CHART_DATA_ATTRIBUTE);
+    let last = since ?? carrier.getAttribute(WK_CHART_DATA_ATTRIBUTE);
 
-    const observer = new MutationObserver(() => {
+    const report = () => {
         const value = carrier.getAttribute(WK_CHART_DATA_ATTRIBUTE);
 
         // The morph rewrites attributes it did not change as well; only a different payload
@@ -61,9 +75,14 @@ export function followChartServerData(root, onData) {
 
             onData(payload);
         }
-    });
+    };
 
+    const observer = new MutationObserver(report);
     observer.observe(carrier, { attributes: true, attributeFilter: [WK_CHART_DATA_ATTRIBUTE] });
+
+    // A chart is built a few tasks after it starts, one chart per task, and an update can land in
+    // between; its payload is news to a chart built from the one before.
+    report();
 
     return () => observer.disconnect();
 }

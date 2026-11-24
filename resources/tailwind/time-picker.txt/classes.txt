@@ -10,7 +10,6 @@
 --color-wk-border-error
 --color-wk-border-strong
 --color-wk-border-strong-hover
---color-wk-danger
 --color-wk-danger-text
 --color-wk-overlay
 --color-wk-ring
@@ -58,6 +57,7 @@
 --text-wk-xs
 --transition-wk-duration
 --transition-wk-easing
+--wk-fill-ink
 --z-wk-dropdown
 --z-wk-modal
 --z-wk-tooltip
@@ -73,8 +73,10 @@
 -times
 -title
 -toggle
+-tooltip
 -translate-y-1/2
 -value
+-words
 @aware
 @else
 @endforeach
@@ -85,6 +87,7 @@
 @include
 @php
 @props
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -99,6 +102,7 @@ action
 activating
 acts
 actually
+address
 adds
 after
 again
@@ -106,6 +110,8 @@ against
 agree
 agreed
 alias
+align-fields
+alignFields
 all
 alone
 already
@@ -206,6 +212,7 @@ binding
 binds
 block
 body
+bool
 boolean
 border
 border-[length:var(--border-wk-width)]
@@ -224,11 +231,14 @@ brings
 browser
 bubble
 bug
+build
+builds
 built
 but
 button
 buttons
 by
+cache
 calendar
 call
 caller
@@ -241,6 +251,7 @@ capture
 card
 caret-transparent
 carries
+carry
 case
 cast
 casts
@@ -289,6 +300,7 @@ component
 components
 conditional
 config/wirekit.php
+configuration
 conflicting
 console
 consuming
@@ -302,6 +314,7 @@ copy
 corner
 costs
 could
+count
 counted
 counterpart
 counts
@@ -317,13 +330,17 @@ danger-text
 dark
 data-wk-fallback-clear
 data-wk-fallback-name
+data-wk-field
 data-wk-field-label
+data-wk-field-part
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-picker-dialog
 data-wk-prose-skip
@@ -332,12 +349,19 @@ data-wk-required-check
 data-wk-server-value
 data-wk-sr-host
 data-wk-time-segments
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 date
 date-object
 datetime
@@ -345,6 +369,7 @@ day
 dayPeriodLabel
 debug
 decided
+declarations
 declared
 declaring
 default
@@ -353,8 +378,10 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -365,6 +392,7 @@ developer
 dialog
 dialogModal
 different
+differs
 direction
 directives
 disabled
@@ -386,6 +414,7 @@ drawer
 drawing
 drawn
 draws
+drives
 dropped
 drops
 duration-100
@@ -424,6 +453,7 @@ evaluated
 evenodd
 event
 events
+ever
 every
 exactly
 explains
@@ -463,7 +493,7 @@ focus
 focus-ring
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
-focus-visible:ring-[var(--color-wk-danger)]
+focus-visible:ring-[var(--color-wk-danger-text)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-inset
 focus-visible:ring-offset-[length:var(--ring-wk-offset)]
@@ -550,6 +580,7 @@ heading
 hear
 hears
 height
+held
 help
 helpButton
 helpField
@@ -652,6 +683,7 @@ language
 last
 later
 layer
+lazy
 leading-none
 leads
 leave
@@ -669,6 +701,7 @@ like
 limits
 line
 lines
+link
 linked
 list
 list-none
@@ -786,6 +819,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -838,6 +872,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 patch
 patches
@@ -886,6 +921,7 @@ project
 prop
 property
 props
+prose
 proxy
 ps-[var(--padding-wk-x-md)]
 ps-[var(--padding-wk-x-sm)]
@@ -904,6 +940,7 @@ py-[var(--padding-wk-y-xs)]
 qualified
 quarter
 question
+race
 racing
 raises
 range
@@ -942,8 +979,10 @@ reports
 request
 required
 required-check
+required-mark
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredValue
 requirement
 requires
@@ -955,6 +994,7 @@ rests
 restyles
 result
 reverted
+ride
 right
 ring
 role
@@ -969,6 +1009,7 @@ row
 row-start-1
 rule
 run
+running
 runs
 s
 safe
@@ -986,6 +1027,7 @@ script
 scroll
 scrolling
 scrolls
+search
 second
 seconds
 see
@@ -1012,6 +1054,7 @@ shaped
 share
 shared
 shares
+short
 shortcut
 shortcuts
 should
@@ -1121,6 +1164,7 @@ taps
 target
 teleport
 teleported
+teleports
 tell
 template
 text
@@ -1149,8 +1193,10 @@ theme
 then
 there
 therefore
+these
 they
 this
+three
 through
 tick
 time
@@ -1186,6 +1232,7 @@ timeListLang
 timer
 times
 tip
+title
 to
 together
 toggletip
@@ -1196,13 +1243,17 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-1/2
 top-left
 touch
 towards
+track
 tracking-[var(--font-wk-letter-spacing)]
+tracks
 transformed
 transition
 transition-colors
@@ -1237,6 +1288,7 @@ unlike
 unsteady
 until
 up
+update
 usable
 use
 uses
@@ -1288,6 +1340,7 @@ wider
 widest
 width
 window
+wins
 wire:id
 wire:key
 wire:model
@@ -1319,6 +1372,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps
@@ -1334,6 +1388,7 @@ x-bind:data-wk-picker-modal
 x-bind:data-wk-tooltip-disabled
 x-bind:disabled
 x-bind:for
+x-bind:title
 x-bind:value
 x-cloak
 x-data

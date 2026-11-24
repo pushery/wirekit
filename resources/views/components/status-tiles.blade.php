@@ -222,7 +222,7 @@
                         <span class="{{ $tileInner }}">
                             <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
                                 <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>
-                                <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
+                                <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]" title="{{ $tile['label'] }}">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
                                 {{-- Its own title when it clamps. The tile carries `title=label`,
@@ -245,7 +245,7 @@
                         <span class="{{ $tileInner }}">
                             <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
                                 <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>
-                                <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
+                                <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]" title="{{ $tile['label'] }}">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
                                 {{-- Its own title when it clamps. The tile carries `title=label`,

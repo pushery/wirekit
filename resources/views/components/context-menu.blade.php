@@ -15,6 +15,9 @@
     // where the reading cursor is, and there is nothing left to identify it by.
     'label' => null,
     'teleport' => true,
+    // Whether the menu waits out of the page until it first opens. The default comes from the
+    // configuration (`components.context-menu.lazy`).
+    'lazy' => config('wirekit.components.context-menu.lazy', false),
     'scope' => null,
 ])
 
@@ -44,6 +47,14 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $teleport = BooleanProp::from($teleport, true, 'context-menu', 'teleport');
+
+    // A lazy context menu holds its menu, teleported or not, in a template of its own among the
+    // children of its root, which the browser keeps out of the page until the factory builds it as
+    // the menu first opens (utils/lazy-panel.js). The wrapper is an echo, since a conditional
+    // around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.context-menu.lazy', false)), 'context-menu', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 
     // Context Menu — right-click triggered dropdown menu.
     // Positions at cursor coordinates using a virtual Floating UI reference.
@@ -79,6 +90,7 @@
 
 <div
     x-data="wirekitContextMenu()"
+    @if($lazy) data-wk-lazy-panel-host @endif
     x-on:keydown="handleKeydown"
     {{-- Escape is also bound on the window, and not only through handleKeydown.
 
@@ -158,6 +170,7 @@
          wrapper) so it fires correctly in both teleport modes — clicking
          anywhere that isn't the panel (including the trigger) closes the
          menu, which is the standard menu behavior. --}}
+    {{ $lazyPanelOpen }}
     @if($teleport)
     <template x-teleport="#wk-overlay-root">
     @endif
@@ -200,4 +213,5 @@
     @if($teleport)
     </template>
     @endif
+    {{ $lazyPanelClose }}
 </div>

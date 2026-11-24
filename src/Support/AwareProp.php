@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use BackedEnum;
 use Illuminate\Contracts\View\View as ViewContract;
+use Illuminate\Support\Stringable;
 use Illuminate\View\Factory;
 use ReflectionProperty;
 use Throwable;
+use UnitEnum;
 
 /**
  * A value a child component takes from its own family through `@aware`, and from no other.
@@ -45,26 +48,28 @@ final class AwareProp
      * The key from the child's own tag, else from the nearest member of its family that holds it.
      *
      * The value is whatever a tag carried, a text, a number, a switch or a list, so the default
-     * and the return are `mixed`.
+     * and the return are `mixed`. An enum or a fluent string is read as its text, and a text
+     * written into a tag with Blade's escape undone (asText()).
      *
      * @param  list<string>  $owners  the components the family belongs to, by name; the search ends at the first of them
      * @param  list<string>  $members  the components between the child and its owner that may hold the key as well
      * @param  array<string, string>  $implied  the components whose content holds the child in one shape only, by name, with the value of that shape
+     * @param  bool  $ownTag  whether the child rendered through the view factory, so the tag data the factory keeps at its depth is its own; a view livewire/blaze compiled into a function did not, and the data there belongs to a component rendered before it
      */
-    public static function read(string $key, array $owners, mixed $default = null, array $members = [], array $implied = []): mixed
+    public static function read(string $key, array $owners, mixed $default = null, array $members = [], array $implied = [], bool $ownTag = true): mixed
     {
         $state = self::state();
 
         if ($state === null) {
-            return app('view')->getConsumableComponentData($key, $default);
+            return self::asText(app('view')->getConsumableComponentData($key, $default));
         }
 
         [$stack, $data, $current] = $state;
         $depth = count($stack);
-        $own = $data[$depth] ?? null;
+        $own = $ownTag ? ($data[$depth] ?? null) : null;
 
         if (is_array($own) && array_key_exists($key, $own)) {
-            return $own[$key];
+            return self::asText($own[$key]);
         }
 
         $family = false;
@@ -93,7 +98,7 @@ final class AwareProp
             $tag = $data[$i] ?? null;
 
             if (is_array($tag) && array_key_exists($key, $tag)) {
-                return $tag[$key];
+                return self::asText($tag[$key]);
             }
 
             if ($owner) {
@@ -101,7 +106,35 @@ final class AwareProp
             }
         }
 
-        return ! $family && array_key_exists($key, $current) ? $current[$key] : $default;
+        return ! $family && array_key_exists($key, $current) ? self::asText($current[$key], escaped: false) : $default;
+    }
+
+    /**
+     * A value from tag data, read as the view composer reads a prop (Support\PropText): an enum
+     * as the text it stands for, a backed one as its value and a pure one as its name, and a
+     * fluent string as its string. The composer reads the data of the view that renders, so a
+     * parent bound `:variant="$style"` reads the text, while the tag data its children read
+     * here holds the value as it was bound, and a child comparing it with `===` or handing it
+     * to a parameter typed for text would take the enum for no value or end the page. `mixed`
+     * for the reason read() gives.
+     *
+     * A text from a tag is read with Blade's escape undone, as the composer reads one written on
+     * a tag (PropText::text()): a value echoed into the tag, `selected="{{ $key }}"`, is held
+     * there escaped, so a key with an ampersand never matched the child's own value, which the
+     * composer had read. The data of the view that renders is read without that step: a
+     * component's has passed the composer already, and a page's never passed Blade's escape.
+     */
+    private static function asText(mixed $value, bool $escaped = true): mixed
+    {
+        if ($value instanceof UnitEnum) {
+            return $value instanceof BackedEnum ? $value->value : $value->name;
+        }
+
+        if ($value instanceof Stringable) {
+            return $value->toString();
+        }
+
+        return $escaped ? PropText::text($value) : $value;
     }
 
     /**

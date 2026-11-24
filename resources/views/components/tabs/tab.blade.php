@@ -33,7 +33,7 @@
     'href' => null,
 ])
 
-@aware(['variant' => 'underline', 'orientation' => 'horizontal'])
+@aware(['variant' => config('wirekit.components.tabs.variant', 'underline'), 'orientation' => 'horizontal'])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -42,7 +42,8 @@
 
     // `@aware` takes a key from any ancestor that holds it; these are read from the family only
     // (Support\AwareProp).
-    $variant = \Pushery\WireKit\Support\AwareProp::read('variant', ['tabs.list', 'tabs'], 'underline');
+    // A bar whose tag names no variant draws the one of the tabs configuration, so a tab takes it too.
+    $variant = \Pushery\WireKit\Support\AwareProp::read('variant', ['tabs.list', 'tabs'], config('wirekit.components.tabs.variant', 'underline'));
     $orientation = \Pushery\WireKit\Support\AwareProp::read('orientation', ['tabs.list', 'tabs'], 'horizontal');
 
     // `@aware` reads a value from the parent but — unlike `@props` — does not remove
@@ -120,7 +121,7 @@
     <span>{{ $slot }}</span>
 
     @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
-    @if($badgeText !== null)
+    @wirekitLast($badgeText !== null)
         <x-wirekit::badge size="sm" :intent="$badgeIntent">{{ $badgeText }}</x-wirekit::badge>
-    @endif
+    @endwirekitLast
 </{{ $tag }}>

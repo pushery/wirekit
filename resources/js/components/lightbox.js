@@ -15,11 +15,22 @@
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { holdPageInert, inOverlayRoot, lockScroll, releasePageInert, unlockScroll } from '../utils/overlay.js';
 import { FOCUSABLE } from '../utils/first-control.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { sameName } from '../utils/same-name.js';
 import { prefersReducedMotion } from '../utils/motion.js';
+import { jsonValue, observeServerValue } from '../utils/server-value.js';
 import { FITTED, panBy, settle, zoomTo } from '../utils/zoom-pan.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
+
+/**
+ * The attribute of the root the slides travel on. They change with the server's items, and in
+ * `x-data` such a change would have Alpine set the component back to the new expression and
+ * start it again, which closes an open viewer.
+ */
+const SLIDES_ATTRIBUTE = 'data-wk-slides';
 /** One step of the zoom buttons and keys, as a factor of the scale. */
 const ZOOM_STEP = 1.5;
 
@@ -96,7 +107,9 @@ function focusableFrom(target) {
  * @param {Object} config
  * @param {string} config.name  - Identifier this instance answers to for the
  *                                `wirekit-lightbox-open` event.
- * @param {number} config.count - Number of items.
+ * @param {number} config.count - Number of items, for a factory built without slides.
+ * @param {Array} [config.slides] - The slides, for a factory built outside Blade. Without them
+ *                                the slides come from the root's `data-wk-slides`, and follow it.
  * @param {boolean} config.loop - Whether prev/next wraps at the ends.
  * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll and makes
  *                                the page behind inert, as the other modal overlays do.
@@ -152,6 +165,11 @@ export default function wirekitLightbox(config = {}) {
         _resizeHandler: null,
         // What a button or a key did, said by the dialog's second live region: "Zoom 200%".
         zoomAnnouncement: '',
+
+        /** The slides, for the viewer's loop: a list the server changes is updated in place. */
+        get slides() {
+            return this._slides;
+        },
 
         /** The current slide's caption, or '' when there is none. */
         get currentCaption() {
@@ -248,9 +266,32 @@ export default function wirekitLightbox(config = {}) {
         _returnTo: null,
         _triggerNoter: null,
         _leaveHandler: null,
+        // Stops following the root's `data-wk-slides`; released in destroy().
+        _stopSlidesSync: null,
 
         init() {
             host = this;
+
+            // The slides are read from the root rather than from `x-data`, so the expression renders
+            // the same on every update. Slides the server changes replace the list, and an open
+            // viewer stays open. Slides passed in `config`, as by a factory built outside Blade,
+            // are the list as given.
+            if (config.slides === undefined && typeof this.$root?.getAttribute === 'function') {
+                this._takeSlides(jsonValue(this.$root.getAttribute(SLIDES_ATTRIBUTE)));
+                this._stopSlidesSync = observeServerValue(this.$root, (raw) => {
+                    this._takeSlides(jsonValue(raw));
+                }, SLIDES_ATTRIBUTE);
+            }
+
+            // A render of the Livewire component around a lazy lightbox must neither remove the viewer
+            // it built nor keep a viewer the server no longer draws. An opening by markup writing
+            // `isOpen` still finds its viewer: it is built a tick after the write.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
 
             // Page-level open: any control can dispatch
             // wirekit-lightbox-open { name, index } to open this instance.
@@ -319,6 +360,16 @@ export default function wirekitLightbox(config = {}) {
             frame.setAttribute('src', String(item.src || ''));
         },
 
+        /**
+         * Build the viewer of a lazy lightbox, its slides and controls, as it first opens. A
+         * lightbox that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            const self = host ?? this;
+
+            buildLazyPanel(lazyPanelTemplate(self.$root));
+        },
+
         openAt(index) {
             const self = host ?? this;
 
@@ -349,6 +400,9 @@ export default function wirekitLightbox(config = {}) {
             // Whoever opened it gets focus back when it closes; see `_returnTo`.
             self._returnTo = self._pendingTrigger;
             self._pendingTrigger = null;
+
+            // A lazy viewer is built here, before it opens and the tick below arms it.
+            self.preparePanel();
 
             self.isOpen = true;
 
@@ -424,6 +478,40 @@ export default function wirekitLightbox(config = {}) {
                 self._trap.deactivate();
             } else {
                 self.isOpen = false;
+            }
+        },
+
+        /**
+         * Take the slides the server wrote: the list, its length, and a current position that still
+         * exists. An open viewer stays open at its position, and moves to the last slide when the
+         * list grew shorter than that; a viewer whose list emptied closes, since it has nothing left
+         * to show. A value that is not a list is no list of slides and changes nothing.
+         *
+         * @param {*} slides the parsed value of `data-wk-slides`
+         */
+        _takeSlides(slides) {
+            if (! Array.isArray(slides)) {
+                return;
+            }
+
+            const self = host ?? this;
+
+            self._slides = slides;
+            self.count = slides.length;
+
+            if (self.count === 0) {
+                if (self.isOpen) {
+                    self.close();
+                }
+
+                self.current = 0;
+
+                return;
+            }
+
+            if (self.current > self.count - 1) {
+                self.current = self.count - 1;
+                self._resetZoom();
             }
         },
 
@@ -873,6 +961,10 @@ export default function wirekitLightbox(config = {}) {
         },
 
         destroy() {
+            if (this._stopSlidesSync) {
+                this._stopSlidesSync();
+                this._stopSlidesSync = null;
+            }
             if (this._openHandler) {
                 window.removeEventListener('wirekit-lightbox-open', this._openHandler);
                 this._openHandler = null;

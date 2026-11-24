@@ -50,6 +50,8 @@ import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
 import { defineShortcut, registerShortcutDirective } from './utils/shortcuts.js';
+import { wirekitCodeJoins } from './utils/code-joins.js';
+import { position } from './utils/floating.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -60,6 +62,12 @@ import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { installFocusInvalid } from './utils/focus-invalid.js';
+import { installLazySelectOptions } from './utils/lazy-select-options.js';
+import { installFocusTarget } from './utils/focus-target.js';
+import { installChoicesFollowTheServer } from './utils/choices-follow-the-server.js';
+import { installApexOnDemand } from './utils/apex-on-demand.js';
+import { installSharedTooltips } from './utils/shared-tooltips.js';
+import { installCartRemovalFocus } from './utils/cart-removal-focus.js';
 import { installSubmitOnce } from './utils/submit-once.js';
 import { installCanceledTransitionHandler } from './utils/canceled-transition.js';
 import collapse from '@alpinejs/collapse';
@@ -151,6 +159,8 @@ import wirekitDatetimePickerMoment from './components/datetime-picker-moment.js'
 import wirekitDatetimePickerTime from './components/datetime-picker-time.js';
 import wirekitDatePicker from './components/date-picker.js';
 import wirekitTimePicker from './components/time-picker.js';
+import wirekitExternalLinkQuestion from './components/external-link-question.js';
+import wirekitCaptcha from './components/captcha.js';
 import wirekitTableSearch from './components/table-search.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
@@ -222,9 +232,18 @@ const target = hostAlpine ?? Alpine;
 // a broken one when it is not.
 installOverlayRoot();
 
+// The panel placement `combobox` and the column menu of `data-table` ask for: both are in this
+// bundle, and without it the combobox list stays where the overlay root holds it, away from its
+// field. Set when the bundle runs, as on the full bundle. See utils/floating.js.
+window.wirekitPosition = position;
+
 // A shortcut that works out what it does registers here, as on the full bundle. See
 // utils/shortcuts.js.
 window.wirekitShortcut = defineShortcut;
+
+// The highlight.js plugin that keeps the joins of code that wraps, as on the full bundle. See
+// utils/code-joins.js.
+window.wirekitCodeJoins = wirekitCodeJoins;
 
     // Alpine's collapse plugin, registered before any component.
     //
@@ -333,12 +352,30 @@ if (hostAlpine) {
     // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
     // See utils/focus-invalid.js.
     installFocusInvalid();
+    // A lazy select builds its list the first time it is used, and keeps it through Livewire's
+    // renders. See utils/lazy-select-options.js.
+    installLazySelectOptions();
+    // `wirekit:focus` takes the focus to the element a response names, opening what hides it.
+    // See utils/focus-target.js.
+    installFocusTarget();
+    // A toggle, a checkbox or a radio that sends an action of its own shows the server's state
+    // once its component's request has ended, refused or not. See utils/choices-follow-the-server.js.
+    installChoicesFollowTheServer();
+    // A chart drawn with ApexCharts that names the adapter waits for it, which loads where a
+    // chart starts while `wirekit.scripts.apex` is `on-demand`. See utils/apex-on-demand.js.
+    installApexOnDemand(target);
+    // The focus goes on to the next control once a cart line the reader removed has left the
+    // page. See utils/cart-removal-focus.js.
+    installCartRemovalFocus();
     // A form with `data-wk-submit-once` sends itself once until the page changes. See
     // utils/submit-once.js.
     installSubmitOnce();
     // A panel opened again while it closes reports no unhandled rejection: Alpine handles the
     // hide it cancels a frame late. See utils/canceled-transition.js.
     installCanceledTransitionHandler();
+    // The trigger of a shared tooltip that is one element, with no component of its own, is
+    // driven from the document through the tooltip factory. See utils/shared-tooltips.js.
+    installSharedTooltips(typeof window === 'undefined' ? null : window, () => wirekitTooltip);
 
     target.data('wirekitChartJs', wirekitChartJs);
     target.data('wirekitDropdown', wirekitDropdown);
@@ -426,6 +463,8 @@ if (hostAlpine) {
     target.data('wirekitDatetimePickerTime', wirekitDatetimePickerTime);
     target.data('wirekitDatePicker', wirekitDatePicker);
     target.data('wirekitTimePicker', wirekitTimePicker);
+    target.data('wirekitExternalLinkQuestion', wirekitExternalLinkQuestion);
+    target.data('wirekitCaptcha', wirekitCaptcha);
     target.data('wirekitTableSearch', wirekitTableSearch);
     target.data('wirekitTableSort', wirekitTableSort);
     target.data('wirekitTour', wirekitTour);

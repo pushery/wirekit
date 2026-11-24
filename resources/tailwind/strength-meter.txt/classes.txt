@@ -26,6 +26,7 @@ after
 against
 alone
 already
+also
 an
 and
 announce
@@ -84,6 +85,7 @@ could
 count
 current
 danger
+data-wk-lit
 data-wk-server-value
 data-wk-sr-host
 debug
@@ -94,6 +96,7 @@ does
 drawn
 draws
 drew
+drops
 duration-[var(--transition-wk-duration)]
 each
 edge
@@ -101,6 +104,7 @@ element
 else
 elseif
 empty
+every
 factory
 fill
 filled
@@ -113,6 +117,7 @@ fn
 follows
 font-[family-name:var(--font-wk-sans)]
 for
+forced-colors
 four
 fraction
 from
@@ -120,6 +125,7 @@ function
 gap-[var(--gap-wk-sm)]
 gap-[var(--gap-wk-xs)]
 give
+gives
 grid
 h-1
 hands
@@ -165,6 +171,7 @@ may
 meter
 meters
 min-w-0
+mode
 most
 muted
 name
@@ -177,6 +184,7 @@ node
 none
 not
 nothing
+null
 of
 on
 one
@@ -206,7 +214,9 @@ read
 reader
 reads
 region
+render
 renders
+repaints
 request
 reserves
 result
@@ -255,6 +265,7 @@ string
 strong
 strval
 style
+stylesheet
 sub-component
 subject
 surrounding
@@ -267,6 +278,8 @@ than
 that
 the
 them
+theme
+then
 there
 this
 through
@@ -304,11 +317,14 @@ wide
 width
 with
 without
+wk-strength-bar
 word
 words
 would
+written
 x-bind:aria-valuenow
 x-bind:aria-valuetext
+x-bind:data-wk-lit
 x-bind:style
 x-data
 x-model

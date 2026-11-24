@@ -41,9 +41,14 @@
         'border-[var(--color-wk-border-subtle)]',
     ]), $scope);
 
+    // Inline code stands in running text, where a line may break after a hyphen, so an operator
+    // such as `->` or `--force` is held together and never ends one line and starts the next. A
+    // hyphen inside a name stays a place to break (Support\CodeWrapJoins::operators()), and an
+    // address takes its own breaks instead.
+    //
     // Code runs from the left inside a sentence of any direction. `dir` isolates it from the text
     // around it, so on a page that reads from the right its closing punctuation stays at its end;
     // a caller's own `dir` wins.
 @endphp
 
-<code data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes]))->merge(['dir' => 'ltr']) }}>{{ $breakMode === 'address' ? \Pushery\WireKit\Support\AddressBreaks::mark($slot) : $slot }}</code>
+<code data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes]))->merge(['dir' => 'ltr']) }}>{{ $breakMode === 'address' ? \Pushery\WireKit\Support\AddressBreaks::mark($slot) : new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\CodeWrapJoins::operators((string) $slot)) }}</code>

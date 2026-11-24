@@ -19,6 +19,9 @@
     'focusable' => true,
     // `sm` 6px, `md` 8px, `lg` 10px.
     'size' => 'md',
+    // Draw the tooltip into the page's shared panel, as `tooltip` does with `shared`. A shared dot
+    // that takes its own tab stop is its own trigger: one element, which the page's host drives.
+    'shared' => config('wirekit.components.tooltip.shared', false),
     'scope' => null,
 ])
 
@@ -30,6 +33,7 @@
     // would otherwise keep the tooltip. Normalized against each prop's own default.
     $tooltip = BooleanProp::from($tooltip, true, 'status-dot', 'tooltip');
     $focusable = BooleanProp::from($focusable, true, 'status-dot', 'focusable');
+    $shared = BooleanProp::from($shared, false, 'status-dot', 'shared');
 
     // Dev-only: flags an unknown prop in debug, silent in production.
     WireKit::warnUnknownProps('status-dot', $attributes->getAttributes());
@@ -73,6 +77,17 @@
     $named = filled($label) || $callerNamed;
     $withTooltip = $tooltip && filled($label);
 
+    // A shared dot with its own tab stop is its own trigger, with no component of its own: the
+    // page's host drives it from the document (resources/js/utils/shared-tooltips.js), and the
+    // shared panel shows its name, or, where the caller names the dot, the label it is described
+    // by. The dot takes the role the trigger around it has otherwise, and the trigger's focus
+    // ring. A role of the caller's keeps the tooltip around the dot.
+    $lean = $withTooltip && $shared && $focusable && ! $attributes->has('role');
+    $leanWordsId = $lean && $callerNamed ? \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-') : '';
+    $leanWords = $leanWordsId !== ''
+        ? new \Illuminate\Support\HtmlString('<span id="'.e($leanWordsId).'" hidden data-wk-tooltip-words>'.e(\Pushery\WireKit\Support\SlotContent::textOf($label)).'</span>')
+        : '';
+
     // A decorative dot manages its own `aria-hidden`, so a caller's copy leaves the bag rather
     // than standing in the tag twice.
     if (! $named) {
@@ -87,7 +102,7 @@
     // keeps all of them.
     $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
 
-    if ($withTooltip) {
+    if ($withTooltip && ! $lean) {
         $callerRef = trim((string) $attributes->get('x-ref', ''));
         [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
@@ -101,9 +116,21 @@
 {{-- The tooltip describes nothing when its text is the dot's own name, which a screen reader
      would otherwise read twice. With a name of the caller's, the label is extra text and does
      describe the dot. The Blade tags cannot be split across a condition, so the dot is written
-     twice. --}}
-@if($withTooltip)
-    <x-wirekit::tooltip :text="$label" :placement="$placement" as="span" :focusable-trigger="$focusable" :describes="$callerNamed" :attributes="$outerAttributes">
+     three times: its own trigger in the shared panel, inside a tooltip of its own, and alone. --}}
+@if($lean)
+    <span
+        data-wk-status-dot
+        data-intent="{{ $intent }}"
+        data-wk-prose-skip
+        data-wk-tip="{{ $leanWordsId }}"
+        @if($placement !== 'top') data-wk-tip-placement="{{ $placement }}" @endif
+        role="button"
+        tabindex="0"
+        @if($callerNamed) aria-describedby="{{ $leanWordsId }}" @else aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-status-dot', $classes, 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]'])) }}
+    ></span>{{ $leanWords }}
+@elseif($withTooltip)
+    <x-wirekit::tooltip :text="$label" :placement="$placement" as="span" :focusable-trigger="$focusable" :describes="$callerNamed" :shared="$shared" :attributes="$outerAttributes">
         <span
             data-wk-status-dot
             data-intent="{{ $intent }}"

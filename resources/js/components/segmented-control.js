@@ -1,4 +1,5 @@
 import { onFormReset } from '../utils/form-reset.js';
+import { revealInTrack } from '../utils/reveal-in-track.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { safeObserver } from '../utils/safe-observer.js';
 import { watchModelEvents } from '../utils/model-events.js';
@@ -322,46 +323,18 @@ export default function wirekitSegmentedControl(config = {}) {
         },
 
         /**
-         * Scroll the selected segment into the visible part of the track.
-         *
-         * Only the track moves. `scrollIntoView()` would scroll every scrollable ancestor as
-         * well, the page included, and a page that jumps sideways on load is the defect the
-         * track's own scroll exists to prevent. The arithmetic uses rectangles rather than
-         * `offsetLeft`, so it does not depend on the writing direction: `scrollLeft` counts
-         * from the other edge in a right-to-left track, and a rectangle delta does not care.
+         * Scroll the selected segment into the visible part of the track, and only the track
+         * (utils/reveal-in-track.js says why, and how a right-to-left track is measured).
          */
         _revealSelected() {
             const track = this.$root;
 
             // Capability-checked like init(): a harness stub has no layout, and nothing to reveal.
-            if (typeof track?.getBoundingClientRect !== 'function' || typeof track.querySelector !== 'function') {
+            if (typeof track?.querySelector !== 'function') {
                 return;
             }
 
-            // A track that does not scroll has nothing outside its visible part.
-            if (track.scrollWidth <= track.clientWidth) {
-                return;
-            }
-
-            const segment = track.querySelector('[role="radio"][aria-checked="true"]');
-
-            if (!segment) {
-                return;
-            }
-
-            const trackBox = track.getBoundingClientRect();
-            const box = segment.getBoundingClientRect();
-            // The track's scroll padding is the margin a segment scrolled into view keeps from the
-            // edge, so its focus ring is not cut off there. The reveal keeps the same margin.
-            const inset = typeof getComputedStyle === 'function'
-                ? parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0
-                : 0;
-
-            if (box.left - inset < trackBox.left) {
-                track.scrollLeft -= trackBox.left - (box.left - inset);
-            } else if (box.right + inset > trackBox.right) {
-                track.scrollLeft += box.right + inset - trackBox.right;
-            }
+            revealInTrack(track, track.querySelector('[role="radio"][aria-checked="true"]'));
         },
 
         /**

@@ -6,7 +6,6 @@
 --color-wk-border
 --color-wk-border-error
 --color-wk-border-strong
---color-wk-danger
 --color-wk-danger-text
 --color-wk-ring
 --color-wk-text
@@ -41,6 +40,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --z-wk-tooltip
 -error
 -help
@@ -48,6 +48,8 @@
 -label
 -my-1
 -required
+-tooltip
+-words
 @aware
 @else
 @endforeach
@@ -58,6 +60,7 @@
 @php
 @props
 [contain:inline-size]
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -73,6 +76,7 @@ activating
 active
 acts
 actually
+address
 adds
 advertises
 affordance
@@ -205,6 +209,7 @@ blockquote
 blur
 body
 bold
+bool
 boolean
 border
 border-[length:var(--border-wk-width)]
@@ -227,8 +232,10 @@ browser
 bubble
 bubbles
 bug
+build
 builds
 built
+bullet
 bullet-list
 bulletList
 bundle
@@ -236,6 +243,7 @@ but
 button
 buttons
 by
+cache
 call
 caller
 caller-supplied
@@ -311,6 +319,7 @@ condition
 conditional
 config
 config/wirekit.php
+configuration
 configure
 consecutive
 console
@@ -351,28 +360,38 @@ data-autofocus
 data-wk-editor-document
 data-wk-editor-seed
 data-wk-field-label
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-print-expand
 data-wk-prose-skip
 data-wk-ref-scope
 data-wk-required-check
 data-wk-required-message
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debounced
 debug
 decided
 declaration
+declarations
 declared
 decoded
 default
@@ -380,8 +399,10 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
+depends
 derived
 descendant
 descendants
@@ -394,6 +415,7 @@ developer
 developer-supplied
 did
 different
+differs
 dimmed
 direction
 directives
@@ -417,6 +439,7 @@ does
 doesn
 dot
 double
+draw
 drawer
 drawing
 drawn
@@ -519,7 +542,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-within
 focus-within:ring-[length:var(--ring-wk-width)]
-focus-within:ring-[var(--color-wk-danger)]
+focus-within:ring-[var(--color-wk-danger-text)]
 focus-within:ring-[var(--color-wk-ring)]
 focus:outline-hidden
 focusable
@@ -528,6 +551,7 @@ focusableTrigger
 focuses
 focusin
 folded
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -720,6 +744,7 @@ lang:extract
 last
 later
 layer
+lazy
 leading-none
 leads
 leave
@@ -864,6 +889,7 @@ nothing
 null
 number
 numbered
+numbers
 of
 off
 offset
@@ -874,6 +900,7 @@ onBlur
 onCreate
 once
 one
+ones
 only
 onmouseover
 onto
@@ -892,6 +919,7 @@ opt
 optimistic
 optimistic-ui
 optimisticArgs
+option
 or
 order
 ordered-list
@@ -929,6 +957,7 @@ parser
 parses
 part
 partial
+parts
 passed
 passthrough
 patches
@@ -979,6 +1008,7 @@ prompt
 prop
 property
 props
+prose
 proxy
 purely
 purpose
@@ -996,6 +1026,7 @@ py-[var(--padding-wk-y-xs)]
 qualified
 question
 quote
+race
 racing
 raises
 ran
@@ -1045,9 +1076,11 @@ reports
 request
 required
 required-check
+required-mark
 required-message
 requiredDisabled
 requiredFormOwner
+requiredMark
 requiredMessage
 requiredMessageBound
 requiredMessageId
@@ -1061,6 +1094,7 @@ rest
 rests
 restyles
 result
+ride
 rides
 right
 ring
@@ -1079,6 +1113,7 @@ row
 rule
 rules
 run
+running
 runs
 s
 safe
@@ -1097,6 +1132,7 @@ screen
 script
 scroll
 scrolls
+search
 second
 see
 seed
@@ -1127,6 +1163,7 @@ share
 shared
 shares
 shipped
+short
 shortcut
 shortcuts
 show
@@ -1142,6 +1179,7 @@ sides
 sign
 silently
 simply
+since
 single
 single-key
 sit
@@ -1153,6 +1191,7 @@ skipped
 slot
 sm
 small
+smaller
 so
 soft
 somebody
@@ -1286,6 +1325,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1421,6 +1462,7 @@ work
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps

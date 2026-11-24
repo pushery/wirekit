@@ -35,6 +35,9 @@
     // The largest scale, as a multiple of the size the image is fitted to. A number above 1.
     'maxZoom' => 4,
     'scope' => null,
+    // Whether the viewer, its slides and controls, waits out of the page until it first opens. The
+    // default comes from the configuration (`components.lightbox.lazy`).
+    'lazy' => config('wirekit.components.lightbox.lazy', false),
 ])
 
 @php
@@ -144,10 +147,22 @@
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    // A lazy lightbox holds the teleport of its viewer in a template of its own among the children of
+    // its root, which the browser keeps out of the page until the factory builds it as the viewer
+    // first opens (utils/lazy-panel.js). The wrapper is an echo, since a conditional around a tag's
+    // two ends would leave Livewire's markers inside the template.
+    $lazy = \Pushery\WireKit\Support\BooleanProp::from($lazy, \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.lightbox.lazy', false)), 'lightbox', 'lazy') && $count > 0;
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
+{{-- The slides travel on an attribute of their own, which the factory reads and follows. In
+     `x-data` a render with other items would change the expression, and Alpine would set the
+     component back to it and start it again, closing a viewer the reader has open. --}}
 <div
-    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }}{{ $zoomConfig }} })"
+    @if($lazy) data-wk-lazy-panel-host @endif
+    data-wk-slides="{{ \Pushery\WireKit\Support\AlpinePayload::json($slides) }}"
+    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }}{{ $zoomConfig }} })"
     {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
     {{-- Optional trigger content (thumbnails / buttons). Anything here can call
@@ -163,7 +178,7 @@
              in WebKit, the image in every engine), so the keys keep reaching it; it is no stop
              in the tab order, and `outline-hidden` keeps a key press after such a click from
              drawing a ring around the whole stage. --}}
-        <template x-teleport="#wk-overlay-root">
+        {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
             <div
                 x-show="isOpen"
                 x-cloak
@@ -203,9 +218,11 @@
                     class="relative z-10 m-0 flex max-h-[90vh] max-w-[92vw] flex-col items-center gap-[var(--space-wk-sm)]"
                 >
                     {{-- The media box: exactly the visible slide, so an overlay laid over it covers the
-                         media and not the caption below. --}}
+                         media and not the caption below. The loop reads the factory's slides, so a
+                         render with other items leaves this expression as it was and the slides on
+                         screen are updated in place. --}}
                     <div data-wk-lightbox-media class="relative">
-                        <template x-for="(item, idx) in {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}" :key="idx">
+                        <template x-for="(item, idx) in slides" :key="idx">
                             <div x-show="current === idx" class="flex items-center justify-center">
                                 <template x-if="item.type === 'video'">
                                     <video :src="item.src" :poster="item.poster" controls preload="metadata" class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]"></video>
@@ -432,6 +449,6 @@
                     <span x-text="announcementLead"></span><span x-bind:lang="announcementLang" x-text="announcementLabel"></span>
                 </div>
             </div>
-        </template>
+        </template>{{ $lazyPanelClose }}
     @endwirekitLast
 </div>

@@ -32,6 +32,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -99,6 +100,8 @@
 --transition-wk-duration
 --transition-wk-easing
 --wk-button-square
+--wk-fill-ink
+--wk-fill-surface
 --wk-fit-floor
 --wk-prose-h1-mb
 --wk-prose-h1-size
@@ -124,8 +127,10 @@
 -my-[3px]
 -panel
 -text
+-tooltip
 -variant
 -variants
+-words
 @break
 @class
 @container/wk-table
@@ -145,7 +150,7 @@
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:ring-[length:var(--ring-wk-width)]
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:ring-[var(--color-wk-ring)]
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)]
-[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--color-wk-accent-text)]
+[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:underline
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:underline-offset-2
 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)]
@@ -153,9 +158,9 @@
 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:italic
 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]
 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:ps-[var(--padding-wk-x-md)]
-[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--color-wk-text-muted)]
+[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]
-[&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)]
+[&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-[var(--wk-fill-surface,var(--color-wk-bg-muted))]
 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[family-name:var(--font-wk-mono)]
 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-xs)]
 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-0.5
@@ -190,7 +195,7 @@
 [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:ps-[var(--padding-wk-x-lg)]
 [&_p:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--wk-prose-p-mb)]
 [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]
-[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)]
+[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-[var(--wk-fill-surface,var(--color-wk-bg-muted))]
 [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]
 [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:p-[var(--padding-wk-x-md)]
 [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)]
@@ -200,21 +205,24 @@
 [&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-transparent
 [&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:p-0
 [&_strong:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]
+[&_table:has(>*>tr>:nth-child(3)):not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:max-md:table-fixed
 [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-collapse
 [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]
 [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:w-full
-[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]
-[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border-subtle)]
-[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-b
-[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)]
-[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)]
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)]
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-b-2
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)]
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)]
-[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-start
+[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>td))]:border-[var(--color-wk-border-subtle)]
+[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>td))]:border-b
+[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>td))]:max-md:hyphens-auto
+[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>td))]:max-xl:[overflow-wrap:anywhere]
+[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>td))]:px-[var(--padding-wk-x-sm)]
+[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>td))]:py-[var(--padding-wk-y-sm)]
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:border-[var(--color-wk-border)]
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:border-b-2
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:font-[number:var(--font-wk-heading-weight)]
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:max-md:hyphens-auto
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:max-xl:[overflow-wrap:anywhere]
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:px-[var(--padding-wk-x-sm)]
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:py-[var(--padding-wk-y-sm)]
+[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip],table[data-wk-prose-skip]>*>tr>th))]:text-start
 [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:list-disc
 [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]
 [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:ps-[var(--padding-wk-x-lg)]
@@ -277,6 +285,7 @@ alongside
 already
 also
 alt
+although
 always
 always-filled
 ambiguity
@@ -398,6 +407,7 @@ badges
 bag
 baked
 bakes
+banner
 bar
 bare
 bare-word
@@ -434,6 +444,7 @@ bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg-elevated))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_8%,var(--color-wk-bg-elevated))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_8%,var(--color-wk-bg-elevated))]
 bg-[var(--color-wk-accent)]
@@ -464,6 +475,7 @@ bg-subtle
 bg-transparent
 bigger
 bind
+binding
 binds
 blade-heroicons
 blade-icons
@@ -478,6 +490,7 @@ blog
 blurs
 body
 bold
+bool
 boolean
 bootstrapped
 border
@@ -509,11 +522,11 @@ border-[var(--color-wk-warning)]
 border-b-2
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-transparent
 bordered-only
 both
@@ -530,6 +543,7 @@ bracket
 branch
 branches
 brand
+breadcrumb
 break
 break-word
 breaking
@@ -543,9 +557,11 @@ browser
 bubble
 bug
 build
+builds
 built
 bump
 bundle
+bundled
 busy
 but
 button
@@ -555,6 +571,7 @@ by
 byte
 byte-identical
 bytes
+cache
 calibrated
 call
 called
@@ -594,6 +611,7 @@ centers
 change
 changes
 channel
+character
 characters
 chat
 check
@@ -653,6 +671,7 @@ color-mix
 colored
 colors
 column
+columns
 combinations
 come
 comes
@@ -671,6 +690,7 @@ complete
 component
 components
 composer
+composers
 composes
 computed
 concentric
@@ -770,15 +790,26 @@ data-wk-busy-spinner
 data-wk-busy-text
 data-wk-button-group
 data-wk-cut-tip
+data-wk-fill
+data-wk-fold-chevron
 data-wk-icon-missing
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-popover
+data-wk-print-open
 data-wk-prose-skip
 data-wk-sr-host
 data-wk-status-shape
+data-wk-tint
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -786,6 +817,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 data-wk-touch
 date
 dates
@@ -795,6 +827,7 @@ decided
 decides
 decision
 declaration
+declarations
 declarative
 declared
 declares
@@ -813,6 +846,7 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deletion
 deliberate
 deliberately
@@ -822,6 +856,7 @@ dense
 density
 depend
 depending
+depends
 depth
 derive
 derived
@@ -848,6 +883,7 @@ did
 difference
 different
 differentiator
+differs
 digit
 dim
 dims
@@ -918,6 +954,7 @@ ease-[var(--transition-wk-easing)]
 ease-in
 ease-out
 echo
+echoed
 echoes
 edge
 editing
@@ -994,6 +1031,7 @@ face
 fact
 factory
 fade
+faded
 fading
 fail
 failed
@@ -1066,6 +1104,7 @@ floors
 flow
 flows
 flush
+fn
 focus
 focus-trapped
 focus-visible:outline-[color:var(--color-wk-ring)]
@@ -1233,9 +1272,11 @@ heading
 hear
 height
 heights
+held
 help
 helper
 here
+hero
 heroicon-m-inbox
 hid
 hidden
@@ -1264,13 +1305,14 @@ horizontal
 host
 hover
 hover-card
+hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -1279,9 +1321,9 @@ hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
-hover:opacity-100
 hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-text)]
+hover:text-[color:var(--wk-fill-ink,var(--color-wk-text))]
 hover:underline
 hoverable
 hovered
@@ -1291,6 +1333,8 @@ href
 hreflang
 hue
 hurts
+hyphenate
+hyphens
 icon
 icon-only
 icon-only-below
@@ -1371,6 +1415,7 @@ introduces
 introduction
 invalid
 inventory
+inverse
 inverted
 invisible
 invocation
@@ -1494,6 +1539,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 log
 logger
 logical
@@ -1504,6 +1550,7 @@ long
 long-form
 long-form-article
 longer
+longest
 look
 looking
 looks
@@ -1516,6 +1563,7 @@ loud
 loudly
 low
 lower
+lowered
 lowering
 lowers
 m19.5
@@ -1619,6 +1667,7 @@ mismatch
 missing
 missing-accessible-name
 mistake
+mix
 mixed
 ml
 modal
@@ -1704,9 +1753,11 @@ note
 nothing
 notice
 nowhere
+nowrap
 null
 number
 numbered
+object
 object-cover
 occurrence
 of
@@ -1733,14 +1784,13 @@ onmouseover
 onto
 opacity-0
 opacity-100
-opacity-70
 opacity-[var(--opacity-wk-disabled)]
 open
 opened
 opening
 opens
-operable
 operation
+operators
 opportunity
 opposite
 opt
@@ -1748,6 +1798,7 @@ opt-out
 opted
 optimism
 optimistic-ui
+option
 optional
 or
 order
@@ -1807,6 +1858,8 @@ pairing
 pairs
 palette
 panel
+panels
+paper
 paragraph
 parent
 parentNode
@@ -1870,6 +1923,7 @@ pointer
 pointer-events
 pointer-events-none
 pointing
+points
 polite
 popover
 popovers
@@ -1905,6 +1959,7 @@ previews
 pricing-card
 primary
 prime
+prints
 problem
 produced
 production
@@ -1950,6 +2005,7 @@ query
 question
 quiet
 quietly
+race
 racing
 radius
 raises
@@ -2057,6 +2113,7 @@ return
 returns
 rhythm
 rich
+ride
 rides
 right
 ring
@@ -2078,6 +2135,7 @@ rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 rounded-full
 row
+rows
 rule
 rules
 run
@@ -2119,6 +2177,7 @@ scrolling
 scrolls
 seam
 seams
+search
 second
 seconds
 section
@@ -2151,6 +2210,7 @@ settle
 settled
 settles
 setup
+seven
 severity
 shadow
 shadow-[var(--shadow-wk-lg)]
@@ -2163,6 +2223,7 @@ shapes
 share
 shared
 shares
+sheet
 shield-check
 shimmer
 shimmers
@@ -2268,12 +2329,14 @@ stacking-context
 stacks
 stadium
 stand
+stand-in
 standalone
 standing
 stands
 start
 starts
 state
+statement
 states
 static
 status
@@ -2344,6 +2407,7 @@ sweep
 switch
 switched
 switches
+syllable
 symptom
 system
 t
@@ -2353,6 +2417,7 @@ tabbed
 tabindex
 table
 tables
+tablet
 tabnabbing
 tabs
 tabular
@@ -2366,6 +2431,7 @@ tall
 taller
 tap
 target
+td
 teaches
 technology
 teleport
@@ -2378,7 +2444,6 @@ tests
 text
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
@@ -2388,10 +2453,13 @@ text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
-text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-2xs)]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
@@ -2464,6 +2532,8 @@ too
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -2487,7 +2557,6 @@ transformed
 transition
 transition-[color,text-decoration-color,opacity]
 transition-colors
-transition-opacity
 transition-transform
 transitively
 translated
@@ -2619,6 +2688,7 @@ w-[var(--size-wk-xs)]
 w-full
 w-max
 wait
+waits
 walk
 wants
 warn
@@ -2735,6 +2805,7 @@ x-on:focusout
 x-on:mouseenter
 x-on:mouseleave
 x-on:pointerdown
+x-on:pointerenter
 x-on:pointerleave
 x-on:pointerup
 x-ref

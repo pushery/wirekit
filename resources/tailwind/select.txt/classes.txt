@@ -7,11 +7,9 @@
 --color-wk-border-strong
 --color-wk-border-strong-hover
 --color-wk-border-success
---color-wk-danger
 --color-wk-danger-text
 --color-wk-ring
 --color-wk-ring-offset
---color-wk-success
 --color-wk-success-text
 --color-wk-text
 --color-wk-text-muted
@@ -51,6 +49,7 @@
 --text-wk-xs
 --transition-wk-duration
 --transition-wk-easing
+--wk-fill-ink
 --z-wk-tooltip
 -empty
 -error
@@ -58,6 +57,8 @@
 -hint
 -my-1
 -success
+-tooltip
+-words
 @aware
 @else
 @endforeach
@@ -66,6 +67,7 @@
 @endwirekitLast
 @php
 @props
+[overflow-wrap:anywhere]
 [overflow-wrap:break-word]
 a
 able
@@ -73,6 +75,7 @@ about
 above
 absence
 absolute
+accent
 accept
 accepts
 accessible
@@ -163,6 +166,7 @@ attributes
 auto-derived
 auto-injection
 auto-invokes
+autocomplete
 automated
 automatic
 axe
@@ -213,6 +217,7 @@ boundary
 box
 branch
 brand
+breadcrumb
 break
 break-word
 breaks
@@ -221,11 +226,14 @@ browser
 bubble
 bug
 build
+builds
 built
+bundled
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -290,6 +298,7 @@ components
 concurrency
 conditional
 config/wirekit.php
+configuration
 confirmation
 conflicting
 console
@@ -306,6 +315,7 @@ copying
 corner
 costs
 could
+count
 counted
 counterpart
 country
@@ -330,25 +340,38 @@ data-wk-combobox-empty
 data-wk-field
 data-wk-field-label
 data-wk-field-part
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
 data-wk-label-after
 data-wk-label-row
+data-wk-lazy-options
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
+data-wk-options-from
 data-wk-prose-skip
 data-wk-ref-scope
 data-wk-select-empty
+data-wk-select-options
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 de
 debug
 decided
+declarations
 declared
 declaring
 default
@@ -358,8 +381,10 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -371,6 +396,7 @@ developer
 dialog
 difference
 different
+differs
 dim
 direction
 directives
@@ -397,6 +423,7 @@ drawing
 drawn
 draws
 drift
+drives
 dropped
 drops
 duration-100
@@ -414,6 +441,7 @@ element
 elements
 elevated
 ellipsis
+else
 email
 emits
 emitted
@@ -430,6 +458,7 @@ emptySlot
 emptyText
 end
 end-0
+ending
 endonym
 ends
 ensures
@@ -445,6 +474,7 @@ escaping
 evaluated
 event
 events
+ever
 every
 everything
 exactly
@@ -458,7 +488,10 @@ explicitly
 expression
 extend
 external
+eye
+factory
 fade
+faded
 false
 family
 far
@@ -471,9 +504,11 @@ fields
 files
 fill
 filled
+fills
 find
 finds
 finish
+finite
 fire
 fires
 first
@@ -487,14 +522,15 @@ flight
 flips
 float
 floor
+flow
 fn
 focus
 focus-ring
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
-focus-visible:ring-[var(--color-wk-danger)]
+focus-visible:ring-[var(--color-wk-danger-text)]
 focus-visible:ring-[var(--color-wk-ring)]
-focus-visible:ring-[var(--color-wk-success)]
+focus-visible:ring-[var(--color-wk-success-text)]
 focus-visible:ring-offset-[length:var(--ring-wk-offset)]
 focus-visible:ring-offset-[var(--color-wk-ring-offset)]
 focus-within
@@ -516,6 +552,7 @@ for
 forced
 forced-colors
 forces
+foreground
 form
 found
 four
@@ -583,6 +620,7 @@ helpId
 helpName
 helpText
 here
+hero
 hidden
 hide
 hideLabel
@@ -590,6 +628,7 @@ hides
 high
 hint
 hoists
+hold
 holds
 horizontal
 host
@@ -597,6 +636,7 @@ hover
 hover:border-[var(--color-wk-border-strong-hover)]
 hover:opacity-[var(--opacity-wk-hover)]
 hover:text-[color:var(--color-wk-text-muted)]
+hover:text-[color:var(--wk-fill-ink,var(--color-wk-text))]
 hover:underline
 hoverable
 how
@@ -667,6 +707,7 @@ keyboard
 keys
 kinds
 kit
+know
 knows
 label
 label-after
@@ -680,9 +721,11 @@ lat
 later
 layer
 layout
+lazy
 leading-none
 leads
 learns
+least
 leave
 leaves
 leaving
@@ -715,6 +758,7 @@ look
 looks
 lose
 loss
+lowering
 mac
 make
 makes
@@ -731,6 +775,7 @@ mask
 mask-image
 masked
 match
+matches
 max-w-[var(--size-wk-tooltip-max)]
 may
 md
@@ -761,6 +806,7 @@ missing
 modal
 mode
 model
+modes
 moment
 monospaced
 more
@@ -816,6 +862,7 @@ nothing
 null
 number
 numeric-keyed
+object
 occurrence
 of
 off
@@ -824,6 +871,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -842,6 +890,7 @@ optimistic-ui
 optimisticArgs
 option
 options
+optionsKey
 or
 order
 original
@@ -873,6 +922,7 @@ parentNode
 parser
 part
 partial
+parts
 pass
 passed
 past
@@ -945,6 +995,7 @@ py-0.5
 py-[var(--padding-wk-y-xs)]
 qualified
 question
+race
 racing
 radius
 raises
@@ -992,6 +1043,8 @@ reported
 reports
 request
 required
+required-mark
+requiredMark
 requires
 reserve-message
 reserveMessage
@@ -1006,6 +1059,7 @@ restyle
 restyles
 result
 reverted
+ride
 right
 ring
 role
@@ -1040,6 +1094,7 @@ scroll
 scrollable
 scrolled
 scrolling
+search
 second
 see
 sees
@@ -1057,6 +1112,7 @@ sequence
 serif
 server
 server-side
+serves
 set
 sets
 settles
@@ -1069,6 +1125,7 @@ share
 shared
 shares
 sharper
+short
 shortcut
 shortcuts
 should
@@ -1087,6 +1144,7 @@ simply
 since
 single
 single-key
+sit
 site
 sits
 size
@@ -1174,13 +1232,16 @@ teleported
 tell
 template
 text
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-muted))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text-subtle))]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
@@ -1198,6 +1259,7 @@ theme
 then
 there
 therefore
+these
 they
 things
 this
@@ -1218,6 +1280,8 @@ took
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -1258,6 +1322,7 @@ unknown
 unless
 unlike
 unsteady
+until
 unvalidated
 up
 usable
@@ -1289,6 +1354,7 @@ w-3.5
 w-4
 w-full
 w-max
+waits
 walk
 warning
 was
@@ -1339,6 +1405,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 wraps

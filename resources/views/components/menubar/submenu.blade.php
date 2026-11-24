@@ -68,6 +68,8 @@
     // per-scope overrides set for menubar.item.
     $itemClasses = WireKit::resolveClasses('menubar.item', 'base', implode(' ', [
         'flex items-center justify-between gap-x-[var(--gap-wk-md)] w-full',
+        // A long token breaks inside the row, as in menubar/item.blade.php.
+        '[overflow-wrap:anywhere]',
         'p-[var(--padding-wk-x-sm)]',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -103,6 +105,12 @@
         // fitViewport caps the height to the window; the panel scrolls its excess instead of
         // clipping it.
         'overflow-y-auto overscroll-contain',
+        // Capped at the screen, as a popover is, so the positioning can keep the panel inside it;
+        // a token with no break point, an email address or a URL, then breaks at the cap rather
+        // than widening the panel past it. `break-word` leaves every min-content width alone, so
+        // the rows inside keep their layout.
+        'max-w-[calc(100vw-1rem)]',
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole

@@ -49,8 +49,9 @@
     //
     // A color on the wrapper does not reach it: the span sets its own and wins.
     'tone' => 'default',
-    // Inline padding, on the page-edge spine ladder. `none` keeps the DOM this
-    // component has always emitted.
+    // Inline padding, on the page-edge spine ladder, and on a control with a name the same
+    // rung of the control ladder above and below. `none` keeps the DOM this component has
+    // always emitted.
     //
     // It exists for the same place `radius` does — the account trigger at the foot of a
     // sidebar. Without it the hover background hugs the name instead of drawing a row,
@@ -111,7 +112,9 @@
         'muted' => 'text-[color:var(--color-wk-text-muted)] group-hover/wk-profile:text-[color:var(--color-wk-text)]',
     };
 
-    $paddingClasses = match (WireKit::validateProp('profile', 'padding', (string) $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl'])) {
+    $padding = WireKit::validateProp('profile', 'padding', (string) $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl']);
+
+    $paddingClasses = match ($padding) {
         'none' => '',
         'xs' => 'px-[var(--padding-wk-x-xs)]',
         'sm' => 'px-[var(--padding-wk-x-sm)]',
@@ -149,6 +152,20 @@
         $radiusClasses = 'rounded-[var(--radius-wk-full)]';
     }
 
+    // A navigation entry pads its icon above and below as well as at the sides, and its hover
+    // background fills that room. A row that answers the pointer takes the same rung of the
+    // control ladder above and below its avatar, so its background surrounds the avatar instead
+    // of ending at its edge. A profile that is no control draws no background to surround, and an
+    // avatar-only control hugs its circle.
+    $blockPaddingClasses = $control && ! $avatarOnly ? match ($padding) {
+        'xs' => 'py-[var(--padding-wk-y-xs)]',
+        'sm' => 'py-[var(--padding-wk-y-sm)]',
+        'md' => 'py-[var(--padding-wk-y-md)]',
+        'lg' => 'py-[var(--padding-wk-y-lg)]',
+        'xl' => 'py-[var(--padding-wk-y-xl)]',
+        default => '',
+    } : '';
+
     // Profile — avatar + name display for header areas.
     $classes = WireKit::resolveClasses('profile', 'base', implode(' ', [
         'flex items-center',
@@ -157,6 +174,7 @@
         $tone === 'muted' && $control ? 'group/wk-profile' : '',
         $gapClasses,
         $paddingClasses,
+        $blockPaddingClasses,
         // Add focus-visible ring when this is a control — same shape as the
         // canonical button focus state (matches the button component).
         // `cursor-pointer` is not decoration on the button branch: Tailwind v4's

@@ -442,6 +442,7 @@ final class McpCatalog
      * @return array{
      *     component: string,
      *     roles: list<string>,
+     *     role_choices: list<string>,
      *     aria: list<string>,
      *     caller_supplies: list<string>,
      *     keys: list<string>,

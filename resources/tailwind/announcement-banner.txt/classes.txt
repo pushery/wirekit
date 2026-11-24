@@ -26,6 +26,8 @@
 --wk-banner-hue
 --wk-banner-hue-c
 --wk-banner-hue-l
+--wk-fill-ink
+--wk-fill-surface
 --wk-strip-height
 --wk-strip-inset
 --z-wk-chrome
@@ -42,6 +44,8 @@
 [--color-wk-ring:var(--color-wk-info-fg)]
 [--color-wk-ring:var(--color-wk-success-fg)]
 [--color-wk-ring:var(--color-wk-warning-fg)]
+[--wk-fill-ink:currentColor]
+[--wk-fill-surface:transparent]
 [overflow-wrap:break-word]
 a
 able
@@ -62,6 +66,7 @@ and
 announcement
 announcement-banner
 announcements
+another
 anything
 app-shell
 application
@@ -72,6 +77,7 @@ aria-hidden
 aria-label
 aria-labelledby
 arm
+around
 as
 asked
 at
@@ -80,6 +86,7 @@ auditor
 auto-derived
 back
 backdrop
+background
 badge
 band
 banner
@@ -91,6 +98,7 @@ be
 beats
 because
 before
+behind
 being
 belongs
 below
@@ -125,6 +133,7 @@ called
 caller
 can
 cannot
+card
 carry
 cast
 centered
@@ -137,9 +146,12 @@ chroma
 chrome
 claim
 class
+classes
 clickable
 close
+code
 color
+colors
 column
 come
 comes
@@ -151,6 +163,7 @@ constants
 content
 content-edge
 contract
+contrast
 contrast-paired
 control
 currentColor
@@ -165,7 +178,9 @@ data-wk-announcement-action
 data-wk-announcement-banner
 data-wk-announcement-content
 data-wk-announcement-dismiss
+data-wk-fill
 data-wk-scroll-inset
+data-wk-tint
 data-wk-viewport-strip
 debug
 default
@@ -244,25 +259,30 @@ form
 formula
 frame
 from
+full
 gap-[var(--gap-wk-sm)]
 gated
 generic
 gets
 give
 gives
+glyph
 gone
 grid
 guards
 h-4
 h-[var(--wk-strip-height)]
 had
+hand
 hands
 harvest
 has
 having
+heading
 height
 holding
-hover:opacity-100
+holds
+hover:bg-[color-mix(in_srgb,currentColor_15%,transparent)]
 hue
 identifies
 if
@@ -272,6 +292,7 @@ in
 info
 inherit
 inline
+inside
 instance
 instead
 intent
@@ -302,9 +323,11 @@ leaves
 let
 lets
 level
+light
 like
 line
 lines
+link
 list
 literal
 live
@@ -316,6 +339,7 @@ lost
 make
 makes
 marketing
+marks
 match
 may
 mean
@@ -332,8 +356,10 @@ most
 moves
 ms-auto
 must
+muted
 name
 names
+nearest
 needs
 neither
 never
@@ -353,7 +379,7 @@ on
 once
 one
 only
-opacity-70
+onto
 opposite
 opt-in
 optimistic-ui
@@ -380,6 +406,7 @@ persistence
 persists
 pinned
 pins
+pointer
 policy
 position
 positively
@@ -392,6 +419,7 @@ promo
 prop
 property
 props
+prose
 px-[var(--padding-wk-x-lg)]
 py-[var(--padding-wk-x-lg)]
 qualified
@@ -449,6 +477,7 @@ spine
 stable
 stacking
 staging
+stand
 stands
 state
 stated
@@ -496,6 +525,7 @@ text-[length:var(--text-wk-sm)]
 than
 that
 the
+their
 them
 theme
 then
@@ -505,6 +535,7 @@ this
 those
 three
 through
+tint
 tints
 to
 token
@@ -512,7 +543,7 @@ tone
 top
 top-0
 top-[var(--wk-strip-inset,0px)]
-transition-opacity
+transition-colors
 transparent
 trap
 treatments
@@ -526,6 +557,7 @@ two
 type
 typed
 unbound
+under
 underneath
 unknown
 unless
@@ -554,6 +586,7 @@ what
 whatever
 when
 where
+wherever
 whether
 which
 whichever
@@ -566,8 +599,10 @@ wk-announcement-banner
 wk-rail
 wk-touch-target
 word
+words
 worse
 would
+write
 writing
 x-cloak
 x-data

@@ -65,6 +65,18 @@
     $isVertical = $orientation === 'vertical';
     $clampedValue = max(0, min(100, \Pushery\WireKit\Support\NumericProp::int($value, 0)));
 
+    // The cut of the after image, the divider and the handle at the start position, as the
+    // factory's style functions place them, so the slider shows where it stands before the script
+    // starts and on a page that runs none; `:style` sets each property again as it starts.
+    $startInset = 100 - $clampedValue;
+    $startClip = $isVertical ? "clip-path: inset({$startInset}% 0 0 0)" : "clip-path: inset(0 0 0 {$startInset}%)";
+    $startDivider = $isVertical
+        ? "top: {$clampedValue}%; left: 0; right: 0; height: var(--wk-image-compare-divider-size, 2px); transform: translateY(-50%)"
+        : "left: {$clampedValue}%; top: 0; bottom: 0; width: var(--wk-image-compare-divider-size, 2px); transform: translateX(-50%)";
+    $startHandle = $isVertical
+        ? "top: {$clampedValue}%; left: 50%; transform: translate(-50%, -50%)"
+        : "left: {$clampedValue}%; top: 50%; transform: translate(-50%, -50%)";
+
     // Accessibility: decorative images get forced-empty alts and role=presentation
     // on the outer figure. The interactive slider handle keeps role="slider".
     // The two alts and the slider's name are attribute values, so one given as markup gives them
@@ -132,7 +144,7 @@
         $heightClass,
         'rounded-[var(--radius-wk-lg)]',
         'bg-[var(--color-wk-bg-muted)]',
-        'border border-[var(--color-wk-border)]',
+        'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-sm)]',
     ]), $scope);
 
@@ -157,7 +169,7 @@
         'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
-        'border border-[var(--color-wk-border)]',
+        'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
     ]), $scope);
 
     $dividerClasses = WireKit::resolveClasses('image-compare', 'divider', implode(' ', [
@@ -171,7 +183,7 @@
         'text-[length:var(--text-wk-xs)] font-medium',
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
-        'border border-[var(--color-wk-border)]',
+        'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-sm)]',
     ]), $scope);
 
@@ -265,6 +277,7 @@
         loading="{{ $loading }}"
         class="{{ $imgClasses }}"
         draggable="false"
+        style="{{ $startClip }}"
         :style="clipStyle()"
     />
 
@@ -301,6 +314,7 @@
     {{-- Divider line — visual separator between before/after halves. --}}
     <span
         class="{{ $dividerClasses }}"
+        style="{{ $startDivider }}"
         :style="dividerStyle()"
         aria-hidden="true"
     ></span>
@@ -309,6 +323,7 @@
     <button
         type="button"
         class="{{ $handleClasses }}"
+        style="{{ $startHandle }}"
         :style="handleStyle()"
         role="slider"
         @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $ariaLabel }}" @endif
@@ -336,8 +351,10 @@
         {{-- Default handle icon: two chevrons pointing outward. Rotated 90° for vertical. --}}
         <svg
             aria-hidden="true"
-            class="w-5 h-5 text-[color:var(--color-wk-text-muted)]"
-            :class="orientation === 'vertical' ? 'rotate-90' : ''"
+            {{-- Turned in the markup for a vertical slider, as the binding turns it; the object form
+                 and its key written as the markup writes the class, short under `compact`. --}}
+            class="w-5 h-5 text-[color:var(--color-wk-text-muted)]{{ $isVertical ? ' rotate-90' : '' }}"
+            :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map('rotate-90')) }}: orientation === 'vertical' }"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

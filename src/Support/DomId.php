@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Str;
 use Pushery\WireKit\WireKit;
 
@@ -50,6 +51,11 @@ use Pushery\WireKit\WireKit;
  * independently-morphing islands rendering the same nameless control. The first is
  * a defect every user meets; the second is a configuration a caller can fix by
  * passing an `id`.
+ *
+ * HTML rendered in an earlier request holds ids this request would count again: a page
+ * that writes a fragment it keeps in a cache, and renders a layout around it, finds
+ * `wk-tooltip-1` in both. {@see reserve()} and {@see reserveIn()} register such ids, so
+ * none of them is handed out again before the registry resets.
  */
 final class DomId
 {
@@ -61,6 +67,9 @@ final class DomId
 
     /** @var array<string, int> whole id → times handed out this request, see distinct() */
     private static array $wholeIds = [];
+
+    /** @var array<string, true> ids already on the page this request, see reserve() */
+    private static array $reserved = [];
 
     /**
      * Return a page-unique id for a control.
@@ -77,10 +86,15 @@ final class DomId
         // either way; only the counted one survives a re-render, which is what a
         // `label[for]` and a Livewire morph both need.
         if ($preferred === null) {
-            $seen = self::$counters[$fallbackPrefix] ?? 0;
-            self::$counters[$fallbackPrefix] = $seen + 1;
+            $number = self::$counters[$fallbackPrefix] ?? 0;
 
-            return $fallbackPrefix.($seen + 1);
+            do {
+                $number++;
+            } while (isset(self::$reserved[$fallbackPrefix.$number]));
+
+            self::$counters[$fallbackPrefix] = $number;
+
+            return $fallbackPrefix.$number;
         }
 
         // Opted out: the preferred value verbatim, which may collide.
@@ -92,11 +106,18 @@ final class DomId
         // leave the id anyway — a `[` is not valid in an id used with label[for].
         $base = str_contains($preferred, '[') ? Str::before($preferred, '[') : $preferred;
 
+        // First occurrence keeps the clean base; collisions get -2, -3, …, and an id already
+        // on the page is passed over.
         $seen = self::$seen[$base] ?? 0;
-        self::$seen[$base] = $seen + 1;
 
-        // First occurrence keeps the clean base; collisions get -2, -3, …
-        return $seen === 0 ? $base : $base.'-'.($seen + 1);
+        do {
+            $seen++;
+            $id = $seen === 1 ? $base : $base.'-'.$seen;
+        } while (isset(self::$reserved[$id]));
+
+        self::$seen[$base] = $seen;
+
+        return $id;
     }
 
     /**
@@ -118,9 +139,72 @@ final class DomId
         }
 
         $seen = self::$wholeIds[$id] ?? 0;
-        self::$wholeIds[$id] = $seen + 1;
 
-        return $seen === 0 ? $id : $id.'-'.($seen + 1);
+        do {
+            $seen++;
+            $candidate = $seen === 1 ? $id : $id.'-'.$seen;
+        } while (isset(self::$reserved[$candidate]));
+
+        self::$wholeIds[$id] = $seen;
+
+        return $candidate;
+    }
+
+    /**
+     * Register ids that are on the page already, so that none of them is handed out again this
+     * request.
+     *
+     * For HTML rendered in an earlier request, such as a fragment a host keeps in a cache and
+     * writes into a layout it renders now. The registry starts empty in every request, so without
+     * this the layout counts from 1 again and repeats the fragment's ids, and `label[for]`,
+     * `aria-describedby` and `getElementById()` find the first element of the two. A counted id
+     * continues after the highest number of its prefix registered here (`wk-tooltip-6`, then
+     * `wk-tooltip-7`), and an id derived from a name or written whole moves on to its next free
+     * suffix (`email`, then `email-2`). Register before anything else renders.
+     */
+    public static function reserve(string ...$ids): void
+    {
+        foreach ($ids as $id) {
+            $id = self::valid($id);
+
+            if ($id === null) {
+                continue;
+            }
+
+            self::$reserved[$id] = true;
+
+            // `wk-tooltip-12` is the prefix `wk-tooltip-` counted to 12. Nine digits at most: a
+            // counted id stays far below that, and a longer run would overflow the counter.
+            if (preg_match('/^(.*\D)(\d{1,9})$/', $id, $counted) === 1) {
+                self::$counters[$counted[1]] = max(self::$counters[$counted[1]] ?? 0, (int) $counted[2]);
+            }
+        }
+    }
+
+    /**
+     * Register every `id` attribute in a piece of rendered HTML, as reserve() registers each.
+     *
+     * A value in double or single quotes or without quotes is read, its character references
+     * decoded as the browser decodes them. What reads as an id without being one, such as the
+     * words `id="…"` in a text, is registered all the same and only moves a counter on.
+     */
+    public static function reserveIn(string|Htmlable $html): void
+    {
+        $html = $html instanceof Htmlable ? $html->toHtml() : $html;
+
+        // Not anchored to the start of a tag: a value before the id may hold a `>`, as an Alpine
+        // expression does, and an id passed over leaves its collision in place. `data-id` and a
+        // bound `:id`, whose value is a script, are no ids.
+        preg_match_all('/(?<![\w:.@-])id\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'=<>`]+))/i', $html, $attributes, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
+
+        $ids = [];
+
+        // One of the three groups holds the value, in double quotes, in single quotes or bare.
+        foreach ($attributes as $attribute) {
+            $ids[] = html_entity_decode($attribute[1] ?? $attribute[2] ?? $attribute[3] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+
+        self::reserve(...$ids);
     }
 
     /**
@@ -146,5 +230,6 @@ final class DomId
         self::$seen = [];
         self::$counters = [];
         self::$wholeIds = [];
+        self::$reserved = [];
     }
 }

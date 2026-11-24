@@ -40,8 +40,7 @@
 
     // Heading level (1–6). An invalid value is reported through the strictness gate,
     // with a did-you-mean, and where the gate does not throw it renders the h3
-    // default — we never emit h1 as a side-effect of validateProp's first-allowed
-    // fallback, which would break the outline worse than the default.
+    // default. An h1 in its place would break the outline worse than the default.
     $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
     if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
         WireKit::validateProp('empty-state', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
@@ -69,7 +68,7 @@
 @php
     // — iconSlot symmetry: slot wins over icon prop when
     // both supplied. Matches feature pattern + stat behavior.
-    $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
+    $hasIconSlot = \Pushery\WireKit\Support\SlotContent::given($iconSlot ?? null);
 @endphp
 
 <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} @endif>
@@ -87,16 +86,19 @@
     @if($title)
         {{-- Dynamic heading tag — level is validated to 1–6 in the @php block. A centered column item
              is as wide as its longest word, so `anywhere` rather than `break-word`: it lets a typed
-             token with no break point (a pasted URL) wrap, and a title whose words fit keeps its width. --}}
-        <h{{ $levelValue }} data-wk-prose-skip class="mb-[var(--space-wk-xs)] [overflow-wrap:anywhere] text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+             token with no break point (a pasted URL) wrap, and a title whose words fit keeps its width.
+             `wk-lines-balanced` evens up its lines where the browser can, so a centered title on a
+             narrow screen does not end on a single word. --}}
+        <h{{ $levelValue }} data-wk-prose-skip class="mb-[var(--space-wk-xs)] [overflow-wrap:anywhere] wk-lines-balanced text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h{{ $levelValue }}>
     @endif
 
     @if($description)
         {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p.
-             `anywhere` for the reason the title has it; a description whose words fit keeps its width. --}}
-        <div data-wk-prose-skip class="max-w-md [overflow-wrap:anywhere] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+             `anywhere` for the reason the title has it; a description whose words fit keeps its width.
+             `wk-lines-pretty` keeps a single word off its last line where the browser can. --}}
+        <div data-wk-prose-skip class="max-w-md [overflow-wrap:anywhere] wk-lines-pretty text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $description }}
         </div>
     @endif

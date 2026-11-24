@@ -38,9 +38,10 @@
     // is 48rem of window. Same numbers, different subject — so the two props are deliberately
     // not interchangeable and a call site should pick one.
     //
-    // The container is named (`@container/wk-table` on the table's frame) rather than
-    // anonymous: an unnamed container would also become the measuring context for every
-    // `@`-variant a caller nests inside the table, and silently retarget it.
+    // The container is named (`@container/wk-table` on the table's frame), so the column asks the
+    // frame even where a cell holds a container of the caller's own. A name does not hide the
+    // frame from a variant without one: inside the table such a variant asks the nearest
+    // container, and that is the frame whenever the frame is one.
     'hideBelowContainer' => null,
     // The window width from which `hideBelowContainer` applies: sm | md | lg | xl | 2xl. Below it the
     // column keeps its place, and the table scrolls in its own frame. A list that may scroll on a
@@ -272,17 +273,21 @@
     // take the same value: a header hidden without its cells, or cells without their header, would
     // put every value under the wrong heading. An unknown value is reported through the strictness
     // gate and, where the gate does not throw, hides nothing.
+    //
+    // Every `hidden` here comes with `--wk-table-cell-display: none` under the same variant. A
+    // stacked table gives each cell its display from the stylesheet, which is unlayered and so
+    // outranks a utility, and that rule reads the property before it falls back to its own display.
     $hideBelow = filled($hideBelow) ? (string) $hideBelow : null;
     if ($hideBelow !== null && ! in_array($hideBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
         WireKit::validateProp('table.th', 'hideBelow', $hideBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
         $hideBelow = null;
     }
     $hideClasses = match ($hideBelow) {
-        'sm' => 'max-sm:hidden',
-        'md' => 'max-md:hidden',
-        'lg' => 'max-lg:hidden',
-        'xl' => 'max-xl:hidden',
-        '2xl' => 'max-2xl:hidden',
+        'sm' => 'max-sm:hidden max-sm:[--wk-table-cell-display:none]',
+        'md' => 'max-md:hidden max-md:[--wk-table-cell-display:none]',
+        'lg' => 'max-lg:hidden max-lg:[--wk-table-cell-display:none]',
+        'xl' => 'max-xl:hidden max-xl:[--wk-table-cell-display:none]',
+        '2xl' => 'max-2xl:hidden max-2xl:[--wk-table-cell-display:none]',
         default => '',
     };
 
@@ -313,56 +318,56 @@
         $hideBelowContainerFrom = null;
     }
     $hideClasses = trim($hideClasses.' '.($hideBelowContainerFrom === null ? match ($hideBelowContainer) {
-        'sm' => '@max-sm/wk-table:hidden',
-        'md' => '@max-md/wk-table:hidden',
-        'lg' => '@max-lg/wk-table:hidden',
-        'xl' => '@max-xl/wk-table:hidden',
-        '2xl' => '@max-2xl/wk-table:hidden',
-        '3xl' => '@max-3xl/wk-table:hidden',
-        '4xl' => '@max-4xl/wk-table:hidden',
-        '5xl' => '@max-5xl/wk-table:hidden',
+        'sm' => '@max-sm/wk-table:hidden @max-sm/wk-table:[--wk-table-cell-display:none]',
+        'md' => '@max-md/wk-table:hidden @max-md/wk-table:[--wk-table-cell-display:none]',
+        'lg' => '@max-lg/wk-table:hidden @max-lg/wk-table:[--wk-table-cell-display:none]',
+        'xl' => '@max-xl/wk-table:hidden @max-xl/wk-table:[--wk-table-cell-display:none]',
+        '2xl' => '@max-2xl/wk-table:hidden @max-2xl/wk-table:[--wk-table-cell-display:none]',
+        '3xl' => '@max-3xl/wk-table:hidden @max-3xl/wk-table:[--wk-table-cell-display:none]',
+        '4xl' => '@max-4xl/wk-table:hidden @max-4xl/wk-table:[--wk-table-cell-display:none]',
+        '5xl' => '@max-5xl/wk-table:hidden @max-5xl/wk-table:[--wk-table-cell-display:none]',
         default => '',
     } : match ($hideBelowContainerFrom.' '.$hideBelowContainer) {
-        'sm sm' => 'sm:@max-sm/wk-table:hidden',
-        'sm md' => 'sm:@max-md/wk-table:hidden',
-        'sm lg' => 'sm:@max-lg/wk-table:hidden',
-        'sm xl' => 'sm:@max-xl/wk-table:hidden',
-        'sm 2xl' => 'sm:@max-2xl/wk-table:hidden',
-        'sm 3xl' => 'sm:@max-3xl/wk-table:hidden',
-        'sm 4xl' => 'sm:@max-4xl/wk-table:hidden',
-        'sm 5xl' => 'sm:@max-5xl/wk-table:hidden',
-        'md sm' => 'md:@max-sm/wk-table:hidden',
-        'md md' => 'md:@max-md/wk-table:hidden',
-        'md lg' => 'md:@max-lg/wk-table:hidden',
-        'md xl' => 'md:@max-xl/wk-table:hidden',
-        'md 2xl' => 'md:@max-2xl/wk-table:hidden',
-        'md 3xl' => 'md:@max-3xl/wk-table:hidden',
-        'md 4xl' => 'md:@max-4xl/wk-table:hidden',
-        'md 5xl' => 'md:@max-5xl/wk-table:hidden',
-        'lg sm' => 'lg:@max-sm/wk-table:hidden',
-        'lg md' => 'lg:@max-md/wk-table:hidden',
-        'lg lg' => 'lg:@max-lg/wk-table:hidden',
-        'lg xl' => 'lg:@max-xl/wk-table:hidden',
-        'lg 2xl' => 'lg:@max-2xl/wk-table:hidden',
-        'lg 3xl' => 'lg:@max-3xl/wk-table:hidden',
-        'lg 4xl' => 'lg:@max-4xl/wk-table:hidden',
-        'lg 5xl' => 'lg:@max-5xl/wk-table:hidden',
-        'xl sm' => 'xl:@max-sm/wk-table:hidden',
-        'xl md' => 'xl:@max-md/wk-table:hidden',
-        'xl lg' => 'xl:@max-lg/wk-table:hidden',
-        'xl xl' => 'xl:@max-xl/wk-table:hidden',
-        'xl 2xl' => 'xl:@max-2xl/wk-table:hidden',
-        'xl 3xl' => 'xl:@max-3xl/wk-table:hidden',
-        'xl 4xl' => 'xl:@max-4xl/wk-table:hidden',
-        'xl 5xl' => 'xl:@max-5xl/wk-table:hidden',
-        '2xl sm' => '2xl:@max-sm/wk-table:hidden',
-        '2xl md' => '2xl:@max-md/wk-table:hidden',
-        '2xl lg' => '2xl:@max-lg/wk-table:hidden',
-        '2xl xl' => '2xl:@max-xl/wk-table:hidden',
-        '2xl 2xl' => '2xl:@max-2xl/wk-table:hidden',
-        '2xl 3xl' => '2xl:@max-3xl/wk-table:hidden',
-        '2xl 4xl' => '2xl:@max-4xl/wk-table:hidden',
-        '2xl 5xl' => '2xl:@max-5xl/wk-table:hidden',
+        'sm sm' => 'sm:@max-sm/wk-table:hidden sm:@max-sm/wk-table:[--wk-table-cell-display:none]',
+        'sm md' => 'sm:@max-md/wk-table:hidden sm:@max-md/wk-table:[--wk-table-cell-display:none]',
+        'sm lg' => 'sm:@max-lg/wk-table:hidden sm:@max-lg/wk-table:[--wk-table-cell-display:none]',
+        'sm xl' => 'sm:@max-xl/wk-table:hidden sm:@max-xl/wk-table:[--wk-table-cell-display:none]',
+        'sm 2xl' => 'sm:@max-2xl/wk-table:hidden sm:@max-2xl/wk-table:[--wk-table-cell-display:none]',
+        'sm 3xl' => 'sm:@max-3xl/wk-table:hidden sm:@max-3xl/wk-table:[--wk-table-cell-display:none]',
+        'sm 4xl' => 'sm:@max-4xl/wk-table:hidden sm:@max-4xl/wk-table:[--wk-table-cell-display:none]',
+        'sm 5xl' => 'sm:@max-5xl/wk-table:hidden sm:@max-5xl/wk-table:[--wk-table-cell-display:none]',
+        'md sm' => 'md:@max-sm/wk-table:hidden md:@max-sm/wk-table:[--wk-table-cell-display:none]',
+        'md md' => 'md:@max-md/wk-table:hidden md:@max-md/wk-table:[--wk-table-cell-display:none]',
+        'md lg' => 'md:@max-lg/wk-table:hidden md:@max-lg/wk-table:[--wk-table-cell-display:none]',
+        'md xl' => 'md:@max-xl/wk-table:hidden md:@max-xl/wk-table:[--wk-table-cell-display:none]',
+        'md 2xl' => 'md:@max-2xl/wk-table:hidden md:@max-2xl/wk-table:[--wk-table-cell-display:none]',
+        'md 3xl' => 'md:@max-3xl/wk-table:hidden md:@max-3xl/wk-table:[--wk-table-cell-display:none]',
+        'md 4xl' => 'md:@max-4xl/wk-table:hidden md:@max-4xl/wk-table:[--wk-table-cell-display:none]',
+        'md 5xl' => 'md:@max-5xl/wk-table:hidden md:@max-5xl/wk-table:[--wk-table-cell-display:none]',
+        'lg sm' => 'lg:@max-sm/wk-table:hidden lg:@max-sm/wk-table:[--wk-table-cell-display:none]',
+        'lg md' => 'lg:@max-md/wk-table:hidden lg:@max-md/wk-table:[--wk-table-cell-display:none]',
+        'lg lg' => 'lg:@max-lg/wk-table:hidden lg:@max-lg/wk-table:[--wk-table-cell-display:none]',
+        'lg xl' => 'lg:@max-xl/wk-table:hidden lg:@max-xl/wk-table:[--wk-table-cell-display:none]',
+        'lg 2xl' => 'lg:@max-2xl/wk-table:hidden lg:@max-2xl/wk-table:[--wk-table-cell-display:none]',
+        'lg 3xl' => 'lg:@max-3xl/wk-table:hidden lg:@max-3xl/wk-table:[--wk-table-cell-display:none]',
+        'lg 4xl' => 'lg:@max-4xl/wk-table:hidden lg:@max-4xl/wk-table:[--wk-table-cell-display:none]',
+        'lg 5xl' => 'lg:@max-5xl/wk-table:hidden lg:@max-5xl/wk-table:[--wk-table-cell-display:none]',
+        'xl sm' => 'xl:@max-sm/wk-table:hidden xl:@max-sm/wk-table:[--wk-table-cell-display:none]',
+        'xl md' => 'xl:@max-md/wk-table:hidden xl:@max-md/wk-table:[--wk-table-cell-display:none]',
+        'xl lg' => 'xl:@max-lg/wk-table:hidden xl:@max-lg/wk-table:[--wk-table-cell-display:none]',
+        'xl xl' => 'xl:@max-xl/wk-table:hidden xl:@max-xl/wk-table:[--wk-table-cell-display:none]',
+        'xl 2xl' => 'xl:@max-2xl/wk-table:hidden xl:@max-2xl/wk-table:[--wk-table-cell-display:none]',
+        'xl 3xl' => 'xl:@max-3xl/wk-table:hidden xl:@max-3xl/wk-table:[--wk-table-cell-display:none]',
+        'xl 4xl' => 'xl:@max-4xl/wk-table:hidden xl:@max-4xl/wk-table:[--wk-table-cell-display:none]',
+        'xl 5xl' => 'xl:@max-5xl/wk-table:hidden xl:@max-5xl/wk-table:[--wk-table-cell-display:none]',
+        '2xl sm' => '2xl:@max-sm/wk-table:hidden 2xl:@max-sm/wk-table:[--wk-table-cell-display:none]',
+        '2xl md' => '2xl:@max-md/wk-table:hidden 2xl:@max-md/wk-table:[--wk-table-cell-display:none]',
+        '2xl lg' => '2xl:@max-lg/wk-table:hidden 2xl:@max-lg/wk-table:[--wk-table-cell-display:none]',
+        '2xl xl' => '2xl:@max-xl/wk-table:hidden 2xl:@max-xl/wk-table:[--wk-table-cell-display:none]',
+        '2xl 2xl' => '2xl:@max-2xl/wk-table:hidden 2xl:@max-2xl/wk-table:[--wk-table-cell-display:none]',
+        '2xl 3xl' => '2xl:@max-3xl/wk-table:hidden 2xl:@max-3xl/wk-table:[--wk-table-cell-display:none]',
+        '2xl 4xl' => '2xl:@max-4xl/wk-table:hidden 2xl:@max-4xl/wk-table:[--wk-table-cell-display:none]',
+        '2xl 5xl' => '2xl:@max-5xl/wk-table:hidden 2xl:@max-5xl/wk-table:[--wk-table-cell-display:none]',
         default => '',
     }));
 
@@ -410,7 +415,7 @@
     };
 @endphp
 
-<th data-wk-prose-skip
+<th
     scope="{{ $headerScope }}"
     data-wk-table-th
     {{-- The table reads this marker to know that something inside measures its frame. --}}
@@ -432,8 +437,15 @@
         {{-- Alpine sort mode: bind aria-sort to parent wirekitTableSort state. The click
              lives on the <button> below, not here — a cursor-pointer cell with an @click
              is mouse-only, and this cell announces its sort state, so a keyboard or switch
-             user could hear the order and never be able to change it (WCAG 2.1.1). --}}
-        :aria-sort="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc' ? 'ascending' : getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc' ? 'descending' : 'none'"
+             user could hear the order and never be able to change it (WCAG 2.1.1).
+
+             Only a table with `alpine-sort` sets that state, so every expression of this
+             mode reads it through `$data` and calls it only where it is there: a bare name
+             that finds no scope throws inside any Alpine scope around the table, a Livewire
+             component's included. Without it the head reads as unsorted. The marker lets a
+             table without `alpine-sort` find the head in its slot and report it. --}}
+        data-wk-alpine-sort
+        :aria-sort="$data.getSortDirection && $data.getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc' ? 'ascending' : $data.getSortDirection && $data.getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc' ? 'descending' : 'none'"
     @elseif($ariaSort)
         aria-sort="{{ $ariaSort }}"
     @endif
@@ -454,13 +466,13 @@
              and inside `data-wk-touch`, which a plain button with this padding never reaches. --}}
         <button
             type="button"
-            @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
+            @click="$data.sortBy && $data.sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
             class="{{ $sortButtonBox }} {{ $sortLayout }} {{ $helpBeside ? 'ps-[var(--padding-wk-x-md)]' : 'px-[var(--padding-wk-x-md)]' }} py-[var(--padding-wk-y-md)] [table[data-wk-compact]>*>tr>th>&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
         >
             {{ $label }}
-            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
-            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
-            <svg x-show="!getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
+            <svg x-show="$data.getSortDirection && $data.getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
+            <svg x-show="$data.getSortDirection && $data.getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
+            <svg x-show="! ($data.getSortDirection && $data.getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}))" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
         </button>@if($helpBeside)<span class="{{ $helpBesideBox }}">@include('wirekit::components.partials.field-help', $helpPartial)</span>@elseif($helpPartial !== null)<span class="flex {{ $justifyClass }} px-[var(--padding-wk-x-md)] pb-[var(--padding-wk-y-md)]">@include('wirekit::components.partials.field-help', $helpPartial)</span>@endif
     @elseif($sortable)
         {{-- Livewire sort mode. With `sortAction`, the label + indicator sit in a

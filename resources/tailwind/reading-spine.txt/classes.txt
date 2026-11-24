@@ -1,4 +1,5 @@
 --active
+--border-wk-width
 --color-wk-bg-elevated
 --color-wk-border
 --color-wk-ring
@@ -114,7 +115,7 @@ bg-[var(--color-wk-bg-elevated)]
 block
 boolean
 border-[var(--color-wk-border)]
-border-b
+border-b-[length:var(--border-wk-width)]
 both
 bottom
 bound
@@ -200,6 +201,7 @@ depends
 developer
 developer-supplied
 development
+differs
 direction
 directive
 disabled
@@ -378,6 +380,8 @@ label
 labels
 landmark
 lands
+lang
+language
 later
 layer
 layout

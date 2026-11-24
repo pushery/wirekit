@@ -34,6 +34,11 @@
     // ordinary race, and throwing there would take down the whole turn over a stale index.
     $active = $total === 0 ? 0 : max(1, min($total, \Pushery\WireKit\Support\NumericProp::int($current, 0, 'branch-switcher', 'current')));
 
+    // Whether each arrow leads anywhere from the variant the switcher starts on, as canGoPrevious()
+    // and canGoNext() read it, so an arrow at an end says so before the script runs too.
+    $canGoPrevious = $total > 1 && ($loop || $active > 1);
+    $canGoNext = $total > 1 && ($loop || $active < $total);
+
     $groupLabel = filled($label) ? $label : __('wirekit::Response variants');
 
     // The index is not in the config. It travels on `data-wk-server-value`, so the expression is
@@ -98,6 +103,8 @@
                  disabled button cannot hold the focus, so stepping onto the last variant would
                  drop the reader's place. previous() and next() check the ends themselves. Only a
                  single variant takes the arrows out of the order. --}}
+            @unless($canGoPrevious) aria-disabled="true" @endunless
+            @if($total <= 1) disabled @endif
             x-bind:aria-disabled="! canGoPrevious()"
             x-bind:disabled="total <= 1"
             x-on:click="previous($el)"
@@ -117,6 +124,8 @@
             data-wk-branch-next
             class="{{ $buttonClasses }}"
             aria-label="{{ __('wirekit::Next response') }}"
+            @unless($canGoNext) aria-disabled="true" @endunless
+            @if($total <= 1) disabled @endif
             x-bind:aria-disabled="! canGoNext()"
             x-bind:disabled="total <= 1"
             x-on:click="next($el)"

@@ -60,6 +60,7 @@ changes
 class
 client-only
 comes
+commas
 compiles
 component
 components
@@ -88,6 +89,7 @@ emits
 end
 engines
 entry
+enum
 error
 escaping
 evenly
@@ -247,6 +249,7 @@ second
 see
 semantics
 sets
+several
 share
 show
 showing

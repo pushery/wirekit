@@ -21,6 +21,14 @@
     // submission again: an answer that leaves the page as it is, such as a download. `0` waits
     // for the page alone.
     'submitOnceRelease' => 10000,
+    // Says what the asterisk of a required field means at the start of the form, before its
+    // first field (`form.required-note`). Off by default; `required-note` in the `form` entry
+    // of the configuration turns it on for every form.
+    'requiredNote' => config('wirekit.components.form.required-note', false),
+    // Whether the required fields inside draw their asterisk. Off, every field stays required and
+    // no label marks it, and the note goes with the mark it explains: a form in which every field
+    // is required needs neither. A field that takes `requiredMark` itself decides for itself.
+    'requiredMark' => true,
     'scope' => null,
 ])
 
@@ -45,6 +53,8 @@
     $submitOnce = BooleanProp::from($submitOnce, false, 'form', 'submitOnce');
     $submitOnceRelease = \Pushery\WireKit\Support\NumericProp::int($submitOnceRelease, 10000, 'form', 'submitOnceRelease');
     $submitOnceRelease = $submitOnceRelease >= 0 ? $submitOnceRelease : 10000;
+    $requiredNote = BooleanProp::from($requiredNote, false, 'form', 'requiredNote');
+    $requiredMark = BooleanProp::from($requiredMark, true, 'form', 'requiredMark');
 @endphp
 
 {{-- A real <form> element: pass wire:submit / action / method through the
@@ -52,5 +62,6 @@
      `announceErrors` via @aware, so one setting governs the whole form's
      error-announcement policy. --}}
 <form @if($submitOnce && ! $attributes->has('data-wk-submit-once')) data-wk-submit-once @endif @if($submitOnce && ! $attributes->has('data-wk-submit-once-release')) data-wk-submit-once-release="{{ $submitOnceRelease }}" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
+    @if($requiredNote && $requiredMark)<x-wirekit::form.required-note />@endif
     {{ $slot }}
 </form>

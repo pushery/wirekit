@@ -71,7 +71,9 @@ final class AlpineFactories
                 }
 
                 preg_match_all('/<x-wirekit::([a-z0-9.-]+)/', $source, $tags);
-                preg_match_all("/@include\\(\\s*'wirekit::components\\.([a-z0-9.-]+)'/", $source, $includes);
+                // Every form of the include, `@includeWhen(! $lean, '…')` among them: the tooltip
+                // renders its component form from a partial that way.
+                preg_match_all("/@include(?:If|When|Unless)?\\([^\\n]*?'wirekit::components\\.([a-z0-9.-]+)'/", $source, $includes);
 
                 array_push($queue, ...$tags[1], ...$includes[1]);
 
@@ -91,6 +93,10 @@ final class AlpineFactories
     /**
      * The factory names `resources/js/wirekit.esm.js` exports, read from its export block.
      *
+     * A factory is a name its default installer hands to `Alpine.data()`. A named export it does
+     * not register, such as the highlight.js plugin `wirekitCodeJoins`, starts no component and is
+     * no factory.
+     *
      * @return list<string>
      */
     public static function exported(): array
@@ -103,8 +109,9 @@ final class AlpineFactories
         $entry = is_file($path) ? (string) file_get_contents($path) : '';
         preg_match('/export \{\s*(.*?)\s*\};/s', $entry, $block);
         preg_match_all('/^\s*(wirekit[A-Z][A-Za-z0-9]*)\s*,?\s*$/m', $block[1] ?? '', $names);
+        preg_match_all("/Alpine\.data\(\s*'([A-Za-z0-9_]+)'/", $entry, $registered);
 
-        return self::$exported = array_values(array_unique($names[1]));
+        return self::$exported = array_values(array_intersect(array_unique($names[1]), $registered[1]));
     }
 
     /**

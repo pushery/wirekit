@@ -185,8 +185,11 @@
                      flex box. The block padding moves with the cut, because overflow is clipped at
                      the padding box, and that padding is the room the descenders of a one-line box
                      at `line-height: 1` have below it. --}}
+                {{-- `lang` only where the heading's language differs from the strip's: a heading of
+                     an English article on a German page is read as English (WCAG 3.1.2). --}}
                 <a data-wk-prose-skip
                     :href="'#' + item.id"
+                    :lang="item.lang"
                     :data-active="item.index === activeIndex ? 'true' : 'false'"
                     :data-level="item.level"
                     :aria-current="item.index === activeIndex ? 'location' : null"

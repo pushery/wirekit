@@ -252,7 +252,7 @@
 
     {{-- Footer slot --}}
     @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
-        <div class="px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] border-t border-[var(--color-wk-border-subtle)]">
+        <div class="px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border-subtle)]">
             {{ $footer }}
         </div>
     @endwirekitLast

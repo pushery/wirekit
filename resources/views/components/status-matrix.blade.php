@@ -109,9 +109,9 @@
         : \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('status-matrix', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
-    // Normalize axes to plain arrays of {key,label}.
+    // Normalize axes to plain arrays of {key,label}. An enum as a key is read as its value.
     $toAxis = function ($items, string $prop) {
-        $items = (array) \Pushery\WireKit\Support\ListProp::from($items, 'status-matrix', $prop);
+        $items = (array) \Pushery\WireKit\Support\ListProp::records($items, 'status-matrix', $prop);
         return array_values(array_map(function ($it) {
             $it = (array) \Pushery\WireKit\Support\ListProp::from($it);
             return ['key' => (string) ($it['key'] ?? $it['label'] ?? ''), 'label' => (string) ($it['label'] ?? $it['key'] ?? '')];
@@ -128,8 +128,9 @@
     // axes do not exist until this line.
     $isCompositeGrid = $isCompositeGrid && $rowList !== [] && $colList !== [];
 
-    // Normalize cells into a flat ["row:col" => value] lookup (accepts nested too).
-    $cellsArr = (array) \Pushery\WireKit\Support\ListProp::from($cells, 'status-matrix', 'cells');
+    // Normalize cells into a flat ["row:col" => value] lookup (accepts nested too). An enum as a
+    // value, a status or a tristate cast on a model, is read as its value at either depth.
+    $cellsArr = (array) \Pushery\WireKit\Support\ListProp::records($cells, 'status-matrix', 'cells');
     $flatCells = [];
     foreach ($cellsArr as $k => $v) {
         $v = \Pushery\WireKit\Support\ListProp::from($v);
@@ -224,11 +225,12 @@
     // For the tristate cell the word is the state: its three SVGs are
     // `aria-hidden`, so `tristateLabel()` is the only channel a screen reader
     // has, so it answers in the application's locale, not in English.
-    $stateLabels = \Pushery\WireKit\Support\AlpinePayload::from([
+    $stateWords = [
         'allow' => __('wirekit::Allowed'),
         'deny' => __('wirekit::Denied'),
         'inherit' => __('wirekit::Inherited'),
-    ]);
+    ];
+    $stateLabels = \Pushery\WireKit\Support\AlpinePayload::from($stateWords);
 
     // The unsaved-changes counter is a count that only exists in the browser, so
     // the plural form has to be chosen there — the server renders every form and
@@ -308,16 +310,16 @@
                 <tr>
                     {{-- The corner at the top and the start: the row-axis label, aligned to the
                          start to match the row headers below it. --}}
-                    <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-start start-0 z-[calc(var(--z-wk-sticky)+1)]">{{ $cornerLabel }}</th>
+                    <th scope="col" class="{{ $headCell }} text-start start-0 z-[calc(var(--z-wk-sticky)+1)]">{{ $cornerLabel }}</th>
                     @foreach($colList as $col)
-                        <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-center z-[var(--z-wk-sticky)]">{{ $col['label'] }}</th>
+                        <th scope="col" class="{{ $headCell }} text-center z-[var(--z-wk-sticky)]">{{ $col['label'] }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody>
                 @foreach($rowList as $ri => $row)
                     <tr>
-                        <th data-wk-prose-skip scope="row" class="{{ $rowHead }}">{{ $row['label'] }}</th>
+                        <th scope="row" class="{{ $rowHead }}">{{ $row['label'] }}</th>
                         @foreach($colList as $ci => $col)
                             @php
                                 $rk = $row['key'];
@@ -325,10 +327,17 @@
                                 $val = $cellAt($rk, $ck);
                                 // Single tab stop into the grid (roving entry); arrows navigate.
                                 $tabindex = ($ri === 0 && $ci === 0) ? '0' : '-1';
+                                // The state a cell starts in, read as the script reads it: one of
+                                // the three words in any case and with spaces around it, else
+                                // `inherit`, and a switch on for every value a switch reads as on.
+                                // The cell is drawn and named in it before the script runs.
+                                $cellText = is_string($val) ? strtolower(trim($val)) : '';
+                                $cellWord = in_array($cellText, ['inherit', 'allow', 'deny'], true) ? $cellText : 'inherit';
+                                $cellOn = \Pushery\WireKit\Support\BooleanProp::orNull($val) === true;
                             @endphp
                             {{-- `gridcell` only inside a grid: the role is defined as a cell
                                  of one, and a <td> outside a grid is already a cell. --}}
-                            <td data-wk-prose-skip @if($isCompositeGrid) role="gridcell" @endif class="{{ $cellBox }}">
+                            <td @if($isCompositeGrid) role="gridcell" @endif class="{{ $cellBox }}">
                                 @switch($cellType)
                                     @case('tristate')
                                         <button
@@ -348,16 +357,19 @@
                                                 @keydown.enter.prevent="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown.space.prevent="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif
+                                            aria-label="{{ $row['label'].', '.$col['label'].': '.$stateWords[$cellWord] }}"
                                             :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::string($row['label'].', '.$col['label'].': ') }} + tristateLabel({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
-                                            :class="isChanged({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'ring-[length:var(--ring-wk-width)] ring-[var(--color-wk-warning)]' : ''"
+                                            :class="isChanged({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'ring-[length:var(--ring-wk-width)] ring-[var(--color-wk-warning-text)]' : ''"
                                             class="{{ $cellButton }}"
                                         >
                                             {{-- Shape differentiates the three states (colorblind-safe);
                                                  color is redundant reinforcement; the text state lives
-                                                 in aria-label. --}}
-                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'allow'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-success-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
-                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'deny'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-danger-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'inherit'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg>
+                                                 in aria-label. The mark of the state the cell starts in
+                                                 stands before the script; the other two wait under
+                                                 `x-cloak`. --}}
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'allow'" @unless($cellWord === 'allow') x-cloak @endunless aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-success-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'deny'" @unless($cellWord === 'deny') x-cloak @endunless aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-danger-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'inherit'" @unless($cellWord === 'inherit') x-cloak @endunless aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg>
                                         </button>
                                         @break
 
@@ -369,7 +381,7 @@
                                             role="switch"
                                             {{-- The cell as the server holds it, read as toggleOn() reads it: on for
                                                  every value a switch reads as on. --}}
-                                            aria-checked="{{ \Pushery\WireKit\Support\BooleanProp::orNull($val) === true ? 'true' : 'false' }}"
+                                            aria-checked="{{ $cellOn ? 'true' : 'false' }}"
                                             :aria-checked="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'true' : 'false'"
                                             {{-- See the tristate cell above: navigation is unconditional, and a
                                                  non-editable switch says so instead of accepting an Enter that
@@ -381,11 +393,12 @@
                                                 @keydown.enter.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown.space.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif
+                                            aria-label="{{ $row['label'].', '.$col['label'].': '.($cellOn ? __('wirekit::On') : __('wirekit::Off')) }}"
                                             :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($row['label'].', '.$col['label'].': ') }} + (toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::On')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Off')) }})"
                                             class="{{ $cellButton }}"
                                         >
-                                            <span x-show="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span>
-                                            <span x-show="!toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
+                                            <span x-show="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" @unless($cellOn) x-cloak @endunless class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success-text)]"></span>
+                                            <span x-show="!toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" @if($cellOn) x-cloak @endif class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
                                         </button>
                                         @break
 
@@ -449,7 +462,7 @@
                     <span>{{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $heatMax) }}{{ $heatUnit }}</span>
                     @break
                 @case('toggle')
-                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('wirekit::On') }}</span>
+                    <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success-text)]"></span> {{ __('wirekit::On') }}</span>
                     <span class="inline-flex items-center gap-[var(--gap-wk-xs)]"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span> {{ __('wirekit::Off') }}</span>
                     @break
             @endswitch

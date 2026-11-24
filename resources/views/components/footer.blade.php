@@ -25,6 +25,10 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'footer');
 
+    // A width the caller passes marks the footer (`data-wk-footer-own-max`): inside a main region
+    // its content spans the region's column, unless the caller chose a width here. The configured
+    // default is no such choice, it is the width of a footer that spans the page.
+    $ownMax = $max !== null;
     $max ??= config('wirekit.components.footer.max', 'xl');
 
     // Inner-container max-width resolution — reads the same
@@ -55,7 +59,8 @@
     // line between the content and the page chrome. `dist/wirekit.css` gives
     // `:where(.wk-main) :where(.wk-footer)` air above that line and less below it, so the
     // rule does not read as belonging to the card it touches. A standalone footer is
-    // untouched.
+    // untouched, and so is a footer whose caller sets its own margin or padding at the top
+    // (the first two markers below).
     $classes = WireKit::resolveClasses('footer', 'base', implode(' ', [
         'wk-footer',
         // `w-full` is load-bearing inside flex-row preview wrappers.
@@ -68,16 +73,28 @@
         // naturally; the explicit width matches that intent.
         'w-full',
         'bg-[var(--color-wk-bg-elevated)]',
-        'border-t border-[var(--color-wk-border)]',
+        'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'py-[var(--space-wk-section-sm)]',
         'px-[var(--padding-wk-x-lg)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text-muted)]',
         'text-[length:var(--text-wk-sm)]',
     ]), $scope);
+
+    // The main-region rule stands outside every cascade layer, where it beats a Tailwind
+    // utility whatever the specificity. A caller's margin or padding at the top, the auto
+    // margin that holds a footer at the end of a growing column included, marks the footer,
+    // and the rule leaves it out.
+    $ownMarginAbove = \Pushery\WireKit\Support\UtilityClasses::callerSets($attributes, 'margin', ['t', 'bs']);
+    $ownPaddingAbove = \Pushery\WireKit\Support\UtilityClasses::callerSets($attributes, 'padding', ['t', 'bs']);
+    // A main region insets its column already, so the same rule takes the footer's inline padding
+    // and its surface away there. A caller's own inline padding or background color marks the
+    // footer, and the rule leaves that part to the caller.
+    $ownPaddingInline = \Pushery\WireKit\Support\UtilityClasses::callerSets($attributes, 'padding', ['s', 'e', 'l', 'r']);
+    $ownBackground = \Pushery\WireKit\Support\UtilityClasses::callerHas($attributes, \Pushery\WireKit\Support\UtilityClasses::BACKGROUND_COLOR);
 @endphp
 
-<footer {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<footer {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($ownMarginAbove) data-wk-footer-own-margin @endif @if($ownPaddingAbove) data-wk-footer-own-padding @endif @if($ownPaddingInline) data-wk-footer-own-inline-padding @endif @if($ownBackground) data-wk-footer-own-background @endif @if($ownMax) data-wk-footer-own-max @endif @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="{{ $innerMaxClass }} mx-auto">
         @wirekitLast(\Pushery\WireKit\Support\SlotContent::given($columns ?? null))
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[var(--space-wk-xl)] mb-[var(--space-wk-xl)]">
@@ -92,7 +109,7 @@
          pattern: legal/brand row separated from columns by a line that
          visually crosses the entire footer, not just the inner content. --}}
     @if(\Pushery\WireKit\Support\SlotContent::given($brand ?? null) || \Pushery\WireKit\Support\SlotContent::given($legal ?? null))
-        <div class="my-[var(--space-wk-lg)] border-t border-[var(--color-wk-border-subtle)]"></div>
+        <div class="my-[var(--space-wk-lg)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border-subtle)]"></div>
 
         <div class="{{ $innerMaxClass }} mx-auto">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-[var(--space-wk-md)]">

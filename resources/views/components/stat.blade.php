@@ -228,16 +228,16 @@
     ]) : '';
 
     // A button tile stands as wide as its place with its text at the start, as the div does.
-    // Pressed, it draws the frame a chosen card of a radio or checkbox set draws, in the accent
-    // color, and twice as thick as the border, so the state is an edge as well as a color
+    // Pressed, it draws the frame a chosen card of a radio or checkbox set draws, in the accent's
+    // text color, and twice as thick as the border, so the state is an edge as well as a color
     // (WCAG 1.4.1). Keyed on `aria-pressed`, so the frame outranks the neutral border rather than
     // competing with it in the stylesheet's order, and follows the state wherever it is set: this
     // prop, or a caller's binding. `wk-state-button` frames it in forced colors, which paint
     // neither.
     $pressedClasses = $tag === 'button' ? implode(' ', [
         'wk-state-button w-full text-start',
-        'aria-pressed:border-[var(--color-wk-accent)]',
-        'aria-pressed:inset-ring-[length:var(--border-wk-width)] aria-pressed:inset-ring-[var(--color-wk-accent)]',
+        'aria-pressed:border-[var(--color-wk-accent-text)]',
+        'aria-pressed:inset-ring-[length:var(--border-wk-width)] aria-pressed:inset-ring-[var(--color-wk-accent-text)]',
     ]) : '';
 
     // A tile that opens a new tab says so, and keeps the page that opened it out of reach, as a
@@ -405,11 +405,11 @@
                 {{ $label }}
             </span>
         @endif
-        @if($icon)
+        @wirekitLast($icon)
             <x-wirekit::icon :name="$icon" size="sm" class="text-[color:var(--color-wk-text-subtle)]" />
         @elseif(\Pushery\WireKit\Support\SlotContent::given($iconSlot ?? null))
             <{{ $part }} data-wk-prose-skip class="text-[color:var(--color-wk-text-subtle)]">{{ $iconSlot }}</{{ $part }}>
-        @endif
+        @endwirekitLast
     </{{ $part }}>
 
     {{-- Main metric value — large, heading-weight for visual emphasis.
@@ -428,11 +428,11 @@
             <{{ $part }} data-wk-prose-skip
                 class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums"
             >
-                @if($fitBag !== null)
+                @wirekitLast($fitBag !== null)
                     {{ \Pushery\WireKit\Support\FitText::box((string) $value, $fitBag, false, null, new \Illuminate\View\ComponentAttributeBag(['x-text' => 'value'])) }}
                 @else
                     <span x-text="value">{{ $value }}</span>
-                @endif
+                @endwirekitLast
             </{{ $part }}>
         @else
             <{{ $part }} data-wk-prose-skip class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums">
@@ -472,8 +472,8 @@
             {{-- The description is a flex item beside the change, never narrower than its longest
                  word: `anywhere` lets a typed token in it, an email address, wrap, and the change
                  keeps its width. --}}
-            @if($description)
-                @if($descriptionDeferred && $animate)
+            @wirekitLast($description)
+                @wirekitLast($descriptionDeferred && $animate)
                     {{-- Option A — defer fade-in. Description hides while counter runs;
                          fades in after settle. aria-hidden mirrors visibility for SR contract. --}}
                     <span
@@ -495,8 +495,8 @@
                     >{{ $description }}</span>
                 @else
                     <span class="text-[color:var(--color-wk-text-muted)] [overflow-wrap:anywhere]">{{ $description }}</span>
-                @endif
-            @endif
+                @endwirekitLast
+            @endwirekitLast
         </{{ $part }}>
     @endif
 

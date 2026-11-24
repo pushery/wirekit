@@ -16,6 +16,8 @@ import { watchCurrent } from '../utils/watch-current.js';
 import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
 import { followPageModel, hasModelBinding, observeServerValue, ownValues, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { pressedTrigger } from '../utils/trigger-press.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 
 /**
  * A hex value typed without its `#`, `B87334` as design tools and the system pickers copy one, with
@@ -201,8 +203,17 @@ export default function wirekitColorPicker(config = {}) {
             // the same reason it needs the focus handling below: in the document it
             // sits last, so a reader who activated the swatch would otherwise tab
             // through the whole rest of the page to reach the sliders.
+            // A render of the Livewire component around a lazy picker must neither remove the panel it
+            // built nor keep a panel the server no longer draws.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+            }
+
             watchCurrent(this, 'isOpen', (isOpen) => {
                 if (isOpen) {
+                    // An opening by markup writing `isOpen` still finds its panel, built before the tick
+                    // below anchors it.
+                    this.preparePanel();
                     this.$nextTick(() => this._openPanel());
                 } else {
                     this._stopAutoUpdate?.();
@@ -330,6 +341,14 @@ export default function wirekitColorPicker(config = {}) {
         // ── Open / close ──────────────────────────────────────────────
 
         /**
+         * Build the panel of a lazy picker before it is needed, on the pointer or the focus on the
+         * picker and as it opens. A picker that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
+        },
+
+        /**
          * Trigger toggle. Closing goes through close() so focus is handed back.
          *
          * Not called `toggle`: this component can sit inside the optimistic layer, which
@@ -350,6 +369,7 @@ export default function wirekitColorPicker(config = {}) {
                 return;
             }
 
+            this.preparePanel();
             this.isOpen = true;
         },
 

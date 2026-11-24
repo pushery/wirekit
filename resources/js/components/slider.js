@@ -22,6 +22,8 @@
  *     (utils/server-value.js), released in destroy().
  *   - _markResizes — the ResizeObserver on the row of mark labels and on every label, and
  *     _markFrame, a scheduled placement of the labels; both released in destroy().
+ *   - _stopTheFirstFit — the first placement, waiting for the task the components start in;
+ *     taken back in destroy().
  *
  * @param {Object} config
  * @param {string} [config.current] the input's value at render time, as a string; without it,
@@ -37,6 +39,7 @@ import { focusClicked } from '../utils/focus-clicked.js';
 import { decimalPlaces, scaleText } from '../utils/locale-number.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { hasModelBinding, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { measureOnceStarted } from '../utils/measure-once-started.js';
 
 /** The row the mark labels hang in, under the track. */
 export const MARKS_ROW_ATTRIBUTE = 'data-wk-slider-marks';
@@ -198,6 +201,7 @@ export default function wirekitSlider(config = {}) {
         // alone places nothing.
         _markWidths: null,
         _markFrame: null,
+        _stopTheFirstFit: null,
 
         /**
          * Follow a form reset. The browser puts the range back to its default value and fires
@@ -253,9 +257,10 @@ export default function wirekitSlider(config = {}) {
         },
 
         /**
-         * Place the mark labels now, and again whenever the row or a label changes its width: the
-         * track grows and shrinks with its container, and a web font that lands after the first
-         * measurement widens every label while the row keeps its width.
+         * Place the mark labels once the components of the page have started, and again whenever
+         * the row or a label changes its width: the track grows and shrinks with its container,
+         * and a web font that lands after the first measurement widens every label while the row
+         * keeps its width.
          */
         _watchMarks() {
             const row = this._marksRow();
@@ -291,7 +296,11 @@ export default function wirekitSlider(config = {}) {
                 markLabelsOf(row).forEach((label) => this._markResizes.observe(label));
             }
 
-            this.fitMarks();
+            // The first placement runs with the other components started in this task, once it
+            // is done: a form of many sliders with marks lays itself out once for all of them,
+            // not once per slider, and its first paint still shows the labels placed. The
+            // placement writes through Alpine, so every slider has read before any writes.
+            this._stopTheFirstFit = measureOnceStarted(() => this.fitMarks());
         },
 
         _scheduleMarks() {
@@ -484,6 +493,8 @@ export default function wirekitSlider(config = {}) {
             this._stopFormReset = null;
             this._stopServerValue?.();
             this._stopServerValue = null;
+            this._stopTheFirstFit?.();
+            this._stopTheFirstFit = null;
             this._markResizes?.disconnect();
             this._markResizes = null;
             this._markWidths = null;

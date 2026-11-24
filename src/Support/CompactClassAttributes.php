@@ -13,11 +13,11 @@ namespace Pushery\WireKit\Support;
  * - a `class` attribute: its literal text becomes a call over the same text, and an echo in it a
  *   call over the echoed value;
  * - `@class(...)`: the list it is given;
- * - an echo of an attribute bag (`{{ $attributes->class([...]) }}`): the defaults handed to
- *   `->class()`.
+ * - an echo of an attribute bag (`{{ $attributes->class([...]) }}`): the `->class()` call, which
+ *   goes through the bag's `when()` so that its defaults are mapped beside the caller's classes.
  *
- * Each call returns what it was given while compact classes are off, so the page is byte for byte
- * what it was. While they are on, the classes come out under their short names.
+ * While compact classes are off, each call leaves the classes it is given as they are, so the page
+ * is byte for byte what it was. While they are on, the classes come out under their short names.
  *
  * Left as written:
  *
@@ -155,6 +155,9 @@ final class CompactClassAttributes
         // The classes the element carries under their own names, from every part that writes or
         // sets one, which each call over a part of its classes reads beside that part.
         $context = [];
+        // The classes its bindings set or remove while the page runs: an Alpine class binding, an
+        // `x-transition` value, a `wire:*.class` value.
+        $runtime = [];
 
         while (true) {
             if (preg_match('/\G\s+/', $template, $space, 0, $i) === 1) {
@@ -167,11 +170,11 @@ final class CompactClassAttributes
             }
 
             if ($template[$i] === '>') {
-                return [$i + 1, self::finish($out, $field, $context).'>'];
+                return [$i + 1, self::finish($out, $field, $context, $runtime).'>'];
             }
 
             if (substr($template, $i, 2) === '/>') {
-                return [$i + 2, self::finish($out, $field, $context).'/>'];
+                return [$i + 2, self::finish($out, $field, $context, $runtime).'/>'];
             }
 
             if (substr($template, $i, 4) === '{{--') {
@@ -258,6 +261,13 @@ final class CompactClassAttributes
 
                 if (! $component) {
                     $context = [...$context, ...self::classesWritten($attribute[0], $value)];
+
+                    // An echo in a binding is PHP: the classes its strings name are written the way
+                    // the view maps them, short where the static markup is short, so only the
+                    // binding's own literals keep their names here.
+                    if (strtolower($attribute[0]) !== 'class') {
+                        $runtime = [...$runtime, ...self::classesWritten($attribute[0], (string) preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}/s', ' ', $value))];
+                    }
                 }
 
                 if (! $component && $quote === '"' && strtolower($attribute[0]) === 'class') {
@@ -325,7 +335,13 @@ final class CompactClassAttributes
             : '{{ '.self::routed('value', $code).' }}';
     }
 
-    /** An echo in an element's attribute list, with the defaults of each `->class()` call routed. */
+    /**
+     * An echo in an element's attribute list, with each `->class()` call routed.
+     *
+     * The call goes through the bag's `when()`, which hands it the bag: the classes a bag holds
+     * before its defaults join them are the caller's, and a default that has to win over one of
+     * them keeps its name (CompactClasses::bagClass()).
+     */
     private static function bagEcho(string $echo): string
     {
         $out = '';
@@ -357,7 +373,8 @@ final class CompactClassAttributes
                     return $echo;
                 }
 
-                $out .= '->class('.self::routed('list', substr($echo, $i + 8, $close - $i - 9)).')';
+                $list = substr($echo, $i + 8, $close - $i - 9);
+                $out .= '->when(true, '.self::CALL.'bagClass('.$list.self::marker($list).'))';
                 $i = $close;
 
                 continue;
@@ -376,9 +393,13 @@ final class CompactClassAttributes
      */
     private static function routed(string $method, string $expression): string
     {
-        $marker = self::ARGS.implode(' ', self::literalListWords($expression)).self::ARGS_END;
+        return '('.self::SWITCH.' ? '.self::CALL.$method.'('.$expression.self::marker($expression).') : ('.$expression.'))';
+    }
 
-        return '('.self::SWITCH.' ? '.self::CALL.$method.'('.$expression.$marker.') : ('.$expression.'))';
+    /** The place of a routed call's trailing arguments, which finish() fills in once the tag is read. */
+    private static function marker(string $expression): string
+    {
+        return self::ARGS.implode(' ', self::literalListWords($expression)).self::ARGS_END;
     }
 
     /**
@@ -404,19 +425,29 @@ final class CompactClassAttributes
      * no kit utility under its own name beside a call's own list, and the flag and those classes
      * when it does.
      *
+     * A utility a binding of the element sets or removes keeps its name in the element's own lists
+     * as well, so it is handed to every call, its own list included: Alpine and Livewire add and
+     * remove a class by its name, and the markup has to carry the one they name. Everywhere else
+     * the utility takes its short name.
+     *
      * @param  list<string>  $context
+     * @param  list<string>  $runtime
      */
-    private static function finish(string $out, bool|string $field, array $context): string
+    private static function finish(string $out, bool|string $field, array $context, array $runtime = []): string
     {
         $kept = array_values(array_unique(array_filter(
             $context,
             static fn (string $class): bool => CompactClasses::keepsItsName($class, $field !== false),
         )));
+        $set = array_values(array_unique(array_filter($runtime, CompactClasses::hasShortName(...))));
 
         $pattern = '/'.preg_quote(self::ARGS, '/').'([^\x00]*)'.preg_quote(self::ARGS_END, '/').'/';
 
-        return (string) preg_replace_callback($pattern, static function (array $marker) use ($kept, $field): string {
-            $beside = array_values(array_diff($kept, preg_split('/\s+/', $marker[1], -1, PREG_SPLIT_NO_EMPTY) ?: []));
+        return (string) preg_replace_callback($pattern, static function (array $marker) use ($kept, $set, $field): string {
+            $beside = array_values(array_unique([
+                ...array_diff($kept, preg_split('/\s+/', $marker[1], -1, PREG_SPLIT_NO_EMPTY) ?: []),
+                ...$set,
+            ]));
 
             if ($beside === []) {
                 return self::fieldArgument($field);

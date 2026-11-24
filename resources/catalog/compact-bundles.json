@@ -1,0 +1,260 @@
+{
+    "button-base": [
+        "inline-flex",
+        "items-center",
+        "justify-center",
+        "gap-x-[var(--gap-wk-sm)]",
+        "whitespace-nowrap",
+        "cursor-pointer",
+        "font-[family-name:var(--font-wk-sans)]",
+        "font-[number:var(--font-wk-body-weight)]",
+        "tracking-[var(--font-wk-letter-spacing)]",
+        "leading-[var(--font-wk-line-height)]",
+        "border-[length:var(--border-wk-width)]",
+        "transition-colors",
+        "duration-[var(--transition-wk-duration)]",
+        "ease-[var(--transition-wk-easing)]",
+        "focus:outline-hidden",
+        "focus-visible:ring-[length:var(--ring-wk-width)]",
+        "focus-visible:ring-offset-[length:var(--ring-wk-offset)]",
+        "focus-visible:ring-[var(--color-wk-ring)]",
+        "focus-visible:ring-offset-[var(--color-wk-ring-offset)]",
+        "disabled:opacity-[var(--opacity-wk-disabled)]",
+        "disabled:pointer-events-none"
+    ],
+    "button-base-wrap": [
+        "inline-flex",
+        "items-center",
+        "justify-center",
+        "gap-x-[var(--gap-wk-sm)]",
+        "whitespace-normal",
+        "flex-nowrap",
+        "[overflow-wrap:anywhere]",
+        "cursor-pointer",
+        "font-[family-name:var(--font-wk-sans)]",
+        "font-[number:var(--font-wk-body-weight)]",
+        "tracking-[var(--font-wk-letter-spacing)]",
+        "leading-[var(--font-wk-line-height)]",
+        "border-[length:var(--border-wk-width)]",
+        "transition-colors",
+        "duration-[var(--transition-wk-duration)]",
+        "ease-[var(--transition-wk-easing)]",
+        "focus:outline-hidden",
+        "focus-visible:ring-[length:var(--ring-wk-width)]",
+        "focus-visible:ring-offset-[length:var(--ring-wk-offset)]",
+        "focus-visible:ring-[var(--color-wk-ring)]",
+        "focus-visible:ring-offset-[var(--color-wk-ring-offset)]",
+        "disabled:opacity-[var(--opacity-wk-disabled)]",
+        "disabled:pointer-events-none"
+    ],
+    "variant-primary-filled": [
+        "bg-[var(--color-wk-accent)]",
+        "text-[color:var(--color-wk-accent-fg)]",
+        "border-transparent",
+        "hover:bg-[var(--color-wk-accent-hover)]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-primary-outline": [
+        "bg-[var(--color-wk-bg)]",
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-[var(--color-wk-accent)]",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-primary-soft": [
+        "bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]",
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]"
+    ],
+    "variant-primary-ghost": [
+        "bg-transparent",
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]",
+        "shadow-[var(--shadow-wk-none)]"
+    ],
+    "variant-primary-link": [
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-transparent",
+        "underline-offset-4",
+        "hover:underline",
+        "p-0",
+        "h-auto"
+    ],
+    "variant-neutral-filled": [
+        "bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]",
+        "text-[color:var(--color-wk-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-neutral-outline": [
+        "bg-[var(--color-wk-bg)]",
+        "text-[color:var(--color-wk-text)]",
+        "border-[var(--color-wk-border)]",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-neutral-soft": [
+        "bg-[var(--color-wk-bg-soft)]",
+        "text-[color:var(--color-wk-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]"
+    ],
+    "variant-neutral-ghost": [
+        "bg-transparent",
+        "text-[color:var(--color-wk-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]",
+        "shadow-[var(--shadow-wk-none)]"
+    ],
+    "variant-neutral-link": [
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-transparent",
+        "underline-offset-4",
+        "hover:underline",
+        "p-0",
+        "h-auto"
+    ],
+    "variant-success-filled": [
+        "bg-[var(--color-wk-success)]",
+        "text-[color:var(--color-wk-success-fg)]",
+        "border-transparent",
+        "hover:bg-[var(--color-wk-success-hover)]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-success-outline": [
+        "bg-[var(--color-wk-bg)]",
+        "text-[color:var(--color-wk-success-text)]",
+        "border-[var(--color-wk-success)]",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-success-soft": [
+        "bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]",
+        "text-[color:var(--color-wk-success-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]"
+    ],
+    "variant-success-ghost": [
+        "bg-transparent",
+        "text-[color:var(--color-wk-success-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]",
+        "shadow-[var(--shadow-wk-none)]"
+    ],
+    "variant-success-link": [
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-transparent",
+        "underline-offset-4",
+        "hover:underline",
+        "p-0",
+        "h-auto"
+    ],
+    "variant-warning-filled": [
+        "bg-[var(--color-wk-warning)]",
+        "text-[color:var(--color-wk-warning-fg)]",
+        "border-transparent",
+        "hover:bg-[var(--color-wk-warning-hover)]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-warning-outline": [
+        "bg-[var(--color-wk-bg)]",
+        "text-[color:var(--color-wk-warning-text)]",
+        "border-[var(--color-wk-warning)]",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-warning-soft": [
+        "bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]",
+        "text-[color:var(--color-wk-warning-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]"
+    ],
+    "variant-warning-ghost": [
+        "bg-transparent",
+        "text-[color:var(--color-wk-warning-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]",
+        "shadow-[var(--shadow-wk-none)]"
+    ],
+    "variant-warning-link": [
+        "text-[color:var(--color-wk-accent-content)]",
+        "border-transparent",
+        "underline-offset-4",
+        "hover:underline",
+        "p-0",
+        "h-auto"
+    ],
+    "variant-danger-filled": [
+        "bg-[var(--color-wk-danger)]",
+        "text-[color:var(--color-wk-danger-fg)]",
+        "border-transparent",
+        "hover:bg-[var(--color-wk-danger-hover)]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-danger-outline": [
+        "bg-[var(--color-wk-bg)]",
+        "text-[color:var(--color-wk-danger-text)]",
+        "border-[var(--color-wk-danger)]",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-danger-soft": [
+        "bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]",
+        "text-[color:var(--color-wk-danger-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]"
+    ],
+    "variant-danger-ghost": [
+        "bg-transparent",
+        "text-[color:var(--color-wk-danger-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]",
+        "shadow-[var(--shadow-wk-none)]"
+    ],
+    "variant-danger-link": [
+        "text-[color:var(--color-wk-danger-text)]",
+        "border-transparent",
+        "underline-offset-4",
+        "hover:underline",
+        "p-0",
+        "h-auto"
+    ],
+    "variant-info-filled": [
+        "bg-[var(--color-wk-info-tone)]",
+        "text-[color:var(--color-wk-info-fg)]",
+        "border-transparent",
+        "hover:bg-[var(--color-wk-info-hover)]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-info-outline": [
+        "bg-[var(--color-wk-bg)]",
+        "text-[color:var(--color-wk-info-text)]",
+        "border-[var(--color-wk-info-tone)]",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]",
+        "shadow-[var(--shadow-wk-sm)]"
+    ],
+    "variant-info-soft": [
+        "bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]",
+        "text-[color:var(--color-wk-info-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]"
+    ],
+    "variant-info-ghost": [
+        "bg-transparent",
+        "text-[color:var(--color-wk-info-text)]",
+        "border-transparent",
+        "hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]",
+        "shadow-[var(--shadow-wk-none)]"
+    ],
+    "variant-info-link": [
+        "text-[color:var(--color-wk-info-text)]",
+        "border-transparent",
+        "underline-offset-4",
+        "hover:underline",
+        "p-0",
+        "h-auto"
+    ]
+}

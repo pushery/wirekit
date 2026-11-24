@@ -123,6 +123,68 @@ final class PluralPhrases
     }
 
     /**
+     * The text a map gives a count, with the count written in as digits, as `pluralize()` in
+     * plural.js writes it: the sample that is the count itself first, then the first sample in
+     * the count's plural category, otherwise the largest sample. A component writes it on the
+     * server for the value its script starts from, so the page says the same before the script
+     * runs and without one.
+     *
+     * The category is CLDR's where the intl extension is loaded, the rule the browser uses. Without
+     * it, the category is the one Laravel's rule gives, which chose the forms in the map.
+     *
+     * @param  array<int|string, string>  $phrases  a map from from()
+     * @param  string  $locale  the locale whose rule chooses, where the map names none under `rule`
+     * @param  bool|null  $intlAvailable  Test seam, production callers omit it: the path without
+     *                                    intl is shipped behavior, provable without unloading it.
+     */
+    public static function choose(array $phrases, int $count, string $locale, ?bool $intlAvailable = null): string
+    {
+        $samples = [];
+
+        foreach ($phrases as $sample => $form) {
+            if (is_int($sample)) {
+                $samples[$sample] = $form;
+            }
+        }
+
+        $rule = is_string($phrases['rule'] ?? null) && $phrases['rule'] !== '' ? $phrases['rule'] : $locale;
+        $intlAvailable ??= class_exists(\MessageFormatter::class);
+
+        $form = $samples[$count]
+            ?? ($intlAvailable ? self::browserForm($samples, $count, $rule) : null)
+            ?? self::laravelForm($samples, $count, $rule);
+
+        return str_replace(':count', (string) $count, $form ?? ':count');
+    }
+
+    /**
+     * The form for a count by Laravel's rule: the first sample other than zero that the rule files
+     * with the count, otherwise the largest sample. Null for a map without samples.
+     *
+     * @param  array<int, string>  $phrases
+     */
+    private static function laravelForm(array $phrases, int $count, string $language): ?string
+    {
+        if ($phrases === []) {
+            return null;
+        }
+
+        // Laravel's rule as the bound translator holds it (Support\Plural), so this class names
+        // nothing of illuminate/translation; with another translator the largest sample stands.
+        $wanted = Plural::formIndex($language, $count);
+
+        if ($wanted !== null) {
+            foreach ($phrases as $sample => $form) {
+                if ($sample !== 0 && Plural::formIndex($language, $sample) === $wanted) {
+                    return $form;
+                }
+            }
+        }
+
+        return $phrases[array_key_last($phrases)];
+    }
+
+    /**
      * The form the browser takes for a count from a map, as plural.js takes it: the
      * first sample in the count's CLDR category, otherwise the largest sample.
      *

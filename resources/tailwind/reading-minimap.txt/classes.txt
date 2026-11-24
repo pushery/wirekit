@@ -131,6 +131,7 @@ desktop
 developer-supplied
 developers
 different
+differs
 direction
 display
 distribution
@@ -241,6 +242,8 @@ landmark
 landmark-unique
 landmarks
 lands
+lang
+language
 later
 layer
 layout

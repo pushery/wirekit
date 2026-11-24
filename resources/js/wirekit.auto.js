@@ -9,14 +9,17 @@
  * The runtime and the factories reach Alpine on `alpine:init`, as the other bundles do, so the
  * module script has to run before Alpine starts: the place of `@wirekitScripts` in front of
  * `@livewireScripts` keeps that, since a module script and its imports run in document order with
- * the deferred scripts after it.
+ * the deferred scripts after it. The globals a page reads outside a component, the highlight.js
+ * plugin `wirekitCodeJoins` among them, need no Alpine and are set when this module runs, as the
+ * full bundle sets them when it loads.
  *
  * An element a later Livewire response or a visit adds may start a factory the page did not load.
  * Alpine asks every interceptor before it runs an element's directives, so the runtime holds such
  * an element back, loads the factory's module beside this one and starts the element then.
  */
 /* global __WIREKIT_AUTO_FACTORIES__ */
-import { installRuntime } from './runtime.js';
+import { installGlobals, installRuntime } from './runtime.js';
+import { installSharedTooltips } from './utils/shared-tooltips.js';
 import { factoryToLoad } from './utils/factory-to-load.js';
 import { reportLateRegistration } from './utils/late-registration.js';
 
@@ -45,6 +48,10 @@ function install(Alpine) {
 
     alpine = Alpine;
     installRuntime(Alpine);
+    // The trigger of a shared tooltip that is one element names no factory in an `x-data`, so the
+    // tooltip's module loads on the first event on such a trigger. See utils/shared-tooltips.js.
+    installSharedTooltips(typeof window === 'undefined' ? null : window, () => factories.get('wirekitTooltip')
+        ?? (known.has('wirekitTooltip') ? load('wirekitTooltip').then(() => factories.get('wirekitTooltip')) : null));
 
     for (const [name, factory] of factories) {
         Alpine.data(name, factory);
@@ -114,6 +121,11 @@ export function register(named) {
 let reachedByInitEvent = false;
 
 if (typeof window !== 'undefined') {
+    // Now rather than with the runtime: Alpine reaches the page after this module when an app
+    // bundles Livewire into a module script of its own, and a page may start no Alpine at all,
+    // while a highlighter in a deferred script after this one runs before Alpine is there.
+    installGlobals();
+
     document.addEventListener('alpine:init', () => {
         reachedByInitEvent = true;
         install(window.Alpine);

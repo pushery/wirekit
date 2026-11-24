@@ -13,6 +13,13 @@
     'sans' => null,
     'serif' => null,
     'mono' => null,
+    // Where the stylesheets of the families load from. `auto` takes the published copy where
+    // it exists and the package's route otherwise. `package` always takes the route, for a
+    // document with an opaque origin, such as a frame with `sandbox` and no
+    // `allow-same-origin` or its `srcdoc`: a browser fetches a font of `@font-face` in CORS
+    // mode, and the route answers a font with `Access-Control-Allow-Origin`, where the
+    // published copy carries what the web server sends.
+    'source' => 'auto',
 ])
 
 @php
@@ -22,6 +29,10 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('fonts', $attributes->getAttributes());
 
     $wkNonce = $nonce ?? \Pushery\WireKit\WireKit::cspNonce();
+
+    // `package` links the route for every family. A value it does not take is reported where the
+    // developer is and reads as `auto` in production.
+    $wkFromPackage = \Pushery\WireKit\Support\StrictnessGate::enforce('fonts', 'source', (string) $source, ['auto', 'package'], 'auto') === 'package';
 
     use Pushery\WireKit\Fonts\FontCss;
     use Pushery\WireKit\Fonts\FontPreset;
@@ -81,7 +92,11 @@
     // stays as well, in every environment: the route means the page looks right,
     // and the comment is what tells a developer they are paying for PHP on every
     // font request instead of serving a static file.
-    $warnMissing = fn (?FontPreset $preset) => $preset
+    //
+    // With `source="package"` the route is asked for, so the family is no unpublished one and
+    // gets neither the comment nor the log line.
+    $warnMissing = fn (?FontPreset $preset) => ! $wkFromPackage
+        && $preset
         && ! file_exists(public_path($preset->publishedCssPath()));
 
     // The log line beside that comment, written here because this is where a page asks for the
@@ -101,8 +116,9 @@
     // is the same shape the unpublished-font case already uses.
     $fontDisplay = FontCss::display();
 
-    $displayMismatch = function (?FontPreset $preset) use ($fontDisplay): bool {
-        if (! $preset) {
+    $displayMismatch = function (?FontPreset $preset) use ($fontDisplay, $wkFromPackage): bool {
+        // The route writes the configured value itself, so a family linked from there has none.
+        if (! $preset || $wkFromPackage) {
             return false;
         }
 
@@ -135,14 +151,19 @@
      *
      * Read out of the stylesheet rather than assembled from the key: the file is named after
      * the family (`Inter-Regular.woff2`, `VT323-Regular.woff2`), not the preset key, and every
-     * bundled family carries exactly one Regular face. Parsing the `src` the
-     * browser would parse anyway means the two can never disagree.
+     * bundled family carries exactly one Regular face, in parts by script
+     * (`Inter-Regular.latin.woff2`). Parsing the `src` the browser would parse anyway means the
+     * two can never disagree.
      *
-     * Only when published as a static file. The route-served fallback resolves through PHP
-     * with a cache-busting query, so a preload of it would be a second, differently-keyed
-     * request for the same bytes — the opposite of the point.
+     * Only when published as a static file and linked from there. The route-served fallback
+     * resolves through PHP with a cache-busting query, so a preload of it would be a second,
+     * differently-keyed request for the same bytes — the opposite of the point.
      */
-    $preloadHref = function (FontPreset $preset): ?string {
+    $preloadHref = function (FontPreset $preset) use ($wkFromPackage): ?string {
+        if ($wkFromPackage) {
+            return null;
+        }
+
         $publishedCss = public_path($preset->publishedCssPath());
 
         if (! file_exists($publishedCss)) {
@@ -151,9 +172,12 @@
 
         $css = (string) file_get_contents($publishedCss);
 
-        // The first `src: url(...)` is the 400 weight in every bundled stylesheet: the faces
-        // are emitted in ascending weight order by the generator.
-        if (preg_match("/src:\s*url\(['\"]?([^'\")]+\.woff2)['\"]?\)/", $css, $m) !== 1) {
+        // The Regular face's Latin part, the one a page in Latin script loads: the faces stand in
+        // ascending weight order, each split into parts by script with its Latin part last, so
+        // the first Latin part of a bundled stylesheet is the 400 weight's. A stylesheet without
+        // parts names the whole file, and its first `src` is that weight's.
+        if (preg_match("/src:\s*url\(['\"]?([^'\")]+\.latin\.woff2)['\"]?\)/", $css, $m) !== 1
+            && preg_match("/src:\s*url\(['\"]?([^'\")]+\.woff2)['\"]?\)/", $css, $m) !== 1) {
             return null;
         }
 
@@ -162,10 +186,10 @@
         return file_exists(public_path($file)) ? asset($file) : null;
     };
 
-    $fontHref = function (FontPreset $preset) use ($fontDisplay): string {
+    $fontHref = function (FontPreset $preset) use ($fontDisplay, $wkFromPackage): string {
         $published = public_path($preset->publishedCssPath());
 
-        if (file_exists($published)) {
+        if (! $wkFromPackage && file_exists($published)) {
             return asset($preset->publishedCssPath()).'?v='.filemtime($published);
         }
 

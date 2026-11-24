@@ -28,6 +28,12 @@ import { timerDelay } from '../utils/timer-delay.js';
  * @param {boolean}      [config.expandable] whether a reader can widen it; absent means true
  */
 export default function wirekitAppRail(config = {}) {
+    // The rail's own element, kept from init(). Alpine binds `$el` to the element an expression
+    // runs on, so `toggle()` from the button inside the rail would read that button: its id
+    // in the announcement and its transition in the timer below. Before init(), as in a harness
+    // that calls a method directly, `$el` answers.
+    let railElement = null;
+
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
@@ -86,6 +92,9 @@ export default function wirekitAppRail(config = {}) {
         _onExternalToggle: null,
         _onWidthSettled: null,
         _wideFallback: null,
+        // Watches the rail's own list come into view, on a wide screen at load and below the
+        // breakpoint each time the drawer opens, to bring the current module into it.
+        _seen: null,
 
         /**
          * The stored preference, kept apart from `expanded` because below the breakpoint
@@ -150,6 +159,7 @@ export default function wirekitAppRail(config = {}) {
         },
 
         init() {
+            railElement = this.$el;
             // A rail that cannot expand has no preference to read. Its resting width is the one
             // `labels` names, and the only other width it ever takes is a drawer's.
             this._persisted = this._canToggle
@@ -229,6 +239,27 @@ export default function wirekitAppRail(config = {}) {
             // synchronously lands on nobody, and a persisted expanded state then shows
             // the wrong arrow until someone clicks it.
             this.$nextTick(() => this._announce());
+
+            // A list that scrolls can hold the current module below what it shows, and in a
+            // phone's drawer that is where the foot's rule cuts it in half. Guarded because a
+            // plain unit harness has no observer.
+            //
+            // Two thresholds. The first reports the list touching the window; the second reports
+            // the whole list in view, which is the moment a drawer has finished opening. A drawer
+            // told to open while it is still sliding out, after a phone turns or on a second tap,
+            // never leaves the window, so the first is not crossed again and only the second
+            // brings the module in. A list that fills a wide screen and does not scroll calls
+            // `revealCurrent()` for nothing, which returns at once.
+            const list = this.$el?.querySelector?.('[data-wk-rail-scroller]');
+
+            if (list && typeof IntersectionObserver === 'function') {
+                this._seen = new IntersectionObserver((entries) => {
+                    if (this._seen && entries.some((entry) => entry.isIntersecting)) {
+                        this.revealCurrent();
+                    }
+                }, { threshold: [0, 1] });
+                this._seen.observe(list);
+            }
         },
 
         destroy() {
@@ -263,6 +294,36 @@ export default function wirekitAppRail(config = {}) {
                 this._readyFrame = null;
             }
 
+            this._seen?.disconnect();
+            this._seen = null;
+        },
+
+        /**
+         * Bring the current module whole into the rail's own list, by as little as it takes: up
+         * when it stands above what the list shows, down when it stands below, not at all when
+         * it is in view. The list's padding counts as the edge, so the module never stops under
+         * the foot's rule. On the list itself, through `scrollTop`, never `scrollIntoView()`,
+         * which scrolls every scrolling ancestor too, the page included.
+         */
+        revealCurrent() {
+            const list = (railElement ?? this.$el)?.querySelector?.('[data-wk-rail-scroller]');
+            const current = list?.querySelector?.('[aria-current]:not([aria-current="false"])');
+
+            if (! current || list.scrollHeight <= list.clientHeight) {
+                return;
+            }
+
+            const style = typeof getComputedStyle === 'function' ? getComputedStyle(list) : null;
+            const box = list.getBoundingClientRect();
+            const entry = current.getBoundingClientRect();
+            const top = box.top + (parseFloat(style?.paddingTop) || 0);
+            const bottom = box.bottom - (parseFloat(style?.paddingBottom) || 0);
+
+            if (entry.top < top) {
+                list.scrollTop -= top - entry.top;
+            } else if (entry.bottom > bottom) {
+                list.scrollTop += entry.bottom - bottom;
+            }
         },
 
         toggle() {
@@ -285,8 +346,9 @@ export default function wirekitAppRail(config = {}) {
                 // than assumed, because the duration is a token a project can retune.
                 clearTimeout(this._wideFallback);
 
-                const declared = typeof getComputedStyle === 'function' && this.$el
-                    ? getComputedStyle(this.$el).transitionDuration || '0s'
+                const rail = railElement ?? this.$el;
+                const declared = typeof getComputedStyle === 'function' && rail
+                    ? getComputedStyle(rail).transitionDuration || '0s'
                     : '0s';
                 const longest = Math.max(
                     0,
@@ -319,7 +381,7 @@ export default function wirekitAppRail(config = {}) {
                     // Alpine magic a plain unit harness does not provide — reading it
                     // unguarded made the sibling component untestable outside a browser,
                     // which is a mistake worth not repeating.
-                    detail: { id: this.$el?.id || null, expanded: this.expanded },
+                    detail: { id: (railElement ?? this.$el)?.id || null, expanded: this.expanded },
                 }),
             );
         },

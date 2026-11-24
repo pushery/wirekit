@@ -37,10 +37,15 @@
     {{ $railTag === 'button' ? $linkAttributes->except('type') : $linkAttributes }}
 >
     @if($icon)
-        {{-- Decorative: the label below is the accessible name. --}}
-        <span class="shrink-0" aria-hidden="true">
-            @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
-                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses]) }}
+        {{-- Decorative: the label below is the accessible name. Markup in the slot, an avatar or a
+             glyph of the caller's, stands in a box of the icon's size, centered and as a block, so
+             its row is as tall as a row with a named icon. A child larger than the box is held to
+             it, a smaller one keeps its size. The box takes the icon's classes, so a theme that
+             sizes the icon sizes it too. --}}
+        @php($iconIsName = is_string($icon) && ! str_contains($icon, '<'))
+        <span class="{{ $iconIsName ? 'shrink-0' : 'flex shrink-0 items-center justify-center [&>*]:max-h-full [&>*]:max-w-full '.$iconClasses }}" aria-hidden="true">
+            @wirekitLast($iconIsName)
+                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses], navigation: true) }}
             @else
                 {{ $icon }}
             @endwirekitLast

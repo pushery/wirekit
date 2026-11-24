@@ -13,7 +13,7 @@
         <x-slot:lede>Components themed by your design tokens and fonts served from your own domain.</x-slot:lede>
         <x-slot:actions>
             <x-wirekit::button href="/get-started">Get started</x-wirekit::button>
-            <x-wirekit::button href="/docs" intent="neutral" surface="outline">Read the docs</x-wirekit::button>
+            <x-wirekit::button href="/docs" intent="neutral">Read the docs</x-wirekit::button>
         </x-slot:actions>
         <x-slot:aside>
             <x-wirekit::code-block language="bash" filename="Install" :copy="true">composer require pushery/wirekit

@@ -21,12 +21,17 @@
 --text-wk-md
 --text-wk-sm
 --text-wk-xs
+--wk-fill-ink
 --z-wk-tooltip
+-tooltip
+-words
 @else
 @endforeach
 @endif
 @endphp
+@endwirekitLast
 @php
+[overflow-wrap:anywhere]
 a
 able
 about
@@ -37,6 +42,7 @@ across
 action
 activating
 actually
+address
 after
 again
 against
@@ -87,6 +93,7 @@ become
 becomes
 becoming
 been
+before
 being
 belongs
 below
@@ -98,6 +105,7 @@ bind
 binds
 block
 body
+bool
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
 border-b-2
@@ -105,13 +113,17 @@ both
 bound
 box
 brand
+breaks
 browser
 bubble
 bug
+build
+builds
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -122,6 +134,7 @@ cap
 capture
 card
 carries
+carry
 case
 cast
 cell
@@ -150,7 +163,9 @@ comes
 compete
 compiles
 component
+conditional
 config/wirekit.php
+configuration
 console
 content
 control
@@ -158,30 +173,43 @@ copies
 corner
 costs
 could
+count
 counterpart
 crossed
 cut
 cuts
 d
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-prose-skip
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
+declarations
 default
 delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -189,6 +217,7 @@ describes
 description
 developer
 different
+differs
 direction
 directives
 disabled
@@ -203,6 +232,7 @@ drawer
 drawing
 drawn
 draws
+drives
 duration-100
 duration-75
 each
@@ -227,13 +257,17 @@ escaping
 evaluated
 event
 events
+ever
 every
 exactly
 expression
+factory
 fade
 false
 feature
 field
+filled
+find
 finds
 finish
 fire
@@ -242,6 +276,7 @@ first
 fixed
 flags
 flips
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -250,6 +285,7 @@ focus-within
 focusable
 focusable-trigger
 focusableTrigger
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -258,6 +294,7 @@ font-normal
 for
 forced-colors
 forces
+form
 four
 fragment
 fresh
@@ -270,6 +307,7 @@ gap-[var(--gap-wk-xs)]
 get
 gets
 given
+gives
 global
 glyph
 go
@@ -298,6 +336,7 @@ hide
 hides
 high
 hoists
+hold
 holds
 host
 hover
@@ -318,6 +357,7 @@ inline-block
 inline-flex
 inserts
 inside
+instanceof
 instead
 interaction
 interactive
@@ -348,6 +388,7 @@ knows
 lands
 last
 later
+lazy
 leading-none
 leads
 leave
@@ -361,6 +402,7 @@ lg
 like
 line
 lines
+link
 linked
 list
 listener
@@ -440,6 +482,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -452,6 +495,7 @@ opens
 operation
 opposite
 optimistic-ui
+option
 or
 order
 original
@@ -473,6 +517,7 @@ panel
 paragraph
 parentNode
 parser
+parts
 passed
 patches
 pending
@@ -499,6 +544,7 @@ production
 project
 prop
 props
+prose
 proxy
 put
 puts
@@ -509,6 +555,7 @@ px-[var(--padding-wk-x-xs)]
 py-0.5
 py-[var(--padding-wk-y-xs)]
 qualified
+race
 racing
 raises
 rather
@@ -542,6 +589,7 @@ resolves
 rests
 restyles
 result
+ride
 role
 roll
 root
@@ -549,6 +597,7 @@ rounded
 rounded-[var(--radius-wk-sm)]
 rule
 run
+running
 s
 safe
 same
@@ -558,6 +607,7 @@ scope
 screen
 script
 scroll
+search
 second
 see
 sees
@@ -570,6 +620,7 @@ shape
 share
 shared
 shares
+short
 shortcut
 shortcuts
 show
@@ -580,6 +631,7 @@ siblings
 side
 sidebar
 simply
+since
 single
 single-key
 site
@@ -627,6 +679,7 @@ tabbed
 tabindex
 tag
 tags
+take
 takes
 teleport
 teleported
@@ -649,6 +702,7 @@ theme
 then
 there
 therefore
+these
 they
 this
 through
@@ -660,6 +714,8 @@ toggletip
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -684,6 +740,7 @@ unknown
 unless
 unlike
 unsteady
+until
 up
 usable
 use
@@ -695,6 +752,7 @@ via
 view
 visibility
 w-max
+waits
 walk
 warning
 was
@@ -710,7 +768,9 @@ while
 whole
 whose
 widening
+width
 window
+wins
 wire:id
 wire:key
 wire:text
@@ -722,6 +782,7 @@ words
 working
 works
 would
+wrap
 wrapper
 wrapping
 writes

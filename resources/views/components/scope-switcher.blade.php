@@ -164,13 +164,14 @@
         }
     }
 
-    // The four states a scope can be in, as a fill and as a word. Both maps are keyed by
+    // The four states a scope can be in, as a dot in the state's text tone, which holds 3:1
+    // against the page where a state's fill does not, and as a word. Both maps are keyed by
     // the same validated set, so a status that passed the check above always resolves —
     // there is no fallback branch to keep in step.
     $statusDotClasses = [
-        'success' => 'bg-[var(--color-wk-success)]',
-        'warning' => 'bg-[var(--color-wk-warning)]',
-        'danger' => 'bg-[var(--color-wk-danger)]',
+        'success' => 'bg-[var(--color-wk-success-text)]',
+        'warning' => 'bg-[var(--color-wk-warning-text)]',
+        'danger' => 'bg-[var(--color-wk-danger-text)]',
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
     ];
 

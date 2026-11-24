@@ -451,7 +451,10 @@
      decided by the stylesheet's order, not by the attribute. `focusable-trigger="false"`
      because the slot is already an <a> — the default would put a second tab stop in front of
      every module. --}}
-@if($outerAttributes->isNotEmpty())<div class="contents" {{ $outerAttributes }}>@endif
+{{-- `data-wk-rail-item-outer` lets the rail's footer reach the entry through this wrapper, which
+     has no box of its own: the room the expanded rail keeps for its toggle is a width cap on the
+     last row, and on a `contents` element a width does nothing. --}}
+@if($outerAttributes->isNotEmpty())<div class="contents" data-wk-rail-item-outer {{ $outerAttributes }}>@endif
 @if($badgeSentence !== null)
     {{-- The counter's sentence, in a tooltip that never goes quiet: no mode draws it. Where the
          name is a tooltip too, the name is the first line while the names are hidden, and goes

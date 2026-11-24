@@ -212,7 +212,7 @@
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         '[&:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
-        '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
+        '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger-text)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
@@ -221,8 +221,8 @@
     // tokens. Each state names its own ring color: a second one in the base list would be
     // decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = match (true) {
-        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
-        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
+        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger-text)]',
+        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success-text)]',
         // Hover belongs to the resting state only, so an error or a success border keeps its
         // color under the pointer.
         default => 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -319,8 +319,10 @@
              asterisk: the mark is for the eye, and the field's `required` says it to a screen
              reader. --}}
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false) && ! $hideLabel" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
-    @elseif($inAlignedRow)
-        {{-- An empty label track, held so that the control stays on the middle one. --}}
+    @endif
+    @if($inAlignedRow && (! $label || $hideLabel))
+        {{-- An empty label track, held so that the control stays on the middle one: a label
+             hidden from the eye is out of the flow and holds no track. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 

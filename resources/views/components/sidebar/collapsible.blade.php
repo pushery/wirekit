@@ -22,6 +22,12 @@
     // entries stand indented below it, and nothing folds. `open`, `persist` and `force-open`
     // have nothing to act on then.
     'foldable' => true,
+    // Builds the entries of a section the server draws closed the first time they are needed:
+    // when it opens, when the pointer or the focus reaches its head, when `persist` opens it, and
+    // when the sidebar folds to its icon rail. Until then the page holds them in a template, which
+    // the browser neither lays out nor hands to Alpine. Once built, they stay. The default comes
+    // from the configuration (`components.sidebar.collapsible.lazy`).
+    'lazy' => config('wirekit.components.sidebar.collapsible.lazy', false),
     'scope' => null,
 ])
 
@@ -63,7 +69,31 @@
     $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.sidebar.collapsible.open', false)), 'sidebar.collapsible', 'open');
     $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.collapsible', 'forceOpen');
     $foldable = BooleanProp::from($foldable, true, 'sidebar.collapsible', 'foldable');
+
+    // In a sidebar with `mode="selection"` a section does not fold. The column is a listbox, which
+    // holds options and groups: a disclosure button is neither, and its arrows would walk onto the
+    // rows of a closed section, which nobody sees. The section stands as with `:foldable="false"`,
+    // its group and its name kept. The mode is read as the sidebar takes it, so a `collapsible`
+    // sidebar, which falls back to navigation, keeps its sections folding.
+    $inListbox = \Pushery\WireKit\Support\AwareProp::read('mode', ['sidebar'], 'navigation', ownTag: false) === 'selection'
+        && ! BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false, ownTag: false), false);
+
+    if ($inListbox && $foldable) {
+        $foldable = false;
+
+        if (config('app.debug')) {
+            $foldInListboxWarning = '[wirekit] sidebar.collapsible: a section does not fold inside a '
+                .'`mode="selection"` sidebar. The column is a listbox, which holds options and groups, '
+                .'so the section stands open with its name, as with `:foldable="false"`.';
+        }
+    }
+
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.sidebar.collapsible.lazy', false)), 'sidebar.collapsible', 'lazy');
     $open = $open || $forceOpen;
+
+    // Only a section the server draws closed holds its entries back: an open one shows them with
+    // the page, and one that does not fold has no closed state.
+    $lazyEntries = $lazy && $foldable && ! $open;
 
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
 
@@ -205,13 +235,24 @@
     // the items being inside the disclosed region, so nothing is lost when it is not seen.
     $childClasses = WireKit::resolveClasses('sidebar.collapsible', 'children', implode(' ', [
         'flex flex-col gap-[2px]',
-        'ms-[var(--space-wk-nav-indent)]',
+        // A section with an icon stands its line in the middle of that icon, one without where its
+        // name begins.
+        $icon ? 'ms-[var(--space-wk-nav-icon-indent)]' : 'ms-[var(--space-wk-nav-indent)]',
         'ps-[var(--padding-wk-x-md)]',
         'border-s-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
     ]), $scope);
+
+    // The size of the head's icon, the one the line's indent is reckoned from.
+    $iconClasses = 'size-[var(--size-wk-nav-icon)]';
+
+    // A bare name draws a glyph of the icon set; markup in the slot is drawn as it came, in a box.
+    $iconIsName = is_string($icon) && ! str_contains($icon, '<');
 @endphp
 
+@if(isset($foldInListboxWarning))
+    <div x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($foldInListboxWarning) }} })" hidden></div>
+@endif
 @if($foldable)
 <div
     x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, forceOpen: {{ $forceOpen ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
@@ -238,6 +279,9 @@
              A caller's `aria-label` cannot serve here: it is read through the bag above
              and names the root, not this button. --}}
         @if((string) $label === '') aria-label="{{ __('wirekit::Section') }}" @endif
+        {{-- A lazy section builds its entries as the pointer or the focus reaches its head, so the
+             components in them have started by the time the head is pressed. --}}
+        @if($lazyEntries) x-on:pointerenter="prepare()" x-on:focus="prepare()" @endif
         data-wk-rail-gone class="wk-touch-row {{ $triggerClasses }}"
     >
         @if($icon)
@@ -247,9 +291,11 @@
                  ComponentSlot, Htmlable) renders verbatim. `data-wk-icon-nudge`
                  lifts it onto the label's letters, level with the item icons
                  in the same column. --}}
-            <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
-                @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
-                    {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
+            {{-- Markup in the slot stands in a box as a block, centered and in its own size, as in a
+                 sidebar entry. The head is gone from a folded column, so no size of the rail applies. --}}
+            <span class="{{ $iconIsName ? 'shrink-0' : 'flex shrink-0 items-center justify-center' }}" data-wk-icon-nudge aria-hidden="true">
+                @wirekitLast($iconIsName)
+                    {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses], navigation: true) }}
                 @else
                     {{ $icon }}
                 @endwirekitLast
@@ -282,10 +328,11 @@
             {{-- Turned in the markup when the server renders the section open, so the arrow of an open
                  section points down from the first paint rather than turning once Alpine starts. The
                  object form of the binding removes a class it did not add, so a section that closes
-                 loses the rotation the markup gave it. --}}
+                 loses the rotation the markup gave it; its key is the class as the markup writes
+                 it, short under `compact`. --}}
             data-wk-disclosure-arrow
             data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 rtl:-scale-x-100 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90 rtl:-rotate-90' : '' }}"
-            :class="{ 'rotate-90 rtl:-rotate-90': isOpen }"
+            :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map('rotate-90 rtl:-rotate-90')) }}: isOpen }"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -300,8 +347,14 @@
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
          `open || collapsed` would throw a ReferenceError there. --}}
     {{-- `x-cloak` only on a section the server renders closed, as in sidebar.group. --}}
+    {{-- A lazy section's entries wait in a template, the panel's first element, until the section
+         first shows them (`utils/lazy-entries.js`). --}}
     <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="{{ $childClasses }}{{ $foldFlat }}">
-        {{ $slot }}
+        @wirekitLast($lazyEntries)
+            <template data-wk-lazy-entries>{{ $slot }}</template>
+        @else
+            {{ $slot }}
+        @endwirekitLast
     </div>
     @wirekitLast(is_string($persist) && $persist !== '' && ! $forceOpen)
         @include('wirekit::components.partials.disclosure-persist-seed', ['seedKey' => $persist, 'seedOn' => $open])
@@ -319,9 +372,11 @@
 >
     <div data-wk-rail-gone class="{{ $headClasses }}">
         @if($icon)
-            <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
-                @wirekitLast(is_string($icon) && ! str_contains($icon, '<'))
-                    {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
+            {{-- Markup in the slot stands in a box as a block, centered and in its own size, as in a
+                 sidebar entry. The head is gone from a folded column, so no size of the rail applies. --}}
+            <span class="{{ $iconIsName ? 'shrink-0' : 'flex shrink-0 items-center justify-center' }}" data-wk-icon-nudge aria-hidden="true">
+                @wirekitLast($iconIsName)
+                    {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses], navigation: true) }}
                 @else
                     {{ $icon }}
                 @endwirekitLast

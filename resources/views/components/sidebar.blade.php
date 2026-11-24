@@ -185,6 +185,17 @@
     $zoneInset = BooleanProp::from($zoneInset, true, 'sidebar', 'zoneInset');
     $trackCurrent = BooleanProp::from($trackCurrent, false, 'sidebar', 'trackCurrent');
 
+    // Selection mode and the collapse-to-icon rail do not compose, and the refusal is
+    // explicit rather than a half-working hybrid. A collapsed rail hides every label, and
+    // a listbox whose options have no visible names is a control nobody can use — while
+    // `aria-selected` would still be announced, so it would read as usable to a screen
+    // reader and be unusable on screen. Navigation survives collapsing because an icon
+    // plus an accessible name is still a link; a choice needs its label.
+    //
+    // Decided before anything reads the mode, so the fallback is navigation everywhere: the width
+    // a reader drags and `track-current` read this, not the mode on the tag, and so do the rows.
+    $selectionMode = $mode === 'selection' && ! $collapsible;
+
     $persistDriver = WireKit::validateProp('sidebar', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
     // Whether the caller set `collapsed`, taken before anything below answers it: an explicit
@@ -210,7 +221,7 @@
     // Normalized here for the report a value that is no boolean gets at the tag that carries it;
     // the rows read `truncate` from their family through AwareProp, where the nearest value wins.
     $truncate = BooleanProp::from($truncate, false, 'sidebar', 'truncate');
-    $resizable = BooleanProp::from($resizable, false, 'sidebar', 'resizable') && $mode !== 'selection';
+    $resizable = BooleanProp::from($resizable, false, 'sidebar', 'resizable') && ! $selectionMode;
     $sidebarLength = static function (mixed $value, string $prop, string $default): string {
         if ($value === null || $value === '') {
             return $default;
@@ -271,7 +282,7 @@
     $navLabelAttrs += ['data-variant' => $variant];
 
     // The current entry follows the address after a visit, in the same merge for the same reason.
-    $navLabelAttrs += $trackCurrent && $mode !== 'selection' ? ['x-wk-current' => ''] : [];
+    $navLabelAttrs += $trackCurrent && ! $selectionMode ? ['x-wk-current' => ''] : [];
 
     // Sidebar root: a semantic <nav> landmark that holds grouped navigation
     // items. Uniform `p-[var(--padding-wk-y-sm)]` (= 0.375rem all four
@@ -375,14 +386,7 @@
         ...($resizable && ! $collapsible ? ['shrink-0', 'w-[var(--wk-sidebar-w,16rem)]'] : []),
     ]), $scope);
 
-    // Selection mode and the collapse-to-icon rail do not compose, and the refusal is
-    // explicit rather than a half-working hybrid. A collapsed rail hides every label, and
-    // a listbox whose options have no visible names is a control nobody can use — while
-    // `aria-selected` would still be announced, so it would read as usable to a screen
-    // reader and be unusable on screen. Navigation survives collapsing because an icon
-    // plus an accessible name is still a link; a choice needs its label.
-    $selectionMode = $mode === 'selection' && ! $collapsible;
-
+    // The refusal of selection mode with the rail is decided above, where `$selectionMode` is set.
     if ($mode === 'selection' && $collapsible && config('app.debug')) {
         $collapsibleSelectionWarning = '[wirekit] sidebar: `mode="selection"` is ignored while '
             .'`collapsible` is set. A collapsed rail hides the labels a listbox option needs, so '

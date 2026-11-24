@@ -114,6 +114,13 @@
         is_array($options) ? $options : [],
     );
 
+    // What the "system" option says while the page names a default for a reader without a choice
+    // (`data-wk-theme-default` on the root element): the default it stands for. The page's root is
+    // read in the browser, so the words are bound there, to `systemLabel`, and the markup starts
+    // from the catalog's word for the option.
+    $defaultLabels = ['light' => __('wirekit::Default (light)'), 'dark' => __('wirekit::Default (dark)')];
+    $systemBinding = new \Illuminate\Support\HtmlString('x-text="systemLabel"');
+
     $classes = WireKit::resolveClasses('theme-controller', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
@@ -145,7 +152,7 @@
 @endphp
 
 <div
-    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }}, fixedReason: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::This page sets the mode.')) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelText) }}, optionLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from($optionLabels) }} })"
+    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }}, fixedReason: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::This page sets the mode.')) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelText) }}, optionLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from($optionLabels) }}, defaultLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from($defaultLabels) }} })"
     data-wk-theme-controller
     data-variant="{{ $variant }}"
     data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
@@ -221,11 +228,11 @@
                  sat here doing nothing while an Alpine :class binding quietly did
                  the work. One mechanism, in the place that can actually see the
                  checkbox. --}}
-            {{-- The track is painted as the toggle's is: filled in the strong border color, which
-                 carries the 3:1 a control's boundary needs against the page (WCAG 1.4.11), and the
-                 3:1 the knob needs against the track it sits on, since the knob is what shows the
-                 state. In the plain border color the knob stood at 1.3:1, and the muted fill before
-                 that left the track at 1.09:1 against a light page. The edge is an
+            {{-- The track is painted as the toggle's is: filled in the strong border color, on which
+                 the knob in the page color holds the 3:1 it needs against the track it sits on,
+                 since the knob is what shows the state (WCAG 1.4.11), and edged in the muted text
+                 color, or once checked in the accent's text color, which stands apart from the page
+                 and from every surface the kit names, as a control's boundary needs. The edge is an
                  inset ring rather than a border because the knob is a child of the track here, and a
                  border would shrink the box it is placed in, so it would sit against the bottom and
                  the end. The inset ring takes no room and leaves the outer focus ring alone.
@@ -235,9 +242,9 @@
                  box beside the hidden input rather than on the label, as checkbox and radio do. --}}
             <span
                 aria-hidden="true"
-                class="wk-theme-switch-track wk-choice-frame wk-touch-target relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-border-strong)] inset-ring-[length:var(--border-wk-width)] inset-ring-[var(--color-wk-border-strong)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-checked:inset-ring-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
+                class="wk-theme-switch-track wk-choice-frame wk-touch-target relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-border-strong)] inset-ring-[length:var(--border-wk-width)] inset-ring-[var(--color-wk-text-muted)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-checked:inset-ring-[var(--color-wk-accent-text)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
             >
-                <span class="wk-theme-switch-knob absolute top-0.5 start-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
+                <span class="wk-theme-switch-knob absolute top-0.5 start-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
             </span>
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         </label>
@@ -276,7 +283,7 @@
                          the select variant (the keys ship in lang/en.json), and the
                          `options` prop so it can re-word them entirely. --}}
                     @foreach($optionLabels as $optionValue => $optionLabel)
-                        <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
+                        <option value="{{ $optionValue }}" {{ $optionValue === 'system' ? $systemBinding : '' }}>{{ $optionLabel }}</option>
                     @endforeach
                 </select>
                 <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-[var(--padding-wk-x-sm)]" data-wk-select-chevron>
@@ -327,7 +334,7 @@
                     @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
                         <span x-show="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
                             <x-wirekit::icon :name="$modeIcon" size="sm" />
-                            <span @class(['sr-only' => $hideLabel])>{{ $optionLabels[$modeValue] ?? $modeValue }}</span>
+                            <span @class(['sr-only' => $hideLabel]) {{ $modeValue === 'system' ? $systemBinding : '' }}>{{ $optionLabels[$modeValue] ?? $modeValue }}</span>
                         </span>
                     @endforeach
                 </x-wirekit::button>
@@ -375,7 +382,7 @@
                     x-bind:aria-checked="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'true' : 'false'"
                     x-bind:aria-disabled="fixed ? 'true' : null"
                     x-bind:class="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'font-medium text-[color:var(--color-wk-accent-text)]' : ''"
-                >{{ $optionLabels[$modeValue] ?? $modeValue }}</x-wirekit::dropdown.item>
+                >@wirekitLast($modeValue === 'system')<span x-text="systemLabel">{{ $optionLabels['system'] }}</span>@else{{ $optionLabels[$modeValue] ?? $modeValue }}@endwirekitLast</x-wirekit::dropdown.item>
             @endforeach
         </x-wirekit::dropdown>
     @endwirekitLast

@@ -26,6 +26,7 @@ import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
 import { defineShortcut, registerShortcutDirective } from './utils/shortcuts.js';
+import { wirekitCodeJoins } from './utils/code-joins.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -36,10 +37,38 @@ import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { installFocusInvalid } from './utils/focus-invalid.js';
+import { installLazySelectOptions } from './utils/lazy-select-options.js';
+import { installFocusTarget } from './utils/focus-target.js';
+import { installChoicesFollowTheServer } from './utils/choices-follow-the-server.js';
+import { installApexOnDemand } from './utils/apex-on-demand.js';
+import { installCartRemovalFocus } from './utils/cart-removal-focus.js';
 import { installSubmitOnce } from './utils/submit-once.js';
 import { installCanceledTransitionHandler } from './utils/canceled-transition.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
+
+/**
+ * The globals a page reads outside a component, as the full bundle sets them. None of them
+ * needs Alpine, so the per-page bundle sets them when its module runs, and a script after
+ * `@wirekitScripts` finds them whether Alpine starts before it, after it or not at all.
+ *
+ * Setting them again changes nothing, so the runtime calls this as well.
+ */
+export function installGlobals() {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    // Inline-Alpine components (combobox, data-table column menu) read this global for panel
+    // positioning: they have no module scope to import from.
+    window.wirekitPosition = position;
+    // A shortcut that works out what it does registers here; an importing app takes
+    // `defineShortcut` from the exports of the ES module.
+    window.wirekitShortcut = defineShortcut;
+    // The highlight.js plugin that keeps the joins of code that wraps; an importing app takes
+    // `wirekitCodeJoins` from the exports of the ES module.
+    window.wirekitCodeJoins = wirekitCodeJoins;
+}
 
 /**
  * The shared runtime every WireKit component leans on, separated from the component
@@ -50,15 +79,7 @@ import { installOverlayRoot } from './utils/overlay-root.js';
  * is harmless.
  */
 export function installRuntime(Alpine) {
-    // Inline-Alpine components (combobox, data-table column menu) read this global
-    // for panel positioning — they have no module scope to import from. Mirrors
-    // the full IIFE bundle. Guarded so it is set once even on repeat plugin use.
-    if (typeof window !== 'undefined') {
-        window.wirekitPosition = position;
-        // A shortcut that works out what it does registers here, as on the full bundle; an
-        // importing app takes `defineShortcut` from the exports below.
-        window.wirekitShortcut = defineShortcut;
-    }
+    installGlobals();
 
     // The overlay root before anything else: every teleported panel targets it, and
     // `x-teleport` treats a selector that matches nothing as fatal.
@@ -153,6 +174,21 @@ export function installRuntime(Alpine) {
     // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
     // See utils/focus-invalid.js.
     installFocusInvalid();
+    // A lazy select builds its list the first time it is used, and keeps it through Livewire's
+    // renders. See utils/lazy-select-options.js.
+    installLazySelectOptions();
+    // `wirekit:focus` takes the focus to the element a response names, opening what hides it.
+    // See utils/focus-target.js.
+    installFocusTarget();
+    // A toggle, a checkbox or a radio that sends an action of its own shows the server's state
+    // once its component's request has ended, refused or not. See utils/choices-follow-the-server.js.
+    installChoicesFollowTheServer();
+    // A chart drawn with ApexCharts that names the adapter waits for it, which loads where a
+    // chart starts while `wirekit.scripts.apex` is `on-demand`. See utils/apex-on-demand.js.
+    installApexOnDemand(Alpine);
+    // The focus goes on to the next control once a cart line the reader removed has left the
+    // page. See utils/cart-removal-focus.js.
+    installCartRemovalFocus();
     // A form with `data-wk-submit-once` sends itself once until the page changes. See
     // utils/submit-once.js.
     installSubmitOnce();

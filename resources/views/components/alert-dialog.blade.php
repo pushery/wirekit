@@ -60,6 +60,9 @@
     // honor only the bound spelling `:describedby="false"` and ship the unresolvable
     // reference silently, in the spelling a reader is most likely to write.
     'describedby' => null,
+    // Whether the dialog waits out of the page until it first opens. The default comes from the
+    // configuration (`components.alert-dialog.lazy`).
+    'lazy' => config('wirekit.components.alert-dialog.lazy', false),
 ])
 
 @php
@@ -165,6 +168,11 @@
         'rounded-[var(--radius-wk-xl)]',
         'shadow-[var(--shadow-wk-lg)]',
         'overflow-hidden',
+        // A token with no break point in the title or the description, an email address, a URL or
+        // a file name, breaks rather than being cut off at the panel's edge. Inherited by everything
+        // inside; `break-word` leaves every min-content width alone, so the row of actions keeps the
+        // layout it had.
+        '[overflow-wrap:break-word]',
         // The same distance on every side, as a container's padding is: the vertical padding takes
         // the x tier the sides use.
         'px-[var(--padding-wk-x-xl)]',
@@ -181,9 +189,17 @@
     // box, and the trigger its place: its own width in a grid cell, the margin a
     // stack gives its children. `class="contents"` on the component hands the trigger over.
     $rootAttributes = \Pushery\WireKit\Support\SlotContent::given($trigger ?? null) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
+    // A lazy dialog holds the teleport of its panel in a template of its own among the children of
+    // its root, which the browser keeps out of the page until the factory builds it as the panel
+    // first opens (utils/lazy-panel.js, show() in utils/overlay.js). The wrapper is an echo, since a
+    // conditional around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.alert-dialog.lazy', false)), 'alert-dialog', 'lazy');
+    $lazyPanelOpen = $lazy ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazy ? new \Illuminate\Support\HtmlString('</template>') : '';
 @endphp
 
 <div
+    @if($lazy) data-wk-lazy-panel-host @endif
     x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }}, confirmShortcut: {{ $confirmShortcut ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     {{ $rootAttributes }}
 >
@@ -199,7 +215,7 @@
     @endif
 
     {{-- Alert dialog overlay and panel — teleported to the overlay root --}}
-    <template x-teleport="#wk-overlay-root">
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div x-show="isOpen" x-cloak>
             {{-- Backdrop --}}
             <div
@@ -252,5 +268,5 @@
                 </div>
             </div>
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 </div>

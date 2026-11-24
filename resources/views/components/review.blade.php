@@ -56,7 +56,7 @@
     $replied = $moment($replyDate, 'replyDate');
     $dateText = static fn (CarbonImmutable $value): string => LocalizedDate::bySkeleton($value, 'yMMMd', 'M j, Y');
 
-    $hasReply = isset($reply) && $reply->hasActualContent();
+    $hasReply = \Pushery\WireKit\Support\SlotContent::given($reply ?? null);
     $replyName = filled($replyAuthor) ? __('wirekit::Reply from :name', ['name' => $replyAuthor]) : __('wirekit::Reply from the shop');
 
     // The article is named by its heading, or by its author where it has no title.

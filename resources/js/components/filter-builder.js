@@ -57,7 +57,10 @@ import { sameValue } from '../utils/same-value.js';
 import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { pressedTrigger } from '../utils/trigger-press.js';
 import { switchWord } from '../utils/switch-word.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
  * navigation-menu use for their teleported panels — same question, so the same
@@ -295,6 +298,16 @@ export default function wirekitFilterBuilder(config = {}) {
         _onResize: null,
         _modelEvents: null,
         init() {
+            // A render of the Livewire component around a lazy filter builder must neither remove the
+            // panel it built nor keep a panel the server no longer draws. An opening by markup writing
+            // `isOpen` still finds its panel: it is built a tick after the write.
+            if (this._lazyTemplate()) {
+                keepLazyEntriesThroughRenders();
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+
             // The filters reach this component on an attribute of the root rather than in
             // `x-data`, so that attribute renders the same on every update. A morph that changed
             // it would have Alpine reset the component to the new expression and initialize it
@@ -396,12 +409,33 @@ export default function wirekitFilterBuilder(config = {}) {
         },
 
         // ── Popover control ──────────────────────────────────────────────
+        /**
+         * The template a lazy filter builder holds its panel in, among the children of the add
+         * button's wrapper, which names itself; null for a builder that builds its panel with the page.
+         */
+        _lazyTemplate() {
+            const host = this.$refs?.trigger?.parentElement;
+
+            return host && typeof host.hasAttribute === 'function' && host.hasAttribute('data-wk-lazy-panel-host')
+                ? lazyPanelTemplate(host)
+                : null;
+        },
+
+        /**
+         * Build the panel of a lazy filter builder as it first opens, to add a filter or to edit one.
+         * A builder that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(this._lazyTemplate());
+        },
+
         openAdd() {
             this.editIndex = null;
             const first = this.fields[0];
             this.draft = { field: first ? first.key : '', op: '', value: '' };
             this._syncDraftDefaults();
             this._anchorAt = anchorSnapshot(this.$refs.trigger);
+            this.preparePanel();
             this.isOpen = true;
             this._focusFirstControl();
         },
@@ -414,6 +448,7 @@ export default function wirekitFilterBuilder(config = {}) {
                 this.draft.value = switchWord(this.draft.value) === true;
             }
             this._anchorAt = anchorSnapshot(this.$refs.trigger);
+            this.preparePanel();
             this.isOpen = true;
             this._focusFirstControl();
         },
@@ -829,8 +864,12 @@ export default function wirekitFilterBuilder(config = {}) {
                         }
                     }
                 }
-                // Not when the reader already moved into the panel while it was being positioned.
-                if (! focusIsWithin(this.$refs.panel)) {
+                // Not when the panel closed while it was opening. Alpine holds this callback while the
+                // panel's transition starts, and an Escape in that frame closes the panel, hands the
+                // focus to the trigger and lets the callback run: a focus moved into the leaving panel
+                // would drop to the page as it hides. Nor when the reader already moved into the
+                // panel while it was being positioned.
+                if (this.isOpen && ! focusIsWithin(this.$refs.panel)) {
                     this.$refs.fieldSelect?.focus();
                 }
             });

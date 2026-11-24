@@ -113,6 +113,7 @@ aria-readonly
 aria-required
 aria-selected
 ariaDisabled
+ariables
 around
 array
 arrive
@@ -121,6 +122,7 @@ arrow
 arrows
 as
 ask
+asking
 asks
 aspect-square
 assembled
@@ -183,6 +185,7 @@ by
 calendar
 calendar-presets
 calendar-sizing-row
+calendar-start-weeks
 calendars
 call
 caller
@@ -210,6 +213,7 @@ classic
 clip
 clip-rule
 clock
+closed
 closes
 col
 color
@@ -233,6 +237,8 @@ content-width
 contents
 control
 controls
+copies
+copy
 could
 counts
 cover
@@ -243,10 +249,13 @@ cursor-default
 cursor-not-allowed
 cursor-pointer
 custom
+data-wk-band
 data-wk-calendar-preset-list
 data-wk-calendar-preset-select
 data-wk-calendar-presets
 data-wk-calendar-presets-layout
+data-wk-calendar-start
+data-wk-in-range
 data-wk-max
 data-wk-max-range
 data-wk-min
@@ -265,6 +274,8 @@ date
 date-picker
 datetime
 day
+dayBtnClasses
+dayCellClasses
 dayOfMonth
 days
 debug
@@ -315,6 +326,7 @@ end
 end-0
 end-[var(--padding-wk-x-md)]
 ends
+entries
 entry
 escaped
 escapes
@@ -372,6 +384,7 @@ focus-visible:ring-inset
 focus:outline-hidden
 focusOffset
 focusedDay
+follow
 follows
 font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-body-weight)]
@@ -387,6 +400,7 @@ four
 frame
 from
 full
+gap
 gap-[var(--gap-wk-md)]
 gap-[var(--gap-wk-xs)]
 gap-[var(--padding-wk-x-sm)]
@@ -420,6 +434,7 @@ handler
 hands
 has
 have
+head
 header
 headers
 heading
@@ -452,6 +467,8 @@ immediately
 imports
 in
 in-between
+inMonth
+inRange
 include
 included
 index
@@ -520,10 +537,12 @@ list
 list-none
 list-style
 listbox
+lists
 literal
 literals
 live
 lives
+loads
 locale
 locks
 long
@@ -624,6 +643,7 @@ offset
 on
 once
 one
+ones
 only
 onto
 opacity-40
@@ -685,6 +705,7 @@ places
 placing
 plain
 plus
+pointer
 pointer-events-none
 polite
 pre-Alpine
@@ -697,6 +718,7 @@ presetList
 presetListLabelId
 presetValue
 presets
+press
 pressed
 presses
 prevDisabled
@@ -714,6 +736,7 @@ puts
 px-[var(--padding-wk-x-sm)]
 py-[var(--padding-wk-y-xs)]
 qualified
+query
 quoted
 quotes
 range
@@ -774,6 +797,7 @@ rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 rounded-full
 row
+rows
 rtl:-scale-x-100
 rule
 run
@@ -848,6 +872,7 @@ stand-in
 standalone
 stands
 start
+startMonth
 starting
 starts
 state
@@ -894,6 +919,7 @@ takes
 target
 tell
 tells
+template
 text
 text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-danger-text)]
@@ -910,6 +936,7 @@ texts
 than
 that
 the
+thead
 their
 them
 then
@@ -939,6 +966,7 @@ transition-colors
 travels
 treeitem
 true
+truncate
 truthy
 twice
 two
@@ -978,6 +1006,7 @@ w-[calc((var(--size-wk-lg)+0.25rem)/2)]
 w-[calc((var(--size-wk-md-compact)+0.25rem)/2)]
 w-[calc((var(--size-wk-sm)+0.25rem)/2)]
 w-full
+wait
 waits
 want
 wants
@@ -1038,6 +1067,7 @@ x-bind:aria-invalid
 x-bind:disabled
 x-bind:selected
 x-bind:value
+x-cloak
 x-data
 x-for
 x-model
@@ -1052,6 +1082,7 @@ x-show
 x-text
 xmlns
 y
+yMMMM
 year
 yearRange
 you

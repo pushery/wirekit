@@ -17,7 +17,7 @@
             <x-wirekit::navbar.item href="#pricing">Pricing</x-wirekit::navbar.item>
             <x-wirekit::navbar.item href="/docs">Docs</x-wirekit::navbar.item>
             <x-slot:actions>
-                <x-wirekit::button intent="neutral" surface="ghost" href="/login">Sign in</x-wirekit::button>
+                <x-wirekit::button intent="neutral" href="/login">Sign in</x-wirekit::button>
                 <x-wirekit::button href="/register">Get started</x-wirekit::button>
             </x-slot:actions>
         </x-wirekit::navbar>
@@ -32,7 +32,7 @@
             </x-slot:lede>
             <x-slot:actions>
                 <x-wirekit::button size="lg" href="/register">Get started for free</x-wirekit::button>
-                <x-wirekit::button size="lg" intent="neutral" surface="outline" href="#features">See how it works</x-wirekit::button>
+                <x-wirekit::button size="lg" intent="neutral" href="#features">See how it works</x-wirekit::button>
             </x-slot:actions>
         </x-wirekit::hero>
 
@@ -104,7 +104,7 @@
                                         <x-wirekit::list.item>1 concurrent build</x-wirekit::list.item>
                                         <x-wirekit::list.item>Community support</x-wirekit::list.item>
                                     </x-wirekit::list>
-                                    <x-wirekit::button intent="neutral" surface="outline" href="/register">Start free</x-wirekit::button>
+                                    <x-wirekit::button intent="neutral" href="/register">Start free</x-wirekit::button>
                                 </x-wirekit::stack>
                             </x-wirekit::card.body>
                         </x-wirekit::card>
@@ -139,7 +139,7 @@
                                         <x-wirekit::list.item>Single sign-on and provisioning</x-wirekit::list.item>
                                         <x-wirekit::list.item>99.99% uptime commitment</x-wirekit::list.item>
                                     </x-wirekit::list>
-                                    <x-wirekit::button intent="neutral" surface="outline" href="/contact">Talk to sales</x-wirekit::button>
+                                    <x-wirekit::button intent="neutral" href="/contact">Talk to sales</x-wirekit::button>
                                 </x-wirekit::stack>
                             </x-wirekit::card.body>
                         </x-wirekit::card>

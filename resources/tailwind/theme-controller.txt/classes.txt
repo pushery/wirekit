@@ -32,6 +32,7 @@
 --color-wk-success-fg
 --color-wk-success-hover
 --color-wk-success-text
+--color-wk-surface
 --color-wk-text
 --color-wk-text-muted
 --color-wk-text-subtle
@@ -103,6 +104,7 @@
 [--wk-touch-min:0px]
 [[aria-expanded=true]:not(:has([aria-expanded]_[data-wk-dropdown-indicator]))_&]:rotate-180
 [overflow-wrap:anywhere]
+[overflow-wrap:break-word]
 a
 a11y
 abel
@@ -129,6 +131,7 @@ actual
 actually
 add
 additive
+address
 adds
 after
 again
@@ -282,6 +285,7 @@ bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-text)_10%,var(--color-wk-surface))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
@@ -324,11 +328,11 @@ border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
-border-b-[var(--color-wk-accent)]
+border-b-[var(--color-wk-accent-text)]
 border-box
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
-border-e-[var(--color-wk-accent)]
+border-e-[var(--color-wk-accent-text)]
 border-t
 border-transparent
 bordered
@@ -347,6 +351,7 @@ break-word
 breaking
 breakpoint
 breakpoints
+breaks
 brings
 browser
 bubble
@@ -359,6 +364,7 @@ building
 builds
 built
 built-in
+bundle
 busy
 but
 button
@@ -379,7 +385,9 @@ candidate
 candidates
 cannot
 canonical
+cap
 caps
+captured
 card
 caret
 carried
@@ -540,6 +548,7 @@ data-wk-dropdown-indicator
 data-wk-dropdown-panel
 data-wk-dropdown-trigger
 data-wk-icon-missing
+data-wk-lazy-panel-host
 data-wk-optimistic-announcer
 data-wk-panel-id
 data-wk-prose-skip
@@ -550,6 +559,7 @@ data-wk-swap
 data-wk-swap-off
 data-wk-swap-on
 data-wk-theme-controller
+data-wk-theme-default
 data-wk-theme-fixed
 data-wk-theme-fixed-reason
 data-wk-theme-toggle
@@ -567,6 +577,7 @@ decoration
 decorative
 deduper
 default
+defaultLabels
 defaultPrevented
 defaults
 defect
@@ -603,6 +614,7 @@ direct
 direction
 directive
 disable
+disable-on-loading
 disableOnLoading
 disabled
 disabled:cursor-not-allowed
@@ -662,6 +674,7 @@ ease-out
 echo
 echoes
 edge
+edged
 editing
 effect
 either
@@ -672,6 +685,7 @@ elevated
 else
 elseif
 em
+email
 embedded
 emit
 emits
@@ -936,9 +950,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_16%,var(--color-wk-surface))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
-hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
@@ -1000,7 +1014,7 @@ input
 inserts
 inset
 inset-ring-[length:var(--border-wk-width)]
-inset-ring-[var(--color-wk-border-strong)]
+inset-ring-[var(--color-wk-text-muted)]
 inset-y-0
 inside
 installed
@@ -1065,6 +1079,7 @@ labels
 land
 lands
 language
+larger
 last
 last:border-b-0
 last:border-e-0
@@ -1115,6 +1130,7 @@ loading
 loading-spinner
 loading-target
 loadingTarget
+loads
 local
 locale
 localize
@@ -1127,10 +1143,12 @@ logs
 lone
 long
 longer
+longest
 look
 looks
 loop
 lose
+loses
 lost
 loud
 lowering
@@ -1171,6 +1189,7 @@ max-md:w-[var(--wk-button-square)]
 max-sm:[--wk-touch-min:0px]
 max-sm:sr-only
 max-sm:w-[var(--wk-button-square)]
+max-w-[calc(100vw-1rem)]
 max-w-full
 max-xl:[--wk-touch-min:0px]
 max-xl:sr-only
@@ -1362,6 +1381,7 @@ overrides
 overriding
 overscroll-contain
 oversights
+overtake
 own
 owned
 ownership
@@ -1406,7 +1426,7 @@ peer
 peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]
 peer-checked
 peer-checked:bg-[var(--color-wk-accent)]
-peer-checked:inset-ring-[var(--color-wk-accent)]
+peer-checked:inset-ring-[var(--color-wk-accent-text)]
 peer-focus-visible:ring-[length:var(--ring-wk-width)]
 peer-focus-visible:ring-[var(--color-wk-ring)]
 pending
@@ -1465,6 +1485,7 @@ presentation
 presentational
 preserves
 preset
+press
 pressed
 prev
 prevailing
@@ -1716,6 +1737,7 @@ share
 shared
 shares
 sharpest
+sheet
 shell
 shells
 ship
@@ -1823,7 +1845,6 @@ stayed
 stays
 step
 still
-stood
 stop
 stopped
 stops
@@ -1886,6 +1907,7 @@ symptom
 sync
 synchronous
 system
+systemLabel
 t
 tab
 tabindex
@@ -1963,6 +1985,7 @@ throw
 throwing
 throws
 tile
+time
 tint
 to
 today
@@ -2098,6 +2121,7 @@ w-[var(--size-wk-md-compact)]
 w-[var(--size-wk-sm)]
 w-full
 wait
+waits
 walk
 walls
 want
@@ -2138,6 +2162,7 @@ whole
 whose
 why
 wide
+widening
 width
 win
 window
@@ -2217,9 +2242,11 @@ x-effect
 x-init
 x-on:change
 x-on:click
+x-on:focusin
 x-on:keydown
 x-on:mouseenter
 x-on:mouseleave
+x-on:pointerenter
 x-ref
 x-show
 x-teleport

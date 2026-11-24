@@ -185,6 +185,21 @@
     // introduced the other.
     $countdownLocale = \Pushery\WireKit\Support\IcuLocale::tag($locale);
 
+    // What the clock shows as the page loads, worked out as the script works it out when it starts:
+    // the units, the sentence a screen reader reads, and whether the deadline has passed or is near.
+    // The page shows the time left before the script runs and on a page that runs none; the script
+    // writes over all of it when it starts, on the reader's clock.
+    $start = \Pushery\WireKit\Support\CountdownStart::at(
+        targetMs: $targetMs,
+        units: $activeUnits,
+        auto: $autoMode,
+        warnSeconds: $warnSeconds,
+        phrases: $unitPhrases,
+        locale: $countdownLocale,
+        separators: $separators,
+        expiredText: $expiredLabel,
+    );
+
     // Resolve the change-animation style. `animate` accepts a bool or one of the
     // strings 'box' / 'text' / 'none'. 'box' (the default when true) pulses the
     // whole box; 'text' flashes only the changing number; anything falsey is off.
@@ -218,6 +233,22 @@
         'text-[length:var(--text-wk-md)]',
         'tabular-nums',
     ]), $scope);
+
+    // The ticking units and the copy the server writes as the page loads are drawn alike, so the
+    // classes are written once for both.
+    $unitsClasses = $variantValue === 'segments'
+        ? 'inline-flex flex-wrap items-stretch justify-center gap-[var(--space-wk-sm)] px-[var(--space-wk-xs)]'
+        : 'inline-flex items-baseline gap-[var(--space-wk-xs)]';
+    $segmentBoxClasses = 'flex min-w-[3.5rem] flex-col items-center rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]';
+    $segmentValueClasses = 'text-[length:var(--text-wk-2xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums';
+    $segmentLabelClasses = 'mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]';
+
+    // The color of the state the page loads in, which the binding on the root takes over.
+    $stateColor = match (true) {
+        $start['expired'] => 'text-[color:var(--color-wk-danger-text)]',
+        $start['urgent'] => 'text-[color:var(--color-wk-warning-text)]',
+        default => 'text-[color:var(--color-wk-text)]',
+    };
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -259,10 +290,10 @@
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
     aria-label="{{ __('wirekit::Deadline') }}: {{ $humanDeadline }}"
     @endunless
-    :class="expired
-        ? 'text-[color:var(--color-wk-danger-text)]'
-        : (urgent ? 'text-[color:var(--color-wk-warning-text)]' : 'text-[color:var(--color-wk-text)]')"
-    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
+    {{-- An object, so the color the server wrote for the state the page loaded in goes once the
+         state changes: the string form takes off only the classes it put on itself. --}}
+    :class="{ 'text-[color:var(--color-wk-danger-text)]': expired, 'text-[color:var(--color-wk-warning-text)]': urgent, 'text-[color:var(--color-wk-text)]': ! expired && ! urgent }"
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $stateColor])) }}
 >
     @if($slot->hasActualContent())
     {{-- Headless mode: the developer's markup renders its own copy around the
@@ -283,17 +314,18 @@
     {{ $slot }}
     @else
     {{-- Machine-readable target instant + coarse remaining time for assistive
-         tech and crawlers. --}}
-    <time datetime="{{ $targetIso }}" class="sr-only" x-text="srText"></time>
+         tech and crawlers. The text is the server's until the script starts. --}}
+    <time datetime="{{ $targetIso }}" class="sr-only" x-text="srText">{{ $start['spoken'] }}</time>
 
-    {{-- Overdue state: a single label, no ticking units. --}}
-    <span aria-hidden="true" x-show="expired" x-text="expiredText"></span>
+    {{-- Overdue state: a single label, no ticking units. Hidden from the start while the deadline
+         is ahead, so a page without the script does not say it has passed. --}}
+    <span aria-hidden="true" x-show="expired" x-text="expiredText" @unless($start['expired']) style="display: none" @endunless>{{ $expiredLabel }}</span>
 
     {{-- Live units. Decorative (aria-hidden) — the value lives in the sr <time>.
          Each unit is its own node keyed by value, so a changed value re-mounts
          and its enter transition plays (the change animation). --}}
     <template x-if="! expired">
-        <span aria-hidden="true" class="{{ $variantValue === 'segments' ? 'inline-flex flex-wrap items-stretch justify-center gap-[var(--space-wk-sm)] px-[var(--space-wk-xs)]' : 'inline-flex items-baseline gap-[var(--space-wk-xs)]' }}">
+        <span aria-hidden="true" class="{{ $unitsClasses }}">
             <template x-for="(seg, index) in computed" :key="segKey(seg)">
                 @if($variantValue === 'segments')
                     {{-- The box re-mounts on each value change (segKey includes the
@@ -305,12 +337,9 @@
                          leave once the factory turns calm a few seconds after the
                          countdown appears. Both are gated for prefers-reduced-motion
                          in dist/wirekit.css. --}}
-                    <span
-                        class="flex min-w-[3.5rem] flex-col items-center rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]"
-                        x-bind:class="boxChangeClass"
-                    >
-                        <span class="text-[length:var(--text-wk-2xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums" x-bind:class="textChangeClass" x-text="segValue(seg, index)"></span>
-                        <span class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from($unitLabels) }}[seg.unit]"></span>
+                    <span class="{{ $segmentBoxClasses }}" x-bind:class="boxChangeClass">
+                        <span class="{{ $segmentValueClasses }}" x-bind:class="textChangeClass" x-text="segValue(seg, index)"></span>
+                        <span class="{{ $segmentLabelClasses }}" x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from($unitLabels) }}[seg.unit]"></span>
                     </span>
                 @else
                     <span class="tabular-nums"><span x-text="segValue(seg, index)"></span><span x-text="unitSuffix[seg.unit]"></span></span>
@@ -318,9 +347,29 @@
             </template>
         </span>
     </template>
+
+    {{-- The units as the page loads, for a page without the script and for the moment before it
+         starts. The script hides them as it starts and draws the ticking units above in their
+         place. `x-show` keeps them hidden through a Livewire render as well: the render starts the
+         incoming copy with the component's state before it compares the two, so both stand hidden.
+         Not drawn past the deadline, where the label above stands instead. --}}
+    @unless($start['expired'])
+    <span aria-hidden="true" data-wk-countdown-start x-show="false" class="{{ $unitsClasses }}">
+        @foreach($start['segments'] as $segment)
+            @if($variantValue === 'segments')
+                <span class="{{ $segmentBoxClasses }}">
+                    <span class="{{ $segmentValueClasses }}">{{ $segment['text'] }}</span>
+                    <span class="{{ $segmentLabelClasses }}">{{ $unitLabels[$segment['unit']] }}</span>
+                </span>
+            @else
+                <span class="tabular-nums"><span>{{ $segment['text'] }}</span><span>{{ \Pushery\WireKit\Support\CountdownStart::SUFFIXES[$segment['unit']] }}</span></span>
+            @endif
+        @endforeach
+    </span>
+    @endunless
     @endif
 
-    @if($pausable)
+    @wirekitLast($pausable)
     {{-- The way to stop the clock (WCAG 2.2.2), drawn as the carousel draws the one that stops
          its slides: a round button whose name says what a press does, "Pause countdown" or
          "Resume countdown", rather than a pressed state, which would say the same thing twice.
@@ -328,7 +377,8 @@
          so the urgent and expired tints of the time leave it alone. A headless countdown that
          draws its own control reads `paused` and calls `togglePause()` instead. It goes with
          the clock at the deadline: past it there is nothing left to stop, and a button named
-         for stopping the clock would offer an action that does nothing. --}}
+         for stopping the clock would offer an action that does nothing. A page made past the
+         deadline draws it hidden from the start. --}}
     <button
         type="button"
         data-wk-countdown-pause
@@ -336,6 +386,7 @@
         aria-label="{{ __('wirekit::Pause countdown') }}"
         x-bind:aria-label="paused ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Resume countdown')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause countdown')) }}"
         x-show="! expired"
+        @if($start['expired']) style="display: none" @endif
         class="wk-touch-target inline-flex h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] shrink-0 cursor-pointer items-center justify-center self-center rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
         <svg x-show="! paused" class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -345,5 +396,5 @@
             <path d="M8 5v14l11-7z" />
         </svg>
     </button>
-    @endif
+    @endwirekitLast
 </{{ $as }}>

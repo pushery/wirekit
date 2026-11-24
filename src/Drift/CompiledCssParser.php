@@ -84,8 +84,11 @@ final class CompiledCssParser
 
         $pattern = '/(?<![\w-])\.((?:\\\\.|[^\s,;>+~\[(){}:.\\\\])+)/u';
 
+        // A stylesheet the engine cannot read, such as text that is not valid UTF-8, stops here
+        // with the reason: read as a stylesheet without classes, it would turn every class the
+        // views write into drift, or hide drift behind an empty set.
         if (preg_match_all($pattern, $css, $matches) === false) {
-            return [];
+            throw new \RuntimeException(sprintf('The compiled stylesheet could not be read for its classes: %s.', preg_last_error_msg()));
         }
 
         $decoded = [];
@@ -116,16 +119,26 @@ final class CompiledCssParser
      * so numeric / color / gradient arguments don't surface as phantom
      * selectors. Iterative — handles nested calls like
      * `color-mix(in oklab, oklch(...), transparent)`.
+     *
+     * `:is(` keeps its body. From Tailwind 4.3.4 on, a utility under a group
+     * or peer variant stands inside one, and an arbitrary variant before the
+     * group variant nests a second one around the utility alone:
+     * `:is(:where(.group\/x)[data-open] :is(.utility > :last-child))`. That
+     * body is selector text, and the class in it is the one to find. The
+     * pseudo-class is held under a marker no function name can match while
+     * the bodies are blanked, and put back afterwards.
      */
     private static function blankFunctionBodies(string $css): string
     {
+        $css = str_replace(':is(', ":\u{1}(", $css);
+
         $previous = '';
         while ($previous !== $css) {
             $previous = $css;
             $css = preg_replace('/([a-z][a-z0-9-]*)\(\s*[^()]*\s*\)/i', '$1()', $css) ?? $css;
         }
 
-        return $css;
+        return str_replace(":\u{1}(", ':is(', $css);
     }
 
     /**

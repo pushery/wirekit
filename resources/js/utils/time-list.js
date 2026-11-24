@@ -1,3 +1,4 @@
+import { pageScrollBehavior } from './motion.js';
 import { hourAway, minutesOf, readTimeLimits, timeSlots, typedSlot } from './time-slots.js';
 import { timeFormatter } from './time-segments.js';
 
@@ -166,7 +167,9 @@ export function timeListState(config = {}) {
             this.$nextTick?.(() => {
                 const option = this.$refs?.timeList?.querySelectorAll('[role="option"]')[index];
                 option?.focus({ preventScroll: true });
-                option?.scrollIntoView?.({ block: 'nearest' });
+                // The page's own speed, and a jump where the reader reduced motion: without a
+                // `behavior` the scroll follows `scroll-behavior` on <html>, also under reduced motion.
+                option?.scrollIntoView?.({ block: 'nearest', behavior: pageScrollBehavior() });
             });
         },
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Theming;
 
 use InvalidArgumentException;
+use Pushery\WireKit\Support\BrowserTrim;
 
 /**
  * WCAG 2.1 contrast-ratio computation for WireKit theme tokens.
@@ -16,9 +17,10 @@ use InvalidArgumentException;
  * Scope: this helper covers the color formats WireKit itself emits and the
  * forms a browser hands back from `getComputedStyle` — `oklch(L C H)` and
  * `oklab(L a b)` (L as a decimal 0–1 or a percentage), hex in all four lengths,
- * `rgb()` / `rgba()` (both the comma and the modern space form),
- * `color(srgb …)`, `color-mix(in srgb, …)` and `transparent`, each with its
- * alpha. A translucent foreground is composited over its background before the
+ * `rgb()` / `rgba()` (both the comma and the modern space form), `hsl()` /
+ * `hsla()` in the forms the color picker writes, `color(srgb …)`,
+ * `color-mix(in srgb, …)` and `transparent`, each with its alpha. Whitespace is
+ * read as the browser half `resources/js/utils/wcag-contrast.js` reads it. A translucent foreground is composited over its background before the
  * ratio is taken; a translucent background has no ratio of its own. Anything
  * else — named colors, `currentColor`, `color-mix` in a non-sRGB space, a
  * `color()` in another space — returns `null`, which means "unmeasurable, skip
@@ -112,7 +114,8 @@ final class WcagContrast
      * Returns null when the format, or its alpha, is unsupported.
      *
      * Reads #rgb, #rgba, #rrggbb and #rrggbbaa; oklch(L C H) with an optional `/ alpha`; rgb() and
-     * rgba() in the comma form and the slash form; the `transparent` keyword; and
+     * rgba() in the comma form and the slash form; hsl() and hsla() in the forms the color picker
+     * writes; the `transparent` keyword; and
      * color-mix(in srgb, …), whose operands may themselves be translucent. An alpha is a number or
      * a percentage, and one this cannot read makes the whole color null: taken for opaque, it
      * would be the overestimate this parser exists to end.
@@ -121,7 +124,16 @@ final class WcagContrast
      */
     public static function parseToLinearRgba(string $color): ?array
     {
-        $color = trim($color);
+        // Whitespace as the browser half reads it: every character JavaScript's `\s` matches becomes
+        // an ASCII space, at the ends and inside a function, so the patterns below see what `\s`
+        // sees there; and only spaces are cut from the ends, so a NUL stays, as it stays there.
+        $color = preg_replace('/'.BrowserTrim::SPACE.'/u', ' ', $color);
+
+        if ($color === null) {
+            return null;
+        }
+
+        $color = trim($color, ' ');
 
         if (strcasecmp($color, 'transparent') === 0) {
             return [0.0, 0.0, 0.0, 0.0];
@@ -244,8 +256,19 @@ final class WcagContrast
 
         // rgb() / rgba() — getComputedStyle returns resolved colors in this form, so a form
         // control's live border or background read back from the DOM is auditable. Both the
-        // legacy comma form (rgba(255, 0, 0, .5)) and the modern slash form (rgb(255 0 0 / 50%)).
-        if (preg_match('#^rgba?\(\s*([\d.]+%?)\s*[,\s]\s*([\d.]+%?)\s*[,\s]\s*([\d.]+%?)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$#i', $color, $m) === 1) {
+        // legacy comma form (rgba(255, 0, 0, .5)) and the modern slash form (rgb(255 0 0 / 50%)),
+        // and no mix of them, which CSS does not read either.
+        $commaForm = preg_match('#^rgba?\(\s*([\d.]+%?)\s*,\s*([\d.]+%?)\s*,\s*([\d.]+%?)\s*(?:,\s*([\d.]+%?)\s*)?\)$#i', $color, $m) === 1;
+
+        if ($commaForm || preg_match('#^rgba?\(\s*([\d.]+%?)\s+([\d.]+%?)\s+([\d.]+%?)\s*(?:/\s*([\d.]+%?)\s*)?\)$#i', $color, $m) === 1) {
+            // Either form takes three numbers or three percentages, and no mix of them. CSS Color 4
+            // lets the space form mix them, but Chrome before 122 and Safari before 18 drop such a
+            // declaration, and both are inside the browsers the kit supports.
+            $percentages = count(array_filter([$m[1], $m[2], $m[3]], static fn (string $part): bool => str_ends_with($part, '%')));
+            if ($percentages !== 0 && $percentages !== 3) {
+                return null;
+            }
+
             $alpha = isset($m[4]) ? self::parseAlpha($m[4]) : 1.0;
             if ($alpha === null) {
                 return null;
@@ -263,7 +286,45 @@ final class WcagContrast
             ];
         }
 
+        // hsl() / hsla(), in the forms the color picker writes and `CssColor` reads: the hue as a
+        // number or in `deg`, saturation and lightness in percent, in the two forms of rgb(), with
+        // commas and an alpha after a comma or with spaces and an alpha after a slash. Another
+        // angle unit, such as `turn`, is no color here either.
+        if (preg_match('#^hsla?\(\s*([\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*(?:,\s*([\d.]+%?)\s*)?\)$#i', $color, $m) === 1
+            || preg_match('#^hsla?\(\s*([\d.]+)(?:deg)?\s+([\d.]+)%\s+([\d.]+)%\s*(?:/\s*([\d.]+%?)\s*)?\)$#i', $color, $m) === 1) {
+            $alpha = isset($m[4]) ? self::parseAlpha($m[4]) : 1.0;
+            if ($alpha === null) {
+                return null;
+            }
+
+            [$r, $g, $b] = self::hslToSrgb((float) $m[1], (float) $m[2] / 100.0, (float) $m[3] / 100.0);
+
+            return [self::srgbToLinear($r), self::srgbToLinear($g), self::srgbToLinear($b), $alpha];
+        }
+
         return null;
+    }
+
+    /**
+     * An HSL color as gamma-encoded sRGB channels in 0..1, by the conversion of CSS Color 4. The
+     * hue wraps at 360 degrees; saturation and lightness are clamped to 0..1.
+     *
+     * @return array{0: float, 1: float, 2: float}
+     */
+    private static function hslToSrgb(float $hue, float $saturation, float $lightness): array
+    {
+        $hue = fmod($hue, 360.0);
+        $saturation = max(0.0, min(1.0, $saturation));
+        $lightness = max(0.0, min(1.0, $lightness));
+        $amount = $saturation * min($lightness, 1.0 - $lightness);
+
+        $channel = static function (int $offset) use ($hue, $lightness, $amount): float {
+            $k = fmod($offset + $hue / 30.0, 12.0);
+
+            return $lightness - $amount * max(-1.0, min($k - 3.0, 9.0 - $k, 1.0));
+        };
+
+        return [$channel(0), $channel(8), $channel(4)];
     }
 
     /**

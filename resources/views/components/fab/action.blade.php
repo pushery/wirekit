@@ -148,7 +148,7 @@
         >{{ $label }}</span>
     @endif
 
-    @if($opensNewTab && ! $hintsNewTabInLabel)
+    @wirekitLast($opensNewTab && ! $hintsNewTabInLabel)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
-    @endif
+    @endwirekitLast
 </{{ $tag }}>

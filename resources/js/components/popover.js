@@ -15,7 +15,10 @@ import { createFocusTrap } from '../utils/focus-trap.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { belongsThroughTeleports } from '../utils/teleport.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { buildLazyPanel, lazyPanelTemplate } from '../utils/lazy-panel.js';
+import { keepLazyEntriesThroughRenders } from '../utils/lazy-entries.js';
 
+import { watchCurrent } from '../utils/watch-current.js';
 /**
  * @param {Object} config - Popover configuration from Blade
  * @param {string} config.placement - Floating UI placement (default: 'bottom')
@@ -77,6 +80,26 @@ export default function wirekitPopover(config = {}) {
                 close: () => this.close(),
                 keep: () => this._trap?.unpause(),
             });
+
+            // A render of the Livewire component around a lazy popover must neither remove the
+            // panel it built nor keep a panel the server no longer draws.
+            if (lazyPanelTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+                // An opening that does not come through show(), markup writing `isOpen` or the
+                // deprecated `open` alias, still finds a panel: it is built a tick after the write.
+                watchCurrent(this, 'isOpen', (open) => {
+                    if (open) this.preparePanel();
+                });
+            }
+        },
+
+        /**
+         * Build the panel of a lazy popover before it opens, on the pointer or the focus on the
+         * trigger, so its Alpine components have started by the time the reader presses it. A
+         * popover that is not lazy, or is built, is left alone.
+         */
+        preparePanel() {
+            buildLazyPanel(lazyPanelTemplate(this.$root));
         },
 
         destroy() {
@@ -106,6 +129,10 @@ export default function wirekitPopover(config = {}) {
          */
         async show() {
             if (this.isOpen) return;
+            // Built before `isOpen` turns true, so a lazy panel starts hidden and its transition
+            // runs on the way open. Every way of opening comes through here: the trigger, the
+            // `open` alias and a caller's own call.
+            this.preparePanel();
             this.isOpen = true;
             this._coordination?.announce();
 

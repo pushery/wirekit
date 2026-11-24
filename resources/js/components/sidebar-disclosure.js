@@ -1,5 +1,6 @@
 import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { buildLazyEntries, keepLazyEntriesThroughRenders, sectionEntriesTemplate } from '../utils/lazy-entries.js';
 
 /**
  * The sections on the page that persist their state, grouped by key.
@@ -62,6 +63,10 @@ function tellSections(key, from, open) {
  *
  * A fold reaches every other section on the page with the same `persist` key, through the
  * registry above.
+ *
+ * A section drawn closed with `lazy` builds its entries the first time it shows them
+ * (`utils/lazy-entries.js`): from `childrenVisible()`, which every way of showing them passes
+ * through, and from `prepare()`, which its head calls on the pointer or the focus.
  */
 export default function wirekitSidebarDisclosure(config = {}) {
     // This instance's place in the registry above. Held in the closure rather than on the
@@ -90,6 +95,12 @@ export default function wirekitSidebarDisclosure(config = {}) {
                 };
                 joinSections(this._persistKey, entry);
             }
+
+            // A render of the Livewire component around a lazy section must neither remove the
+            // entries it built nor keep the ones the server no longer draws.
+            if (sectionEntriesTemplate(this.$root)) {
+                keepLazyEntriesThroughRenders();
+            }
         },
 
         destroy() {
@@ -98,6 +109,15 @@ export default function wirekitSidebarDisclosure(config = {}) {
             }
 
             entry.adopt = null;
+        },
+
+        /**
+         * Build the entries of a lazy section before it opens, on the pointer or the focus on its
+         * head, so the Alpine components in them have started by the time the reader presses it.
+         * A section that is not lazy, or is built, is left alone.
+         */
+        prepare() {
+            buildLazyEntries(sectionEntriesTemplate(this.$root));
         },
 
         toggle() {
@@ -134,8 +154,18 @@ export default function wirekitSidebarDisclosure(config = {}) {
         childrenVisible() {
             const isOpen = this.isOpen === true;
             const railFolded = 'collapsed' in this && this.collapsed === true;
+            const visible = isOpen || railFolded;
 
-            return isOpen || railFolded;
+            // The entries of a lazy section are built before the answer reaches `x-show`, so
+            // `x-collapse` measures them on the way open instead of opening to nothing and then
+            // jumping. Every way of showing them comes through here: a press on the head, the
+            // stored state at the start, another section with the same `persist` key and the icon
+            // rail, which shows the entries of every section.
+            if (visible) {
+                buildLazyEntries(sectionEntriesTemplate(this.$root));
+            }
+
+            return visible;
         },
     });
 }

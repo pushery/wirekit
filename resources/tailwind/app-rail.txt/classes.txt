@@ -51,6 +51,7 @@
 --text-wk-sm
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --wk-nav-pad
 --wk-rail-brand-inset
 --wk-rail-gutter
@@ -58,6 +59,8 @@
 --wk-rail-inset-start
 --wk-rail-item-pad
 --z-wk-tooltip
+-tooltip
+-words
 @aware
 @else
 @endforeach
@@ -69,9 +72,11 @@
 @persist
 @php
 @props
-[&>*:last-child]:group-data-[expanded]/wk-rail:pe-[2.25rem]
+[&>*]:max-h-full
+[&>*]:max-w-full
 [--wk-nav-pad:var(--padding-wk-y-sm)]
 [font-weight:inherit]
+[overflow-wrap:anywhere]
 [transform-box:fill-box]
 a
 able
@@ -272,6 +277,7 @@ button
 buttons
 buys
 by
+cache
 calc
 call
 called
@@ -282,6 +288,7 @@ cancel
 cancels
 cannot
 cap
+caps
 caption
 captions
 capture
@@ -365,7 +372,9 @@ compound
 computed
 concentric-radius
 condition
+conditional
 config/wirekit.php
+configuration
 conflict
 conflicting
 conjunction
@@ -412,10 +421,12 @@ data-expanded
 data-indicator
 data-labels
 data-variant
+data-wk-fill
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-names
 data-wk-prose-skip
 data-wk-rail
@@ -424,7 +435,9 @@ data-wk-rail-brand-desc
 data-wk-rail-brand-mark
 data-wk-rail-brand-mark-wide
 data-wk-rail-brand-name
+data-wk-rail-foot-rows
 data-wk-rail-item
+data-wk-rail-item-outer
 data-wk-rail-label
 data-wk-rail-scroller
 data-wk-ready
@@ -436,6 +449,12 @@ data-wk-seed-key
 data-wk-seed-min
 data-wk-seed-on
 data-wk-sidebar-collapse
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tone
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
@@ -443,6 +462,7 @@ data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 data-wk-touch
 dataset
 dead
@@ -451,6 +471,7 @@ decide
 decided
 decides
 decision
+declarations
 declare
 declared
 decorative
@@ -463,10 +484,12 @@ delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberate
 deliberately
 delivered
 depended
+depends
 derived
 descendant
 descendants
@@ -481,6 +504,7 @@ did
 dies
 difference
 different
+differs
 digits
 direct
 direction
@@ -613,6 +637,7 @@ filed
 fill
 filled
 fills
+find
 finds
 finger
 finish
@@ -710,7 +735,7 @@ grid
 group
 group-data-[expanded]/wk-rail:absolute
 group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)]
-group-data-[expanded]/wk-rail:end-[var(--padding-wk-y-sm)]
+group-data-[expanded]/wk-rail:end-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]
 group-data-[expanded]/wk-rail:justify-end
 group-data-[indicator=edge]/wk-rail:after:absolute
 group-data-[indicator=edge]/wk-rail:after:bg-[var(--color-wk-rail-active-text)]
@@ -810,6 +835,7 @@ hint
 history
 hit
 hoists
+hold
 holds
 holdsParts
 hook
@@ -858,6 +884,7 @@ inset-0
 inset-and-border
 insets
 inside
+instanceof
 instead
 interaction
 interactive
@@ -917,6 +944,7 @@ later
 layout
 layout-shift
 lays
+lazy
 leading-aligned
 leading-none
 leading-tight
@@ -1109,6 +1137,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -1124,6 +1153,7 @@ opt-in
 opted
 optical
 optimistic-ui
+option
 optional
 or
 order
@@ -1166,6 +1196,7 @@ parser
 part
 partial
 particular
+parts
 pass
 passed
 passes
@@ -1266,6 +1297,7 @@ question
 quiet
 quieter
 quoted
+race
 racing
 rail
 rails
@@ -1473,6 +1505,7 @@ sizes
 slot
 sm
 small
+smaller
 snap
 snaps
 so
@@ -1636,6 +1669,8 @@ tone
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-[calc(var(--padding-wk-y-sm)/2)]

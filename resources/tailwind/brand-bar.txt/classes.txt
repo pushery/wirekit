@@ -1,3 +1,4 @@
+--border-wk-width
 --color-wk-bg
 --color-wk-border
 --color-wk-text-muted
@@ -48,7 +49,7 @@ beside
 bg-[var(--color-wk-bg)]
 body
 border-[var(--color-wk-border)]
-border-b
+border-b-[length:var(--border-wk-width)]
 borderless
 both
 bottom

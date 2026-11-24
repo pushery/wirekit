@@ -33,13 +33,17 @@
 --text-wk-xl
 --text-wk-xs
 --transition-wk-duration
+--wk-fill-ink
 --wk-fit-floor
 --z-wk-tooltip
 -my-1
+-tooltip
+-words
 @else
 @endforeach
 @endif
 @endphp
+@endwirekitLast
 @php
 [overflow-wrap:anywhere]
 [overflow-wrap:normal]
@@ -74,6 +78,7 @@ an
 ancestor
 and
 announced
+announcement
 announcing
 answer
 anticipate
@@ -121,6 +126,7 @@ become
 becomes
 becoming
 been
+before
 behind
 being
 belongs
@@ -133,6 +139,7 @@ bind
 binds
 block
 body
+bool
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
 border-b-2
@@ -146,10 +153,13 @@ brings
 browser
 bubble
 bug
+build
+builds
 but
 button
 buttons
 by
+cache
 call
 caller
 can
@@ -197,7 +207,9 @@ compete
 compiles
 component
 concatenated
+conditional
 config/wirekit.php
+configuration
 console
 container
 content
@@ -209,6 +221,7 @@ copy
 corner
 costs
 could
+count
 counterpart
 counts
 crossed
@@ -217,27 +230,39 @@ cut
 cuts
 d
 data
+data-wk-fill
 data-wk-heading-row
 data-wk-kbd-guess
 data-wk-kbd-platform
 data-wk-kbd-shortcut
 data-wk-kbd-single
+data-wk-lazy-panel-host
 data-wk-prose-skip
+data-wk-tip
+data-wk-tip-delay-hide
+data-wk-tip-delay-show
+data-wk-tip-offset
+data-wk-tip-placement
+data-wk-tip-words
 data-wk-tooltip-cut-words
 data-wk-tooltip-describedby
 data-wk-tooltip-disabled
 data-wk-tooltip-panel-class
 data-wk-tooltip-surface
 data-wk-tooltip-trigger
+data-wk-tooltip-words
 debug
+declarations
 default
 del
 delay-hide
 delay-show
 delayHide
 delayShow
+delays
 deliberately
 delivered
+depends
 descendant
 descendants
 described
@@ -247,6 +272,7 @@ designers
 developer
 dfn
 different
+differs
 direction
 directives
 disabled
@@ -266,6 +292,7 @@ drawing
 drawn
 draws
 drift
+drives
 duration-100
 duration-75
 duration-[var(--transition-wk-duration)]
@@ -291,8 +318,10 @@ escape
 escapes
 escaping
 evaluated
+evens
 event
 events
+ever
 every
 exactly
 explains
@@ -300,6 +329,7 @@ explanation
 explicitly
 expression
 external
+factory
 fade
 false
 feature
@@ -308,6 +338,7 @@ field
 field-help
 fields
 filled
+find
 finds
 finish
 fire
@@ -322,6 +353,7 @@ flex
 flex-1
 flips
 floor
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -330,6 +362,7 @@ focus-within
 focusable
 focusable-trigger
 focusableTrigger
+follow
 followed
 follows
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
@@ -393,6 +426,7 @@ hide
 hides
 high
 hoists
+hold
 holds
 host
 hover
@@ -420,6 +454,7 @@ inline-flex
 ins
 inserts
 inside
+instanceof
 instead
 int
 interaction
@@ -427,6 +462,7 @@ interactive
 interpolated
 into
 invalid
+inverse
 inverted
 invocation
 is
@@ -454,6 +490,7 @@ lands
 largest
 last
 later
+lazy
 leading-[var(--font-wk-heading-line-height,1.25)]
 leading-none
 leads
@@ -564,6 +601,7 @@ often
 on
 once
 one
+ones
 only
 onmouseover
 onto
@@ -577,6 +615,7 @@ operation
 opportunities
 opposite
 optimistic-ui
+option
 or
 order
 original
@@ -601,6 +640,7 @@ parentNode
 parser
 part
 partial
+parts
 passed
 patches
 pending
@@ -634,6 +674,7 @@ project
 prop
 properties
 props
+prose
 proxy
 put
 puts
@@ -646,6 +687,7 @@ py-[var(--padding-wk-y-xs)]
 q
 qualified
 question
+race
 racing
 raises
 rather
@@ -680,6 +722,7 @@ rest
 rests
 restyles
 result
+ride
 role
 roll
 root
@@ -689,6 +732,7 @@ rounded-full
 row
 rule
 run
+running
 s
 safe
 same
@@ -702,6 +746,7 @@ screen
 script
 scroll
 seams
+search
 second
 section
 see
@@ -718,6 +763,8 @@ share
 shared
 shares
 ship
+shipped
+short
 shortcut
 shortcuts
 show
@@ -797,11 +844,12 @@ teleported
 template
 tend
 text
-text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-subtle)]
 text-[color:var(--color-wk-tooltip-text)]
+text-[color:var(--wk-fill-ink,var(--color-wk-accent-text))]
+text-[color:var(--wk-fill-ink,var(--color-wk-text))]
 text-[length:var(--text-wk-2xl,1.5rem)]
 text-[length:var(--text-wk-3xl,1.875rem)]
 text-[length:var(--text-wk-4xl,2.25rem)]
@@ -822,6 +870,7 @@ theme
 then
 there
 therefore
+these
 they
 this
 through
@@ -836,6 +885,8 @@ toggletip
 toolbar
 tooltip
 tooltip-panel
+tooltip-root
+tooltip-words
 tooltips
 top
 top-left
@@ -869,7 +920,9 @@ unique
 unknown
 unless
 unlike
+unset
 unsteady
+until
 up
 usable
 use
@@ -880,6 +933,7 @@ value
 values
 vanished
 var
+variable
 vertical
 via
 view
@@ -887,6 +941,7 @@ visibility
 visually
 w-4
 w-max
+waits
 walk
 warning
 was
@@ -906,13 +961,16 @@ whole
 whose
 wide
 widening
+width
 window
+wins
 wire:id
 wire:key
 wire:text
 wirekit:field-help
 with
 without
+wk-heading
 wk-tooltip-panel
 word
 words
@@ -922,6 +980,7 @@ would
 wrap
 wrapper
 wrapping
+wraps
 write
 writes
 writing

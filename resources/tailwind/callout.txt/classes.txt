@@ -132,6 +132,7 @@ danger
 dashboard
 data-intent
 data-wk-prose-skip
+data-wk-tint
 debug
 default
 deliberately

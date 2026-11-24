@@ -173,7 +173,7 @@ final class TablistStyles
             // all-sides `border-color` here lost to it on stylesheet order, so the selected tab
             // showed no underline at all. The side colors are longhands, which Tailwind sorts
             // after the `border-color` shorthand, so they win wherever the classes are built.
-            default => 'border-b-[var(--color-wk-accent)] border-e-[var(--color-wk-accent)] text-[color:var(--color-wk-text)]',
+            default => 'border-b-[var(--color-wk-accent-text)] border-e-[var(--color-wk-accent-text)] text-[color:var(--color-wk-text)]',
         };
     }
 

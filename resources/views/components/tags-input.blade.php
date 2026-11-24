@@ -57,7 +57,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -77,7 +77,13 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `input` does. Not inside a `field`, which takes
+    // the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -231,6 +237,8 @@
      * 1 tag reached"), and `:count` stays in it for the factory to fill.
      */
     $tagLimit = \Pushery\WireKit\Support\NumericProp::intOrNull($maxTags, 'tags-input', 'maxTags');
+    // A set that starts full starts closed to more tags, as `atMaxTags` reads it from the seed.
+    $tagsFullAtStart = $tagLimit !== null && count($initialTags) >= $tagLimit;
     $tagAnnouncements = \Pushery\WireKit\Support\AlpinePayload::from([
         'added' => __('wirekit::Added :name'),
         'removed' => __('wirekit::Removed :name'),
@@ -277,9 +285,14 @@
     [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'maxlength', 'tabindex']);
 @endphp
 
-<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+    @endif
+    @if($inAlignedRow && ! $label)
+        {{-- An empty label track in a row that lines its fields up, held so that the field stays on
+             the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <div
@@ -371,6 +384,18 @@
                  tree, which reads the DOM and keeps a role whose box was removed from
                  layout. The same technique the optimistic wrapper below uses, and for
                  the same reason: a structural element that must not become a layout one. --}}
+            {{-- The tags as the page loads, for the moment before the script starts and for a page
+                 that runs none: the template below draws nothing until then. The script hides them
+                 as it starts and draws its own in their place, and `x-show` keeps them hidden
+                 through a Livewire render as well. Text only, since without the script a remove
+                 button would remove nothing, and outside the list, whose items stay the script's. --}}
+            @if($initialTags !== [])
+                <span data-wk-tags-input-start x-show="false" style="display: contents">
+                    @foreach($initialTags as $initialTag)
+                        <span class="{{ $tagClasses }}"><span class="[overflow-wrap:anywhere]">{{ $initialTag }}</span></span>
+                    @endforeach
+                </span>
+            @endif
             <span role="list" style="display: contents">
             <template x-for="(tag, i) in tags" :key="'tag-'+i">
                 <span role="listitem" class="{{ $tagClasses }}">
@@ -452,10 +477,13 @@
                      never told why — while `readonly` is what actually stops the typing.
                      `null` rather than `false`, because an aria attribute set to the string
                      "false" is a statement, and the statement here is that there is none. --}}
+                @if($tagsFullAtStart) aria-disabled="true" @endif
                 x-bind:aria-disabled="atMaxTags ? 'true' : null"
                 {{-- A read-only set is read-only for good. Bound, `readonly` would come off again
-                     whenever the set is not full. --}}
-                @if($readonly) readonly @else x-bind:readonly="atMaxTags" @endif
+                     whenever the set is not full. A set that starts full is written read-only as
+                     well, until the binding opens it again. --}}
+                @if($readonly || $tagsFullAtStart) readonly @endif
+                @unless($readonly) x-bind:readonly="atMaxTags" @endunless
                 @keydown.enter.prevent="addTag()"
                 @keydown.comma.prevent="addTag()"
                 {{-- A comma that arrives without its key (a paste, an on-screen keyboard) ends a tag too. --}}
@@ -492,7 +520,7 @@
         // built right before the echo, so it runs on the path and in the scope the echo does.
         $messagePart = $hasError && $errorMessage
             ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-error" '.($announceError ? ' aria-live="polite" aria-atomic="true" ' : '').' class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]')).'">'.e($errorMessage).'</p>')
-            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : '');
+            : ($hint ? new \Illuminate\Support\HtmlString('<p data-wk-prose-skip id="'.e($id).'-hint" class="'.e(\Pushery\WireKit\Support\CompactClasses::map('text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]')).'">'.e($hint).'</p>') : ($inAlignedRow ? new \Illuminate\Support\HtmlString('<span data-wk-field-part="message" aria-hidden="true"></span>') : ''));
     @endphp
     {{ $messagePart }}
 </div>

@@ -123,7 +123,7 @@
 
     $rootClasses = WireKit::resolveClasses('attachment', 'base', implode(' ', [
         'flex items-center gap-[var(--gap-wk-sm)]',
-        'rounded-[var(--radius-wk-md)] border border-[var(--color-wk-border)]',
+        'rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'p-[var(--padding-wk-x-sm)]',
         'text-[color:var(--color-wk-text)]',

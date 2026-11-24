@@ -106,6 +106,7 @@ be
 because
 becomes
 been
+before
 behavior
 being
 below
@@ -151,6 +152,7 @@ claims
 clamped
 clamps
 class
+close
 code
 collapses
 color
@@ -165,6 +167,7 @@ component
 component-level
 component-tag
 compute
+conditional
 configured
 consistently
 contract
@@ -202,10 +205,12 @@ dimmed
 directory
 disagree
 div
+do
 docs
 does
 done
 double-announce
+down
 drawing
 drawn
 drew
@@ -219,6 +224,7 @@ ease-[var(--transition-wk-easing)]
 easy
 edge
 effective
+either
 element
 else
 empty
@@ -255,6 +261,7 @@ flex-col
 flex-wrap
 flight
 flips
+float
 fn
 font
 font-[family-name:var(--font-wk-sans)]
@@ -333,6 +340,7 @@ it
 items-baseline
 items-center
 its
+just
 justify-between
 justify-center
 keep
@@ -367,6 +375,7 @@ locale
 low-emphasis
 made
 mandatory
+marker
 markers
 marks
 match
@@ -407,6 +416,7 @@ neutral
 never
 new
 next
+nine
 no
 nobody
 node
@@ -429,6 +439,8 @@ one
 only
 opacity
 opacity-[var(--opacity-wk-disabled)]
+opened
+opening
 opposite
 optimistic-ui
 optional
@@ -538,8 +550,10 @@ richer
 rides
 ring
 role
+root
 rotates
 round
+rounded
 rounded-[var(--radius-wk-full)]
 rule
 run
@@ -594,6 +608,7 @@ span
 spans
 stable
 stack
+stands
 starts
 state
 static
@@ -743,6 +758,7 @@ work
 would
 wrapped
 wrapper
+writes
 written
 x-bind:aria-valuenow
 x-bind:class

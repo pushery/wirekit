@@ -103,7 +103,11 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                     continue;
                 }
 
-                if ($hasPlain && $app[$plain] !== $value) {
+                // A wording that differs from WireKit's only in its typography means the same: a
+                // clone that writes "Aujourd’hui" where WireKit writes "Aujourd'hui" is no collision.
+                $theirs = $hasPlain ? $app[$plain] : null;
+
+                if ($hasPlain && ! (is_string($theirs) && is_string($value) ? self::sameWording($theirs, $value) : $theirs === $value)) {
                     $collisions[(string) $key][] = $locale;
                 }
             }
@@ -204,6 +208,24 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                 $ways
             ));
         }
+    }
+
+    /**
+     * Whether two wordings say the same, with the typography a catalog may write either way set
+     * aside: an apostrophe straight or typographic, and the space before a French mark plain,
+     * protected or narrow. Every other difference is one of wording.
+     */
+    private static function sameWording(string $theirs, string $ours): bool
+    {
+        $plain = static fn (string $text): string => strtr($text, [
+            "\u{2019}" => "'",
+            "\u{2018}" => "'",
+            "\u{02BC}" => "'",
+            "\u{00A0}" => ' ',
+            "\u{202F}" => ' ',
+        ]);
+
+        return $plain($theirs) === $plain($ours);
     }
 
     /**

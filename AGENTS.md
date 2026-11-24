@@ -44,14 +44,26 @@ editor, the WireKit MCP server exposes the same catalog as live tools.
   leaks a dead attribute). `icon` IS a prop on ~20 other components (e.g.
   `sidebar.item`), so don't carry the attribute form over to `button` / `badge`.
 - Buttons are filled. An action takes its rank from `intent`: the main one in the
-  accent, another `intent="neutral"`, a destructive one `intent="danger"`. An
-  outline beside a filled button is a second style, not a lower rank.
+  accent, another `intent="neutral"`, a destructive one `intent="danger"`. A
+  button with words sets no `surface`: an outline, soft or ghost button beside a
+  filled one is a second style, not a lower rank. Three kinds of control may wear
+  another surface, because it says something other than a rank: one half of a
+  toggle (`aria-pressed`), a button with an icon alone (`icon-only`), and a
+  control that opens something in place, a disclosure (`aria-expanded`) or the
+  trigger of a dropdown or a popover. A link in running text is `x-wirekit::link`.
 - The content of a screen stands in cards, one per part. A card of settings has a
   head: `card.header` with an icon, the name of the part and a one-sentence
   `description` of what it is for.
 - A date or a time a reader sees stays on one line, in an element with
   `whitespace-nowrap`, so a narrow column never leaves the hour under the day.
-- `php artisan wirekit:doctor:props` reports a place that leaves one of the three
+- The actions of a table's row stand at its end, side by side: the cell that
+  holds them is `table.td align="end"` or `table.td actions`.
+- A destructive action asks first. A button or a menu entry that deletes,
+  removes, cancels or revokes is `intent="danger"` (`danger` on an entry) and
+  opens an `alert-dialog`, whose `alert-dialog.confirm` runs the action; it never
+  runs it from its own `wire:click`, and `wire:confirm` asks in the browser's
+  dialog instead of the kit's.
+- `php artisan wirekit:doctor:props` reports a place that leaves one of the five
   conventions above as a hint.
 
 ## Full reference

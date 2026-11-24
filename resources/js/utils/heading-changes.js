@@ -8,13 +8,16 @@
  * frame, after a batch of changes `changesOutside()` lets through.
  */
 
-/** Every node under the target, every text in it, and the `id` of every element. */
+/**
+ * Every node under the target, every text in it, and the `id` and `lang` of every element: an entry
+ * links to its heading by the `id` and speaks in the heading's language (heading-lang.js).
+ */
 export const HEADING_CHANGES = {
     childList: true,
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ['id'],
+    attributeFilter: ['id', 'lang'],
 };
 
 /**
@@ -32,14 +35,14 @@ export function changesOutside(records, outline) {
 
 /**
  * Whether a fresh collection lists the same headings as the outline, in the same order and under
- * the same text and `id`.
+ * the same text, `id` and language.
  *
- * @param {Array<{el: Element, text: string, id: string}>} fresh
- * @param {Array<{el: Element, text: string, id: string}>} listed
+ * @param {Array<{el: Element, text: string, id: string, lang?: string|null}>} fresh
+ * @param {Array<{el: Element, text: string, id: string, lang?: string|null}>} listed
  */
 export function sameHeadings(fresh, listed) {
     return fresh.length === listed.length
-        && fresh.every((item, i) => item.el === listed[i].el && item.text === listed[i].text && item.id === listed[i].id);
+        && fresh.every((item, i) => item.el === listed[i].el && item.text === listed[i].text && item.id === listed[i].id && item.lang === listed[i].lang);
 }
 
 /**

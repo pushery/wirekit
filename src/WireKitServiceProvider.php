@@ -28,19 +28,15 @@ use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AssetTags;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\BlankName;
+use Pushery\WireKit\Support\BlazeRender;
 use Pushery\WireKit\Support\BooleanProp;
 use Pushery\WireKit\Support\CallerAttribute;
 use Pushery\WireKit\Support\CompactClassAttributes;
-use Pushery\WireKit\Support\CompactClasses;
 use Pushery\WireKit\Support\ContainedFile;
-use Pushery\WireKit\Support\DomId;
-use Pushery\WireKit\Support\FaqCollector;
 use Pushery\WireKit\Support\FlagPackage;
 use Pushery\WireKit\Support\LogThrottle;
 use Pushery\WireKit\Support\PropText;
 use Pushery\WireKit\Support\SharedViewData;
-use Pushery\WireKit\Support\StrictnessGate;
-use Pushery\WireKit\Support\TourStepCounter;
 use Pushery\WireKit\Support\UnboundModel;
 use Pushery\WireKit\Support\ValuelessDirectives;
 use Pushery\WireKit\Values\DateRangeSynth;
@@ -161,22 +157,26 @@ class WireKitServiceProvider extends ServiceProvider
     {
         // Reset the per-render registries after each request and before each queued job: DOM
         // ids start clean, a rejected prop value is reported again, tour steps count from zero,
-        // a question an orphaned faq-item left behind reaches no later FAQ, and the compact switch
-        // is read again. The registries
+        // a question an orphaned faq-item left behind reaches no later FAQ, a shared option list is
+        // written again, and the compact switch is read again. The registries
         // are static, and static state lasts as long as the PHP script that holds it: FPM starts
         // the script afresh for every HTTP request, so they start empty there anyway, while an
         // Octane worker and a queue worker run one script across many requests or jobs. A queue
-        // worker never finishes an HTTP request, hence the second listener; WireKit::flush()
-        // covers tests.
+        // worker never finishes an HTTP request, hence the second listener. A test that renders
+        // without the HTTP kernel calls WireKit::resetPerRender() itself.
         $resetPerRender = static function (): void {
-            DomId::reset();
-            StrictnessGate::forgetLogged();
-            CompactClasses::forget();
-            TourStepCounter::reset();
-            FaqCollector::reset();
+            WireKit::resetPerRender();
         };
         $this->app['events']->listen(RequestHandled::class, $resetPerRender);
         $this->app['events']->listen(JobProcessing::class, $resetPerRender);
+
+        // livewire/blaze compiles the families of views an application opts in through
+        // `wirekit.blaze` (Support\BlazeRender). Once every provider has booted, so the
+        // configuration is final and Blaze's own provider, where the application loads it, has
+        // registered its manager.
+        $this->app->booted(function (): void {
+            BlazeRender::register($this->app, self::COMPONENTS_PATH);
+        });
 
         // `'scripts' => ['bundle' => 'auto']` loads the shared runtime and the factories a page
         // starts. They are known once the page is complete, so they are written into the response
@@ -543,6 +543,14 @@ class WireKitServiceProvider extends ServiceProvider
             ?>';
         });
 
+        // @wirekitIconSprite — the symbols of the icon sprite alone, for a layout that loads the
+        // components through a module of its own and carries no @wirekitScripts, which writes
+        // them otherwise: the glyphs while `icons.sprite` is on, and the icons the navigation rows
+        // above it named while `icons.navigation_sprite` is on. Nothing while both are off. It
+        // stands in place of @wirekitScripts' sheet, never beside it: two sheets on one page
+        // repeat the id of every glyph.
+        Blade::directive('wirekitIconSprite', fn (): string => '<?php echo \Pushery\WireKit\Support\KitIcons::spriteSheet(), \Pushery\WireKit\Support\NavigationIcons::sheet(); ?>');
+
         // @wirekitThemeScript — the no-FOUC head script.
         //
         // Applies the stored theme before the first paint. It has to be a plain, classic script at the
@@ -614,6 +622,10 @@ class WireKitServiceProvider extends ServiceProvider
                 // end of the body and outside every component, no morph takes them away.
                 echo \Pushery\WireKit\Support\KitIcons::spriteSheet();
 
+                // The named icons the navigation rows above it drew, once each, while
+                // `wirekit.icons.navigation_sprite` is on (Support\\NavigationIcons).
+                echo \Pushery\WireKit\Support\NavigationIcons::sheet();
+
                 // The ApexCharts adapter, opt-in via config.
                 //
                 // It is a SEPARATE bundle so an app that draws no charts pays no bytes, and
@@ -625,8 +637,10 @@ class WireKitServiceProvider extends ServiceProvider
                 // file existed and hand-write a script tag against a route whose path is not
                 // documented anywhere they were looking.
                 //
-                // One config line now emits it in the right place and order instead.
-                if (config("wirekit.scripts.apex", false)) {
+                // One config line now emits it in the right place and order instead. With
+                // `on-demand` it emits nothing: a chart names the adapter on its root, and the
+                // bundle loads it where one starts (Support\\ApexAdapter).
+                if (\Pushery\WireKit\Support\ApexAdapter::delivery() === "eager") {
                     echo \Pushery\WireKit\WireKitServiceProvider::scriptTag("wirekit-apex.js", $__wk_nonceAttr);
                 }
 
@@ -948,13 +962,24 @@ class WireKitServiceProvider extends ServiceProvider
                     $body = FontCss::applyDisplay($body);
                 }
 
-                return response($body, 200, [
+                $headers = [
                     'Content-Type' => $type,
                     // Same one-year immutable policy as the other assets. The URL
                     // carries a ?v={filemtime} from the component, so new content
                     // is a new URL.
                     'Cache-Control' => 'public, max-age=31536000, immutable',
-                ]);
+                ];
+
+                // A browser fetches a font of `@font-face` in CORS mode, so a document with an
+                // opaque origin, a frame with `sandbox` and no `allow-same-origin` or its
+                // `srcdoc`, receives the file only with this header. The files are public, any
+                // origin may read them, and a shared cache keeps the answer with the header. The
+                // stylesheet loads without CORS and needs none.
+                if (str_starts_with($type, 'font/')) {
+                    $headers['Access-Control-Allow-Origin'] = '*';
+                }
+
+                return response($body, 200, $headers);
             })->where('path', '.*');
         });
 

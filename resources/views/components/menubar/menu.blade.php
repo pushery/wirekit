@@ -48,6 +48,12 @@
         // Scrolls once the position helper caps its height to a short viewport; a submenu is
         // fixed, so this clips nothing beside the panel.
         'overflow-y-auto overscroll-contain',
+        // Capped at the screen, as a popover is, so the positioning can keep the panel inside it;
+        // a token with no break point, an email address or a URL, then breaks at the cap rather
+        // than widening the panel past it. `break-word` leaves every min-content width alone, so
+        // the rows inside keep their layout.
+        'max-w-[calc(100vw-1rem)]',
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // A caller's name for the menu, `aria-label` or `aria-labelledby`, belongs on its trigger; on
@@ -56,9 +62,12 @@
     // A caller's `aria-describedby` goes with the name: a description is announced only for the
     // element that carries it.
     [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
+    // Where a lazy menubar's template for this menu opens and closes; the menubar resolves them.
+    $lazyPanelOpen = new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\LazyPanel::OPEN);
+    $lazyPanelClose = new \Illuminate\Support\HtmlString(\Pushery\WireKit\Support\LazyPanel::CLOSE);
 @endphp
 
-<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'relative')) }}>
+<div data-wk-lazy-host-mark {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'relative')) }}>
     {{-- Menu trigger --}}
     <button
         type="button"
@@ -97,8 +106,13 @@
          across the move, so `this.$refs['panel-<name>']` (used by the JS to
          position the panel and collect its items) keeps resolving and the
          per-instance ref namespace avoids the cross-menubar collision a
-         global `data-wk-menubar-panel` selector would have. --}}
-    <template x-teleport="#wk-overlay-root">
+         global `data-wk-menubar-panel` selector would have.
+
+         A lazy menubar holds this teleport in a template of its own until the menu first opens.
+         The menubar decides from its own `lazy`: this view marks where the template opens and
+         closes, and the menubar writes it there or nothing (Support\LazyPanel), as it names the
+         wrapper above to the render hook or not from the mark the wrapper carries. --}}
+    {{ $lazyPanelOpen }}<template x-teleport="#wk-overlay-root">
         <div
             x-ref="panel-{{ $name }}"
             x-show="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}"
@@ -130,5 +144,5 @@
         >
             {{ $slot }}
         </div>
-    </template>
+    </template>{{ $lazyPanelClose }}
 </div>

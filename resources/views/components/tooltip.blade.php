@@ -53,6 +53,11 @@
     // help text a field is described by. A shared tooltip is described by it and shows its words,
     // so they are not written a second time. Without it, a shared tooltip writes its own.
     'textFrom' => null,
+    // Whether a panel of the tooltip's own waits out of the page until the tooltip first shows.
+    // The trigger is described from the start all the same, by the tooltip's words in a hidden
+    // element beside it. A shared tooltip draws into the page's one panel and has none of its own
+    // to hold back. The default comes from the configuration (`components.tooltip.lazy`).
+    'lazy' => config('wirekit.components.tooltip.lazy', false),
     'scope' => null,
     // What the host and the trigger wrapper root in. `div` is the default; `as="span"` is
     // what makes this component usable inside a
@@ -120,7 +125,13 @@
     // two halves of one pairing; a fresh id per render would leave them naming different
     // things, and both stay well-formed so
     // nothing in the markup looks wrong. A screen reader simply stops announcing the tip.
-    $tooltipId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
+    // A tooltip that takes its words from an element on the page, as the help of a field does,
+    // takes its id from that element's as well: it then depends on no count of the tooltips
+    // before it, so a field keeps it when its form is rendered alone, and HTML written from a
+    // cache cannot hold it twice.
+    $tooltipId = is_string($textFrom) && trim($textFrom) !== ''
+        ? \Pushery\WireKit\Support\DomId::distinct(trim($textFrom).'-tooltip')
+        : \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
 
     // The stop this component makes of its trigger is a button: activating it shows the tooltip, as a
     // toggletip does. A button takes its name from its words; around an icon alone it has none, so
@@ -142,8 +153,8 @@
     $triggerExplainsDisabled = $triggerIsButton && preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i', $slotHtml) === 1;
     if ($triggerIsButton) {
         [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
-        $slotText = trim(html_entity_decode(strip_tags((string) preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s', '', $slotHtml)), ENT_QUOTES | ENT_HTML5));
-        $slotNamesItself = $slotText !== '' || preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/', $slotHtml) === 1;
+        $slotText = \Pushery\WireKit\Support\SlotContent::spoken($slotHtml);
+        $slotNamesItself = \Pushery\WireKit\Support\SlotContent::names($slotHtml);
         $tipText = $hasContent ? \Pushery\WireKit\Support\SlotContent::plain($content) : \Pushery\WireKit\Support\SlotContent::textOf($text);
         $ownName = ! $slotNamesItself && $tipText !== '' ? $tipText : null;
         $triggerName = \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $ownName);
@@ -194,11 +205,18 @@
     // w-max ensures the tooltip sizes to its content (not the trigger width)
     // Uses `fixed` positioning so the tooltip escapes ancestor `overflow: hidden` containers.
     // Floating UI uses strategy: 'fixed' to position relative to the viewport.
-    $tooltipClasses = WireKit::resolveClasses('tooltip', 'panel', implode(' ', array_filter([
+    //
+    // The page's shared panel draws this list without classes where it is the default: the
+    // stylesheet gives `#wk-tooltip-shared[data-wk-tooltip-default]` the declarations of these
+    // utilities, so a trigger without a component of its own does not carry the list.
+    $defaultPanelClasses = implode(' ', [
         'fixed',
         'w-max',
         'z-[var(--z-wk-tooltip)]',
         'max-w-[var(--size-wk-tooltip-max)]',
+        // A code, a key or an address has no space to wrap at, so it breaks inside the panel's
+        // width instead of running out of it.
+        '[overflow-wrap:anywhere]',
         'px-[var(--padding-wk-x-sm)]',
         'py-[var(--padding-wk-y-xs)]',
         'bg-[var(--color-wk-tooltip-bg)]',
@@ -207,6 +225,9 @@
         'font-[family-name:var(--font-wk-sans)]',
         'rounded-[var(--radius-wk-sm)]',
         'shadow-[var(--shadow-wk-md)]',
+    ]);
+    $tooltipClasses = WireKit::resolveClasses('tooltip', 'panel', implode(' ', array_filter([
+        $defaultPanelClasses,
         // The elevated surface keeps the popover's border, so it has an edge on a theme with no
         // shadow. The colors come from the wrapper (`data-wk-tooltip-surface` in the stylesheet).
         $surface === 'elevated' ? 'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]' : '',
@@ -225,76 +246,96 @@
     $shared = BooleanProp::from($shared, false, 'tooltip', 'shared');
     $sharedPanel = $shared && ! $hasContent && $tipShortcutKeys === null && ! $tipCutLead;
     // What a shared tooltip is described by and shows: an element the caller names, which holds the
-    // words already, or one this tooltip writes, hidden, in place of its panel.
+    // words already, or one this tooltip writes, hidden, in place of its panel. A tooltip that
+    // describes nothing writes no such element, which a search of the page's text would find beside
+    // the trigger's own name: its words ride on the trigger as `data-wk-tip-words`, where the panel
+    // reads them, and a trigger this tooltip names with them, as a stop around an icon, carries
+    // them in that name already.
     $textFromId = is_string($textFrom) && trim($textFrom) !== '' ? trim($textFrom) : null;
-    $describedById = $sharedPanel && $textFromId !== null ? $textFromId : $tooltipId;
-    $ownWords = $sharedPanel && $textFromId === null
+    $wordsOnTrigger = $sharedPanel && $textFromId === null && ! $triggerDescribes;
+    $triggerNamedByWords = $triggerIsButton && ($callerLabelledBy ?? null) === null && ($callerLabel ?? null) === null && ($ownName ?? null) !== null;
+    $tipWordsAttribute = $wordsOnTrigger && ! $triggerNamedByWords ? \Pushery\WireKit\Support\SlotContent::textOf($text) : null;
+    $describedById = $sharedPanel && $textFromId !== null ? $textFromId : ($wordsOnTrigger ? '' : $tooltipId);
+    $ownWords = $sharedPanel && $textFromId === null && ! $wordsOnTrigger
         ? new \Illuminate\Support\HtmlString('<span id="'.e($tooltipId).'" hidden data-wk-tooltip-words>'.e($text).'</span>')
         : '';
 
+    // A lazy tooltip holds the teleport of its panel in a template of its own, which the browser
+    // keeps out of the page until the factory builds it (utils/lazy-panel.js). The trigger cannot
+    // name a panel that is not there yet, and a build on the first focus would race the screen
+    // reader that reads the description as the focus lands. So the trigger names the words of the
+    // panel instead, hidden beside it under an id of their own (partials/tooltip-words), before the
+    // build and after it, and no two elements ever carry one id. The wrapper is an echo, since a
+    // conditional around a tag's two ends would leave Livewire's markers inside the template.
+    $lazy = BooleanProp::from($lazy, BooleanProp::from(config('wirekit.components.tooltip.lazy', false)), 'tooltip', 'lazy');
+    $lazyPanel = $lazy && ! $sharedPanel;
+    $lazyPanelOpen = $lazyPanel ? new \Illuminate\Support\HtmlString('<template data-wk-lazy-panel>') : '';
+    $lazyPanelClose = $lazyPanel ? new \Illuminate\Support\HtmlString('</template>') : '';
+
+    $tipDescribedWords = '';
+
+    if ($lazyPanel) {
+        $describedById = $tooltipId.'-words';
+        // What the open panel says: its content as a screen reader reads it, with the parts hidden
+        // from one left out, or its text. A string is text already, and markup is read for its words.
+        $tipDescribedWords = $hasContent || $text instanceof \Illuminate\Contracts\Support\Htmlable
+            ? \Illuminate\Support\Str::squish(\Pushery\WireKit\Support\SlotContent::spoken($hasContent ? $content : $text))
+            : trim((string) $text);
+    }
+
+    $tipOffset = \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'tooltip', 'offset');
+    $tipDelayShow = \Pushery\WireKit\Support\NumericProp::int($delayShow, 0, 'tooltip', 'delayShow');
+    $tipDelayHide = \Pushery\WireKit\Support\NumericProp::int($delayHide, 0, 'tooltip', 'delayHide');
+
+    // A shared tooltip whose trigger is its own tab stop around a slot that holds no control is one
+    // element, with no component of its own: the page's host drives every such trigger from the
+    // document (resources/js/utils/shared-tooltips.js) through the same factory. `data-wk-tip`
+    // names the element its words stand in, and an option it differs in from the factory's
+    // default. A control of the caller's in the slot keeps the component, which describes that
+    // control once the page has started, since the template never sees it.
+    $lean = $sharedPanel && $triggerIsButton;
+    $leanTrigger = '';
+
+    if ($lean) {
+        // What a caller may set as well goes through the bag, where the caller's value wins and
+        // the tag holds each name once; the markers stand in the string below.
+        $leanBag = $attributes->merge(array_filter([
+            'data-wk-tip-placement' => $placement !== 'top' ? $placement : null,
+            'data-wk-tip-offset' => $tipOffset !== 6 ? (string) $tipOffset : null,
+            'data-wk-tip-delay-show' => $tipDelayShow !== 300 ? (string) $tipDelayShow : null,
+            'data-wk-tip-delay-hide' => $tipDelayHide !== 100 ? (string) $tipDelayHide : null,
+            'data-wk-tooltip-disabled' => $disabled ? 'true' : null,
+            'data-wk-tooltip-surface' => $surface === 'elevated' ? 'elevated' : null,
+            // The stylesheet draws the default panel; a panel that differs carries its classes.
+            'data-wk-tooltip-panel-class' => $tooltipClasses !== $defaultPanelClasses ? \Pushery\WireKit\Support\CompactClasses::map('wk-tooltip-panel '.$tooltipClasses) : null,
+            'aria-describedby' => $triggerDescribes ? $describedById : null,
+            'data-wk-tip-words' => $tipWordsAttribute,
+            'tabindex' => '0',
+            'role' => 'button',
+            'aria-disabled' => $triggerExplainsDisabled ? 'true' : null,
+        ], static fn ($value): bool => $value !== null));
+
+        // The wrapper's place in the line and the trigger's focus ring, on the one element. Built as
+        // a string, so the classes take their short names here, which the view's class attributes
+        // take as it compiles; a class of the caller's keeps its name.
+        $leanClasses = \Pushery\WireKit\Support\CompactClasses::map(
+            \Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'relative inline-block rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'),
+            false,
+            preg_split('/\s+/', trim(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', ''))), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+        );
+        $leanTrigger = new \Illuminate\Support\HtmlString(
+            '<'.$as.' data-wk-prose-skip data-wk-tip="'.e($describedById).'" '.$leanBag->class($leanClasses)->toHtml().($triggerName->toHtml() !== '' ? ' '.$triggerName->toHtml() : '').'>'.$slotHtml.'</'.$as.'>'.(string) $ownWords
+        );
+    }
+
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
-    // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // which would keep it: CallerRef::onRoot() hands it to the root above. One element without a
+    // component of its own stands in the caller's scope, where the ref belongs.
+    if (! $lean) {
+        $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    }
 @endphp
 
-{{-- Tooltip wrapper — handles hover, focus, touch, and keyboard events --}}
-<{{ $as }} data-wk-prose-skip
-    @if($disabled) data-wk-tooltip-disabled="true" @endif
-    @if($surface === 'elevated') data-wk-tooltip-surface="elevated" @endif
-    @if($sharedPanel) data-wk-tooltip-panel-class="{{ \Pushery\WireKit\Support\CompactClasses::map('wk-tooltip-panel '.$tooltipClasses) }}" @endif
-    x-data="wirekitTooltip({
-        placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }},
-        offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'tooltip', 'offset') }},
-        delayShow: {{ \Pushery\WireKit\Support\NumericProp::int($delayShow, 0, 'tooltip', 'delayShow') }},
-        delayHide: {{ \Pushery\WireKit\Support\NumericProp::int($delayHide, 0, 'tooltip', 'delayHide') }}@if($sharedPanel),
-        shared: true,
-        textFrom: {{ \Pushery\WireKit\Support\AlpinePayload::string($describedById) }}@endif
-    })"
-    x-on:mouseenter="mouseenter()"
-    x-on:mouseleave="mouseleave()"
-    x-on:focusin="focusin($event)"
-    x-on:focusout="focusout()"
-    x-on:pointerdown="pointerdown($event)"
-    x-on:pointerup="pointerup($event)"
-    x-on:pointerleave="pointerleave($event)"
-    {{-- Escape listens on the window, and it has to.
-         A tooltip is opened by pointing at its trigger, and a pointer moves no focus —
-         so a handler bound here would only fire once something inside had been tabbed
-         to, the one case that needs it least. WCAG 1.4.13 requires
-         content shown on hover or focus to be dismissible without moving the pointer or
-         the focus, and Escape is the mechanism it names.
-         In the capture phase, because a modal or a drawer around the reader reads the
-         key on the document and on the window too, and a tooltip on screen marks the
-         press it hides on: the overlay leaves a marked press alone.
-         Deliberately not guarded on `open`, unlike the hover card's counterpart: a
-         tooltip opens on a `delayShow` timer, so the key regularly arrives while the
-         panel is still pending, and a guard on `open` would let it appear a moment
-         after the Escape that was meant to answer it. `keydownEscape()` clears the
-         pending show as well as the open panel, and on a tooltip with nothing to
-         dismiss it costs four no-op `clearTimeout` calls. --}}
-    x-on:keydown.escape.window.capture="keydownEscape($event)"
-    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['relative inline-block'])) }}
->
-    {{-- Trigger element — linked to tooltip via aria-describedby. `data-wk-tooltip-trigger` is what
-         the stylesheet stands a control in the slot at the top of the trigger's line by, so the
-         trigger ends where the control ends. --}}
-    {{-- The description sits on this wrapper, and a wrapper `<div>` is not what a reader
-         lands on. With `focusable-trigger` the wrapper takes the tab stop and carries the
-         name itself, which works. Without it — the documented shape for wrapping a caller's
-         own `<button>` — the button is what gets focused, and it has no `aria-describedby`:
-         the tooltip is announced to nobody.
-
-         Alpine puts it on the first focusable descendant at init instead, which is where the
-         reader actually arrives, and leaves it here when there is none so the wrapper case
-         is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
-         markup — this template never sees the element it needs to annotate. --}}
-    <{{ $as }} data-wk-prose-skip data-wk-tooltip-trigger x-ref="trigger" @if($triggerDescribes) data-wk-tooltip-describedby="{{ $describedById }}" aria-describedby="{{ $describedById }}" @endif @if($focusableTrigger) tabindex="0" @if($triggerIsButton) role="button" @if($triggerExplainsDisabled) aria-disabled="true" @endif {{ $triggerName }} x-on:keydown.enter="activate($event)" x-on:keydown.space="activate($event)" @endif class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
-        {{ $slot }}
-    </{{ $as }}>
-
-    {{-- The panel of its own, teleported to the overlay root, or, drawing into the page's shared
-         panel, the words the trigger is described by, hidden, where none is named. An include
-         and an echo rather than a conditional, which Livewire would mark at both ends. --}}
-    @includeWhen(! $sharedPanel, 'wirekit::components.partials.tooltip-panel')
-    {{ $ownWords }}
-</{{ $as }}>
+{{-- One element the page's host drives, or the root with a component of its own. An echo and an
+     include rather than a conditional, which Livewire would mark at both ends. --}}
+{{ $leanTrigger }}@includeWhen(! $lean, 'wirekit::components.partials.tooltip-root')

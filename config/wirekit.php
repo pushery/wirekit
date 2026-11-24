@@ -67,8 +67,9 @@ return [
     |         environment that should fail loudly, set both.
     |
     | false — Lenient everywhere. An invalid prop is logged at WARNING
-    |         level and the first allowed value is rendered. No exception,
-    |         whatever `throw_on_invalid` says.
+    |         level and the prop's default is rendered, or the first
+    |         allowed value where the default is not one of them. No
+    |         exception, whatever `throw_on_invalid` says.
     |
     */
 
@@ -114,6 +115,13 @@ return [
         //
         // 0 removes the bound and reads the whole log.
         'scan_logs_window_hours' => EnvValue::get('WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS', 24),
+
+        // The parts of a view's path that mark a settings page, for the `content-in-card` hint of
+        // `wirekit:doctor:props`: a view whose path has one of them as a folder, or as a file name
+        // before a dot, an underscore or a hyphen, is read as a settings page. The list replaces
+        // the default, so an application that keeps its settings under `account` as well writes
+        // ['settings', 'account'].
+        'settings_paths' => ['settings'],
     ],
 
     /*
@@ -299,7 +307,10 @@ return [
         // such field, and a field can still pass its own `format-hint`.
         'input' => ['size' => 'md', 'format-hint' => false],
         'label' => [],
-        'select' => ['size' => 'md'],
+        // `lazy`: a select carries its placeholder and chosen option until it is first used, and the
+        // rest of its options wait in a template after it. A field whose value only the browser
+        // knows, or that the browser may fill in, builds its list with the page.
+        'select' => ['size' => 'md', 'lazy' => false],
         'textarea' => ['size' => 'md', 'rows' => 3],
         // The editor engine is a peer dependency (Tiptap recommended: install
         // @tiptap/core + @tiptap/starter-kit and expose window.wirekitEditor — the
@@ -330,6 +341,10 @@ return [
         'field' => [],
         'field.set' => [],
         'field.legend' => [],
+        // `required-note`: every form says at its start what the asterisk of a required field
+        // means (`form.required-note`), and a form can still pass its own `required-note`.
+        'form' => ['required-note' => false],
+        'form.required-note' => [],
 
         // Data display components
         // A sub-component's own options live nested, not under its flat dotted name.
@@ -362,14 +377,35 @@ return [
         // component's `__()` fallback — `config(key, default)` never reaches its second
         // argument once the key exists — so an English word in this file silently made
         // the catalog unreachable for every application that did not override it.
-        'filter-builder' => ['searchable' => false, 'search-placeholder' => null, 'search-debounce' => 300, 'add-label' => null],
+        // `lazy`: the panel that adds and edits a filter waits out of the page until it first opens.
+        // Off by default.
+        'filter-builder' => ['searchable' => false, 'search-placeholder' => null, 'search-debounce' => 300, 'add-label' => null, 'lazy' => false],
         'status-matrix' => ['cell-type' => 'status', 'legend' => true],
         // `trigger`: how a center without one opens, `bell`, the icon button, `row`, an entry in
         // the look of a sidebar item, for a center that stands among a sidebar's entries, or `rail`,
         // an entry of an app rail.
-        'notification-center' => ['group-by' => 'none', 'filters' => false, 'trigger' => 'bell'],
+        // `lazy`: the panel waits out of the page until the pointer or the focus reaches the
+        // trigger, or the panel opens. Off by default.
+        'notification-center' => ['group-by' => 'none', 'filters' => false, 'trigger' => 'bell', 'lazy' => false],
         'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false, 'search-debounce' => 300, 'sticky-column' => false],
         'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
+        // A question before a link takes the reader to another site. `trusted`: hosts that never
+        // ask, each as it is or `*.example.com` for every host under a domain and the domain
+        // itself; the page's own host never asks. `remember`: where a host the reader chose not to
+        // be warned about again is kept, `browser` or `none`.
+        'external-link-question' => ['trusted' => [], 'remember' => 'browser'],
+        // A captcha whose token reaches a Livewire property. `provider`: `turnstile` (Cloudflare)
+        // or `altcha` (a proof of work the application serves itself). The script of each loads
+        // from its address the first time a captcha needs it. Cloudflare asks that Turnstile's
+        // `api.js` be loaded from its own address, never copied or cached; ALTCHA's can be a copy
+        // the application serves. `defer`: load nothing from the provider until the reader uses
+        // the form around a captcha; a captcha's own `defer` prop wins.
+        'captcha' => [
+            'provider' => 'turnstile',
+            'defer' => false,
+            'turnstile' => ['script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'],
+            'altcha' => ['script' => 'https://unpkg.com/altcha@3.5.0/dist/main/altcha.min.js'],
+        ],
         // The first day of the week, 0 (Sunday) to 6 (Saturday); null follows the application's
         // locale. A calendar's own `week-starts-on` prop wins.
         'calendar' => ['week-starts-on' => 1],
@@ -425,7 +461,9 @@ return [
         'shimmer' => ['active' => true, 'duration' => null],
 
         // Overlay components
-        'dropdown' => ['placement' => 'bottom-start', 'offset' => 8, 'panel' => ['width' => 'auto']],
+        // `lazy`: the panel waits out of the page until the pointer or the focus reaches the
+        // trigger, or the menu opens. Off by default.
+        'dropdown' => ['placement' => 'bottom-start', 'offset' => 8, 'lazy' => false, 'panel' => ['width' => 'auto']],
         'dropdown.panel' => [],
         'dropdown.item' => [],
         'dropdown.checkbox-item' => [],
@@ -433,23 +471,36 @@ return [
         // `shared`: a tooltip of words alone draws into one panel the page's tooltips share rather
         // than carrying a panel of its own in its markup, which a form with help on every label
         // repeats for every field. Its words stand once, in the element its trigger is described by.
-        'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100, 'shared' => false],
-        'modal' => ['size' => 'md', 'dismissible' => true, 'confirm-discard' => true, 'confirm-shortcut' => true],
-        'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true, 'confirm-discard' => true],
+        // `lazy`: a tooltip with a panel of its own keeps the panel out of the page until it first
+        // shows, and its trigger is described from the start by its words, hidden beside it. Off by
+        // default.
+        'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100, 'shared' => false, 'lazy' => false],
+        // `lazy` on modal, drawer and alert-dialog: the panel waits out of the page until it first
+        // opens. Off by default.
+        'modal' => ['size' => 'md', 'dismissible' => true, 'confirm-discard' => true, 'confirm-shortcut' => true, 'lazy' => false],
+        'drawer' => ['position' => 'end', 'size' => 'md', 'dismissible' => true, 'confirm-discard' => true, 'lazy' => false],
         // `placeholder` is null rather than a literal so the component keeps resolving
         // its own translated default; the hotkey is app-wide by nature.
-        'command-palette' => ['hotkey' => 'cmd+k', 'placeholder' => null],
+        // `lazy`: the palette waits out of the page until it first opens. Off by default.
+        'command-palette' => ['hotkey' => 'cmd+k', 'placeholder' => null, 'lazy' => false],
 
         // Navigation components
         'tabs' => ['variant' => 'underline', 'findable' => false],
         'breadcrumb' => ['separator' => 'chevron'],
+        'link' => ['variant' => 'default', 'underline' => 'always'],
         // `item.open`, `collapsible.open` and `sidebar.collapsible.open`: whether a box starts open where the
         // call does not say. An accordion takes it in `multiple` mode only, since in `single` mode one
         // panel is open at a time and a default cannot say which.
         'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md', 'findable' => true, 'animate' => true, 'item' => ['open' => false]],
         'accordion.item' => [],
         'collapsible' => ['findable' => true, 'open' => false],
-        'sidebar' => ['collapsible' => ['open' => false]],
+        // `item.shared-tooltip`: whether the tooltip a row of a sidebar that can collapse wears draws
+        // into the panel the page's tooltips share, without changing any other tooltip. null follows
+        // `tooltip.shared`. A row's tooltip is its name alone, so a row always shares when asked.
+        // `collapsible.lazy` and `group.lazy`: whether a section or a folding group the server draws
+        // closed builds its entries in the browser the first time they are needed, instead of with
+        // the page.
+        'sidebar' => ['collapsible' => ['open' => false, 'lazy' => false], 'group' => ['lazy' => false], 'item' => ['shared-tooltip' => null]],
         'sidebar.group' => [],
         'sidebar.item' => [],
         'stepper' => ['orientation' => 'horizontal'],
@@ -460,26 +511,38 @@ return [
         // displayed format is the viewer's locale by specification and is not settable
         // by the page. The key shipped for a while and could never have had an effect.
         // `format-hint`: the same as on 'input', for every date picker.
-        'date-picker' => ['size' => 'md', 'format-hint' => false],
+        // `lazy` on date-picker, time-picker and datetime-picker: in popover mode, the dialog waits out
+        // of the page until it first opens. Off by default.
+        'date-picker' => ['size' => 'md', 'format-hint' => false, 'lazy' => false],
         'file-upload' => ['size' => 'md', 'multiple' => false, 'upload-separately' => false, 'accept' => null, 'capture' => null],
         // `placement`: where the options panel opens, any placement `dropdown` takes. `panel-width`:
         // `trigger` matches the field, `auto` fits the widest option, or a CSS length such as 20rem.
-        'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300],
-        'multi-select' => ['placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300],
+        // `lazy`: the list waits out of the page until the pointer or the focus reaches the field,
+        // or the list opens. Off by default.
+        'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300, 'lazy' => false],
+        // `lazy`: the list waits out of the page until the pointer or the focus reaches the field,
+        // or the list opens. The list layout has none to hold back. Off by default.
+        'multi-select' => ['placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300, 'lazy' => false],
         'otp-input' => ['length' => 6, 'masked' => false, 'justify' => 'start', 'size' => 'md'],
         // `placeholder` is null rather than a literal so the component keeps resolving its
         // own translated default; set a string here to override it in every locale at once.
         'tags-input' => ['max-tags' => null, 'placeholder' => null],
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
         'range-slider' => ['show_values' => true, 'min' => 0, 'max' => 100, 'step' => 1],
-        'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],
+        // `lazy`: the panel waits out of the page until the pointer or the focus reaches the picker,
+        // or the panel opens. Off by default.
+        'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false, 'lazy' => false],
         // `stepper-surface`: the surface of the − and + of `stepper="buttons"`, `outline`, `soft`,
-        // `filled` or `ghost`.
-        'cart-item' => ['min' => 1, 'size' => 'lg', 'stepper-surface' => 'outline'],
+        // `filled` or `ghost`. `truncate`: whether `layout="compact"` cuts the name and the line
+        // under it to one line each (`true`) or lets them wrap (`false`). `remove-at-min`: whether −
+        // at the smallest quantity takes the line out. `confirm-remove`: whether taking a line out
+        // asks first, from the remove control and from that −.
+        'cart-item' => ['min' => 1, 'size' => 'lg', 'stepper-surface' => 'outline', 'truncate' => true, 'remove-at-min' => true, 'confirm-remove' => true],
         'number-input' => ['size' => 'md', 'step' => 1],
         'password-input' => ['size' => 'md', 'toggle' => true, 'strength-meter' => false],
         'phone' => ['country' => 'DE', 'size' => 'md'],
-        'time-picker' => ['size' => 'md'],
+        'time-picker' => ['size' => 'md', 'lazy' => false],
+        'datetime-picker' => ['lazy' => false],
 
         // Additional components
         'navbar' => ['variant' => 'default', 'max' => 'xl', 'sticky' => false],
@@ -487,7 +550,22 @@ return [
         'callout' => ['variant' => 'info'],
         'data-list' => ['layout' => 'horizontal'],
         'segmented-control' => ['size' => 'md'],
-        'popover' => ['placement' => 'bottom', 'offset' => 8],
+        // `lazy`: the panel waits out of the page until the pointer or the focus reaches the
+        // trigger, or the popover opens. Off by default.
+        'popover' => ['placement' => 'bottom', 'offset' => 8, 'lazy' => false],
+        // `lazy`: the menu waits out of the page until it first opens. Off by default.
+        'context-menu' => ['lazy' => false],
+        // `lazy`: each menu waits out of the page until it first opens. Off by default.
+        'menubar' => ['lazy' => false],
+        // `lazy`: each panel waits out of the page until it first opens. Off by default.
+        'navigation-menu' => ['lazy' => false],
+        // `lazy`: the card waits out of the page until it first shows. Off by default.
+        'hover-card' => ['lazy' => false],
+        // `lazy`: the tour's overlay waits out of the page until the tour first starts. Off by default.
+        'tour' => ['lazy' => false],
+        // `lazy`: the viewer, its slides and controls, waits out of the page until it first opens.
+        // Off by default.
+        'lightbox' => ['lazy' => false],
 
         // Scope switcher — the breadcrumb control that changes which team / server / site
         // the page is about. `client_filter_max` is a warning threshold, not a limit: the
@@ -503,7 +581,7 @@ return [
             'client_filter_max' => 300,
         ],
         'scroll-to-top' => ['size' => 'md'],
-        'alert-dialog' => ['dismissible' => false, 'close-on-confirm' => false, 'confirm-shortcut' => true],
+        'alert-dialog' => ['dismissible' => false, 'close-on-confirm' => false, 'confirm-shortcut' => true, 'lazy' => false],
         'toast-region' => ['position' => 'top-end', 'duration' => 5000, 'max' => 5],
 
         // Activity-row kind → dot-color token map. Merged over the
@@ -626,6 +704,15 @@ return [
         // that renders these components needs @wirekitScripts while this is on:
         // without it the glyphs have no symbol to point at.
         'sprite' => EnvValue::get('WIREKIT_ICON_SPRITE', false),
+
+        // Draw the named icon of a navigation row once per page as well. A sidebar
+        // or an app rail names a few icons in many rows, `icon="home"`, and each row
+        // carries the whole drawing of its icon. With this on, @wirekitScripts writes
+        // each icon the rows above it named once as a symbol, and every such row
+        // points there. A row after the directive, or in a Livewire update, draws
+        // its icon whole. Every page needs @wirekitScripts while this is on, as for
+        // the glyphs above.
+        'navigation_sprite' => EnvValue::get('WIREKIT_ICON_NAVIGATION_SPRITE', false),
     ],
 
     /*
@@ -890,8 +977,12 @@ return [
          * while using the component fails in a way that is easy to lose time to: the page
          * renders, the console says "wirekitApexChart is not defined", and only the chart
          * is missing. You still supply ApexCharts itself; this loads WireKit's glue for it.
+         *
+         * 'on-demand' loads it only where a chart drawn with ApexCharts starts: no page carries
+         * its tag, the chart names it, and WireKit's script loads it then, after a
+         * `wire:navigate` and in a lazy island as well.
          */
-        'apex' => false,
+        'apex' => false, // false, true or 'on-demand'
     ],
 
     /*
@@ -956,6 +1047,26 @@ return [
 
     'styles' => [
         'compact' => EnvValue::get('WIREKIT_COMPACT_CLASSES', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Blaze
+    |--------------------------------------------------------------------------
+    |
+    | With livewire/blaze installed, a switch here lets it compile a family of
+    | WireKit's views into PHP functions, which skips most of the work Blade does
+    | around every component a long table draws. `table` is the cells of a table
+    | with their stand-ins, `text` the text component; the table and its rows
+    | stay Blade components. Each family renders the same markup as under Blade.
+    | Without Blaze, or with a switch off, nothing changes. Clear the compiled
+    | views (`php artisan view:clear`) after turning one on or off.
+    |
+    */
+
+    'blaze' => [
+        'table' => false,
+        'text' => false,
     ],
 
     /*

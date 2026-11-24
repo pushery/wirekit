@@ -16,9 +16,22 @@
  * so the first invalid field of the form takes the focus here, with what hides it opened
  * (utils/focus-invalid.js).
  *
+ * It goes as well when its form is reset, which puts the fields back without an `input` or a
+ * `change` and takes their red away, and when its field leaves the check: disabled, read-only or
+ * switched off, most often by another control of the form, which the next change or input there
+ * brings to light.
+ *
  * A field that shows a message of the server already, an `aria-invalid="true"` this did not set,
  * keeps that one alone. The message is no markup of the view: a Livewire update renders the field
  * from the server again and takes it away with the state that put it there.
+ *
+ * A message that comes or goes moves what stands below its field. A field the reader leaves by
+ * pressing the pointer, most often on the button under it, therefore waits until that press is over
+ * and its click is sent: shown at once, the message pushes the button from under the pointer, the
+ * release lands beside it, and the browser sends no click at all.
+ *
+ * A form that says why in its own words keeps all of this away with `data-wk-field-validity-off`,
+ * on the form or on anything around its fields. The red stays, so such a form has to say why itself.
  *
  * Installed once per page.
  */
@@ -37,6 +50,20 @@ export const WK_FIELD_VALIDITY_ATTRIBUTE = 'data-wk-field-validity';
 /** What a field carries while a message of this module describes it, so its `aria-invalid` is known as ours. */
 export const WK_FIELD_VALIDITY_SHOWN_ATTRIBUTE = 'data-wk-field-validity-shown';
 
+/** What keeps this module away: from every field inside the element that carries it, and from every field of a form that does. */
+export const WK_FIELD_VALIDITY_OFF_ATTRIBUTE = 'data-wk-field-validity-off';
+
+/**
+ * How long a field left during a tap waits for the click once the finger is up. A finger and a pen
+ * send their click after the release, with the mouse events the browser makes up for them, and the
+ * field loses the focus only then; a browser that waits for a second tap first takes about a third
+ * of a second.
+ */
+const TAP_SETTLE_MS = 400;
+
+/** The longest a press holds a message back. One that never reports its end must not keep a field silent. */
+const PRESS_CEILING_MS = 10000;
+
 /** How many animation frames the focus waits for a field that is still hidden. */
 const FRAMES_TO_WAIT = 10;
 
@@ -53,7 +80,25 @@ export function isHouseField(el) {
         && typeof el.matches === 'function'
         && (el.matches('.wk-field') || isHouseBox(el))
         && typeof el.checkValidity === 'function'
-        && el.willValidate === true;
+        && el.willValidate === true
+        && ! switchedOff(el);
+}
+
+/**
+ * Whether the developer keeps this module away from the field: it stands inside
+ * `data-wk-field-validity-off`, or it belongs to a form that carries it, which a field outside its
+ * form (`form="…"`) does without standing inside.
+ */
+export function switchedOff(field) {
+    const around = typeof field.closest === 'function' && field.closest(`[${WK_FIELD_VALIDITY_OFF_ATTRIBUTE}]`) !== null;
+    const form = field.form;
+
+    return around || (!! form && typeof form.hasAttribute === 'function' && form.hasAttribute(WK_FIELD_VALIDITY_OFF_ATTRIBUTE));
+}
+
+/** Whether a field still takes part: the browser checks it, and the module is not switched off for it. */
+function takesPart(field) {
+    return field.willValidate !== false && ! switchedOff(field);
 }
 
 /** The control of the kit's checkbox, which always carries `data-wk-indeterminate`. */
@@ -180,6 +225,174 @@ function follow(field) {
     }
 }
 
+/** A field the reader changed and left: painted red it says why, and a message it shows follows its value. */
+function leave(field) {
+    if (paintedInvalid(field)) {
+        showValidity(field);
+    } else {
+        follow(field);
+    }
+}
+
+/**
+ * The fields of a form that left the check since their message came lose it: no input of the
+ * reader's reaches a disabled or read-only field, and the browser no longer paints it red.
+ *
+ * @param {HTMLFormElement} form
+ */
+function sweepForm(form) {
+    if (! form || ! form.elements) {
+        return;
+    }
+
+    for (const field of Array.from(form.elements)) {
+        if (shown.has(field) && ! takesPart(field)) {
+            clearValidity(field);
+        }
+    }
+}
+
+/** The fields left while a press is under way. They say what they have to say once it is over. */
+const waiting = new Set();
+
+/** The forms changed while a press is under way. Their fields that left the check lose their messages once it is over. */
+const waitingForms = new Set();
+
+/**
+ * A change or an input in a form: its fields that left the check lose their messages, after a press
+ * under way, since a message that goes moves what stands below it as much as one that comes.
+ *
+ * @param {HTMLFormElement|null|undefined} form
+ */
+function sweepSoon(form) {
+    if (! form) {
+        return;
+    }
+
+    if (pressUnderWay()) {
+        waitingForms.add(form);
+    } else {
+        sweepForm(form);
+    }
+}
+
+/** Whether the primary pointer is down. */
+let pressed = false;
+
+/** The timer that ends the wait: after the click of the press, or once no click can follow it. */
+let settling = null;
+
+/** Whether a press is under way: the pointer is down, or it is up and its click is not sent yet. */
+function pressUnderWay() {
+    return pressed || settling !== null;
+}
+
+/** End the wait `delay` milliseconds from now, in a task of its own, so a click sent meanwhile is through. */
+function settleIn(delay) {
+    if (settling !== null) {
+        clearTimeout(settling);
+    }
+
+    settling = setTimeout(pressOver, delay);
+}
+
+/** The press is over: every field left during it says what it has to say. */
+function pressOver() {
+    if (settling !== null) {
+        clearTimeout(settling);
+    }
+
+    settling = null;
+    pressed = false;
+
+    const fields = [...waiting];
+    waiting.clear();
+
+    for (const field of fields) {
+        if (field.isConnected && isHouseField(field)) {
+            leave(field);
+        }
+    }
+
+    const forms = [...waitingForms];
+    waitingForms.clear();
+
+    for (const form of forms) {
+        sweepForm(form);
+    }
+}
+
+/**
+ * The primary button of the primary pointer goes down, the start of a click. A second finger and
+ * the button of the context menu start none. The native list of a `select` opens on the press of a
+ * mouse and may keep the release to itself, so such a press is not followed either.
+ *
+ * @param {PointerEvent} event
+ */
+function onPressStart(event) {
+    if (event.isPrimary === false || (typeof event.button === 'number' && event.button > 0)) {
+        return;
+    }
+
+    if (event.pointerType === 'mouse' && event.target && event.target.tagName === 'SELECT') {
+        return;
+    }
+
+    pressed = true;
+    settleIn(PRESS_CEILING_MS);
+}
+
+/**
+ * The pointer is up. A mouse sends its click in the task of the release, so the wait ends in the
+ * next one; a finger and a pen send theirs later, and the field they leave loses the focus only then.
+ *
+ * @param {PointerEvent} event
+ */
+function onPressEnd(event) {
+    if (! pressed || event.isPrimary === false) {
+        return;
+    }
+
+    pressed = false;
+    settleIn(event.pointerType === 'mouse' ? 0 : TAP_SETTLE_MS);
+}
+
+/** The browser took the press for something else, a scroll or a drag: no click follows it. */
+function onPressCanceled(event) {
+    if (pressed && event.isPrimary !== false) {
+        pressed = false;
+        settleIn(0);
+    }
+}
+
+/**
+ * The click of the press is being sent: the wait ends once its handlers, and the submit it starts,
+ * are through. A click a key or a script made (`detail` 0) ends no press.
+ *
+ * @param {MouseEvent} event
+ */
+function onClick(event) {
+    if (pressUnderWay() && event.detail !== 0) {
+        pressed = false;
+        settleIn(0);
+    }
+}
+
+/** The keys that go with a press of the pointer rather than taking the reader to the keyboard. */
+const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta'];
+
+/**
+ * A key goes down: the reader is at the keyboard, so a press that never reported its end, behind a
+ * context menu or a dialog of the browser, is over.
+ *
+ * @param {KeyboardEvent} event
+ */
+function onKey(event) {
+    if (pressUnderWay() && event.repeat !== true && ! MODIFIER_KEYS.includes(event.key)) {
+        pressOver();
+    }
+}
+
 /**
  * The browser checks a field and finds it invalid: its message, no bubble, and the focus on the
  * first invalid field of the form, as the browser gives it to the first.
@@ -208,6 +421,33 @@ export function onInvalid(event) {
 }
 
 /**
+ * A form is reset: every message of its fields goes, with the invalid state it gave them. The
+ * browser puts the fields back without an `input` or a `change` and takes their red away, so a
+ * message left standing would explain a red the field no longer shows. `reset` fires before the
+ * fields are put back, and a listener may cancel it, so the messages go a task later and only where
+ * the reset went through, as utils/form-reset.js waits for it.
+ *
+ * @param {Event} event
+ */
+export function onReset(event) {
+    const form = event.target;
+
+    if (! form || ! form.elements) {
+        return;
+    }
+
+    setTimeout(() => {
+        if (event.defaultPrevented) {
+            return;
+        }
+
+        for (const field of Array.from(form.elements)) {
+            clearValidity(field);
+        }
+    }, 0);
+}
+
+/**
  * Install once per page. Safe to call from every bundle, and from a bundle evaluated again: every
  * call after the first does nothing.
  */
@@ -222,22 +462,40 @@ export function registerFieldValidity() {
     // others.
     document.addEventListener('invalid', onInvalid, true);
 
-    // A field the reader changed and left, which the browser now paints red, says why at once.
+    // A field the reader changed and left, which the browser now paints red, says why at once,
+    // unless a press of the pointer took the reader out of it: then it waits for that press to end.
     const left = (event) => {
         const field = event.target;
 
-        if (isHouseField(field) && paintedInvalid(field)) {
-            showValidity(field);
-        } else if (isHouseField(field)) {
-            follow(field);
+        if (! isHouseField(field)) {
+            return;
+        }
+
+        if (pressUnderWay()) {
+            waiting.add(field);
+        } else {
+            leave(field);
         }
     };
 
-    document.addEventListener('change', left, true);
+    // A change or an input anywhere in a form may take one of its fields out of the check, a switch
+    // such as "same as the billing address" most often, and that field hears nothing itself.
+    document.addEventListener('change', (event) => {
+        left(event);
+        sweepSoon(event.target?.form);
+    }, true);
     document.addEventListener('focusout', left, true);
+    document.addEventListener('pointerdown', onPressStart, true);
+    document.addEventListener('pointerup', onPressEnd, true);
+    document.addEventListener('pointercancel', onPressCanceled, true);
+    document.addEventListener('click', onClick, true);
+    document.addEventListener('keydown', onKey, true);
     document.addEventListener('input', (event) => {
         if (isHouseField(event.target)) {
             follow(event.target);
         }
+
+        sweepSoon(event.target?.form);
     }, true);
+    document.addEventListener('reset', onReset, true);
 }

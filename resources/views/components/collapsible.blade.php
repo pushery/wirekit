@@ -127,9 +127,13 @@
         <span class="flex-1 min-w-0">{{ $trigger }}</span>
         {{-- Chevron — rotates 180° when open. Decorative. --}}
         <svg
-            class="w-4 h-4 shrink-0 transition-transform duration-[var(--transition-wk-duration)]"
-            :class="isOpen ? 'rotate-180' : ''"
+            {{-- Turned in the markup when the server renders it open, so the arrow points the way the
+                 content stands from the first paint. The object form of the binding takes off a class it
+                 did not add, and its key is the class as the markup writes it, short under `compact`. --}}
+            class="w-4 h-4 shrink-0 transition-transform duration-[var(--transition-wk-duration)]{{ $openBool ? ' rotate-180' : '' }}"
+            :class="{ {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map('rotate-180')) }}: isOpen }"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
+            data-wk-fold-chevron
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
         </svg>
@@ -137,7 +141,9 @@
 
     {{-- Collapsible region — smooth height transition via x-collapse. x-cloak hides a closed
          one until Alpine initializes, so it never flashes open on load; an open one paints
-         with the page, as its trigger says. --}}
+         with the page, as its trigger says. `data-wk-print-open` prints it open however the
+         reader left it, since paper has no trigger, and `data-wk-fold-chevron` keeps the
+         arrow off the sheet (print block of dist/wirekit.css, section 10). --}}
     @wirekitLast($findable)
         {{-- Findable: `hidden="until-found"` while closed where the engine supports it, with the
              height animated by `x-wk-findable.collapse` in place of `x-collapse`, which only works
@@ -148,13 +154,14 @@
             x-wk-findable.collapse="isOpen"
             x-on:beforematch="isOpen = true"
             @unless($openBool) hidden="until-found" @endunless
+            data-wk-print-open
         >
             <div class="{{ $contentClasses }}">
                 {{ $slot }}
             </div>
         </div>
     @else
-        <div id="{{ $uid }}" x-show="isOpen" x-collapse @unless($openBool) x-cloak @endunless class="{{ $contentClasses }}">
+        <div id="{{ $uid }}" x-show="isOpen" x-collapse @unless($openBool) x-cloak @endunless class="{{ $contentClasses }}" data-wk-print-open>
             {{ $slot }}
         </div>
     @endwirekitLast
