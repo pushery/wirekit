@@ -1,2 +1,0 @@
-/*! WireKit per page v2.74.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
-import{a as i}from"./chunk-PZOVCQMX.js";var n='button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',u="data-wk-initial-focus";function f(e,c){if(!e)return;let o=t=>!!t&&!t.hasAttribute(c)&&!i(t)&&t.getClientRects().length>0,r=[...e.querySelectorAll(`[${u}]`)].map(t=>t.matches?.(n)?t:t.querySelector?.(n)).find(o);return r||([...e.querySelectorAll(n)].find(o)??void 0)}export{n as a,f as b};

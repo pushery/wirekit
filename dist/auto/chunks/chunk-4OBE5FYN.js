@@ -1,0 +1,2 @@
+/*! WireKit per page v2.74.1 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+var n=new Set;function s(e){for(let t of e)try{t?.()}catch(r){globalThis.reportError?.(r)}}function a(e){return n.size===0&&queueMicrotask(()=>{let t=[...n];n.clear(),s(t)}),n.add(e),()=>{n.delete(e)}}var o=null;function i(e){if(typeof document>"u"||!document.fonts)return()=>{};if(o===null){let r=new Set,u=document.fonts;o=r,queueMicrotask(()=>{o=null,u.ready?.then?.(()=>s([...r]))})}let t=o;return t.add(e),()=>{t.delete(e)}}export{s as a,a as b,i as c};

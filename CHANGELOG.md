@@ -10,6 +10,21 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.74.1] — 2026-11-25
+
+**Patch.** The bundles carry focus-trap 8.2.5, which no longer lets a trap finish activating after its overlay has closed again. The docs get three fixes: the captcha previews stand as wide as their form, the frames around the demos follow the preset's border width, and the table page names the Blaze version WireKit is tested with.
+
+### Changed
+
+- **The bundles carry focus-trap 8.2.5 and tabbable 6.5.2.** `wirekit.js`, `wirekit.esm.js`, `wirekit-alpine.js` and `wirekit-alpine.csp.js` bring them for every overlay that holds the focus, as the [dependency list](https://docs.wirekit.app/dependencies) shows. A trap moves the focus into its overlay a moment after the overlay opens, and an overlay that closes again in that moment no longer leaves its trap to finish activating behind it. tabbable 6.5.2 finds the same elements as 6.5.1.
+- **A [popover](https://docs.wirekit.app/components/popover) pressed outside while its focus trap is still activating keeps that trap paused.** The popover pauses its trap on a press outside it, and with focus-trap 8.2.5 a trap paused before its activation has finished no longer starts listening for the focus, clicks and keys of the page.
+
+### Documentation
+
+- **The [captcha](https://docs.wirekit.app/components/captcha) previews stand as wide as their form, 24rem.** "A Turnstile check with Cloudflare's test key" and "Error state" stood at the width of their fields on the page and at 24rem in the frames of the width switcher; they stand at 24rem in both now.
+- **The frames the docs previews draw around a demo follow the preset's border width.** In Material and Minimal they draw no edge, as the components inside them draw none; in Cupertino they are half as wide as before and in Brutalist twice as wide, as every other edge of those presets is. The default preset looks as before; [center](https://docs.wirekit.app/components/center) and the [Inter](https://docs.wirekit.app/components/fonts/inter) font page show it.
+- **The [table](https://docs.wirekit.app/components/table#rendering-many-rows) page names the Blaze version WireKit is tested with: 1.0.21 and later.** With Blaze 1.0.10, a compiled cell that holds a button throws while it renders, and the page says to update Blaze before turning `wirekit.blaze.table` on.
+
 ## [2.74.0] — 2026-11-24
 
 **Minor.** Two new components: a [captcha](https://docs.wirekit.app/components/captcha) whose token reaches a Livewire property, and an [external link question](https://docs.wirekit.app/components/external-link-question) that asks before a link takes the reader to another site. [`ColorScheme::from()`](https://docs.wirekit.app/theming#a-whole-scheme-from-four-colors) derives every color token of both modes from four colors. Overlays, sidebar sections and selects can build their contents the first time they're needed, and table cells and text can be compiled by livewire/blaze. A labeled action in a component is now filled, and a page carries fewer of Livewire's morph markers. Most of the other entries are fixes.

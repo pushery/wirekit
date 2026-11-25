@@ -1,2 +1,0 @@
-/*! WireKit per page v2.74.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
-function f(t,l){if(!l||typeof t?.getBoundingClientRect!="function"||typeof l.getBoundingClientRect!="function"||t.scrollWidth<=t.clientWidth)return;let e=t.getBoundingClientRect(),n=l.getBoundingClientRect(),i=typeof getComputedStyle=="function"&&parseFloat(getComputedStyle(t).scrollPaddingLeft)||0;n.left-i<e.left?t.scrollLeft-=Math.ceil(e.left-(n.left-i)):n.right+i>e.right&&(t.scrollLeft+=Math.ceil(n.right+i-e.right))}export{f as a};
